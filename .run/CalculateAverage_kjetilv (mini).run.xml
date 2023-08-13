@@ -1,0 +1,24 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="CalculateAverage_kjetilv (mini)" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="graalvm-21" />
+    <option name="MAIN_CLASS_NAME" value="com.github.kjetilv.flopp.ca.CalculateAverage_kjetilvlong" />
+    <module name="flopp.flopp-lc.main" />
+    <option name="PROGRAM_PARAMETERS" value="/home/kjetilv/Development/data/measurements.txt /home/kjetilv/Development/data/fasit.txt" />
+    <target name="graalvm@mini:22" />
+    <option name="VM_PARAMETERS" value="-XX:+UseG1GC -Xmx4G -Xms4G -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -Xnoclassgc " />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="onebrc.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <extension name="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension">
+      <option name="credential" />
+      <option name="region" />
+      <option name="useCurrentConnection" value="false" />
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

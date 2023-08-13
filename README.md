@@ -1,1 +1,3 @@
-# Lopp: Line-oriented parallel processing.
+# flopp
+
+(flopp, line-oriented parallel processing)

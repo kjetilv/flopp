@@ -1,33 +1,57 @@
+import org.gradle.api.JavaVersion.VERSION_22
+import org.gradle.jvm.toolchain.JvmVendorSpec.GRAAL_VM
+
 plugins {
-    id("java")
+    java
+    `maven-publish`
 }
 
-group = "com.github.kjetilv.filstr"
-version = "1.0-SNAPSHOT"
+subprojects {
+    apply(plugin = "maven-publish")
+    apply(plugin = "java")
 
-repositories {
-    mavenCentral()
-}
+    group = "com.github.kjetilv.flopp"
+    version = "0.1.0-SNAPSHOT"
 
-dependencies {
-    implementation("org.slf4j:slf4j-api:2.0.7")
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
 
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
-    testImplementation(platform("org.junit:junit-bom:5.9.3"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-}
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(22))
+            vendor.set(GRAAL_VM)
+        }
+        withSourcesJar()
+        modularity.inferModulePath
+        sourceCompatibility = VERSION_22
+        targetCompatibility = VERSION_22
+    }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-    withSourcesJar()
-}
+    publishing {
+        publications {
+            register<MavenPublication>("floppPublication") {
+                pom {
+                    name.set("Flopp")
+                    description.set("Flopp")
+                    url.set("https://github.com/kjetilv/flopp")
 
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("--enable-preview")
-}
+                    licenses {
+                        license {
+                            name.set("GNU General Public License v3.0")
+                            url.set("https://github.com/kjetilv/flopp/blob/main/LICENSE")
+                        }
+                    }
 
-tasks.test {
-    useJUnitPlatform()
+                    scm {
+                        connection.set("scm:git:https://github.com/kjetilv/flopp")
+                        developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
+                        url.set("https://github.com/kjetilv/flopp")
+                    }
+                }
+                from(components["java"])
+            }
+        }
+    }
 }
