@@ -1,6 +1,6 @@
 package com.github.kjetilv.lopp.lc;
 
-import com.github.kjetilv.lopp.FileShape;
+import com.github.kjetilv.lopp.Shape;
 import com.github.kjetilv.lopp.Partitioning;
 
 import java.io.BufferedInputStream;
@@ -14,21 +14,28 @@ public class IndexingLineCounter implements LineCounter {
 
     private final Partitioning partitioning;
 
-    private final FileShape fileShape;
+    private final Shape shape;
 
-    public IndexingLineCounter(Partitioning partitioning, FileShape fileShape) {
+    private final int scanResolution;
+
+    public IndexingLineCounter(Partitioning partitioning, Shape shape, int scanResolution) {
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        this.fileShape = Objects.requireNonNull(fileShape, "fileShape");
+        this.shape = Objects.requireNonNull(shape, "fileShape");
+        this.scanResolution = scanResolution;
     }
 
     @Override
     public long count(Path path) {
-        return scan(path).linesCount();
+        try (InputStream inputStream = bytes(path)) {
+            return lineCount(inputStream);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not count lines: " + path, e);
+        }
     }
 
     @Override
     public Lines scan(Path path) {
-        long byteSize = fileShape.stats().fileSize();
+        long byteSize = shape.size();
         if (byteSize <= 0) {
             throw new IllegalStateException("Empty file: " + path);
         }
@@ -41,10 +48,10 @@ public class IndexingLineCounter implements LineCounter {
 
     private ByteIndexEstimator lines(InputStream is) {
         byte[] buffer = new byte[partitioning.bufferSize()];
-        ByteIndexEstimator estimator = new ByteIndexEstimator(fileShape, partitioning);
+        ByteIndexEstimator estimator = new ByteIndexEstimator(shape, partitioning, scanResolution);
         long offset = 0;
         while (true) {
-            int b = 0;
+            int b;
             try {
                 b = is.read(buffer);
             } catch (Exception e) {
@@ -53,12 +60,33 @@ public class IndexingLineCounter implements LineCounter {
             if (b < 0) {
                 return estimator;
             }
-            for (int i = 0; i != b; i++) {
+            for (int i = 0; i < b; i++) {
                 if (buffer[i] == '\n') {
                     estimator.lineAt(offset + i + 1);
                 }
             }
             offset += b;
+        }
+    }
+
+    private long lineCount(InputStream is) {
+        byte[] buffer = new byte[partitioning.bufferSize()];
+        long c = 0;
+        while (true) {
+            int b;
+            try {
+                b = is.read(buffer);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to read from " + is, e);
+            }
+            if (b < 0) {
+                return c;
+            }
+            for (int i = 0; i < b; i++) {
+                if (buffer[i] == '\n') {
+                    c++;
+                }
+            }
         }
     }
 
@@ -75,6 +103,6 @@ public class IndexingLineCounter implements LineCounter {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + fileShape + " / " + partitioning + "]";
+        return getClass().getSimpleName() + "[" + shape + " / " + partitioning + "]";
     }
 }

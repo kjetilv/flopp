@@ -1,34 +1,36 @@
 package com.github.kjetilv.lopp.lc;
 
-import com.github.kjetilv.lopp.FileShape;
-import com.github.kjetilv.lopp.Partitioning;
+import com.github.kjetilv.lopp.Shape;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public final class AsyncLineCounter implements LineCounter {
+@SuppressWarnings("unused")
+public final class AsyncLineCounter {
 
     private final ExecutorService executorService;
 
-    private final FileShape fileShape;
+    private final int bufferSize;
 
-    private final Partitioning partitioning;
-
-    public AsyncLineCounter(FileShape fileShape, Partitioning partitioning, ExecutorService executorService) {
-        this.fileShape = Objects.requireNonNull(fileShape, "fileShape");
-        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        this.executorService = Objects.requireNonNull(executorService, "executorService");
+    public AsyncLineCounter(ExecutorService executorService) {
+        this(executorService, 0);
     }
 
-    @Override
-    public Lines scan(Path path) {
+    public AsyncLineCounter(ExecutorService executorService, int bufferSize) {
+        this.executorService = Objects.requireNonNull(executorService, "executorService");
+        this.bufferSize = bufferSize > 0 ? bufferSize : DEFAULT_BUFFER_SIZE;
+    }
+
+    public long count(Path path, Shape shape) {
         try (
             AsynchronousFileChannel channel = AsynchronousFileChannel.open(
                 path,
@@ -36,18 +38,18 @@ public final class AsyncLineCounter implements LineCounter {
                 executorService
             )
         ) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(partitioning.bufferSize());
+            ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
             Lock completeLock = new ReentrantLock();
             Condition completed = completeLock.newCondition();
+            LongAdder linesCount = new LongAdder();
+            long size = shape.size();
             LineCountingCompletionHandler handler =
                 new LineCountingCompletionHandler(
-                    fileShape,
-                    partitioning,
                     channel,
                     byteBuffer,
                     0L,
-                    partitioning.bufferSize(),
-                    fileShape.fileSize(),
+                    bufferSize,
+                    size,
                     () -> {
                         completeLock.lock();
                         try {
@@ -57,24 +59,15 @@ public final class AsyncLineCounter implements LineCounter {
                         }
                     }
                 );
-            List<ByteIndexEstimator> estimators = Collections.synchronizedList(new ArrayList<>());
-            channel.read(
-                byteBuffer,
-                0,
-                estimators,
-                handler
-            );
+            channel.read(byteBuffer, 0, linesCount, handler);
             awaitSignalDone(completeLock, completed);
-            return combined(estimators);
+            return linesCount.longValue();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-
     }
 
-    private static ByteIndexEstimator combined(List<ByteIndexEstimator> estimators) {
-        return estimators.stream().reduce(ByteIndexEstimator::combine).orElseThrow();
-    }
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private static void awaitSignalDone(Lock completeLock, Condition completed) {
         completeLock.lock();

@@ -12,10 +12,10 @@ import static java.util.stream.Collectors.joining;
 
 final class FileBuilder {
 
-    static Path file(Path tmp, String base, FileShape shape, int lineCount, int columnCount) {
+    static Path file(Path tmp, String base, int lineCount, int columnCount, Shape.Decor decor) {
         try {
             Path path = tmp.resolve(base + "-data.txt");
-            Iterable<String> lines = lines(shape, lineCount, columnCount);
+            Iterable<String> lines = lines(lineCount, columnCount, decor);
             Files.write(path, lines, WRITE, CREATE);
             return path;
         } catch (Exception e) {
@@ -26,9 +26,9 @@ final class FileBuilder {
     private FileBuilder() {
     }
 
-    private static Iterable<String> lines(FileShape fileShape, int lineCount, int colCount) {
-        int header = fileShape.decor().header();
-        int footer = fileShape.decor().footer();
+    private static Iterable<String> lines(int lineCount, int colCount, Shape.Decor decor) {
+        int header = decor.header();
+        int footer = decor.footer();
         AtomicLong countdown = new AtomicLong(lineCount + header + footer);
         Iterable<String> lines = () -> new Iterator<>() {
 

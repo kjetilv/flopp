@@ -1,7 +1,8 @@
 package com.github.kjetilv.lopp.io.test;
 
-import com.github.kjetilv.lopp.io.ReadQr;
-import com.github.kjetilv.lopp.io.WriteQr;
+import com.github.kjetilv.lopp.qr.Qrs;
+import com.github.kjetilv.lopp.qr.ReadQr;
+import com.github.kjetilv.lopp.qr.WriteQr;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -18,14 +19,14 @@ public class IOTest {
         List<String> sink = new ArrayList<>();
 
         try (
-            WriteQr<String> foo = WriteQr.create(
+            WriteQr<String> foo = Qrs.writer(
                 string ->
                         sink.add(Thread.currentThread() + ": " + string),
                 10,
                 "foo")
         ) {
             ExecutorService readExecutor = Executors.newSingleThreadExecutor();
-            ReadQr readQr = ReadQr.create(readExecutor);
+            ReadQr readQr = Qrs.reader(readExecutor);
             ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
             CompletableFuture<Void> async = CompletableFuture.runAsync(foo, writeExecutor);
 

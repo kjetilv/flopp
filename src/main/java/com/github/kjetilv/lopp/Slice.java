@@ -1,11 +1,9 @@
 package com.github.kjetilv.lopp;
 
-import com.github.kjetilv.lopp.utils.Non;
-
 record Slice(int offset, int length, int total) {
 
-    public static Slice first(long sliceSize, long total) {
-        return new Slice(0, Math.min(sliceSize, total), total);
+    static Slice first(long size, long total) {
+        return new Slice(0, Math.min(size, total), total);
     }
 
     Slice(long offset, long length, long total) {
@@ -14,17 +12,17 @@ record Slice(int offset, int length, int total) {
 
     Slice {
         Non.negative(offset, "offset");
-        Non.negativeOrZero(length, "length");
-        Non.negativeOrZero(total, "total");
+        Non.negative(length, "length");
+        Non.negative(total, "total");
     }
 
-    public Slice next() {
+    Slice bump(long total) {
+        return new Slice(offset, length, total);
+    }
+
+    Slice next() {
         int nextOffset = offset + length;
-        if (nextOffset == total) {
-            return null;
-        }
         int nextLength = Math.min(total - nextOffset, length);
         return new Slice(nextOffset, nextLength, total);
     }
-
 }

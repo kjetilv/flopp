@@ -1,11 +1,10 @@
 package com.github.kjetilv.lopp.lc;
 
-import com.github.kjetilv.lopp.FileShape;
+import com.github.kjetilv.lopp.Shape;
 import com.github.kjetilv.lopp.Partition;
-import com.github.kjetilv.lopp.PartitionBytes;
 import com.github.kjetilv.lopp.Partitioning;
 import com.github.kjetilv.lopp.lc.LineCounter.LineOffset;
-import com.github.kjetilv.lopp.utils.Non;
+import com.github.kjetilv.lopp.Non;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +17,7 @@ final class ByteIndexEstimator implements LineCounter.Lines {
 
     private final long byteSize;
 
-    private final FileShape fileShape;
+    private final Shape shape;
 
     private final Partitioning partitioning;
 
@@ -36,16 +35,16 @@ final class ByteIndexEstimator implements LineCounter.Lines {
 
     private int factorCountdown;
 
-    ByteIndexEstimator(FileShape fileShape, Partitioning partitioning) {
-        this.fileShape = Objects.requireNonNull(fileShape, "fileShape");
-        this.byteSize = Non.negativeOrZero(fileShape.fileSize(), "byteSize");
-        this.partitioning = partitioning;
-        int count = estimationSlots(this.byteSize, partitioning.scanResolution());
+    ByteIndexEstimator(Shape shape, Partitioning partitioning, int scanResolution) {
+        this.shape = Objects.requireNonNull(shape, "shape");
+        this.byteSize = Non.negativeOrZero(shape.size(), "byteSize");
+        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
+        int count = estimationSlots(this.byteSize, scanResolution);
         this.bytePositions = new long[count];
         this.factor = 1;
         this.factorCountdown = 1;
-        this.headersLeft = fileShape.header();
-        if (fileShape.header() == 0) {
+        this.headersLeft = shape.header();
+        if (shape.header() == 0) {
             lineStart(0);
         }
     }
@@ -72,13 +71,9 @@ final class ByteIndexEstimator implements LineCounter.Lines {
                 Partition partition = new Partition(partitionNo, partitionCount, offset, lo1.lineNo() - offset);
                 long byteOffset = lo0.bytePosition();
                 long nextBytePosition = partition.last() ? byteSize : lo1.bytePosition();
-                return partition.at(byteOffset, nextBytePosition - byteOffset);
+                return new PartitionBytes(byteOffset, nextBytePosition - byteOffset, partition);
             })
             .toList();
-    }
-
-    public ByteIndexEstimator combine(ByteIndexEstimator byteIndexEstimator) {
-        return this;
     }
 
     @Override
@@ -120,14 +115,14 @@ final class ByteIndexEstimator implements LineCounter.Lines {
     private LineOffset[] offsets(Partitioning partitioning) {
         long[] idealPositions = idealPositions(partitioning.partitionCount());
         long[] approximateIndices = findApproximate(idealPositions);
-        int header = fileShape.header();
+        int header = shape.header();
         LineOffset[] offsets = new LineOffset[approximateIndices.length];
         for (int j = 0; j < approximateIndices.length; j++) {
             int approximateIndex = Math.toIntExact(approximateIndices[j]);
             long bytePosition = bytePositions[approximateIndex];
             boolean lastIndex = approximateIndices.length - j == 1;
             long lineNo = lastIndex
-                ? linesCount - fileShape.footer()
+                ? linesCount - shape.footer()
                 : header + (long) approximateIndex * factor;
             offsets[j] = new LineOffset(bytePosition, lineNo);
         }

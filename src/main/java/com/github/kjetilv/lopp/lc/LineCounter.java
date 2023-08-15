@@ -1,7 +1,5 @@
 package com.github.kjetilv.lopp.lc;
 
-import com.github.kjetilv.lopp.PartitionBytes;
-
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;

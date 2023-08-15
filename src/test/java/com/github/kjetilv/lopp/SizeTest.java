@@ -1,29 +1,29 @@
 package com.github.kjetilv.lopp;
 
-import com.github.kjetilv.lopp.io.ReadQr;
-import com.github.kjetilv.lopp.io.WriteQr;
-import com.github.kjetilv.lopp.lc.AsyncLineCounter;
+import com.github.kjetilv.lopp.files.FileChannelSources;
+import com.github.kjetilv.lopp.files.FileChannelTransfers;
+import com.github.kjetilv.lopp.files.FileTempTargets;
 import com.github.kjetilv.lopp.lc.IndexingLineCounter;
-import com.github.kjetilv.lopp.lc.LineCounter;
 import com.github.kjetilv.lopp.lc.SimpleLineCounter;
+import com.github.kjetilv.lopp.files.MemoryMappedByteArrayLinesWriter;
+import com.github.kjetilv.lopp.files.SimpleLinesWriter;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
-import java.nio.channels.FileChannel;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -43,51 +43,29 @@ public class SizeTest {
 
     private ExecutorService readerExec;
 
-    private ExecutorService writeExec;
-
     private Path path;
-
-    private int sliceSize;
 
     private int partitions;
 
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private int ioQueueSize;
 
     private Path tempDirectory;
 
-    private FileShape fileShape;
+    private Shape shape;
 
     private int linesCount;
 
+    @SuppressWarnings("FieldCanBeLocal")
     private int columnCount;
 
-    private int scanResolution;
-
-    @Test
     @Disabled
-    void asyncCountLines() {
-        FileShape fileShape;
-        Partitioning partitioning = new Partitioning(10, 8192, 10);
-        try {
-            fileShape = new FileShape().fileSize(Files.size(path));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        long straight = countLinesStraight(path);
-        logTime(1, () -> {
-            long start = System.nanoTime();
-            LineCounter.Lines lines = new AsyncLineCounter(fileShape, partitioning, readerExec).scan(path);
-            assertEquals(straight, lines.linesCount());
-            return Duration.ofNanos(System.nanoTime() - start);
-        });
-    }
-
     @Test
     void countLinesStraight() {
-        FileShape fileShape1;
-        Partitioning partitioning = new Partitioning(10, 8192, 10);
+        Shape shape1;
+        Partitioning partitioning = new Partitioning(10, 8192);
         try {
-            fileShape1 = new FileShape().fileSize(Files.size(path));
+            shape1 = Shape.size(Files.size(path));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -98,29 +76,18 @@ public class SizeTest {
             assertEquals(straight, count);
             return Duration.ofNanos(System.nanoTime() - start);
         });
-//        logTime(10, () -> {
-//            long start = System.nanoTime();
-//            long count = new AsyncLineCounter(fileShape1, partitioning, readerExec).count(path);
-//            assertEquals(straight, count);
-//            return Duration.ofNanos(System.nanoTime() - start);
-//        });
         logTime(10, () -> {
             long start = System.nanoTime();
-            long count = new IndexingLineCounter(partitioning, fileShape1).count(path);
+            long count = new IndexingLineCounter(partitioning, shape1, 10).count(path);
             assertEquals(straight, count);
             return Duration.ofNanos(System.nanoTime() - start);
         });
     }
 
-    @Disabled
-    @Test
-    void queueingReadersAndMultipleQueueingWriters(TestInfo testInfo) {
-        logTime(20, () -> doQueueingReadersAndMultipleQueueingWriters(testInfo, null, OP));
-    }
-
+//    @Disabled
     @Test
     void realStuff(TestInfo testInfo) {
-        logTime(20, () -> doRealStuff(testInfo, null, OP));
+        logTime(50, () -> doRealStuff(testInfo, null, OP, 16384));
     }
 
     @Test
@@ -130,203 +97,135 @@ public class SizeTest {
 
     @Test
     void realStuffOnce(TestInfo testInfo) {
-        logTime(1, () -> doRealStuff(testInfo, null, OP));
+        logTime(1, () -> doRealStuff(testInfo, null, OP, 16384));
     }
 
+    @Disabled
     @Test
-    void simpleReadersMultipleSimpleWriters(TestInfo testInfo) {
-        logTime(25, () -> doSimpleReadersAndMultipleSimpleWriters(testInfo, OP));
+    void realStuffFastOnce(TestInfo testInfo) {
+        logTime(1, () -> doRealStuffFast(testInfo, null, OP));
     }
 
+    @Disabled
     @Test
     void theStraightStory(TestInfo testInfo) {
         logTime(15, () -> doTheStraightStory(testInfo, OP));
     }
 
+    @Disabled
     @Test
     void theStraightStoryParallel(TestInfo testInfo) {
         logTime(15, () -> doTheStraightStoryParallel(testInfo, OP));
     }
 
-    @Test
-    void theStraightStoryQueued(TestInfo testInfo) {
-        logTime(25, () -> doTheStraightStoryQueued(testInfo, OP));
-    }
-
     @BeforeEach
-    void setUp(TestInfo testInfo) {
-        linesCount = 100_000;
-        columnCount = 2;
+    void setUp(TestInfo testInfo) throws IOException {
+        linesCount = 1_250_000 + new Random().nextInt(100_000);
+        columnCount = 10;
         ioQueueSize = 10;
-        scanResolution = 1;
-        readerExec = writeExec = new ThreadPoolExecutor(
-            32,
-            64,
-            1,
-            TimeUnit.MINUTES,
-            new ArrayBlockingQueue<>(100)
-        );
-        sliceSize = 64 * 1024;
+        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
-        int header = 2;
-        int footer = 1;
+        int header = 3;
+        int footer = 2;
 
         String className = testInfo.getTestClass()
             .map(Class::getSimpleName).orElseThrow();
         String methodName = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
         String pathBase = className + "-" + methodName;
-        try {
-            tempDirectory = Files.createTempDirectory(pathBase + "-" + System.currentTimeMillis());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        tempDirectory = Files.createTempDirectory(pathBase + "-" + System.currentTimeMillis());
         log.info("Test: {}", tempDirectory.toUri());
 
-        fileShape = FileShape.base().iso8859_1().header(header, footer);
-        path = FileBuilder.file(tempDirectory, pathBase, fileShape, linesCount, columnCount);
+        path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
+        shape = Shape.size(Files.size(path)).header(header, footer);
         partitions = Runtime.getRuntime().availableProcessors();
     }
 
     @AfterEach
     void tearDown() {
         readerExec.shutdown();
-        writeExec.shutdown();
         readerExec.shutdownNow();
-        writeExec.shutdownNow();
         try {
-            assertTrue(readerExec.awaitTermination(10, TimeUnit.SECONDS) && writeExec.awaitTermination(
-                10,
-                TimeUnit.SECONDS
-            ));
+            assertTrue(readerExec.awaitTermination(10, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
         readerExec = null;
-        writeExec = null;
     }
 
-    private PartitionedFile partitionedFile(ExecutorService service) {
-        return PartitionedFile.create(
-            path,
-            fileShape,
-            new Partitioning(partitions, 8192, 1),
-            service
-        );
-    }
-
-    private Duration doQueueingReadersAndMultipleQueueingWriters(
-        TestInfo testInfo,
-        String qual,
-        Function<String, String> r
-    ) {
+    private Duration doRealStuff(TestInfo testInfo, String qual, Function<String, String> processor, int bufferSize) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        try (PartitionedFile partitionedFile = partitionedFile(readerExec)) {
-            PathResultConsumer pathResultConsumer = new PathResultConsumer(partitionedFile.partitionCount());
-            readerExec.submit(() -> partitionedFile.asyncMap(sliceSize, (partitionBytes, stream) -> {
-                    Partition partition = partitionBytes.partition();
-                    Path pbTemp = out(path, testInfo, partition, qual);
-                    int index = partition.partitionNo();
-                    try (PrintWriter pw = pw(pbTemp)) {
-                        try (
-                            WriteQr<String> writeQr = WriteQr.create("w-" + index, pw::println, ioQueueSize).in(writeExec);
-                            Stream<NPLine> lines = ReadQr.create(readerExec)
-                                .stream("r-" + index, stream, ioQueueSize, NPLine.empty())
-                        ) {
-                            lines.map(NPLine::line)
-                                .map(reader(r))
-                                .forEach(writeQr);
-                            writeQr.awaitAllProcessed();
-                        }
-                    }
-                    return pbTemp;
-                }, readerExec)
-                .forEach(pathResultConsumer));
-            transfer(tmp, pathResultConsumer.stream());
-        }
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        return time;
-    }
-
-    private Duration doRealStuff(TestInfo testInfo, String qual, Function<String, String> processor) {
-        long start = System.nanoTime();
-        Path tmp = out(path, testInfo, qual);
+        Partitioning partitioning = new Partitioning(partitions, bufferSize);
         try (
-            PartitionedFile partitionedFile = PartitionedFile.create(
-                path,
-                fileShape,
-                new Partitioning(partitions, 8192, scanResolution)
+            PartitionedProcessor partitioned =
+                PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
+        ) {
+            partitioned.process(processor);
+        }
+        return log(testInfo, start);
+    }
+
+    private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<String, String> processor) {
+        Path tmp = out(path, testInfo, qual);
+        long start = System.nanoTime();
+        try (
+            Partitioned<Path> partitioned = new DefaultPartitioned<>(
+                shape,
+                new Partitioning(partitions, 8192),
+                new FileChannelSources(path, shape.size()),
+                readerExec
             )
         ) {
-            partitionedFile.processSingle(processor, tmp, readerExec, sliceSize);
+            partitioned
+                .processor(
+                    new FileTempTargets(tmp),
+                    new FileChannelTransfers(tmp),
+                    SizeTest::sizeOf,
+                    SimpleLinesWriter::new
+                )
+                .process(processor);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        return time;
+        return log(testInfo, start);
     }
 
     private Duration doRealStuffVerified(TestInfo testInfo, String qual, Function<String, String> processor) {
-        long start = System.nanoTime();
-        Path tmp = out(path, testInfo, qual);
         Path verified = straightUp(testInfo, processor, "verified");
-        try (
-            PartitionedFile partitionedFile = PartitionedFile.create(
-                path,
-                fileShape,
-                new Partitioning(partitions, 8192, scanResolution)
-            )
-        ) {
-            partitionedFile.processSingle(processor, tmp, readerExec, sliceSize);
-        }
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        assertThat(tmp).hasSameTextualContentAs(verified);
-        return time;
-    }
-
-    private Duration doSimpleReadersAndMultipleSimpleWriters(TestInfo testInfo, Function<String, String> r) {
-        Path tmp = out(path, testInfo);
+        Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
-        try (PartitionedFile partitionedFile = partitionedFile(readerExec)) {
-            PathResultConsumer pathResultConsumer = new PathResultConsumer(partitionedFile.partitionCount());
-            PartitionBytesProcessor<Path> pathPartitionBytesProcessor = (partitionBytes, npLines) -> {
-                Path subTmp = out(path, testInfo, partitionBytes.partition());
-                try (PrintWriter pw = pw(subTmp)) {
-                    npLines.map(NPLine::line)
-                        .map(reader(r))
-                        .forEach(pw::println);
-                }
-                return subTmp;
-            };
-            Stream<CompletableFuture<PartitionedFile.Result<Path>>> pathResults = partitionedFile.asyncMap(
-                sliceSize,
-                pathPartitionBytesProcessor,
-                readerExec
-            );
-            readerExec.execute(() -> pathResults.forEach(pathResultConsumer));
-            transfer(tmp, pathResultConsumer.stream());
+        Partitioning partitioning = new Partitioning(partitions, 8192);
+        try (
+            Partitioned<Path> partitioned = PartitionedPaths.create(path, shape, partitioning)
+        ) {
+            partitioned
+                .processor(
+                    new FileTempTargets(tmp),
+                    new FileChannelTransfers(tmp),
+                    SizeTest::sizeOf,
+                    (target, charset) ->
+                        new MemoryMappedByteArrayLinesWriter(target, 1024, charset)
+                )
+                .process(processor);
         }
         Duration time = log(testInfo, start);
-        checkLineCount(tmp);
+        assertThat(tmp).hasSameTextualContentAs(verified);
         return time;
     }
 
     private Duration doTheStraightStory(TestInfo testInfo, Function<String, String> r) {
         long start = System.nanoTime();
-        Path tmp = straightUp(testInfo, r, null);
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        return time;
+        straightUp(testInfo, r, null);
+        return log(testInfo, start);
     }
 
     private Path straightUp(TestInfo testInfo, Function<String, String> r, String qual) {
         Path tmp = out(path, testInfo, qual);
         try (PrintWriter pw = pw(tmp)) {
             try (Stream<String> stringStream = Files.lines(path)) {
-                stringStream.skip(fileShape.decor().header()).limit(linesCount)
+                stringStream.skip(shape.decor().header()).limit(linesCount)
                     .map(reader(r))
                     .forEach(pw::println);
             } catch (Exception e) {
@@ -337,11 +236,11 @@ public class SizeTest {
     }
 
     private Duration doTheStraightStoryParallel(TestInfo testInfo, Function<String, String> r) {
+        Path tmp = out(path, testInfo, null);
         long start = System.nanoTime();
-        Path tmp = out(path, testInfo, (String) null);
         try (PrintWriter pw = pw(tmp)) {
             try (Stream<String> stringStream = Files.lines(path)) {
-                stringStream.skip(fileShape.decor().header()).limit(linesCount)
+                stringStream.skip(shape.decor().header()).limit(linesCount)
                     .parallel()
                     .map(reader(r))
                     .forEach(pw::println);
@@ -349,42 +248,7 @@ public class SizeTest {
                 throw new RuntimeException(e);
             }
         }
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        return time;
-    }
-
-    private Duration doTheStraightStoryQueued(TestInfo testInfo, Function<String, String> r) {
-        long start = System.nanoTime();
-        Path tmp = out(path, testInfo);
-        try (PrintWriter pw = pw(tmp)) {
-            try (WriteQr<String> stringWriteQr = WriteQr.create(pw::println, ioQueueSize)) {
-                writeExec.submit(stringWriteQr);
-                try (
-                    Stream<String> stringStream = ReadQr.create(readerExec).streamStrings(
-                        Files.lines(path),
-                        ioQueueSize
-                    )
-                ) {
-                    stringStream.skip(fileShape.decor().header()).limit(linesCount)
-                        .map(reader(r))
-                        .forEach(stringWriteQr);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        Duration time = log(testInfo, start);
-        checkLineCount(tmp);
-        return time;
-    }
-
-    private void checkLineCount(Path tmp) {
-        assertEquals(
-            countLinesStraight(path),
-            fileShape.decor().size() + countLinesStraight(tmp),
-            "Bad line count in " + tmp.toUri()
-        );
+        return log(testInfo, start);
     }
 
     private Path out(Path path, TestInfo testInfo, Partition partition, String qual) {
@@ -396,51 +260,43 @@ public class SizeTest {
         return tempDirectory.resolve(tmp);
     }
 
-    private Path out(Path path, TestInfo testInfo) {
-        return out(path, testInfo, null, null);
-    }
-
-    private Path out(Path path, TestInfo testInfo, Partition partition) {
-        return out(path, testInfo, partition, null);
-    }
-
     private Path out(Path path, TestInfo testInfo, String qual) {
         return out(path, testInfo, null, qual);
     }
 
+    @SuppressWarnings("CommentedOutCode")
     public static final Function<String, String> OP = line -> {
         try {
-            Optional<BigInteger> tail = Arrays.stream(line.split(";")).skip(1)
-                .map(BigInteger::new).reduce(BigInteger::add);
-            Optional<BigInteger> total = Arrays.stream(line.split(";"))
-                .map(BigInteger::new).reduce(BigInteger::add);
-            return tail.flatMap(ta -> total.map(to -> to.subtract(ta)))
-                .map(BigInteger::toString).orElse("0");
+            String[] split = line.split(";");
+//            Optional<BigInteger> tail = Arrays.stream(split).skip(1)
+//                .map(BigInteger::new).reduce(BigInteger::add);
+//            Optional<BigInteger> total = Arrays.stream(split)
+//                .map(BigInteger::new).reduce(BigInteger::add);
+//            Optional<BigInteger> bigInteger = tail
+//                .flatMap(ta ->
+//                    total.map(to -> to.subtract(ta)));
+            if (split.length > 0) {
+                return new BigDecimal(split[1]).toPlainString();
+            }
+            return "0";
+//            return Arrays.stream(split).findFirst()
+//                .map(BigInteger::new)
+//                .map(BigInteger::toString)
+//                .orElse("0");
         } catch (Exception e) {
             throw new IllegalStateException("Failed", e);
         }
     };
 
-    private static void transfer(Path tmp, Stream<PartitionedFile.Result<Path>> results) {
-        try (
-            RandomAccessFile target = new RandomAccessFile(tmp.toFile(), "rw");
-            FileChannel channel = target.getChannel()
-        ) {
-            results.map(result -> {
-                    Path path1 = result.result();
-                    Partition partition = result.bytesPartition();
-                    return new PartitionTransferer(path1, partition);
-                })
-                .<Runnable>map(transferer -> () -> transferer.accept(channel))
-                .map(CompletableFuture::runAsync)
-                .toList()
-                .forEach(CompletableFuture::join);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+    private static long sizeOf(Path path1) {
+        try {
+            return Files.size(path1);
+        } catch (IOException e) {
+            throw new IllegalStateException(path1.toString(), e);
         }
     }
 
-    private static Duration logTime(int times, Supplier<Duration> doer) {
+    private static void logTime(int times, Supplier<Duration> doer) {
         Duration duration = Duration.ZERO;
         Duration longest = Duration.ZERO;
         Duration shortest = Duration.ofDays(365);
@@ -467,7 +323,6 @@ public class SizeTest {
             mean = Duration.ofNanos(duration.toNanos() / samples);
         }
         log.info("Average: {}", mean.truncatedTo(ChronoUnit.MILLIS));
-        return mean;
     }
 
     private static Duration msSince(long pbStart) {

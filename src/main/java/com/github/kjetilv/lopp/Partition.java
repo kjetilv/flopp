@@ -1,7 +1,5 @@
 package com.github.kjetilv.lopp;
 
-import com.github.kjetilv.lopp.utils.Non;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,30 +16,23 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         this.partitionCount = Non.negativeOrZero(partitionCount, "partitionCount");
         this.offset = Non.negative(offset, "offset");
         this.count = Non.negative(count, "count");
+        if (partitionNo >= partitionCount) {
+            throw new IllegalStateException("partitionNo >= partitionCount: " + partitionNo + " >= " + partitionCount);
+        }
     }
 
     public static List<Partition> partitions(long total, int partitionCount) {
-        return partitions(total, null, partitionCount);
-    }
-
-    public static List<Partition> partitions(
-        long total,
-        FileShape fileShape,
-        int partitionCount
-    ) {
         return createPartitions(
             Non.negativeOrZero(total, "total"),
-            fileShape,
             Non.negativeOrZero(partitionCount, "partitionCount")
         );
     }
 
     private static List<Partition> createPartitions(
         long total,
-        FileShape fileShape,
         int partitionCount
     ) {
-        long retrievableLineCount = retrievableLineCount(total, fileShape, partitionCount);
+        long retrievableLineCount = retrievableLineCount(total, null, partitionCount);
         if (retrievableLineCount <= partitionCount) {
             return List.of(new Partition(0, 1, 0, retrievableLineCount));
         }
@@ -56,10 +47,9 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         }
         long offset = 0;
         List<Partition> partitions = new ArrayList<>();
-        int header = fileShape == null ? 0 : fileShape.decor().header();
         for (int i = 0; i < sizes.length; i++) {
             partitions.add(
-                new Partition(i, partitionCount, offset + header, sizes[i])
+                new Partition(i, partitionCount, offset, sizes[i])
             );
             offset += sizes[i];
         }
@@ -68,10 +58,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
 
     private static long retrievableLineCount(
         long total,
-        FileShape fileShape,
+        Shape shape,
         int partitionCount
     ) {
-        int decorSize = fileShape == null ? 0 : fileShape.decor().size();
+        int decorSize = shape == null ? 0 : shape.decor().size();
         long retrievableLineCount = total - decorSize;
         if (retrievableLineCount <= 0) {
             throw new IllegalStateException(
@@ -89,16 +79,16 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return Integer.compare(partitionNo, o.partitionNo);
     }
 
-    public PartitionBytes at(long offset, long count) {
-        return new PartitionBytes(offset, count, this);
+    public Partition at(long offset, long count) {
+        return new Partition(partitionNo, partitionCount, offset, count);
     }
 
     public boolean first() {
         return partitionNo == 0;
     }
 
-    public boolean empty() {
-        return count == 0;
+    public boolean hasData() {
+        return count > 0;
     }
 
     public boolean last() {

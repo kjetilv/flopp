@@ -1,5 +1,6 @@
 package com.github.kjetilv.lopp;
 
+import com.github.kjetilv.lopp.files.FileChannelSources;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
@@ -7,17 +8,16 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.LongAdder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FastPartitionerTest {
 
     @Test
-    void test(TestInfo testInfo) throws IOException {
+    void test(TestInfo testInfo) {
         for (int i = 50; i < 300; i++) {
             for (int p = 1; p < 50; p++) {
                 try {
@@ -29,36 +29,73 @@ public class FastPartitionerTest {
         }
     }
 
+    @Test
+    void tes2(TestInfo testInfo) throws IOException {
+        run2(testInfo, 80, 7);
+    }
+
     private static void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
-        FileShape fileShape = FileShape.base().header(1, 1);
 
         Method method = testInfo.getTestMethod().orElseThrow();
 
         Path file = FileBuilder.file(
             Files.createTempDirectory(method.getName()),
             method.getName(),
-            fileShape,
             lineCount,
-            4
+            4,
+            new Shape.Decor(1, 1)
         );
 
         try {
-            FileShape shape = fileShape.fileSize(Files.size(file)).longestLine(32);
-
-                try (
-                PartitionedFile partitionedFile = new FastPartitionedFile(
-                    file,
-                    shape,
+            try (
+                Partitioned<Path> partitioned = new DefaultPartitioned<>(
+                    Shape.size(Files.size(file)).header(1, 1),
                     Partitioning.create(partitionCount, 10),
+                    new FileChannelSources(file, Shape.size(Files.size(file)).header(1, 1).size()),
                     ForkJoinPool.commonPool()
                 )
             ) {
-                List<NPLine> lines = new ArrayList<>();
-                partitionedFile.streamers()
+                LongAdder cont = new LongAdder();
+                partitioned.streams().streamers()
                     .forEach(streamer ->
                         streamer.lines()
-                            .forEach(lines::add));
-                assertThat(lines).hasSize(lineCount + 2);
+                            .forEach(line ->
+                                cont.increment()));
+                assertThat(cont).hasValue(lineCount);
+            }
+        } finally {
+            Files.delete(file);
+        }
+    }
+
+    private static void run2(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
+        Method method = testInfo.getTestMethod().orElseThrow();
+
+        Path file = FileBuilder.file(
+            Files.createTempDirectory(method.getName()),
+            method.getName(),
+            lineCount,
+            4,
+            new Shape.Decor(1, 1)
+        );
+
+        try {
+            try (
+                Partitioned<Path> partitioned = new DefaultPartitioned<>(
+                    Shape.size(Files.size(file)).longestLine(32).header(1,1),
+                    Partitioning.create(partitionCount, 10),
+                    new FileChannelSources(file, Shape.size(Files.size(file)).longestLine(32).header(1,1).size()),
+                    ForkJoinPool.commonPool()
+                )
+            ) {
+                LongAdder cont = new LongAdder();
+                partitioned.consumer().forEach(
+                        (partition, entries) ->
+                            entries.forEach(line -> cont.increment())
+                    )
+                    .toList()
+                    .forEach(CompletableFuture::join);
+                assertThat(cont).hasValue(lineCount);
             }
         } finally {
             Files.delete(file);
