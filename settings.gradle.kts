@@ -1,2 +1,2 @@
-rootProject.name = "lopp"
+rootProject.name = "flopp"
 
