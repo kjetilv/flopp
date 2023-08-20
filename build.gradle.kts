@@ -35,23 +35,23 @@ tasks.test {
 
 publishing {
     publications {
-        register<MavenPublication>("loppPublication") {
+        register<MavenPublication>("floppPublication") {
             pom {
-                name.set("Lopp")
-                description.set("Lopp")
-                url.set("https://github.com/kjetilv/lopp")
+                name.set("Flopp")
+                description.set("Flopp")
+                url.set("https://github.com/kjetilv/flopp")
 
                 licenses {
                     license {
                         name.set("GNU General Public License v3.0")
-                        url.set("https://github.com/kjetilv/lopp/blob/main/LICENSE")
+                        url.set("https://github.com/kjetilv/flopp/blob/main/LICENSE")
                     }
                 }
 
                 scm {
                     connection.set("scm:git:https://github.com/kjetilv/uplift")
-                    developerConnection.set("scm:git:https://github.com/kjetilv/lopp")
-                    url.set("https://github.com/kjetilv/lopp")
+                    developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
+                    url.set("https://github.com/kjetilv/flopp")
                 }
             }
             from(components["java"])
