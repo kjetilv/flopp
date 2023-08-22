@@ -24,7 +24,13 @@ public final class Qrs {
     }
 
     public static WriteQr<String> writer(String name, Consumer<String> sink, int queueLength) {
-        return new AsynchWriteQr<>(name, sink, queueLength, QUEUE_POLL, UUID.randomUUID().toString());
+        return new AsynchWriteQr<>(
+            name,
+            sink,
+            queueLength,
+            QUEUE_POLL,
+            UUID.randomUUID().toString()
+        );
     }
 
     private Qrs() {
