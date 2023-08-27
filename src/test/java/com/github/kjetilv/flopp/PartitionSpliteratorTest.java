@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,7 +13,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PartitionSpliteratorTest {
-    private static final Logger log = LoggerFactory.getLogger(PartitionSpliteratorTest.class);
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Test
@@ -89,7 +86,7 @@ class PartitionSpliteratorTest {
                 .describedAs(
                     state(partitionCount, size, lines, bufferSize)
                 ).isEqualTo(contents);
-            log.info("{} partitions of {} lines, slice size {}", partitionCount, size, bufferSize);
+            System.out.printf("%s partitions of %s lines, slice size %s%n", partitionCount, size, bufferSize);
         } catch (Exception e) {
             throw new IllegalStateException(state(partitionCount, size, lines, bufferSize), e);
         }

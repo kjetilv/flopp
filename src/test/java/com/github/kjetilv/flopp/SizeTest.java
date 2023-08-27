@@ -1,16 +1,5 @@
 package com.github.kjetilv.flopp;
 
-import com.github.kjetilv.flopp.files.FileChannelSources;
-import com.github.kjetilv.flopp.files.FileChannelTransfers;
-import com.github.kjetilv.flopp.files.FileTempTargets;
-import com.github.kjetilv.flopp.lc.IndexingLineCounter;
-import com.github.kjetilv.flopp.lc.SimpleLineCounter;
-import com.github.kjetilv.flopp.files.MemoryMappedByteArrayLinesWriter;
-import com.github.kjetilv.flopp.files.SimpleLinesWriter;
-import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -28,6 +17,19 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.github.kjetilv.flopp.files.FileChannelSources;
+import com.github.kjetilv.flopp.files.FileChannelTransfers;
+import com.github.kjetilv.flopp.files.FileTempTargets;
+import com.github.kjetilv.flopp.files.MemoryMappedByteArrayLinesWriter;
+import com.github.kjetilv.flopp.files.SimpleLinesWriter;
+import com.github.kjetilv.flopp.lc.IndexingLineCounter;
+import com.github.kjetilv.flopp.lc.SimpleLineCounter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.toLowerCase;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -38,8 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("SameParameterValue")
 public class SizeTest {
-
-    private static final Logger log = LoggerFactory.getLogger(SizeTest.class);
 
     private ExecutorService readerExec;
 
@@ -134,7 +134,7 @@ public class SizeTest {
             .map(Method::getName).orElseThrow();
         String pathBase = className + "-" + methodName;
         tempDirectory = Files.createTempDirectory(pathBase + "-" + System.currentTimeMillis());
-        log.info("Test: {}", tempDirectory.toUri());
+        System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
         shape = Shape.size(Files.size(path)).header(header, footer);
@@ -322,7 +322,7 @@ public class SizeTest {
         } else {
             mean = Duration.ofNanos(duration.toNanos() / samples);
         }
-        log.info("Average: {}", mean.truncatedTo(ChronoUnit.MILLIS));
+        System.out.printf("Average: %s%n", mean.truncatedTo(ChronoUnit.MILLIS));
     }
 
     private static Duration msSince(long pbStart) {
@@ -353,7 +353,7 @@ public class SizeTest {
                     " " + Character.toString(toLowerCase(c))
                     : Character.toString(c))
             .collect(joining());
-        log.info("{}: {}", method, time);
+        System.out.printf("%s: %s%n", method, time);
         return duration;
     }
 
