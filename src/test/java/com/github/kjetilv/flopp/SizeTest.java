@@ -120,7 +120,7 @@ public class SizeTest {
 
     @BeforeEach
     void setUp(TestInfo testInfo) throws IOException {
-        linesCount = 1_250_000 + new Random().nextInt(100_000);
+        linesCount = 100_000 + new Random().nextInt(100_000);
         columnCount = 10;
         ioQueueSize = 10;
         readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);

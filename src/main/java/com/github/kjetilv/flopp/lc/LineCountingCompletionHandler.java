@@ -17,9 +17,9 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
 
     private final long offset;
 
-    private final int length;
+    private final int bufferSize;
 
-    private final long total;
+    private final long size;
 
     private final Runnable signalDone;
 
@@ -33,19 +33,19 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
             AsynchronousFileChannel channel,
             ByteBuffer byteBuffer,
             long offset,
-            int length,
-            long total,
+            int bufferSize,
+            long size,
             Runnable signalDone
     ) {
-        this(channel, byteBuffer, offset, length, total, signalDone, null, null, null);
+        this(channel, byteBuffer, offset, bufferSize, size, signalDone, null, null, null);
     }
 
     private LineCountingCompletionHandler(
             AsynchronousFileChannel channel,
             ByteBuffer byteBuffer,
             long offset,
-            int length,
-            long total,
+            int bufferSize,
+            long size,
             Runnable signalDone,
             Pool<ByteBuffer> byteBuffers,
             Pool<byte[]> buffers,
@@ -54,12 +54,12 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
         this.channel = Objects.requireNonNull(channel, "channel");
         this.byteBuffer = Objects.requireNonNull(byteBuffer, "byteBuffer");
         this.offset = Non.negative(offset, "offset");
-        this.length = Non.negative(length, "length");
-        this.total = Non.negativeOrZero(total, "total");
+        this.bufferSize = Non.negative(bufferSize, "length");
+        this.size = Non.negativeOrZero(size, "total");
         this.signalDone = signalDone;
 
-        this.byteBuffers = byteBuffers == null ? Pool.byteBuffers(length) : byteBuffers;
-        this.buffers = buffers == null ? Pool.byteArrays(length) : buffers;
+        this.byteBuffers = byteBuffers == null ? Pool.byteBuffers(bufferSize) : byteBuffers;
+        this.buffers = buffers == null ? Pool.byteArrays(bufferSize) : buffers;
         this.reads = reads == null
                 ? new AtomicInteger(1)
                 : reads;
@@ -76,11 +76,7 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
         } else {
             try {
                 fork(linesCount, read);
-                long newLinesFound = countLines(read);
-                linesCount.add(newLinesFound);
-                if (reads.decrementAndGet() == 0) {
-                    this.signalDone.run();
-                }
+                read(linesCount, read);
             } finally {
                 byteBuffers.release(this.byteBuffer);
             }
@@ -88,23 +84,35 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
     }
 
     private void fork(LongAdder attachment, int read) {
-        long nextPosition = offset + read;
-        if (nextPosition != total) {
+        long forkPosition = offset + read;
+        if (forkPosition < size) {
             ByteBuffer nextByteBuffer = byteBuffers.acquire();
-            CompletionHandler<Integer, LongAdder> handler = new LineCountingCompletionHandler(
-                channel,
-                nextByteBuffer,
-                nextPosition,
-                length,
-                total,
-                signalDone,
-                byteBuffers,
-                buffers,
-                reads
-            );
+            CompletionHandler<Integer, LongAdder> handler = forked(nextByteBuffer, forkPosition);
             reads.incrementAndGet();
-            channel.read(nextByteBuffer, nextPosition, attachment, handler);
+            channel.read(nextByteBuffer, forkPosition, attachment, handler);
         }
+    }
+
+    private void read(LongAdder linesCount, int read) {
+        long newLinesFound = countLines(read);
+        linesCount.add(newLinesFound);
+        if (reads.decrementAndGet() == 0) {
+            this.signalDone.run();
+        }
+    }
+
+    private LineCountingCompletionHandler forked(ByteBuffer nextByteBuffer, long nextPosition) {
+        return new LineCountingCompletionHandler(
+            channel,
+            nextByteBuffer,
+            nextPosition,
+            bufferSize,
+            size,
+            signalDone,
+            byteBuffers,
+            buffers,
+            reads
+        );
     }
 
     private long countLines(int read) {

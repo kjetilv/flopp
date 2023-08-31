@@ -1,3 +1,6 @@
+import com.github.kjetilv.flopp.build.Native
+import com.github.kjetilv.flopp.build.Native.runCommand
+
 plugins {
     id("java")
     id("maven-publish")
@@ -7,6 +10,7 @@ group = "com.github.kjetilv.flopp"
 version = "0.1.0-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -18,8 +22,8 @@ dependencies {
 }
 
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_20
+    targetCompatibility = JavaVersion.VERSION_20
     withSourcesJar()
 }
 
@@ -55,4 +59,15 @@ publishing {
             from(components["java"])
         }
     }
+}
+
+tasks.register("native-image").configure {
+    project.runCommand(
+        command = Native.image(
+            "flopp-$version.jar",
+            "com.github.kjetilv.flopp.lc.Lc",
+            "lc"
+        )
+    )
+    dependsOn(tasks.named("build"))
 }

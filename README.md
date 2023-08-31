@@ -1,1 +1,3 @@
-# flopp: forking line-oriented parallel processing.
+# flopp
+
+(flopp, line-oriented parallel processing)
