@@ -25,7 +25,6 @@ public final class Lc {
         } else {
             System.out.println(count(counter, Paths.get(args[0])));
         }
-        System.in.read();
     }
 
     private Lc() {
