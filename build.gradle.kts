@@ -2,8 +2,8 @@ import com.github.kjetilv.flopp.build.Native
 import com.github.kjetilv.flopp.build.Native.runCommand
 
 plugins {
-    id("java")
-    id("maven-publish")
+    java
+    `maven-publish`
 }
 
 group = "com.github.kjetilv.flopp"
@@ -22,8 +22,8 @@ dependencies {
 }
 
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_20
-    targetCompatibility = JavaVersion.VERSION_20
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
 }
 

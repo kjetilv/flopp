@@ -1,13 +1,12 @@
 package com.github.kjetilv.flopp.lc;
 
-import com.github.kjetilv.flopp.Non;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+
+import com.github.kjetilv.flopp.Non;
 
 final class LineCountingCompletionHandler implements CompletionHandler<Integer, LongAdder> {
 
@@ -27,7 +26,7 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
 
     private final Pool<byte[]> buffers;
 
-    private final AtomicInteger reads;
+    private final LongAdder bytesRead;
 
     LineCountingCompletionHandler(
             AsynchronousFileChannel channel,
@@ -49,7 +48,7 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
             Runnable signalDone,
             Pool<ByteBuffer> byteBuffers,
             Pool<byte[]> buffers,
-            AtomicInteger reads
+            LongAdder bytesRead
     ) {
         this.channel = Objects.requireNonNull(channel, "channel");
         this.byteBuffer = Objects.requireNonNull(byteBuffer, "byteBuffer");
@@ -60,9 +59,9 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
 
         this.byteBuffers = byteBuffers == null ? Pool.byteBuffers(bufferSize) : byteBuffers;
         this.buffers = buffers == null ? Pool.byteArrays(bufferSize) : buffers;
-        this.reads = reads == null
-                ? new AtomicInteger(1)
-                : reads;
+        this.bytesRead = bytesRead == null
+                ? new LongAdder()
+                : bytesRead;
     }
 
     @Override
@@ -74,31 +73,26 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
         if (read == 0) {
             channel.read(byteBuffer, offset, linesCount, this);
         } else {
+            bytesRead.add(read);
             try {
-                fork(linesCount, read);
-                read(linesCount, read);
+                long nextPosition = offset + read;
+                if (nextPosition < size) {
+                    fork(linesCount, nextPosition);
+                }
+                linesCount.add(countLines(read));
             } finally {
                 byteBuffers.release(this.byteBuffer);
+                if (bytesRead.longValue() == size) {
+                    this.signalDone.run();
+                }
             }
         }
     }
 
-    private void fork(LongAdder attachment, int read) {
-        long forkPosition = offset + read;
-        if (forkPosition < size) {
-            ByteBuffer nextByteBuffer = byteBuffers.acquire();
-            CompletionHandler<Integer, LongAdder> handler = forked(nextByteBuffer, forkPosition);
-            reads.incrementAndGet();
-            channel.read(nextByteBuffer, forkPosition, attachment, handler);
-        }
-    }
-
-    private void read(LongAdder linesCount, int read) {
-        long newLinesFound = countLines(read);
-        linesCount.add(newLinesFound);
-        if (reads.decrementAndGet() == 0) {
-            this.signalDone.run();
-        }
+    private void fork(LongAdder linesCount, long position) {
+        ByteBuffer nextByteBuffer = byteBuffers.acquire();
+        LineCountingCompletionHandler forkedHandler = forked(nextByteBuffer, position);
+        channel.read(nextByteBuffer, position, linesCount, forkedHandler);
     }
 
     private LineCountingCompletionHandler forked(ByteBuffer nextByteBuffer, long nextPosition) {
@@ -111,7 +105,7 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
             signalDone,
             byteBuffers,
             buffers,
-            reads
+            bytesRead
         );
     }
 

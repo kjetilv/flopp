@@ -3,14 +3,11 @@ package com.github.kjetilv.flopp.lc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -20,20 +17,15 @@ import com.github.kjetilv.flopp.Shape;
 public final class Lc {
 
     public static void main(String[] args) throws Exception {
-        int availableProcessors = Runtime.getRuntime().availableProcessors();
-        try (
-            ExecutorService executor = new ThreadPoolExecutor(
-                availableProcessors * 10,
-                availableProcessors * 20,
-                10, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(2000)
-            )
-        ) {
-            AsyncLineCounter counter = new AsyncLineCounter(executor, 1024 * 1024);
+        ExecutorService executor = new ForkJoinPool(32);
+        AsyncLineCounter counter = new AsyncLineCounter(executor, 1024 * 1024);
+        if (args.length > 1 || Arrays.stream(args).anyMatch(arg -> arg.contains("*"))) {
             Stream<Path> paths = paths(args);
-//            countAsync(paths, counter, executor);
-            System.out.println("  " + countSync(paths, counter));
+            countAsync(paths, counter, executor);
+        } else {
+            System.out.println(count(counter, Paths.get(args[0])));
         }
+        System.in.read();
     }
 
     private Lc() {
@@ -41,10 +33,6 @@ public final class Lc {
     }
 
     private static final LongAdder SUM = new LongAdder();
-
-    private static final LongAdder COUNTED = new LongAdder();
-
-    private static final List<CompletableFuture<Count>> COUNTS = new ArrayList<>();
 
     @SuppressWarnings("unused")
     private static long countSync(Stream<Path> paths, AsyncLineCounter counter) {
@@ -56,7 +44,6 @@ public final class Lc {
                 }
             }).peek(count -> {
                 SUM.add(count.lines());
-                COUNTED.increment();
                 System.out.println(count);
             })
             .mapToLong(Count::lines)
@@ -64,20 +51,56 @@ public final class Lc {
     }
 
     private static void countAsync(Stream<Path> paths, AsyncLineCounter counter, ExecutorService executor) {
-        paths.forEach(path ->
-            COUNTS.add(CompletableFuture.supplyAsync(() -> count(counter, path), executor)
-                .exceptionally(throwable ->
-                    uncountable(path, throwable))
-                .thenApplyAsync(count -> {
-                    SUM.add(count.lines());
-                    COUNTED.increment();
-                    return count;
-                })));
-        COUNTS.stream()
-            .map(CompletableFuture::join)
-            .forEach(System.out::println);
-        if (COUNTS.size() > 1) {
-            System.out.println("  " + SUM);
+        ArrayBlockingQueue<CompletableFuture<Count>> queue = new ArrayBlockingQueue<>(1);
+        Stream<CompletableFuture<Count>> countFutures = paths.map(path ->
+            CompletableFuture.supplyAsync(
+                () -> count(counter, path),
+                executor
+            ).exceptionally(throwable ->
+                uncountable(path, throwable)));
+        CompletableFuture<Count> poison = CompletableFuture
+            .supplyAsync(() -> new Count(null, 0L), executor);
+
+        CompletableFuture<Void> feeder = CompletableFuture.runAsync(() ->
+            Stream.concat(countFutures, Stream.of(poison)).forEach(future -> {
+                try {
+                    queue.put(future);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
+            })).whenComplete((__, e) -> fail(e));
+
+        LongAdder sum = new LongAdder();
+        CompletableFuture<Void> eater = CompletableFuture.runAsync(
+            () -> {
+                while (true) {
+                    CompletableFuture<Count> take;
+                    try {
+                        take = queue.take();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(e);
+                    }
+                    if (take == poison) {
+                        return;
+                    }
+                    Count join = take.join();
+                    System.out.println(join);
+                    sum.add(join.lines());
+                }
+            },
+            executor
+        ).whenComplete((__, e) -> fail(e));
+
+        eater.join();
+        feeder.join();
+        System.out.println("    " + sum);
+    }
+
+    private static void fail(Throwable e) {
+        if (e != null) {
+            e.printStackTrace(System.err);
         }
     }
 
@@ -86,14 +109,12 @@ public final class Lc {
         return Arrays.stream(args).flatMap(arg -> {
             Path root = Paths.get(".");
             if (arg.startsWith("**/*.")) {
-                String suffix = arg.substring("**/*".length());
-                return walk(root, suffixed(suffix));
+                return walk(root, suffixed(arg, 4));
             }
             if (arg.startsWith("*.")) {
-                String suffix = arg.substring("*".length());
                 try {
                     Stream<Path> list = Files.list(root);
-                    return list.filter(suffixed(suffix));
+                    return list.filter(suffixed(arg, 1));
                 } catch (Exception e) {
                     throw new IllegalStateException("Failed to list " + root, e);
                 }
@@ -108,11 +129,14 @@ public final class Lc {
         });
     }
 
+    private static Predicate<Path> suffixed(String arg, int length) {
+        return suffixed(arg.substring(length));
+    }
+
     @SuppressWarnings("resource")
     private static Stream<Path> walk(Path root, Predicate<Path> predicate) {
         try {
-            Stream<Path> list = Files.list(root);
-            return list.flatMap(path -> {
+            return Files.list(root).flatMap(path -> {
                 if (Files.isRegularFile(path) && predicate.test(path)) {
                     return Stream.of(path);
                 }
@@ -134,12 +158,11 @@ public final class Lc {
     private static Count count(AsyncLineCounter counter, Path path) {
         Shape shape = shapeOf(path);
         long lines = counter.count(path, shape);
-        SUM.add(lines);
         return new Count(path, lines);
     }
 
     private static Count uncountable(Path path, Throwable throwable) {
-        throwable.printStackTrace(System.err);
+        fail(throwable);
         return new Count(path, -1L);
     }
 
