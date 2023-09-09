@@ -8,6 +8,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -17,13 +18,16 @@ import com.github.kjetilv.flopp.Shape;
 public final class Lc {
 
     public static void main(String[] args) throws Exception {
-        ExecutorService executor = new ForkJoinPool(32);
+        ForkJoinPool executor = ForkJoinPool.commonPool();
         AsyncLineCounter counter = new AsyncLineCounter(executor, 1024 * 1024);
         if (args.length > 1 || Arrays.stream(args).anyMatch(arg -> arg.contains("*"))) {
             Stream<Path> paths = paths(args);
             countAsync(paths, counter, executor);
         } else {
             System.out.println(count(counter, Paths.get(args[0])));
+        }
+        if (!executor.awaitQuiescence(30, TimeUnit.SECONDS)) {
+            System.exit(-1);
         }
     }
 
