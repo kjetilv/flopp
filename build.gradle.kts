@@ -63,6 +63,7 @@ publishing {
 
 tasks.register("native-image").configure {
     project.runCommand(
+        javaToolchains,
         command = Native.image(
             "flopp-$version.jar",
             "com.github.kjetilv.flopp.lc.Lc",
