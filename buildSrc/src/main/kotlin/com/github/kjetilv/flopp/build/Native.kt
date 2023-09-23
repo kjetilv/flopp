@@ -1,0 +1,58 @@
+package com.github.kjetilv.flopp.build
+
+import org.gradle.api.Project
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
+object Native {
+
+    fun image(fromJarFile: String, mainClass: String, toBinary: String) =
+        javaBin("native-image")?.let { nativeImage ->
+            baseCommand(nativeImage, fromJarFile, mainClass, toBinary).split(whitespace)
+        } ?: throw IllegalStateException("Failed to resolve $toBinary")
+
+    fun Project.runCommand(
+        javaToolchainService: JavaToolchainService,
+        dir: File = libsDir,
+        command: List<String>,
+        fail: Boolean = true
+    ) =
+        exec {
+            workingDir = dir
+            commandLine = command
+        }.apply { if (fail) assertNormalExitValue() }
+            .exitValue
+
+    fun baseCommand(nativeImage: Path, fromJarFile: String, mainClass: String, toBinary: String) =
+        """
+        $nativeImage -cp $fromJarFile $mainClass
+         --verbose 
+         --no-fallback
+         -H:+ReportExceptionStackTraces
+         -H:+BuildReport
+         --enable-http
+         -o $toBinary
+         -march=native
+        """.trimIndent()
+
+    private val Project.libsDir: File
+        get() =
+            layout.buildDirectory.dir("libs").get().asFile.also {
+                Files.createDirectories(it.toPath())
+            }
+
+
+    fun javaBin(binary: String): Path? {
+        return "java.home".sysprop?.asPath?.resolve("bin")?.resolve(binary)
+    }
+
+    private val String.sysprop get() = System.getProperty(this)
+
+    private val String.asPath get() = Paths.get(this)
+
+    private val whitespace = "\\s+".toRegex()
+}
