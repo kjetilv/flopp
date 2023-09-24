@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.build
 import org.gradle.api.Project
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JvmVendorSpec
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -10,13 +11,17 @@ import java.nio.file.Paths
 
 object Native {
 
-    fun image(fromJarFile: String, mainClass: String, toBinary: String) =
-        javaBin("native-image")?.let { nativeImage ->
+    fun image(
+        fromJarFile: String,
+        mainClass: String,
+        toBinary: String,
+        javaToolchainService: JavaToolchainService,
+    ): List<String> =
+        javaBin("native-image", javaToolchainService)?.let { nativeImage ->
             baseCommand(nativeImage, fromJarFile, mainClass, toBinary).split(whitespace)
         } ?: throw IllegalStateException("Failed to resolve $toBinary")
 
     fun Project.runCommand(
-        javaToolchainService: JavaToolchainService,
         dir: File = libsDir,
         command: List<String>,
         fail: Boolean = true
@@ -24,8 +29,7 @@ object Native {
         exec {
             workingDir = dir
             commandLine = command
-        }.apply { if (fail) assertNormalExitValue() }
-            .exitValue
+        }.apply { if (fail) assertNormalExitValue() }.exitValue
 
     fun baseCommand(nativeImage: Path, fromJarFile: String, mainClass: String, toBinary: String) =
         """
@@ -33,8 +37,6 @@ object Native {
          --verbose 
          --no-fallback
          -H:+ReportExceptionStackTraces
-         -H:+BuildReport
-         --enable-http
          -o $toBinary
          -march=native
         """.trimIndent()
@@ -45,9 +47,19 @@ object Native {
                 Files.createDirectories(it.toPath())
             }
 
-
-    fun javaBin(binary: String): Path? {
-        return "java.home".sysprop?.asPath?.resolve("bin")?.resolve(binary)
+    fun javaBin(binary: String, javaToolchainService: JavaToolchainService): Path? {
+        return javaToolchainService.compilerFor {
+            vendor.set(JvmVendorSpec.GRAAL_VM)
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }.map {
+            it.executablePath
+        }.map {
+            it.asFile
+        }.map {
+            it.toPath()
+        }.map {
+            it.parent
+        }.orNull?.resolve(binary)
     }
 
     private val String.sysprop get() = System.getProperty(this)

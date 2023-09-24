@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.lc;
 
+import com.github.kjetilv.flopp.Shape;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -7,27 +9,26 @@ import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import com.github.kjetilv.flopp.Shape;
-
 public final class Lc {
 
-    public static void main(String[] args) throws Exception {
-        ForkJoinPool executor = ForkJoinPool.commonPool();
-        AsyncLineCounter counter = new AsyncLineCounter(executor, 1024 * 1024);
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.println("Usage:");
+            System.out.println("  lc <file>");
+            System.exit(0);
+        }
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+        AsyncLineCounter counter = new AsyncLineCounter(service, 1024 * 1024);
         if (args.length > 1 || Arrays.stream(args).anyMatch(arg -> arg.contains("*"))) {
             Stream<Path> paths = paths(args);
-            countAsync(paths, counter, executor);
+            countAsync(paths, counter, service);
         } else {
             System.out.println(count(counter, Paths.get(args[0])));
-        }
-        if (!executor.awaitQuiescence(30, TimeUnit.SECONDS)) {
-            System.exit(-1);
         }
     }
 
@@ -65,14 +66,15 @@ public final class Lc {
             .supplyAsync(() -> new Count(null, 0L), executor);
 
         CompletableFuture<Void> feeder = CompletableFuture.runAsync(() ->
-            Stream.concat(countFutures, Stream.of(poison)).forEach(future -> {
-                try {
-                    queue.put(future);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException(e);
-                }
-            })).whenComplete((__, e) -> fail(e));
+            Stream.concat(countFutures, Stream.of(poison))
+                .forEach(future -> {
+                    try {
+                        queue.put(future);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(e);
+                    }
+                })).whenComplete((__, e) -> fail(e));
 
         LongAdder sum = new LongAdder();
         CompletableFuture<Void> eater = CompletableFuture.runAsync(
@@ -107,7 +109,6 @@ public final class Lc {
         }
     }
 
-    @SuppressWarnings("resource")
     private static Stream<Path> paths(String... args) {
         return Arrays.stream(args).flatMap(arg -> {
             Path root = Paths.get(".");
@@ -115,8 +116,7 @@ public final class Lc {
                 return walk(root, suffixed(arg, 4));
             }
             if (arg.startsWith("*.")) {
-                try {
-                    Stream<Path> list = Files.list(root);
+                try (Stream<Path> list = Files.list(root)) {
                     return list.filter(suffixed(arg, 1));
                 } catch (Exception e) {
                     throw new IllegalStateException("Failed to list " + root, e);

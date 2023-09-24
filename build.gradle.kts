@@ -16,20 +16,21 @@ repositories {
 
 dependencies {
     testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
-    testImplementation(platform("org.junit:junit-bom:5.9.3"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-    withSourcesJar()
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+        vendor.set(JvmVendorSpec.GRAAL_VM)
+        withSourcesJar()
+        languageVersion.set(JavaLanguageVersion.of(21))
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
 }
-
-//tasks.withType<JavaCompile> {
-//    options.compilerArgs.add("--enable-preview")
-//}
 
 tasks.test {
     useJUnitPlatform()
@@ -61,14 +62,17 @@ publishing {
     }
 }
 
-tasks.register("native-image").configure {
-    project.runCommand(
-        javaToolchains,
-        command = Native.image(
-            "flopp-$version.jar",
-            "com.github.kjetilv.flopp.lc.Lc",
-            "lc"
-        )
-    )
-    dependsOn(tasks.named("build"))
-}
+tasks.register<Task>("native-image")
+    .configure {
+        dependsOn(tasks.named("jar").get())
+        doLast {
+            project.runCommand(
+                command = Native.image(
+                    "flopp-$version.jar",
+                    "com.github.kjetilv.flopp.lc.Lc",
+                    "lc",
+                    javaToolchains
+                )
+            )
+        }
+    }
