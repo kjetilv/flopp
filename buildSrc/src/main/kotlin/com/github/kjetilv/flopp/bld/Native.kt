@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.build
+package com.github.kjetilv.flopp.bld
 
 import org.gradle.api.Project
 import org.gradle.jvm.toolchain.JavaLanguageVersion

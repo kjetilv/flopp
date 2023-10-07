@@ -1,5 +1,5 @@
-import com.github.kjetilv.flopp.build.Native
-import com.github.kjetilv.flopp.build.Native.runCommand
+//import com.github.kjetilv.flopp.build.Native
+//import com.github.kjetilv.flopp.build.Native.runCommand
 
 plugins {
     java
@@ -24,7 +24,7 @@ dependencies {
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
-        vendor.set(JvmVendorSpec.GRAAL_VM)
+//        vendor.set(JvmVendorSpec.GRAAL_VM)
         withSourcesJar()
         languageVersion.set(JavaLanguageVersion.of(21))
         sourceCompatibility = JavaVersion.VERSION_21
@@ -62,17 +62,17 @@ publishing {
     }
 }
 
-tasks.register<Task>("native-image")
-    .configure {
-        dependsOn(tasks.named("jar").get())
-        doLast {
-            project.runCommand(
-                command = Native.image(
-                    "flopp-$version.jar",
-                    "com.github.kjetilv.flopp.lc.Lc",
-                    "lc",
-                    javaToolchains
-                )
-            )
-        }
-    }
+//tasks.register<Task>("native-image")
+//    .configure {
+//        dependsOn(tasks.named("jar").get())
+//        doLast {
+//            project.runCommand(
+//                command = Native.image(
+//                    "flopp-$version.jar",
+//                    "com.github.kjetilv.flopp.lc.Lc",
+//                    "lc",
+//                    javaToolchains
+//                )
+//            )
+//        }
+//    }
