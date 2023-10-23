@@ -6,17 +6,6 @@ plugins {
     `maven-publish`
 }
 
-allprojects {
-
-    group = "com.github.kjetilv.flopp"
-    version = "0.1.0-SNAPSHOT"
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
-}
-
 dependencies {
     testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
