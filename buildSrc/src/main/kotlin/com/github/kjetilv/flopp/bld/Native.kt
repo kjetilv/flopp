@@ -49,7 +49,7 @@ object Native {
 
     fun javaBin(binary: String, javaToolchainService: JavaToolchainService): Path? {
         return javaToolchainService.compilerFor {
-            vendor.set(JvmVendorSpec.GRAAL_VM)
+            vendor.set(JvmVendorSpec.ORACLE)
             languageVersion.set(JavaLanguageVersion.of(21))
         }.map {
             it.executablePath
