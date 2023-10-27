@@ -1,4 +1,4 @@
 rootProject.name = "flopp"
 
-include(":kernel")
-include(":lc")
+include(":flopp-kernel")
+include(":flopp-lc")

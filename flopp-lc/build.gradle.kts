@@ -8,7 +8,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":kernel"))
+    implementation(project(":flopp-kernel"))
 
     testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
