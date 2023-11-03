@@ -1,6 +1,6 @@
 import com.github.kjetilv.flopp.bld.Native
 import com.github.kjetilv.flopp.bld.Native.runCommand
-import java.nio.file.Paths
+import java.nio.file.Path
 
 plugins {
     java
@@ -36,7 +36,14 @@ tasks.register<Task>("native-image")
         doLast {
             project.runCommand(
                 command = Native.image(
-                    "/Users/kjetilvalstadsve/Development/git/flopp/kernel/build/libs/flopp-0.1.0-SNAPSHOT.jar:/Users/kjetilvalstadsve/Development/git/flopp/lc/build/libs/lc-0.1.0-SNAPSHOT.jar:",
+                    listOf(
+                        "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar",
+                        "build/libs/flopp-lc-${project.version}.jar"
+                    ).map(
+                        projectDir.toPath()::resolve
+                    ).map(
+                        Path::toString
+                    ),
                     "com.github.kjetilv.flopp.lc.Lc",
                     "lc",
                     javaToolchains

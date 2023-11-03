@@ -12,13 +12,18 @@ import java.nio.file.Paths
 object Native {
 
     fun image(
-        fromJarFile: String,
+        jarFiles: List<String>,
         mainClass: String,
         toBinary: String,
         javaToolchainService: JavaToolchainService,
     ): List<String> =
         javaBin("native-image", javaToolchainService)?.let { nativeImage ->
-            baseCommand(nativeImage, fromJarFile, mainClass, toBinary).split(whitespace)
+            baseCommand(
+                nativeImage,
+                jarFiles.joinToString(":"),
+                mainClass,
+                toBinary
+            ).split(whitespace)
         } ?: throw IllegalStateException("Failed to resolve $toBinary")
 
     fun Project.runCommand(
