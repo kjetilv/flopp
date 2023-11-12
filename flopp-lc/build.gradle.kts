@@ -34,20 +34,24 @@ tasks.register<Task>("native-image")
     .configure {
         dependsOn(tasks.named("jar").get())
         doLast {
-            project.runCommand(
-                command = Native.image(
-                    listOf(
-                        "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar",
-                        "build/libs/flopp-lc-${project.version}.jar"
-                    ).map(
-                        projectDir.toPath()::resolve
-                    ).map(
-                        Path::toString
-                    ),
-                    "com.github.kjetilv.flopp.lc.Lc",
-                    "lc",
-                    javaToolchains
-                )
+            val command = Native.image(
+                listOf(
+                    "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar",
+                    "build/libs/flopp-lc-${project.version}.jar"
+                ).map(
+                    projectDir.toPath()::resolve
+                ).map(
+                    Path::toString
+                ),
+                "com.github.kjetilv.flopp.lc.Lc",
+                "lc",
+                javaToolchains
             )
+            command.also {
+                project.logger.lifecycle("Running command: ")
+                project.logger.lifecycle("  ${it.joinToString(" ")}")
+            }.also {
+                project.runCommand(command = it)
+            }
         }
     }

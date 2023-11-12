@@ -1,5 +1,11 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.files.*;
+import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
+import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -16,19 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import com.github.kjetilv.flopp.kernel.files.FileChannelSources;
-import com.github.kjetilv.flopp.kernel.files.FileChannelTransfers;
-import com.github.kjetilv.flopp.kernel.files.FileTempTargets;
-import com.github.kjetilv.flopp.kernel.files.MemoryMappedByteArrayLinesWriter;
-import com.github.kjetilv.flopp.kernel.files.SimpleLinesWriter;
-import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
-import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.toLowerCase;
@@ -50,6 +43,7 @@ public class SizeTest {
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private int ioQueueSize;
 
+    @TempDir
     private Path tempDirectory;
 
     private Shape shape;
@@ -84,10 +78,10 @@ public class SizeTest {
         });
     }
 
-//    @Disabled
+    //    @Disabled
     @Test
     void realStuff(TestInfo testInfo) {
-        logTime(50, () -> doRealStuff(testInfo, null, OP, 16384));
+        logTime(200, () -> doRealStuff(testInfo, null, OP, 16384));
     }
 
     @Test
@@ -123,7 +117,7 @@ public class SizeTest {
         linesCount = 100_000 + new Random().nextInt(100_000);
         columnCount = 10;
         ioQueueSize = 10;
-        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
 
         int header = 3;
         int footer = 2;
@@ -133,12 +127,11 @@ public class SizeTest {
         String methodName = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
         String pathBase = className + "-" + methodName;
-        tempDirectory = Files.createTempDirectory(pathBase + "-" + System.currentTimeMillis());
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
         shape = Shape.size(Files.size(path)).header(header, footer);
-        partitions = Runtime.getRuntime().availableProcessors();
+        partitions = Runtime.getRuntime().availableProcessors() * 2;
     }
 
     @AfterEach
@@ -200,8 +193,7 @@ public class SizeTest {
         try (
             Partitioned<Path> partitioned = PartitionedPaths.create(path, shape, partitioning)
         ) {
-            partitioned
-                .processor(
+            partitioned.processor(
                     new FileTempTargets(tmp),
                     new FileChannelTransfers(tmp),
                     SizeTest::sizeOf,

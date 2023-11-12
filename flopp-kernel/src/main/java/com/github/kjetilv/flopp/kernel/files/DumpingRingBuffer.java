@@ -19,7 +19,9 @@ class DumpingRingBuffer implements Closeable {
     DumpingRingBuffer(byte[] buffer, IntConsumer dump) {
         this.buffer = buffer;
         this.dump = Objects.requireNonNull(dump, "dump");
-        newBuffer();
+        this.bufferIndex = 0;
+        this.bufferLength = this.buffer.length;
+        this.bufferLeft = bufferLength;
     }
 
     public void accept(byte[] bytes, byte additional) {
@@ -33,7 +35,6 @@ class DumpingRingBuffer implements Closeable {
                 written += bytesWritten;
                 bytesLeft -= bytesWritten;
                 dump();
-                newBuffer();
             }
             writeRemaining(bytes, additional, written);
         }
@@ -46,6 +47,9 @@ class DumpingRingBuffer implements Closeable {
 
     private void dump() {
         dump.accept(bufferIndex);
+        this.bufferIndex = 0;
+        this.bufferLength = this.buffer.length;
+        this.bufferLeft = bufferLength;
     }
 
     private int padToEnd(byte[] bytes, int offset) {
@@ -66,9 +70,4 @@ class DumpingRingBuffer implements Closeable {
         bufferLeft--;
     }
 
-    private void newBuffer() {
-        this.bufferIndex = 0;
-        this.bufferLength = this.buffer.length;
-        this.bufferLeft = bufferLength;
-    }
 }

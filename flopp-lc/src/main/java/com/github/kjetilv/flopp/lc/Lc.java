@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.lc;
 
-
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.lc.AsyncLineCounter;
 
@@ -8,10 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -21,16 +17,21 @@ public final class Lc {
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("Usage:");
-            System.out.println("  lc <file>");
+            System.out.println("  lc [-r] <file>");
             System.exit(0);
         }
         ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
         AsyncLineCounter counter = new AsyncLineCounter(service, 1024 * 1024);
+        boolean recursive = args[0].trim().equals("-r");
+        int skip = recursive ? 1 : 0;
         if (args.length > 1 || Arrays.stream(args).anyMatch(arg -> arg.contains("*"))) {
-            Stream<Path> paths = paths(args);
-            countAsync(paths, counter, service);
+            countAsync(paths(skip, recursive, args), counter, service);
         } else {
-            System.out.println(count(counter, Paths.get(args[0])));
+            Path path = Paths.get(args[0]);
+            if (Files.isRegularFile(path)) {
+                System.out.println(count(counter, path));
+            }
+            countAsync(paths(skip, recursive, args), counter, service);
         }
     }
 
@@ -39,6 +40,8 @@ public final class Lc {
     }
 
     private static final LongAdder SUM = new LongAdder();
+
+    private static final Predicate<Path> ALL = __ -> true;
 
     @SuppressWarnings("unused")
     private static long countSync(Stream<Path> paths, AsyncLineCounter counter) {
@@ -57,7 +60,7 @@ public final class Lc {
     }
 
     private static void countAsync(Stream<Path> paths, AsyncLineCounter counter, ExecutorService executor) {
-        ArrayBlockingQueue<CompletableFuture<Count>> queue = new ArrayBlockingQueue<>(1);
+        BlockingQueue<CompletableFuture<Count>> queue = new ArrayBlockingQueue<>(100);
         Stream<CompletableFuture<Count>> countFutures = paths.map(path ->
             CompletableFuture.supplyAsync(
                 () -> count(counter, path),
@@ -69,14 +72,8 @@ public final class Lc {
 
         CompletableFuture<Void> feeder = CompletableFuture.runAsync(() ->
             Stream.concat(countFutures, Stream.of(poison))
-                .forEach(future -> {
-                    try {
-                        queue.put(future);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException(e);
-                    }
-                })).whenComplete((__, e) -> fail(e));
+                .forEach(future -> add(future, queue))
+        ).whenComplete((__, e) -> fail(e));
 
         LongAdder sum = new LongAdder();
         CompletableFuture<Void> eater = CompletableFuture.runAsync(
@@ -105,17 +102,29 @@ public final class Lc {
         System.out.println("    " + sum);
     }
 
+    private static void add(
+        CompletableFuture<Count> future,
+        BlockingQueue<CompletableFuture<Count>> queue
+    ) {
+        try {
+            queue.put(future);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static void fail(Throwable e) {
         if (e != null) {
             e.printStackTrace(System.err);
         }
     }
 
-    private static Stream<Path> paths(String... args) {
-        return Arrays.stream(args).flatMap(arg -> {
+    private static Stream<Path> paths(int skip, boolean recursive, String... args) {
+        return Arrays.stream(args).skip(skip).flatMap(arg -> {
             Path root = Paths.get(".");
             if (arg.startsWith("**/*.")) {
-                return walk(root, suffixed(arg, 4));
+                return walk(root, suffixed(arg, 4), -1);
             }
             if (arg.startsWith("*.")) {
                 try (Stream<Path> list = Files.list(root)) {
@@ -127,9 +136,11 @@ public final class Lc {
                 Path path = Paths.get(arg);
                 if (Files.isRegularFile(path)) {
                     return Stream.of(path);
-                } else {
-                    return Stream.empty();
                 }
+                if (Files.isDirectory(path)) {
+                    return walk(path, ALL, recursive ? -1 : 1);
+                }
+                return Stream.empty();
             }
         });
     }
@@ -139,14 +150,17 @@ public final class Lc {
     }
 
     @SuppressWarnings("resource")
-    private static Stream<Path> walk(Path root, Predicate<Path> predicate) {
+    private static Stream<Path> walk(Path root, Predicate<Path> predicate, int levels) {
+        if (levels == 0) {
+            return Stream.empty();
+        }
         try {
             return Files.list(root).flatMap(path -> {
                 if (Files.isRegularFile(path) && predicate.test(path)) {
                     return Stream.of(path);
                 }
                 if (Files.isDirectory(path)) {
-                    return walk(path, predicate);
+                    return walk(path, predicate, levels - 1);
                 }
                 return Stream.empty();
             });
@@ -161,8 +175,8 @@ public final class Lc {
     }
 
     private static Count count(AsyncLineCounter counter, Path path) {
-        Shape shape = shapeOf(path);
-        long lines = counter.count(path, shape);
+        long size = size(path);
+        long lines = size > 0 ? counter.count(path, Shape.size(size)) : 0;
         return new Count(path, lines);
     }
 
@@ -171,11 +185,7 @@ public final class Lc {
         return new Count(path, -1L);
     }
 
-    private static Shape shapeOf(Path path) {
-        return Shape.size(getSize(path));
-    }
-
-    private static long getSize(Path path) {
+    private static long size(Path path) {
         long size;
         try {
             size = Files.size(path);

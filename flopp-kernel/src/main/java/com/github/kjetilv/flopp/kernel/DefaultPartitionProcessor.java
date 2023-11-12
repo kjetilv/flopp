@@ -1,9 +1,11 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
@@ -47,28 +49,21 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     @Override
-    public void processMulti(Function<String, Stream<String>> processor) {
-        ResultCollector<P> collector = new ResultCollector<>(partitionCount, sizer);
-        CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
-            () ->
-                partitionedMapper.map(
-                        (partition, npLines) ->
-                            streamer(processor, partition, npLines)
-                    )
-                    .forEach(collector::collect),
-            executorService
+    public void process(Function<String, String> processor) {
+        collect(
+            new ResultCollector<P>(partitionCount, sizer),
+            (partition, npLines) ->
+                streamer(processor, partition, npLines)
         );
-        try {
-            collector.streamCollected()
-                .map(partitionResult ->
-                    transfers.transfer(partitionResult.partition(), partitionResult.result()))
-                .map(runnable ->
-                    CompletableFuture.runAsync(runnable, executorService))
-                .toList()
-                .forEach(CompletableFuture::join);
-        } finally {
-            streamFuture.join();
-        }
+    }
+
+    @Override
+    public void processMulti(Function<String, Stream<String>> processor) {
+        collect(
+            new ResultCollector<P>(partitionCount, sizer),
+            (partition, npLines) ->
+                multiStreamer(processor, partition, npLines)
+        );
     }
 
     @Override
@@ -76,12 +71,46 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         partitionedMapper.close();
     }
 
-    private P streamer(Function<String, Stream<String>> processor, Partition partition, Stream<NpLine> npLines) {
+    private void collect(
+        ResultCollector<P> collector, BiFunction<Partition, Stream<NpLine>, P> partitionStreamPBiFunction
+    ) {
+        CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
+            () ->
+                partitionedMapper.map(partitionStreamPBiFunction)
+                    .forEach(collector::collect),
+            executorService
+        );
+        List<CompletableFuture<Void>> transferFutures = collector.streamCollected()
+            .map(partitionResult ->
+                transfers.transfer(partitionResult.partition(), partitionResult.result()))
+            .map(runnable ->
+                CompletableFuture.runAsync(runnable, executorService))
+            .toList();
+        try {
+            transferFutures
+                .forEach(CompletableFuture::join);
+        } finally {
+            streamFuture.join();
+        }
+    }
+
+    private P multiStreamer(Function<String, Stream<String>> processor, Partition partition, Stream<NpLine> npLines) {
         P target = tempTargets.temp(partition);
         try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
-            npLines.map(NpLine::line)
-                .flatMap(processor)
-                .forEach(linesWriter);
+            npLines.forEach(npLine ->
+                processor.apply(npLine.line())
+                    .forEach(linesWriter));
+            return target;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to write " + target, e);
+        }
+    }
+
+    private P streamer(Function<String, String> processor, Partition partition, Stream<NpLine> npLines) {
+        P target = tempTargets.temp(partition);
+        try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
+            npLines.forEach(npLine ->
+                linesWriter.accept(processor.apply(npLine.line())));
             return target;
         } catch (Exception e) {
             throw new RuntimeException("Failed to write " + target, e);

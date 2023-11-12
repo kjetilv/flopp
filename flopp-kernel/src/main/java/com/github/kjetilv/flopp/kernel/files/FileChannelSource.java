@@ -23,7 +23,11 @@ final class FileChannelSource implements ByteSource {
 
     private static final int DEFAULT_LONGEST_LINE = 1024;
 
-    private static MappedByteBuffer mappedByteBuffer(Partition partition, FileChannel channel, long size) {
+    private static MappedByteBuffer mappedByteBuffer(
+        Partition partition,
+        FileChannel channel,
+        long size
+    ) {
         long traverseLimit = Math.min(
             partition.count() + (partition.last() ? 0 : DEFAULT_LONGEST_LINE),
             size - partition.offset()

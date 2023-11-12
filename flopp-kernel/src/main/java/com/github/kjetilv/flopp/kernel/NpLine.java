@@ -9,22 +9,41 @@ public record NpLine(String line, int partition, long lineNo) {
     }
 
     public NpLine(String line, int partition, long lineNo) {
-        this.line = lineNo == Long.MAX_VALUE - 1 && partition == Integer.MAX_VALUE
-            ? null
-            : Objects.requireNonNull(line, "line");
-        this.lineNo = Non.negative(lineNo, "lineNo") + 1;
-        this.partition = Non.negative(partition, "partition");
+        this.line = line;
+        this.partition = partition;
+        this.lineNo = lineNo + 1;
     }
 
-    private static final NpLine NULL = new NpLine(null, Integer.MAX_VALUE, Long.MAX_VALUE - 1);
+    public NpLine(String line, int partition, long lineNo, boolean isNull) {
+        this(
+            isNull ? null : Objects.requireNonNull(line, "line"),
+            Non.negative(partition, "partition"),
+            Non.negative(lineNo, "lineNo")
+        );
+    }
 
     @Override
     public String toString() {
         if (line == null) {
-            return "⎨NULL⎬";
+            return NULL_STRING;
         }
         int length = line.length();
-        String shortString = length > 10 ? line.substring(0, 6) + "⋯" + line.substring(length - 3) : line;
-        return "⎨" + partition + "⎯" + lineNo + ": `" + shortString + "`⎬";
+        return length <= 12
+            ? STRING_FORMAT_SHORT.formatted(partition, lineNo, line)
+            : STRING_FORMAT.formatted(
+                partition,
+                lineNo,
+                line.substring(0, 8),
+                line.substring(length - 3)
+            );
     }
+
+    private static final NpLine NULL =
+        new NpLine(null, Integer.MAX_VALUE, Long.MAX_VALUE - 1, true);
+
+    private static final String NULL_STRING = "⎨NULL⎬";
+
+    private static final String STRING_FORMAT = "⎨%d⎯%d: `%s⋯%s`⎬";
+
+    private static final String STRING_FORMAT_SHORT = "⎨%d⎯%d: `%s`⎬";
 }

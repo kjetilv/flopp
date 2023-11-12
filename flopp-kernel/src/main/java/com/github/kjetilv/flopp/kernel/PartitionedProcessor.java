@@ -7,9 +7,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public interface PartitionedProcessor extends Closeable {
 
-    default void process(Function<String, String> processor) {
-        processMulti(toMulti(processor));
-    }
+    void process(Function<String, String> processor);
 
     void processMulti(Function<String, Stream<String>> processor);
 

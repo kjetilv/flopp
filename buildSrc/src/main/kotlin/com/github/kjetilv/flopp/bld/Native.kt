@@ -16,13 +16,15 @@ object Native {
         mainClass: String,
         toBinary: String,
         javaToolchainService: JavaToolchainService,
+        gc: String = "serial",
     ): List<String> =
         javaBin("native-image", javaToolchainService)?.let { nativeImage ->
             baseCommand(
                 nativeImage,
                 jarFiles.joinToString(":"),
                 mainClass,
-                toBinary
+                toBinary,
+                gc
             ).split(whitespace)
         } ?: throw IllegalStateException("Failed to resolve $toBinary")
 
@@ -36,11 +38,19 @@ object Native {
             commandLine = command
         }.apply { if (fail) assertNormalExitValue() }.exitValue
 
-    fun baseCommand(nativeImage: Path, fromJarFile: String, mainClass: String, toBinary: String) =
+    fun baseCommand(
+        nativeImage: Path,
+        fromJarFile: String,
+        mainClass: String,
+        toBinary: String,
+        gc: String = "serial"
+    ) =
         """
         $nativeImage -cp $fromJarFile $mainClass
          --verbose 
          --no-fallback
+         --gc=$gc
+         -H:Optimize=3
          -H:+ReportExceptionStackTraces
          -o $toBinary
          -march=native

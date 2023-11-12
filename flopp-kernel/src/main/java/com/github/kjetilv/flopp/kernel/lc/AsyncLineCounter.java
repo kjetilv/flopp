@@ -30,6 +30,9 @@ public final class AsyncLineCounter {
     }
 
     public long count(Path path, Shape shape) {
+        if (shape.size() <= 0) {
+            return 0;
+        }
         try (
             AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, OPTIONS, executorService)
         ) {
