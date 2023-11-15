@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.ToLongFunction;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 class DefaultPartitionProcessor<P> implements PartitionedProcessor {
@@ -53,7 +51,8 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         collect(
             new ResultCollector<P>(partitionCount, sizer),
             (partition, npLines) ->
-                streamer(processor, partition, npLines)
+                stream(partition, npLines, (consumer, npl) ->
+                    consumer.accept(processor.apply(npl.line())))
         );
     }
 
@@ -62,7 +61,9 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         collect(
             new ResultCollector<P>(partitionCount, sizer),
             (partition, npLines) ->
-                multiStreamer(processor, partition, npLines)
+                stream(partition, npLines, (consumer, npl) ->
+                    processor.apply(npl.line())
+                        .forEach(consumer))
         );
     }
 
@@ -94,26 +95,20 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         }
     }
 
-    private P multiStreamer(Function<String, Stream<String>> processor, Partition partition, Stream<NpLine> npLines) {
+    private P stream(Partition partition, Stream<NpLine> npLines, BiConsumer<Consumer<String>, NpLine> fun) {
         P target = tempTargets.temp(partition);
         try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
-            npLines.forEach(npLine ->
-                processor.apply(npLine.line())
-                    .forEach(linesWriter));
-            return target;
+            npLines.forEach(feed(linesWriter, fun));
         } catch (Exception e) {
             throw new RuntimeException("Failed to write " + target, e);
         }
+        return target;
     }
 
-    private P streamer(Function<String, String> processor, Partition partition, Stream<NpLine> npLines) {
-        P target = tempTargets.temp(partition);
-        try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
-            npLines.forEach(npLine ->
-                linesWriter.accept(processor.apply(npLine.line())));
-            return target;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to write " + target, e);
-        }
+    private static Consumer<NpLine> feed(
+        Consumer<String> linesWriter, BiConsumer<Consumer<String>, NpLine> fun
+    ) {
+        return npLine ->
+            fun.accept(linesWriter, npLine);
     }
 }

@@ -15,8 +15,6 @@ final class Futures {
     }
 
     private static <T> List<T> await(List<CompletableFuture<T>> futures) {
-        return futures.stream()
-            .map(CompletableFuture::join)
-            .toList();
+        return futures.stream().map(CompletableFuture::join).toList();
     }
 }

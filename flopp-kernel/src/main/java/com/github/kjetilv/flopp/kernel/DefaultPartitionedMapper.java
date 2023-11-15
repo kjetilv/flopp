@@ -29,15 +29,9 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     public <T> Stream<CompletableFuture<PartitionResult<T>>> map(BiFunction<Partition, Stream<NpLine>, T> processor) {
         return streams.streamers()
             .map(streamer ->
-                CompletableFuture.supplyAsync(
-                        streamer(processor, streamer),
-                        this.executorService
-                    )
+                CompletableFuture.supplyAsync(streamer(processor, streamer), this.executorService)
                     .thenApply(result ->
-                        new PartitionResult<>(
-                            streamer.partition(),
-                            result
-                        )));
+                        new PartitionResult<>(streamer.partition(), result)));
     }
 
     @Override
