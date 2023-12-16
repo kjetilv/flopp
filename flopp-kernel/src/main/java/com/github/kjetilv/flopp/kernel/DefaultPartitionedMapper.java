@@ -43,6 +43,7 @@ class DefaultPartitionedMapper implements PartitionedMapper {
         BiFunction<Partition, Stream<NpLine>, T> processor,
         PartitionedStreams.Streamer streamer
     ) {
-        return () -> processor.apply(streamer.partition(), streamer.lines());
+        return () ->
+            processor.apply(streamer.partition(), streamer.lines());
     }
 }

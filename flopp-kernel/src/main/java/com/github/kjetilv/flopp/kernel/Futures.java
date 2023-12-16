@@ -6,15 +6,15 @@ import java.util.stream.Stream;
 
 final class Futures {
 
+    static <T> List<T> awaitCompleted(Stream<CompletableFuture<T>> futures) {
+        return futures
+            .toList()
+            .stream()
+            .map(CompletableFuture::join)
+            .toList();
+    }
+
     private Futures() {
 
-    }
-
-    static <T> List<T> await(Stream<CompletableFuture<T>> futures) {
-        return await(futures.toList());
-    }
-
-    private static <T> List<T> await(List<CompletableFuture<T>> futures) {
-        return futures.stream().map(CompletableFuture::join).toList();
     }
 }

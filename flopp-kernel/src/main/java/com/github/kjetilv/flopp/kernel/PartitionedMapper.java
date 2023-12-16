@@ -7,10 +7,11 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface PartitionedMapper extends Closeable {
 
     default <T> List<PartitionResult<T>> awaitMap(BiFunction<Partition, Stream<NpLine>, T> processor) {
-        return Futures.await(map(processor));
+        return Futures.awaitCompleted(map(processor));
     }
 
     <T> Stream<CompletableFuture<PartitionResult<T>>> map(

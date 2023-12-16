@@ -30,6 +30,11 @@ class DefaultPartitionedStreams implements PartitionedStreams {
     }
 
     private Streamer streamer(Partition partition) {
-        return new DefaultStreamer(sources.source(partition), partition, shape, partitioning.bufferSize());
+        return new DefaultStreamer(
+            sources.source(partition),
+            partition,
+            shape,
+            partitioning.bufferSize()
+        );
     }
 }

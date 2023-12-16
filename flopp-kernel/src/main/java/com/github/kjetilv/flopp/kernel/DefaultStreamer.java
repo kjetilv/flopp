@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.util.Objects;
-import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -29,16 +28,14 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
 
     @Override
     public Stream<NpLine> lines() {
-        return StreamSupport.stream(spliterator(), false);
+        return StreamSupport.stream(
+            new PartitionSpliterator(source, partition, shape, bufferSize),
+            false);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + partition + "]";
-    }
-
-    private Spliterator<NpLine> spliterator() {
-        return new PartitionSpliterator(source, partition, shape, bufferSize);
     }
 
     private static final int DEFAULT_SLICE_SIZE = 8192;

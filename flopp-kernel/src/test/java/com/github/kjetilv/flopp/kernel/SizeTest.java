@@ -103,7 +103,7 @@ public class SizeTest {
     @Disabled
     @Test
     void theStraightStory(TestInfo testInfo) {
-        logTime(15, () -> doTheStraightStory(testInfo, OP));
+        logTime(100, () -> doTheStraightStory(testInfo, OP));
     }
 
     @Disabled

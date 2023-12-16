@@ -80,7 +80,7 @@ class PartitionedTest {
         assertEquals(14, lines.size(),
             collect
         );
-        assertEquals("1a", lines.get(0).line(), collect);
+        assertEquals("1a", lines.getFirst().line(), collect);
         assertEquals("11", lines.get(13).line(), collect);
     }
 

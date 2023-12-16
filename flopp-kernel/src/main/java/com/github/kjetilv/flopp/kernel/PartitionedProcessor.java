@@ -5,6 +5,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface PartitionedProcessor extends Closeable {
 
     default void process(Function<String, String> processor) {
