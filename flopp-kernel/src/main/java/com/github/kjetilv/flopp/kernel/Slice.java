@@ -16,8 +16,8 @@ record Slice(int offset, int length, int total) {
         Non.negative(total, "total");
     }
 
-    Slice bump(long total) {
-        return new Slice(offset, length, total);
+    Slice newTotal(long newTotal) {
+        return new Slice(offset, length, newTotal);
     }
 
     Slice next() {

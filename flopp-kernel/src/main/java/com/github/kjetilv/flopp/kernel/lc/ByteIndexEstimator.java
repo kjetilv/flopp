@@ -65,12 +65,14 @@ final class ByteIndexEstimator implements LineCounter.Lines {
         int offsetsCount = offsets.length;
         int partitionCount = offsetsCount - 1;
         return IntStream.range(0, partitionCount).mapToObj(partitionNo -> {
-                LineOffset lo0 = offsets[partitionNo];
-                LineOffset lo1 = offsets[partitionNo + 1];
-                long offset = lo0.lineNo();
-                Partition partition = new Partition(partitionNo, partitionCount, offset, lo1.lineNo() - offset);
-                long byteOffset = lo0.bytePosition();
-                long nextBytePosition = partition.last() ? byteSize : lo1.bytePosition();
+                LineOffset lineOffset = offsets[partitionNo];
+                long offset = lineOffset.lineNo();
+                long byteOffset = lineOffset.bytePosition();
+
+                LineOffset lineOffset1 = offsets[partitionNo + 1];
+                Partition partition = new Partition(partitionNo, partitionCount, offset, lineOffset1.lineNo() - offset);
+                long nextBytePosition = partition.last() ? byteSize : lineOffset1.bytePosition();
+
                 return new PartitionBytes(byteOffset, nextBytePosition - byteOffset, partition);
             })
             .toList();
@@ -79,7 +81,7 @@ final class ByteIndexEstimator implements LineCounter.Lines {
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-            "[@" + index +
+            "[@" + index + ":" +
             " factor=" + factor +
             " linesCount=" + linesCount +
             " longestLine=" + longestLine +
