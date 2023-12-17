@@ -40,10 +40,12 @@ class PartitionSpliteratorTest {
 
     @Test
     void simpleTest() {
-        String str = "mississippiburningvhpictures";
+        String str = "mississippiburningvhpicturesthisisthenextbigthing";
         for (int size = 6; size < str.length(); size++) {
             for (int partitionCount = 2; partitionCount < size / 3; partitionCount++) {
                 for (int bufferSize = 1; bufferSize < 10; bufferSize++) {
+                    go(str, partitionCount, size, bufferSize);
+                    go(str, partitionCount, size, 4 * bufferSize);
                     go(str, partitionCount, size, 10 * bufferSize);
                 }
             }
@@ -74,7 +76,7 @@ class PartitionSpliteratorTest {
                 do {
                 } while (spliterator0.tryAdvance(lines::add));
             }
-            Assertions.assertThat(lines)
+            assertThat(lines)
                 .describedAs(
                     state(partitionCount, size, lines, bufferSize))
                 .hasSize(size);

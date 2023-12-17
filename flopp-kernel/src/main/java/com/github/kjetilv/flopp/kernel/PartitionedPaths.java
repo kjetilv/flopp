@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.files.FileChannelSources;
-import com.github.kjetilv.flopp.kernel.files.FileChannelTransfers;
-import com.github.kjetilv.flopp.kernel.files.FileTempTargets;
-import com.github.kjetilv.flopp.kernel.files.MemoryMappedByteArrayLinesWriter;
+import com.github.kjetilv.flopp.kernel.files.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -210,10 +210,10 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     traversed++; // Whatever we did, count up number of bytes processed
                 }
                 if (traversed > partitionSize && !trailing) { // We are past our byte mark!
+                    trailing = true; // Make a note that we are now in the trailing part of the partition
                     if (lastPartition) { // This is the last partition, so we are domne
                         return done();
                     }
-                    trailing = true; // Make a note that we are now in the trailing part of the partition
                 }
             }
             if (lastPartition && traversed == partitionSize) { // We've exhausted the last partition
