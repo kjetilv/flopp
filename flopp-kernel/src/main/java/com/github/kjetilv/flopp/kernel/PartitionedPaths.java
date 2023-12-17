@@ -10,7 +10,7 @@ import java.util.concurrent.ForkJoinPool;
 @SuppressWarnings("unused")
 public final class PartitionedPaths {
 
-    public static Partitioned<Path> create(
+    public static PartitionedPath create(
         Path path,
         Partitioning partitioning
     ) {
@@ -21,7 +21,7 @@ public final class PartitionedPaths {
         );
     }
 
-    public static Partitioned<Path> create(
+    public static PartitionedPath create(
         Path path,
         Shape shape,
         Partitioning partitioning
@@ -34,7 +34,7 @@ public final class PartitionedPaths {
         );
     }
 
-    public static Partitioned<Path> create(
+    public static PartitionedPath create(
         Path path,
         Partitioning partitioning,
         ExecutorService executorService
@@ -47,14 +47,14 @@ public final class PartitionedPaths {
         );
     }
 
-    public static Partitioned<Path> create(
+    public static PartitionedPath create(
         Path path,
         Shape shape,
         Partitioning partitioning,
         ExecutorService executorService
     ) {
         Shape fileShape = resolveShape(path, shape);
-        return new DefaultPartitioned<>(
+        return new DefaultPartitionedPath(
             path,
             fileShape,
             partitioning,
@@ -108,7 +108,7 @@ public final class PartitionedPaths {
             : shape.sized(() -> sizeOf(path));
     }
 
-    private static long sizeOf(Path path) {
+    static long sizeOf(Path path) {
         try {
             return Files.size(path);
         } catch (Exception e) {

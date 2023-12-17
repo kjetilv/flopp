@@ -48,8 +48,9 @@ public class FastPartitionerTest {
 
         try {
             try (
-                Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                    path, Shape.size(Files.size(file)).header(1, 1),
+                PartitionedPath partitioned = new DefaultPartitionedPath(
+                    file,
+                    Shape.size(Files.size(file)).header(1, 1),
                     Partitioning.create(partitionCount, 10),
                     new FileChannelSources(file, Shape.size(Files.size(file)).header(1, 1).size()),
                     ForkJoinPool.commonPool()
@@ -82,7 +83,8 @@ public class FastPartitionerTest {
         try {
             try (
                 Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                    path, Shape.size(Files.size(file)).longestLine(32).header(1,1),
+                    file,
+                    Shape.size(Files.size(file)).longestLine(32).header(1,1),
                     Partitioning.create(partitionCount, 10),
                     new FileChannelSources(file, Shape.size(Files.size(file)).longestLine(32).header(1,1).size()),
                     ForkJoinPool.commonPool()
