@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-class DefaultPartitionedStreams implements PartitionedStreams {
+class DefaultPartitionedStreams implements PartitionedStreams{
 
     private final Shape shape;
 
@@ -27,6 +27,11 @@ class DefaultPartitionedStreams implements PartitionedStreams {
             .stream()
             .filter(Partition::hasData)
             .map(this::streamer);
+    }
+
+    @Override
+    public void close() {
+        sources.close();
     }
 
     private Streamer streamer(Partition partition) {

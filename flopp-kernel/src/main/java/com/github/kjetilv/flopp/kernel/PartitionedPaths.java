@@ -55,6 +55,7 @@ public final class PartitionedPaths {
     ) {
         Shape fileShape = resolveShape(path, shape);
         return new DefaultPartitioned<>(
+            path,
             fileShape,
             partitioning,
             new FileChannelSources(path, fileShape.size()),

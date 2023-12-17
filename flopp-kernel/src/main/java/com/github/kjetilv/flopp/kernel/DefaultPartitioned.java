@@ -1,10 +1,17 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.lc.AsyncLineCounter;
+
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
 class DefaultPartitioned<P> implements Partitioned<P> {
+
+    private final Path path;
 
     private final Shape shape;
 
@@ -14,16 +21,29 @@ class DefaultPartitioned<P> implements Partitioned<P> {
 
     private final ByteSources sources;
 
+    private final AtomicLong lineCount = new AtomicLong(-1);
+
     DefaultPartitioned(
+        Path path,
         Shape shape,
         Partitioning partitioning,
         ByteSources sources,
         ExecutorService executorService
     ) {
+        this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
         this.executorService = Objects.requireNonNull(executorService, "executorService");
         this.sources = Objects.requireNonNull(sources, "sources");
+    }
+
+    @Override
+    public Supplier<Long> lineCounter() {
+        return () ->
+            lineCount.updateAndGet(alreadyComputed ->
+                alreadyComputed < 0
+                    ? new AsyncLineCounter(executorService, partitioning.bufferSize()).count(path, shape)
+                    : alreadyComputed);
     }
 
     @Override

@@ -165,7 +165,7 @@ public class SizeTest {
         long start = System.nanoTime();
         try (
             Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                shape,
+                path, shape,
                 new Partitioning(partitions, 8192),
                 new FileChannelSources(path, shape.size()),
                 readerExec
