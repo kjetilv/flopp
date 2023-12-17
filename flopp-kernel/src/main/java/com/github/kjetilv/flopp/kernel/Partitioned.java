@@ -3,14 +3,13 @@ package com.github.kjetilv.flopp.kernel;
 import java.io.Closeable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 public interface Partitioned<T> extends Closeable {
 
-    Supplier<Long> lineCounter();
+    T partitioned();
 
     PartitionedStreams streams();
 
