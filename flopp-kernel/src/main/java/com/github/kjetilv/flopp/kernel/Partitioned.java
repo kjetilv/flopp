@@ -1,7 +1,9 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
@@ -24,9 +26,18 @@ public interface Partitioned<T> extends Closeable {
         LinesWriterFactory<T> linesWriterFactory
     );
 
+    default List<T> mapPartition(BiFunction<Partition, Stream<NpLine>, T> function) {
+        try (PartitionedMapper mapper = mapper()) {
+            return Futures.awaitCompleted(mapper
+                .map(function)
+                .map(future ->
+                    future.thenApply(PartitionResult::result)));
+        }
+    }
+
     default void forEachPartition(BiConsumer<Partition, Stream<NpLine>> action) {
         try (PartitionedConsumer consumer = consumer()) {
-            consumer.forEach(action);
+            Futures.awaitCompleted(consumer.forEach(action));
         }
     }
 
