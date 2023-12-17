@@ -3,9 +3,14 @@ package com.github.kjetilv.flopp.kernel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
 public record Shape(long size, Charset charset, Decor decor, Stats stats) {
+
+    public static Shape decor(int header, int footer) {
+        return new Shape(-1, null, new Decor(header, footer), null);
+    }
 
     public static Shape size(long size) {
         return new Shape(size);
@@ -16,7 +21,7 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public Shape(long size, Charset charset, Decor decor, Stats stats) {
-        this.size = Non.negative(size, "size");
+        this.size = Math.max(-1, size);
         this.charset = charset == null ? StandardCharsets.UTF_8 : charset;
         this.decor = decor == null ? new Decor() : decor;
         this.stats = stats;
@@ -52,6 +57,12 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
 
     public Shape iso8859_1() {
         return charset(StandardCharsets.ISO_8859_1);
+    }
+
+    public Shape sized(Supplier<Long> sizeSupplier) {
+        return this.size < 0
+            ? new Shape(sizeSupplier.get(), charset(), decor(), stats())
+            : this;
     }
 
     public int header() {

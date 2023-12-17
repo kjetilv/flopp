@@ -53,7 +53,7 @@ public final class PartitionedPaths {
         Partitioning partitioning,
         ExecutorService executorService
     ) {
-        Shape fileShape = shape == null ? Shape.size(sizeOf(path)) : shape;
+        Shape fileShape = resolveShape(path, shape);
         return new DefaultPartitioned<>(
             fileShape,
             partitioning,
@@ -88,7 +88,7 @@ public final class PartitionedPaths {
     ) {
         return create(
             path,
-            shape,
+            resolveShape(path, shape),
             partitioning,
             executorService
         ).processor(
@@ -99,6 +99,12 @@ public final class PartitionedPaths {
                 new MemoryMappedByteArrayLinesWriter(p, partitioning.bufferSize(), charset)
 
         );
+    }
+
+    private static Shape resolveShape(Path path, Shape shape) {
+        return shape == null
+            ? Shape.size(sizeOf(path))
+            : shape.sized(() -> sizeOf(path));
     }
 
     private static long sizeOf(Path path) {
