@@ -12,6 +12,17 @@ public final class PartitionedPaths {
 
     public static Partitioned<Path> create(
         Path path,
+        Partitioning partitioning
+    ) {
+        return create(
+            path,
+            null,
+            partitioning
+        );
+    }
+
+    public static Partitioned<Path> create(
+        Path path,
         Shape shape,
         Partitioning partitioning
     ) {
@@ -25,14 +36,28 @@ public final class PartitionedPaths {
 
     public static Partitioned<Path> create(
         Path path,
+        Partitioning partitioning,
+        ExecutorService executorService
+    ) {
+        return create(
+            path,
+            null,
+            partitioning,
+            executorService
+        );
+    }
+
+    public static Partitioned<Path> create(
+        Path path,
         Shape shape,
         Partitioning partitioning,
         ExecutorService executorService
     ) {
+        Shape fileShape = shape == null ? Shape.size(sizeOf(path)) : shape;
         return new DefaultPartitioned<>(
-            shape,
+            fileShape,
             partitioning,
-            new FileChannelSources(path, shape.size()),
+            new FileChannelSources(path, fileShape.size()),
             executorService == null
                 ? ForkJoinPool.commonPool()
                 : executorService
@@ -69,17 +94,19 @@ public final class PartitionedPaths {
         ).processor(
             new FileTempTargets(target),
             new FileChannelTransfers(target),
-            p -> {
-                try {
-                    return Files.size(p);
-                } catch (Exception e) {
-                    throw new IllegalStateException("Failed to size " + p, e);
-                }
-            },
+            PartitionedPaths::sizeOf,
             (p, charset) ->
                 new MemoryMappedByteArrayLinesWriter(p, partitioning.bufferSize(), charset)
 
         );
+    }
+
+    private static long sizeOf(Path path) {
+        try {
+            return Files.size(path);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to size " + path, e);
+        }
     }
 
     private PartitionedPaths() {
