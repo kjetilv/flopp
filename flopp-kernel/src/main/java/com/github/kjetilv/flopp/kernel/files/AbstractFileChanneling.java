@@ -7,7 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
-abstract sealed class FileChannelBase implements Closeable
+abstract sealed class AbstractFileChanneling implements Closeable
     permits FileChannelSources, FileChannelTransfers {
 
     private final Path target;
@@ -16,15 +16,10 @@ abstract sealed class FileChannelBase implements Closeable
 
     private final FileChannel channel;
 
-    protected FileChannelBase(Path target, boolean writable) {
+    protected AbstractFileChanneling(Path target, boolean writable) {
         this.target = Objects.requireNonNull(target, "target");
         this.randomAccessFile = randomAccess(this.target, writable ? "rw" : "r");
         this.channel = randomAccessFile.getChannel();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + target + "]";
     }
 
     @Override
@@ -39,6 +34,11 @@ abstract sealed class FileChannelBase implements Closeable
         } catch (Exception e) {
             throw new IllegalStateException("Failed to close: " + randomAccessFile, e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + target + "]";
     }
 
     protected FileChannel channel() {

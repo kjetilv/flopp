@@ -6,7 +6,7 @@ import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.nio.file.Path;
 
-public final class FileChannelTransfers extends FileChannelBase implements Transfers<Path> {
+public final class FileChannelTransfers extends AbstractFileChanneling implements Transfers<Path> {
 
     public FileChannelTransfers(Path target) {
         super(target, true);

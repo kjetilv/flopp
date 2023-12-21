@@ -28,18 +28,23 @@ final class FileChannelSource implements ByteSource {
         FileChannel channel,
         long size
     ) {
-        long traverseLimit = Math.min(
-            partition.count() + (partition.last() ? 0 : DEFAULT_LONGEST_LINE),
-            size - partition.offset()
-        );
         try {
             return channel.map(
                 FileChannel.MapMode.READ_ONLY,
                 partition.offset(),
-                traverseLimit
+                traverseLimit(partition, size)
             );
         } catch (Exception e) {
             throw new IllegalStateException("Failed to open " + channel, e);
         }
+    }
+
+    private static long traverseLimit(Partition partition, long size) {
+        return Math.min(
+            partition.count() + (partition.last()
+                ? 0
+                : DEFAULT_LONGEST_LINE),
+            size - partition.offset()
+        );
     }
 }

@@ -35,15 +35,14 @@ public class IndexingLineCounter implements LineCounter {
 
     @Override
     public Lines scan(Path path) {
-        long byteSize = shape.size();
-        if (byteSize <= 0) {
-            throw new IllegalStateException("Empty file: " + path);
+        if (shape.size() > 0) {
+            try (InputStream inputStream = bytes(path)) {
+                return lines(inputStream);
+            } catch (Exception e) {
+                throw new IllegalStateException("Could not count lines: " + path, e);
+            }
         }
-        try (InputStream inputStream = bytes(path)) {
-            return lines(inputStream);
-        } catch (Exception e) {
-            throw new IllegalStateException("Could not count lines: " + path, e);
-        }
+        throw new IllegalStateException("Empty file: " + path);
     }
 
     private ByteIndexEstimator lines(InputStream is) {
