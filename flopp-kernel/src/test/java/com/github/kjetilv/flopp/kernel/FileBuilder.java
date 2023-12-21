@@ -10,9 +10,9 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static java.util.stream.Collectors.joining;
 
-final class FileBuilder {
+public final class FileBuilder {
 
-    static Path file(Path tmp, String base, int lineCount, int columnCount, Shape.Decor decor) {
+    public static Path file(Path tmp, String base, int lineCount, int columnCount, Shape.Decor decor) {
         try {
             Path path = tmp.resolve(base + "-data.txt");
             Iterable<String> lines = lines(lineCount, columnCount, decor);

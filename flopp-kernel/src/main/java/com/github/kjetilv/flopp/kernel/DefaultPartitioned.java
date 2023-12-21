@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.ToLongFunction;
 
-class DefaultPartitioned<P> implements Partitioned<P> {
+public class DefaultPartitioned<P> implements Partitioned<P> {
 
     private final P path;
 
@@ -16,7 +16,7 @@ class DefaultPartitioned<P> implements Partitioned<P> {
 
     private final ByteSources sources;
 
-    DefaultPartitioned(
+    public DefaultPartitioned(
         P path,
         Shape shape,
         Partitioning partitioning,

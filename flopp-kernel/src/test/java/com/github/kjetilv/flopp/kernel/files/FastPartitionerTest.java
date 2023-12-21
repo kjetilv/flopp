@@ -1,6 +1,6 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.files.FileChannelSources;
+import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 

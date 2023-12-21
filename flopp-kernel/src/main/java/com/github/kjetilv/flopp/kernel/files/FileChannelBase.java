@@ -7,7 +7,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
-abstract class FileChannelBase implements Closeable {
+abstract sealed class FileChannelBase implements Closeable
+    permits FileChannelSources, FileChannelTransfers {
 
     private final Path target;
 

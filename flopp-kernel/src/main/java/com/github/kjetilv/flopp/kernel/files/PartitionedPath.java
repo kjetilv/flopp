@@ -1,4 +1,7 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.files;
+
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedProcessor;
 
 import java.nio.file.Path;
 import java.util.function.Supplier;

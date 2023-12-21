@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 
-class DumpingRingBuffer implements Closeable {
+final class DumpingRingBuffer implements Closeable {
 
     private final byte[] buffer;
 

@@ -11,10 +11,7 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
 
     private final ByteSources sources;
 
-    DefaultPartitionedConsumer(
-        PartitionedMapper mapper,
-        ByteSources sources
-    ) {
+    DefaultPartitionedConsumer(PartitionedMapper mapper, ByteSources sources) {
         this.mapper = mapper;
         this.sources = Objects.requireNonNull(sources, "sources");
     }

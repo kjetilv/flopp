@@ -1,6 +1,6 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.files.*;
+import com.github.kjetilv.flopp.kernel.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
