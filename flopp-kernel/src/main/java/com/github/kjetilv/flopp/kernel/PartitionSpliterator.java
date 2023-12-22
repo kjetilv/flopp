@@ -182,8 +182,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     byte byyte = byteBuffer[i]; // So what's the next byyte then?
                     if (byyte == '\n') { // We've got a line!
                         try {
-                            NpLine npLine = npLine(extract());
-                            ship(action, npLine); // Here it is!
+                            ship(action, npLine(extract())); // Here it is!
                         } finally {
                             shipped++; // Count up lines shipped
                             nextLineNo++; // Note the next line number
@@ -196,9 +195,9 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                         try {
                             if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
                                 expand();
-                                this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust slice
+                                currentSlice = currentSlice.newTotal(traverseLimit); // Adjust slice
                             }
-                            this.lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
+                            lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
                         } finally {
                             lineIndex++; // Count up our position on the current line
                         }
@@ -219,10 +218,8 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
             Slice next = currentSlice.next();
             if (next.done()) { // Oops, it's empty
                 expand();
-                this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust slice
-            } else {
-                this.currentSlice = next; // We have another slice coming up.
             }
+            currentSlice = currentSlice.newTotal(traverseLimit).next(); // Adjust slice
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
@@ -240,12 +237,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
 
     private void expand() {
         this.maxLineLength *= 2; // Let's double it
-        byte[] newCurrentLinebytes = copyToNewBuffer( // Make a new buffer, hold
-            this.lineBytes,
-            this.lineIndex,
-            this.maxLineLength
-        );
-        this.lineBytes = newCurrentLinebytes; // This new buffer should do
+        this.lineBytes = copyToNewBuffer(this.lineBytes, this.lineIndex, this.maxLineLength); // This new buffer should do
         this.traverseLimit = computeTraverseLimit(); // Re-compute limit
     }
 
