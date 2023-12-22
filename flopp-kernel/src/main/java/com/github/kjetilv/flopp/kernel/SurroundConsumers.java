@@ -62,6 +62,5 @@ final class SurroundConsumers {
                 : "") +
                 "]";
         }
-
     }
 }

@@ -8,17 +8,17 @@ public record NpLine(String line, int partition, long lineNo) {
         return NULL;
     }
 
-    public NpLine(String line, int partition, long lineNo) {
-        this.line = line;
-        this.partition = partition;
-        this.lineNo = lineNo + 1;
+    public NpLine {
+        if (lineNo < 1) {
+            throw new IllegalArgumentException("Line numbers are one-indexed: " + lineNo);
+        }
     }
 
     public NpLine(String line, int partition, long lineNo, boolean isNull) {
         this(
             isNull ? null : Objects.requireNonNull(line, "line"),
             Non.negative(partition, "partition"),
-            Non.negative(lineNo, "lineNo")
+            Non.negativeOrZero(lineNo, "lineNo")
         );
     }
 
@@ -39,7 +39,7 @@ public record NpLine(String line, int partition, long lineNo) {
     }
 
     private static final NpLine NULL =
-        new NpLine(null, Integer.MAX_VALUE, Long.MAX_VALUE - 1, true);
+        new NpLine(null, Integer.MAX_VALUE, Long.MAX_VALUE, true);
 
     private static final String NULL_STRING = "⎨NULL⎬";
 

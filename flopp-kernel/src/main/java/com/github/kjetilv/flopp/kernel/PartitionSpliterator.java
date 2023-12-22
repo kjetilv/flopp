@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -87,7 +88,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     /**
      * Line number of next line
      */
-    private long nextLineNo;
+    private long nextLineNo = 1;
 
     /**
      * Number of lines shipped
@@ -130,7 +131,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         this.lastPartition = this.partition.last();
         this.partitionNo = partition.partitionNo();
         this.maxLineLength = longestLine(shape); // If the shape indicates a longest line, make note of it
-        this.traverseLimit = traverseLimit();
+        this.traverseLimit = computeTraverseLimit();
         this.currentSlice = Slice.first(
             Non.negativeOrZero(bufferSize, "bufferSize"),
             traverseLimit
@@ -178,7 +179,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     byte byyte = byteBuffer[i]; // So what's the next byyte then?
                     if (byyte == '\n') { // We've got a line!
                         try {
-                            NpLine npLine = npLine(new String(lineBytes, 0, lineIndex, charset));
+                            NpLine npLine = npLine(extract());
                             ship(action, npLine); // Here it is!
                         } finally {
                             shipped++; // Count up lines shipped
@@ -198,8 +199,8 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                                     this.maxLineLength
                                 );
                                 this.lineBytes = newCurrentLinebytes; // This new buffer should do
-                                this.traverseLimit = traverseLimit(); // Set a new limit
-                                this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust the slice.
+                                this.traverseLimit = computeTraverseLimit(); // Re-compute limit
+                                this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust slice
                             }
                             this.lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
                         } finally {
@@ -211,37 +212,42 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                 }
                 if (traversed > partitionSize && !trailing) { // We are past our byte mark!
                     trailing = true; // Make a note that we are now in the trailing part of the partition
-                    if (lastPartition) { // This is the last partition, so we are domne
-                        return done();
+                    if (lastPartition) { // This is the last partition
+                        return done(); // So it goes
                     }
                 }
             }
             if (lastPartition && traversed == partitionSize) { // We've exhausted the last partition
                 return done(); // So that's it
             }
-            currentSlice = currentSlice.next(); // We have another slice coming up.
-            if (currentSlice.length() == 0) { // Oops, it's empty
+            Slice nextSlice = currentSlice.next();
+            if (nextSlice.done()) { // Oops, it's empty
                 if (trailing) { // That's ok, we are in the trailing end
-                    return false; // So we are done
+                    return done(); // So we are done
                 }
-                throw new IllegalStateException("Reading past allocated size " + partitionSize); // We're not? Something's up!
+                throw new IllegalStateException(
+                    "Reading past allocated size of " + partition + ": " + partitionSize); // We're not? Something's up!
             }
+            currentSlice = nextSlice; // We have another slice coming up.
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
         }
     }
 
-    private long traverseLimit() {
-        return Math.min(
-            partitionSize + (lastPartition ? 0 : this.maxLineLength),
-            size - this.partition.offset()
-        );
+    private String extract() {
+        return new String(lineBytes, 0, lineIndex, charset);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + partition + ": " + shipped + " lines]";
+    }
+
+    private long computeTraverseLimit() {
+        return lastPartition
+            ? size - this.partition.offset()
+            : partitionSize + this.maxLineLength;
     }
 
     @SuppressWarnings("unchecked")

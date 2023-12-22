@@ -39,8 +39,7 @@ final class ByteIndexEstimator implements LineCounter.Lines {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.byteSize = Non.negativeOrZero(shape.size(), "byteSize");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        int count = estimationSlots(this.byteSize, scanResolution);
-        this.bytePositions = new long[count];
+        this.bytePositions = new long[estimationSlots(this.byteSize, scanResolution)];
         this.factor = 1;
         this.factorCountdown = 1;
         this.headersLeft = shape.header();
