@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -167,8 +166,12 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     }
                 }
                 if (!firstLineFound || firstLineIndex == bytesToRead) { // Still no line!
-                    currentSlice = currentSlice.next(); // Move to the next slice then
-                    return currentSlice.length() > 0; // If that slice is empty – guess we're done then
+                    Slice next = currentSlice.next();
+                    if (next.done()) {
+                        return false;
+                    }
+                    currentSlice = next; // Move to the next slice then
+                    return true; // If that slice is empty – guess we're done then
                 }
             }
             for (int i = firstLineIndex; i < bytesToRead; i++) { // Found first line, now onwards!
@@ -192,14 +195,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     } else { // No line yet
                         try {
                             if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-                                this.maxLineLength *= 2; // Let's double it
-                                byte[] newCurrentLinebytes = copyToNewBuffer( // Make a new buffer, hold
-                                    this.lineBytes,
-                                    this.lineIndex,
-                                    this.maxLineLength
-                                );
-                                this.lineBytes = newCurrentLinebytes; // This new buffer should do
-                                this.traverseLimit = computeTraverseLimit(); // Re-compute limit
+                                expand();
                                 this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust slice
                             }
                             this.lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
@@ -220,28 +216,37 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
             if (lastPartition && traversed == partitionSize) { // We've exhausted the last partition
                 return done(); // So that's it
             }
-            Slice nextSlice = currentSlice.next();
-            if (nextSlice.done()) { // Oops, it's empty
-                if (trailing) { // That's ok, we are in the trailing end
-                    return done(); // So we are done
-                }
-                throw new IllegalStateException(
-                    "Reading past allocated size of " + partition + ": " + partitionSize); // We're not? Something's up!
+            Slice next = currentSlice.next();
+            if (next.done()) { // Oops, it's empty
+                expand();
+                this.currentSlice = this.currentSlice.newTotal(traverseLimit); // Adjust slice
+            } else {
+                this.currentSlice = next; // We have another slice coming up.
             }
-            currentSlice = nextSlice; // We have another slice coming up.
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
         }
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + partition + ": " + shipped + " lines]";
+    }
+
     private String extract() {
         return new String(lineBytes, 0, lineIndex, charset);
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + partition + ": " + shipped + " lines]";
+    private void expand() {
+        this.maxLineLength *= 2; // Let's double it
+        byte[] newCurrentLinebytes = copyToNewBuffer( // Make a new buffer, hold
+            this.lineBytes,
+            this.lineIndex,
+            this.maxLineLength
+        );
+        this.lineBytes = newCurrentLinebytes; // This new buffer should do
+        this.traverseLimit = computeTraverseLimit(); // Re-compute limit
     }
 
     private long computeTraverseLimit() {

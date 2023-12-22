@@ -155,8 +155,9 @@ class PartitionSpliteratorTest {
             lines3,
             lines4,
             lines5
-        )).allSatisfy(npLines ->
-            assertThat(npLines).hasSize(4));
+        ).mapToInt(List::size).sum()).isEqualTo(24);
+
+        assertThat(lines3.get(4).line()).isEqualTo(" 2ssissippiburningvhpicturesthisisthenextbigthing");
     }
 
     @Test
