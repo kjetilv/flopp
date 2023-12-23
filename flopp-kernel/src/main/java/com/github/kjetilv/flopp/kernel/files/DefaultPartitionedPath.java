@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class DefaultPartitionedPath extends DefaultPartitioned<Path>
+class DefaultPartitionedPath extends DefaultPartitioned<Path>
     implements PartitionedPath {
 
     private final AtomicLong lineCount = new AtomicLong(-1);

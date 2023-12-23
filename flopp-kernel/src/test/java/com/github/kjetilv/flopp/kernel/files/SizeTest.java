@@ -1,6 +1,6 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.files.*;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
 import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
 import org.junit.jupiter.api.*;

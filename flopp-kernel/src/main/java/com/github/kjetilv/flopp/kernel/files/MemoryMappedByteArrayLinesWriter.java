@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 
 @SuppressWarnings("unused")
-public class MemoryMappedByteArrayLinesWriter implements LinesWriter {
+class MemoryMappedByteArrayLinesWriter implements LinesWriter {
 
     private final RandomAccessFile randomAccessFile;
 
@@ -15,7 +15,7 @@ public class MemoryMappedByteArrayLinesWriter implements LinesWriter {
 
     private final DumpingRingBuffer dumpingRingBuffer;
 
-    public MemoryMappedByteArrayLinesWriter(Path target, int bufferSize, Charset charset) {
+    MemoryMappedByteArrayLinesWriter(Path target, int bufferSize, Charset charset) {
         try {
             this.randomAccessFile = new RandomAccessFile(target.toFile(), "rw");
         } catch (Exception e) {
