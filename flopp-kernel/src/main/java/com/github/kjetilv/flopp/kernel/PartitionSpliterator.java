@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine> {
 
     /**
@@ -94,9 +96,9 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         int bufferSize
     ) {
         super(Long.MAX_VALUE, ORDERED | IMMUTABLE);
-        this.byteSource = Objects.requireNonNull(byteSource, "bytesProvider");
-        this.partition = Objects.requireNonNull(partition, "partition");
-        this.shape = Objects.requireNonNull(shape, "shape");
+        this.byteSource = requireNonNull(byteSource, "bytesProvider");
+        this.partition = requireNonNull(partition, "partition");
+        this.shape = requireNonNull(shape, "shape");
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
         this.limit = computeSliceLength();

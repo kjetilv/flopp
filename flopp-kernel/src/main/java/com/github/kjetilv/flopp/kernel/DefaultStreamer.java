@@ -39,5 +39,4 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     private static final int DEFAULT_SLICE_SIZE = 8192;
-
 }

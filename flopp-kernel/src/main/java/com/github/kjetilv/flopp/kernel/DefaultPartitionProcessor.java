@@ -88,8 +88,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
                 CompletableFuture.runAsync(runnable, executorService))
             .toList();
         try {
-            transferFutures
-                .forEach(CompletableFuture::join);
+            transferFutures.forEach(CompletableFuture::join);
         } finally {
             streamFuture.join();
         }
@@ -105,9 +104,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         return target;
     }
 
-    private static Consumer<NpLine> feed(
-        Consumer<String> linesWriter, BiConsumer<Consumer<String>, NpLine> fun
-    ) {
+    private static Consumer<NpLine> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, NpLine> fun) {
         return npLine ->
             fun.accept(linesWriter, npLine);
     }
