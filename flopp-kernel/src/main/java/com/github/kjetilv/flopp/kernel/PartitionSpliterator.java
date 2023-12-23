@@ -133,12 +133,13 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                 }
             }
             for (int i = firstLineIndex; i < bytesToRead; i++) { // Found first line, now onwards!
-                if (trailing && traversed > this.partition.count() + lineIndex) { // What does this mean?
+                if (trailing && traversed > partition.count() + lineIndex) { // What does this mean?
                     return done(); // Looks like we are done, actually - but why!
                 }
                 byte byyte = byteBuffer[i]; // So what's the next byyte then?
                 if (byyte == '\n') { // We've got a line!
-                    ship(action, npLine(extract())); // Here it is!
+                    String line = new String(lineBytes, 0, lineIndex, charset);
+                    ship(action, new NpLine(line, partition.partitionNo(), nextLineNo)); // Here it is!
                     shipped++; // Count up lines shipped
                     nextLineNo++; // Note the next line number
                     lineIndex = 0; // Note that we're beginning a new line
@@ -154,14 +155,14 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                     lineIndex++; // Count up our position on the current line
                 }
                 traversed++; // Whatever we did, count up number of bytes processed
-                if (traversed > this.partition.count() && !trailing) { // We are past our byte mark!
+                if (traversed > partition.count() && !trailing) { // We are past our byte mark!
                     trailing = true; // Make a note that we are now in the trailing part of the partition
-                    if (this.partition.last()) { // This is the last partition
+                    if (partition.last()) { // This is the last partition
                         return done(); // So it goes
                     }
                 }
             }
-            if (this.partition.last() && traversed == this.partition.count()) { // We've exhausted the last partition
+            if (partition.last() && traversed == partition.count()) { // We've exhausted the last partition
                 return done(); // So that's it
             }
             if (slice.last()) { // Oops, it's empty
@@ -179,19 +180,15 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         return getClass().getSimpleName() + "[" + partition + ": " + shipped + " lines]";
     }
 
-    private String extract() {
-        return new String(lineBytes, 0, lineIndex, charset);
-    }
-
     private void growBuffer() {
         maxLineLength *= 2; // Let's double it
         lineBytes = expandBuffer(lineBytes, lineIndex, maxLineLength); // This new buffer should do
     }
 
     private long computeSliceLength() {
-        return this.partition.last()
+        return partition.last()
             ? shape.size() - partition.offset()
-            : this.partition.count() + maxLineLength;
+            : partition.count() + maxLineLength;
     }
 
     @SuppressWarnings("unchecked")
@@ -199,15 +196,11 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         lineConsumer.accept((Consumer<NpLine>) action, npLine);
     }
 
-    private NpLine npLine(String line) {
-        return new NpLine(line, partition.partitionNo(), nextLineNo);
-    }
-
     private boolean done() {
-        if (partition.first() && shipped < this.shape.header()) { // Check if we've got a bad partition
+        if (partition.first() && shipped < shape.header()) { // Check if we've got a bad partition
             throw new IllegalStateException(this + ": Partition is shorter than header");
         }
-        if (this.partition.last() && shipped < this.shape.footer()) { // Or a really bad one
+        if (partition.last() && shipped < shape.footer()) { // Or a really bad one
             throw new IllegalStateException(this + ": Partition is shorter than footer");
         }
         return false;
