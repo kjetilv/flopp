@@ -48,9 +48,14 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     private Slice slice;
 
     /**
+     * The current limit for this partition
+     */
+    private long limit;
+
+    /**
      * The number of bytes we've processed so far
      */
-    private int traversed;
+    private int pointer;
 
     /**
      * Line number of next line
@@ -94,9 +99,10 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         this.shape = Objects.requireNonNull(shape, "shape");
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
+        this.limit = computeSliceLength();
         this.slice = Slice.first(
             Non.negativeOrZero(bufferSize, "bufferSize"),
-            computeSliceLength()
+            this.limit
         );
         this.byteBuffer = new byte[bufferSize];
         this.lineBytes = new byte[maxLineLength];
@@ -116,30 +122,25 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
             int firstLineIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (int i = 0; i < bytesToRead && !firstLineFound; i++) { // Fast forward ...
-                    byte byyte = byteBuffer[i]; // Ok, so next byte is ...
-                    if (byyte == '\n') { // Found it!
+                    byte c = byteBuffer[i]; // Ok, so next byte is ...
+                    if (c == '\n') { // Found it!
                         firstLineIndex = i + 1;
                         firstLineFound = true;
                     }
-                    traversed++; // Count up number of bytes processed
+                    pointer++; // Count up number of bytes processed
                 }
                 if (!firstLineFound || firstLineIndex == bytesToRead) { // Still no line!
-                    Slice next = slice.next();
-                    if (next.done()) {
+                    if (slice.last(limit)) {
                         return false;
                     }
-                    slice = next; // Move to the next slice then
-                    return true; // If that slice is empty – guess we're done then
+                    slice = slice.next(limit);
+                    return true;
                 }
             }
             for (int i = firstLineIndex; i < bytesToRead; i++) { // Found first line, now onwards!
-                if (trailing && traversed > partition.count() + lineIndex) { // What does this mean?
-                    return done(); // Looks like we are done, actually - but why!
-                }
-                byte byyte = byteBuffer[i]; // So what's the next byyte then?
-                if (byyte == '\n') { // We've got a line!
-                    String line = new String(lineBytes, 0, lineIndex, charset);
-                    ship(action, new NpLine(line, partition.partitionNo(), nextLineNo)); // Here it is!
+                byte c = byteBuffer[i]; // So what's the next byyte then?
+                if (c == '\n') { // We've got a line!
+                    ship(action, new NpLine(line(), partition.partitionNo(), nextLineNo)); // Here it is!
                     shipped++; // Count up lines shipped
                     nextLineNo++; // Note the next line number
                     lineIndex = 0; // Note that we're beginning a new line
@@ -149,26 +150,33 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                 } else { // No line yet
                     if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
                         growBuffer();
-                        slice = slice.withTotal(computeSliceLength()); // Adjust slice
                     }
-                    lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
+                    lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
                     lineIndex++; // Count up our position on the current line
                 }
-                traversed++; // Whatever we did, count up number of bytes processed
-                if (traversed > partition.count() && !trailing) { // We are past our byte mark!
-                    if (partition.last()) { // This is the last partition
-                        return done(); // So it goes
+                pointer++; // Whatever we did, count up number of bytes processed
+                if (trailing) {
+                    if (pointer > partition.count() + lineIndex) { // What does this mean?
+                        return done(); // Looks like we are done, actually - but why!
                     }
-                    trailing = true; // Make a note that we are now in the trailing part of the partition
+                } else {
+                    if (pointer > partition.count()) { // We are past our byte mark!
+                        if (partition.last()) { // This is the last partition
+                            return done(); // So it goes
+                        }
+                        trailing = true; // Make a note that we are now in the trailing part of the partition
+                    }
                 }
             }
-            if (partition.last() && traversed == partition.count()) { // We've exhausted the last partition
+            if (partition.last() && pointer == partition.count()) { // We've exhausted the last partition
                 return done(); // So that's it
             }
-            if (slice.last()) { // Oops, it's empty
+            if (slice.last(limit)) { // Oops, it's empty
                 growBuffer();
+                slice = slice.next(computeSliceLength()); // Adjust slice
+            } else {
+                slice = slice.next(limit);
             }
-            slice = slice.next(computeSliceLength()); // Adjust slice
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
@@ -177,12 +185,19 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + partition + ": " + shipped + " lines]";
+        return getClass().getSimpleName() + "[" + partition + "]";
+    }
+
+    private String line() {
+        return new String(lineBytes, 0, lineIndex, charset);
     }
 
     private void growBuffer() {
         maxLineLength *= 2; // Let's double it
-        lineBytes = expandBuffer(lineBytes, lineIndex, maxLineLength); // This new buffer should do
+        byte[] newCurrentLinebytes = new byte[maxLineLength];
+        System.arraycopy(lineBytes, 0, newCurrentLinebytes, 0, lineIndex);
+        lineBytes = newCurrentLinebytes; // This new buffer should do
+        limit = computeSliceLength();
     }
 
     private long computeSliceLength() {
@@ -207,18 +222,6 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     }
 
     private static final int DEFAULT_LONGEST_LINE = 1024;
-
-    private static byte[] expandBuffer(byte[] src, int index, int length) {
-        byte[] newCurrentLinebytes = new byte[length];
-        System.arraycopy(
-            src,
-            0,
-            newCurrentLinebytes,
-            0,
-            index
-        );
-        return newCurrentLinebytes;
-    }
 
     private static int longestLine(Shape shape) {
         Shape.Stats stats = shape.stats();
