@@ -156,10 +156,10 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
                 }
                 traversed++; // Whatever we did, count up number of bytes processed
                 if (traversed > partition.count() && !trailing) { // We are past our byte mark!
-                    trailing = true; // Make a note that we are now in the trailing part of the partition
                     if (partition.last()) { // This is the last partition
                         return done(); // So it goes
                     }
+                    trailing = true; // Make a note that we are now in the trailing part of the partition
                 }
             }
             if (partition.last() && traversed == partition.count()) { // We've exhausted the last partition
