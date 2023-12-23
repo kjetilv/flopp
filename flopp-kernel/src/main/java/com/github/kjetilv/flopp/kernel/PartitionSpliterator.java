@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.nio.charset.Charset;
-import java.util.Objects;
 import java.util.Spliterators;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -32,7 +32,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     /**
      * A convenient consumer for the lines, managing header/footer counts.
      */
-    private final SurroundConsumer<NpLine> lineConsumer;
+    private final BiConsumer<Consumer<NpLine>, NpLine> lineConsumer;
 
     /**
      * Buffer holding the current working set of bytes

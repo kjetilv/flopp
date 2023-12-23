@@ -15,6 +15,5 @@ final class Futures {
     }
 
     private Futures() {
-
     }
 }

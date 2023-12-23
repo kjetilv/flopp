@@ -7,11 +7,11 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class SimpleLinesWriter implements LinesWriter {
+class SimpleLinesWriter implements LinesWriter {
 
     private final PrintWriter printWriter;
 
-    public SimpleLinesWriter(Path target, Charset charset) {
+    SimpleLinesWriter(Path target, Charset charset) {
         try {
             this.printWriter = new PrintWriter(Files.newBufferedWriter(target, charset), false);
         } catch (Exception e) {

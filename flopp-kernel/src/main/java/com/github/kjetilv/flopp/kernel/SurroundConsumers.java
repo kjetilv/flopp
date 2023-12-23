@@ -2,20 +2,21 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 final class SurroundConsumers {
 
-    static <T> SurroundConsumer<T> surround(int header, int footer) {
+    static <T> BiConsumer<Consumer<T>, T> surround(int header, int footer) {
         return header == 0 && footer == 0
             ? Consumer::accept
-            : new DefaultSurroundConsumer<T>(header, footer);
+            : new Default<T>(header, footer);
     }
 
     private SurroundConsumers() {
     }
 
-    static final class DefaultSurroundConsumer<T> implements SurroundConsumer<T> {
+    private static final class Default<T> implements BiConsumer<Consumer<T>, T> {
 
         private final int header;
 
@@ -25,7 +26,7 @@ final class SurroundConsumers {
 
         private int headersLeft;
 
-        DefaultSurroundConsumer(int header, int footer) {
+        private Default(int header, int footer) {
             this.header = Non.negative(header, "header'");
             this.footer = Non.negative(footer, "footer");
             this.headersLeft = this.header;
