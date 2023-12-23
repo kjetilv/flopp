@@ -8,14 +8,19 @@ import java.util.function.Consumer;
 final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine> {
 
     /**
+     * The source of our bytes
+     */
+    private final ByteSource byteSource;
+
+    /**
      * This is our partition. There are many like it, but this is ours
      */
     private final Partition partition;
 
     /**
-     * The source of our bytes
+     * Shape of file
      */
-    private final ByteSource byteSource;
+    private final Shape shape;
 
     /**
      * Charset for building line strings
@@ -27,42 +32,10 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
      */
     private final SurroundConsumer<NpLine> lineConsumer;
 
-    private final int partitionNo;
-
-    /**
-     * The size in bytes of this partition
-     */
-    private final long partitionSize;
-
-    /**
-     * Number of header lines in the partitioned data
-     */
-    private final int headerCount;
-
-    /**
-     * Number of footer lines in the partitioned data
-     */
-    private final int footerCount;
-
-    /**
-     * Iff true, this is the first partition
-     */
-    private final boolean firstPartition;
-
-    /**
-     * Iff true, this is the last partition
-     */
-    private final boolean lastPartition;
-
     /**
      * Buffer holding the current working set of bytes
      */
     private final byte[] byteBuffer;
-
-    /**
-     * Total size of all the partitioned data.
-     */
-    private final long size;
 
     /**
      * Flag indicating that we've found the first line in the partition
@@ -72,17 +45,12 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     /**
      * The current slice being processed.
      */
-    private Slice currentSlice;
+    private Slice slice;
 
     /**
      * The number of bytes we've processed so far
      */
     private int traversed;
-
-    /**
-     * The maximum number of bytes we should expect to ever have to read, given the current {@link #maxLineLength}
-     */
-    private long traverseLimit;
 
     /**
      * Line number of next line
@@ -95,7 +63,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     private int shipped;
 
     /**
-     * Iff true, we're currently past our allocated byte range. The current line is our last
+     * Iff true, we're currently past our allocated byte range, and the current line is our last
      */
     private boolean trailing;
 
@@ -121,105 +89,85 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         int bufferSize
     ) {
         super(Long.MAX_VALUE, ORDERED | IMMUTABLE);
-        Objects.requireNonNull(shape, "shape");
-        this.size = shape.size();
         this.byteSource = Objects.requireNonNull(byteSource, "bytesProvider");
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.partitionSize = this.partition.count();
-        this.firstPartition = this.partition.first();
-        this.lastPartition = this.partition.last();
-        this.partitionNo = partition.partitionNo();
-        this.maxLineLength = longestLine(shape); // If the shape indicates a longest line, make note of it
-        this.traverseLimit = computeTraverseLimit();
-        this.currentSlice = Slice.first(
+        this.shape = Objects.requireNonNull(shape, "shape");
+
+        this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
+        this.slice = Slice.first(
             Non.negativeOrZero(bufferSize, "bufferSize"),
-            traverseLimit
+            computeSliceLength()
         );
         this.byteBuffer = new byte[bufferSize];
         this.lineBytes = new byte[maxLineLength];
-        this.charset = shape.charset();
-        this.firstLineFound = partition.first();
+        this.charset = this.shape.charset();
+        this.firstLineFound = this.partition.first();
 
-        this.headerCount = shape.header();
-        this.footerCount = shape.footer();
         this.lineConsumer = SurroundConsumers.surround(
-            firstPartition && headerCount > 0 ? headerCount : 0,
-            lastPartition && footerCount > 0 ? footerCount : 0
+            this.partition.first() && this.shape.header() > 0 ? this.shape.header() : 0,
+            this.partition.last() && this.shape.footer() > 0 ? this.shape.footer() : 0
         );
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super NpLine> action) {
         try {
-            int bytesToRead = byteSource.fill(byteBuffer, currentSlice.offset(), currentSlice.length());
+            long bytesToRead = byteSource.fill(byteBuffer, slice.offset(), slice.length());
             int firstLineIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (int i = 0; i < bytesToRead && !firstLineFound; i++) { // Fast forward ...
-                    try {
-                        byte byyte = byteBuffer[i]; // Ok, so next byte is ...
-                        if (byyte == '\n') { // Found it!
-                            firstLineIndex = i + 1;
-                            firstLineFound = true;
-                        }
-                    } finally {
-                        traversed++; // Count up number of bytes processed
+                    byte byyte = byteBuffer[i]; // Ok, so next byte is ...
+                    if (byyte == '\n') { // Found it!
+                        firstLineIndex = i + 1;
+                        firstLineFound = true;
                     }
+                    traversed++; // Count up number of bytes processed
                 }
                 if (!firstLineFound || firstLineIndex == bytesToRead) { // Still no line!
-                    Slice next = currentSlice.next();
+                    Slice next = slice.next();
                     if (next.done()) {
                         return false;
                     }
-                    currentSlice = next; // Move to the next slice then
+                    slice = next; // Move to the next slice then
                     return true; // If that slice is empty – guess we're done then
                 }
             }
             for (int i = firstLineIndex; i < bytesToRead; i++) { // Found first line, now onwards!
-                if (trailing && traversed > partitionSize + lineIndex) { // What does this mean?
+                if (trailing && traversed > this.partition.count() + lineIndex) { // What does this mean?
                     return done(); // Looks like we are done, actually - but why!
                 }
-                try {
-                    byte byyte = byteBuffer[i]; // So what's the next byyte then?
-                    if (byyte == '\n') { // We've got a line!
-                        try {
-                            ship(action, npLine(extract())); // Here it is!
-                        } finally {
-                            shipped++; // Count up lines shipped
-                            nextLineNo++; // Note the next line number
-                            lineIndex = 0; // Note that we're beginning a new line
-                        }
-                        if (trailing) { // This was the line on the trailing end of our partition, so we are done
-                            return done();
-                        }
-                    } else { // No line yet
-                        try {
-                            if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-                                expand();
-                                currentSlice = currentSlice.newTotal(traverseLimit); // Adjust slice
-                            }
-                            lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
-                        } finally {
-                            lineIndex++; // Count up our position on the current line
-                        }
+                byte byyte = byteBuffer[i]; // So what's the next byyte then?
+                if (byyte == '\n') { // We've got a line!
+                    ship(action, npLine(extract())); // Here it is!
+                    shipped++; // Count up lines shipped
+                    nextLineNo++; // Note the next line number
+                    lineIndex = 0; // Note that we're beginning a new line
+                    if (trailing) { // This was the line on the trailing end of our partition, so we are done
+                        return done();
                     }
-                } finally {
-                    traversed++; // Whatever we did, count up number of bytes processed
+                } else { // No line yet
+                    if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
+                        growBuffer();
+                        slice = slice.withTotal(computeSliceLength()); // Adjust slice
+                    }
+                    lineBytes[lineIndex] = byyte; // Remember the byte for the upcoming line
+                    lineIndex++; // Count up our position on the current line
                 }
-                if (traversed > partitionSize && !trailing) { // We are past our byte mark!
+                traversed++; // Whatever we did, count up number of bytes processed
+                if (traversed > this.partition.count() && !trailing) { // We are past our byte mark!
                     trailing = true; // Make a note that we are now in the trailing part of the partition
-                    if (lastPartition) { // This is the last partition
+                    if (this.partition.last()) { // This is the last partition
                         return done(); // So it goes
                     }
                 }
             }
-            if (lastPartition && traversed == partitionSize) { // We've exhausted the last partition
+            if (this.partition.last() && traversed == this.partition.count()) { // We've exhausted the last partition
                 return done(); // So that's it
             }
-            Slice next = currentSlice.next();
-            if (next.done()) { // Oops, it's empty
-                expand();
+            if (slice.last()) { // Oops, it's empty
+                growBuffer();
             }
-            currentSlice = currentSlice.newTotal(traverseLimit).next(); // Adjust slice
+            slice = slice.next(computeSliceLength()); // Adjust slice
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
@@ -235,16 +183,15 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
         return new String(lineBytes, 0, lineIndex, charset);
     }
 
-    private void expand() {
-        this.maxLineLength *= 2; // Let's double it
-        this.lineBytes = copyToNewBuffer(this.lineBytes, this.lineIndex, this.maxLineLength); // This new buffer should do
-        this.traverseLimit = computeTraverseLimit(); // Re-compute limit
+    private void growBuffer() {
+        maxLineLength *= 2; // Let's double it
+        lineBytes = expandBuffer(lineBytes, lineIndex, maxLineLength); // This new buffer should do
     }
 
-    private long computeTraverseLimit() {
-        return lastPartition
-            ? size - this.partition.offset()
-            : partitionSize + this.maxLineLength;
+    private long computeSliceLength() {
+        return this.partition.last()
+            ? shape.size() - partition.offset()
+            : this.partition.count() + maxLineLength;
     }
 
     @SuppressWarnings("unchecked")
@@ -253,14 +200,14 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
     }
 
     private NpLine npLine(String line) {
-        return new NpLine(line, partitionNo, nextLineNo);
+        return new NpLine(line, partition.partitionNo(), nextLineNo);
     }
 
     private boolean done() {
-        if (firstPartition && shipped < headerCount) { // Check if we've got a bad partition
+        if (partition.first() && shipped < this.shape.header()) { // Check if we've got a bad partition
             throw new IllegalStateException(this + ": Partition is shorter than header");
         }
-        if (lastPartition && shipped < footerCount) { // Or a really bad one
+        if (this.partition.last() && shipped < this.shape.footer()) { // Or a really bad one
             throw new IllegalStateException(this + ": Partition is shorter than footer");
         }
         return false;
@@ -268,7 +215,7 @@ final class PartitionSpliterator extends Spliterators.AbstractSpliterator<NpLine
 
     private static final int DEFAULT_LONGEST_LINE = 1024;
 
-    private static byte[] copyToNewBuffer(byte[] src, int index, int length) {
+    private static byte[] expandBuffer(byte[] src, int index, int length) {
         byte[] newCurrentLinebytes = new byte[length];
         System.arraycopy(
             src,

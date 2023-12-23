@@ -15,9 +15,9 @@ final class FileChannelSource implements ByteSource {
     }
 
     @Override
-    public int fill(byte[] bytes, int offset, int length) {
-        int bytesToRead = Math.min(length, mappedByteBuffer.limit() - offset);
-        mappedByteBuffer.get(offset, bytes, 0, bytesToRead);
+    public long fill(byte[] bytes, long offset, long length) {
+        long bytesToRead = Math.min(length, mappedByteBuffer.limit() - offset);
+        mappedByteBuffer.get(Math.toIntExact(offset), bytes, 0, Math.toIntExact(bytesToRead));
         return bytesToRead;
     }
 

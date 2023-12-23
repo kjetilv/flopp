@@ -6,7 +6,7 @@ package com.github.kjetilv.flopp.kernel;
  * @param length Lenght of slice
  * @param total Total available
  */
-record Slice(int offset, int length, int total) {
+record Slice(long offset, long length, long total) {
 
     /**
      * First slice.
@@ -19,14 +19,18 @@ record Slice(int offset, int length, int total) {
         return new Slice(0, Math.min(length, total), total);
     }
 
-    Slice(long offset, long length, long total) {
-        this(Math.toIntExact(offset), Math.toIntExact(length), Math.toIntExact(total));
-    }
-
     Slice {
         Non.negative(offset, "offset");
         Non.negative(length, "length");
         Non.negative(total, "total");
+    }
+
+    public boolean done() {
+        return length() == 0;
+    }
+
+    boolean last() {
+        return next().done();
     }
 
     /**
@@ -35,7 +39,7 @@ record Slice(int offset, int length, int total) {
      * @param newTotal New total
      * @return New slice with updated {@link #total)}
      */
-    Slice newTotal(long newTotal) {
+    Slice withTotal(long newTotal) {
         return new Slice(offset, length, newTotal);
     }
 
@@ -45,12 +49,12 @@ record Slice(int offset, int length, int total) {
      * @return Next slice
      */
     Slice next() {
-        int nextOffset = offset + length;
-        int nextLength = Math.min(total - nextOffset, length);
-        return new Slice(nextOffset, nextLength, total);
+        return next(total);
     }
 
-    public boolean done() {
-        return length() == 0;
+    Slice next(long total) {
+        long nextOffset = offset + length;
+        long nextLength = Math.min(total - nextOffset, length);
+        return new Slice(nextOffset, nextLength, total);
     }
 }

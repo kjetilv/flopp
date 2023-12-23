@@ -48,8 +48,12 @@ class PartitionSpliteratorTest {
             abc
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
-        List<NpLine> lines =
-            drain(bytes, new Partition(0, 1, 0, bytes.length));
+        List<NpLine> lines = drain(
+            bytes,
+            new Partition(0, 1, 0, bytes.length),
+            2,
+            8
+        );
 
         assertThat(lines).containsExactly(
             new NpLine("abc", 0, 2),
@@ -71,8 +75,8 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 2);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0));
-        List<NpLine> lines1 = drain(bytes, partitions.get(1));
+        List<NpLine> lines0 = drain(bytes, partitions.get(0), 2, 8);
+        List<NpLine> lines1 = drain(bytes, partitions.get(1), 2, 8);
 
         assertThat(lines0).containsExactly(
             new NpLine("abc", 0, 2),
@@ -95,9 +99,9 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 3);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0));
-        List<NpLine> lines1 = drain(bytes, partitions.get(1));
-        List<NpLine> lines2 = drain(bytes, partitions.get(2));
+        List<NpLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
+        List<NpLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
+        List<NpLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
 
         assertThat(lines0).containsExactly(
             new NpLine("abc", 0, 2),
@@ -141,12 +145,12 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 6);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0));
-        List<NpLine> lines1 = drain(bytes, partitions.get(1));
-        List<NpLine> lines2 = drain(bytes, partitions.get(2));
-        List<NpLine> lines3 = drain(bytes, partitions.get(3));
-        List<NpLine> lines4 = drain(bytes, partitions.get(4));
-        List<NpLine> lines5 = drain(bytes, partitions.get(5));
+        List<NpLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
+        List<NpLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
+        List<NpLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
+        List<NpLine> lines3 = drain(bytes, partitions.get(3), 10, 16);
+        List<NpLine> lines4 = drain(bytes, partitions.get(4), 10, 16);
+        List<NpLine> lines5 = drain(bytes, partitions.get(5), 10, 16);
 
         assertThat(Stream.of(
             lines0,
@@ -177,7 +181,7 @@ class PartitionSpliteratorTest {
     @Test
     void trickyTest() {
         String str = "mississippiburningvhpicturesthisisthenextbigthing";
-        go(str, 2, 9, 1);
+        go(str, 2, 9, 10);
     }
 
     @Test
@@ -185,8 +189,13 @@ class PartitionSpliteratorTest {
         go("mississippiburningvhpictures", 3, 12, 10);
     }
 
-    private static List<NpLine> drain(byte[] bytes, Partition partition) {
-        return StreamSupport.stream(spliterator(bytes, partition, 16), false)
+    private static List<NpLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize) {
+        return StreamSupport.stream(spliterator(
+                bytes,
+                partition,
+                longestLine,
+                bufferSize
+            ), false)
             .toList();
     }
 
@@ -212,7 +221,7 @@ class PartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
             for (Partition partition : partitions) {
-                PartitionSpliterator spliterator0 = spliterator(bytes, partition, bufferSize);
+                PartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
                 do {
                 } while (spliterator0.tryAdvance(npLine -> {
                     subLines.get(partition.partitionNo()).add(npLine);
@@ -260,14 +269,19 @@ class PartitionSpliteratorTest {
                    .collect(Collectors.joining());
     }
 
-    private static PartitionSpliterator spliterator(byte[] bytes, Partition partition, int bufferSize) {
+    private static PartitionSpliterator spliterator(
+        byte[] bytes,
+        Partition partition,
+        int longestLine,
+        int bufferSize
+    ) {
         MyByteSource bytesProvider = new MyByteSource(bytes, Math.toIntExact(partition.offset()));
         PartitionSpliterator spliterator = new PartitionSpliterator(
             bytesProvider,
             partition,
             Shape.size(bytes.length)
                 .header(1, 1)
-                .longestLine(10)
+                .longestLine(longestLine)
                 .charset(StandardCharsets.US_ASCII),
             bufferSize
         );
@@ -286,10 +300,16 @@ class PartitionSpliteratorTest {
         }
 
         @Override
-        public int fill(byte[] bytes, int offset, int length) {
+        public long fill(byte[] bytes, long offset, long length) {
             if (this.offset + offset < source.length) {
-                int toRead = Math.min(source.length - offset, length);
-                System.arraycopy(source, this.offset + offset, bytes, 0, toRead);
+                long toRead = Math.min(source.length - offset, length);
+                System.arraycopy(
+                    source,
+                    Math.toIntExact(this.offset + offset),
+                    bytes,
+                    0,
+                    Math.toIntExact(toRead)
+                );
                 return toRead;
             }
             return -1;
