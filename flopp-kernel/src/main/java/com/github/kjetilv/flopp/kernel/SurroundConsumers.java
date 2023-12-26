@@ -10,7 +10,7 @@ final class SurroundConsumers {
     static <T> BiConsumer<Consumer<T>, T> surround(int header, int footer) {
         return header == 0 && footer == 0
             ? Consumer::accept
-            : new Default<T>(header, footer);
+            : new Default<>(header, footer);
     }
 
     private SurroundConsumers() {
