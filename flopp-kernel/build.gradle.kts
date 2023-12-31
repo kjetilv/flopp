@@ -4,10 +4,11 @@ plugins {
 }
 
 dependencies {
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
+
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.14")
 }
 
 java {
