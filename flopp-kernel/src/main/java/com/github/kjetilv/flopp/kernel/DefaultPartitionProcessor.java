@@ -50,8 +50,8 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     public void process(Function<String, String> processor) {
         collect(
             new ResultCollector<P>(partitionCount, sizer),
-            (partition, npLines) ->
-                stream(partition, npLines, (consumer, npl) ->
+            (partition, nLines) ->
+                stream(partition, nLines, (consumer, npl) ->
                     consumer.accept(processor.apply(npl.line())))
         );
     }
@@ -60,8 +60,8 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     public void processMulti(Function<String, Stream<String>> processor) {
         collect(
             new ResultCollector<P>(partitionCount, sizer),
-            (partition, npLines) ->
-                stream(partition, npLines, (consumer, npl) ->
+            (partition, nLines) ->
+                stream(partition, nLines, (consumer, npl) ->
                     processor.apply(npl.line())
                         .forEach(consumer))
         );
@@ -73,7 +73,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     private void collect(
-        ResultCollector<P> collector, BiFunction<Partition, Stream<NpLine>, P> partitionStreamPBiFunction
+        ResultCollector<P> collector, BiFunction<Partition, Stream<NLine>, P> partitionStreamPBiFunction
     ) {
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () ->
@@ -94,18 +94,17 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         }
     }
 
-    private P stream(Partition partition, Stream<NpLine> npLines, BiConsumer<Consumer<String>, NpLine> fun) {
+    private P stream(Partition partition, Stream<NLine> nLines, BiConsumer<Consumer<String>, NLine> fun) {
         P target = tempTargets.temp(partition);
         try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
-            npLines.forEach(feed(linesWriter, fun));
+            nLines.forEach(feed(linesWriter, fun));
         } catch (Exception e) {
             throw new RuntimeException("Failed to write " + target, e);
         }
         return target;
     }
 
-    private static Consumer<NpLine> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, NpLine> fun) {
-        return npLine ->
-            fun.accept(linesWriter, npLine);
+    private static Consumer<NLine> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, NLine> fun) {
+        return nLine -> fun.accept(linesWriter, nLine);
     }
 }

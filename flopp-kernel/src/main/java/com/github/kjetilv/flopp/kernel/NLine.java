@@ -2,19 +2,19 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.Objects;
 
-public record NpLine(String line, int partition, long lineNo) {
+public record NLine(String line, int partition, long lineNo) {
 
-    public static NpLine empty() {
+    public static NLine empty() {
         return NULL;
     }
 
-    public NpLine {
+    public NLine {
         if (lineNo < 1) {
             throw new IllegalArgumentException("Line numbers are one-indexed: " + lineNo);
         }
     }
 
-    public NpLine(String line, int partition, long lineNo, boolean isNull) {
+    public NLine(String line, int partition, long lineNo, boolean isNull) {
         this(
             isNull ? null : Objects.requireNonNull(line, "line"),
             Non.negative(partition, "partition"),
@@ -38,8 +38,8 @@ public record NpLine(String line, int partition, long lineNo) {
             );
     }
 
-    private static final NpLine NULL =
-        new NpLine(null, Integer.MAX_VALUE, Long.MAX_VALUE, true);
+    private static final NLine NULL =
+        new NLine(null, Integer.MAX_VALUE, Long.MAX_VALUE, true);
 
     private static final String NULL_STRING = "⎨NULL⎬";
 

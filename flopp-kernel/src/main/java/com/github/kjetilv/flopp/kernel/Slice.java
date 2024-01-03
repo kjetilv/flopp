@@ -4,7 +4,7 @@ package com.github.kjetilv.flopp.kernel;
  * @param offset Start position of slice
  * @param length Lenght of slice
  */
-record Slice(long offset, long length) {
+public record Slice(long offset, long length) {
 
     /**
      * First slice.
@@ -13,11 +13,11 @@ record Slice(long offset, long length) {
      * @param total  Total available
      * @return Slice of {@link #offset} 0
      */
-    static Slice first(long length, long total) {
+    public static Slice first(long length, long total) {
         return new Slice(0, Math.min(length, total));
     }
 
-    Slice {
+    public Slice {
         Non.negative(offset, "offset");
         Non.negative(length, "length");
     }

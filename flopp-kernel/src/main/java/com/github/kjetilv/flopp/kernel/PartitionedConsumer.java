@@ -9,11 +9,11 @@ import java.util.stream.Stream;
 @FunctionalInterface
 public interface PartitionedConsumer extends Closeable {
 
-    default void awaitForEach(BiConsumer<Partition, Stream<NpLine>> consumer) {
+    default void awaitForEach(BiConsumer<Partition, Stream<NLine>> consumer) {
         Futures.awaitCompleted(forEach(consumer));
     }
 
-    Stream<CompletableFuture<PartitionResult<Void>>> forEach(BiConsumer<Partition, Stream<NpLine>> consumer);
+    Stream<CompletableFuture<PartitionResult<Void>>> forEach(BiConsumer<Partition, Stream<NLine>> consumer);
 
     @Override
     default void close() {

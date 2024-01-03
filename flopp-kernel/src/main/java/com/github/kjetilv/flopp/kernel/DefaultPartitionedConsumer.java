@@ -18,7 +18,7 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
 
     @Override
     public Stream<CompletableFuture<PartitionResult<Void>>> forEach(
-        BiConsumer<Partition, Stream<NpLine>> consumer
+        BiConsumer<Partition, Stream<NLine>> consumer
     ) {
         return mapper.map((partition, entries) -> {
             consumer.accept(partition, entries);

@@ -33,10 +33,10 @@ class PartitionSpliteratorTest {
                 .charset(StandardCharsets.US_ASCII),
             50
         );
-        List<NpLine> lines = new ArrayList<>();
+        List<NLine> lines = new ArrayList<>();
         while (spliterator.tryAdvance(lines::add)) {
         }
-        assertThat(lines).containsExactly(new NpLine("CONTNT", 0, 2));
+        assertThat(lines).containsExactly(new NLine("CONTNT", 0, 2));
     }
 
     @Test
@@ -48,7 +48,7 @@ class PartitionSpliteratorTest {
             abc
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
-        List<NpLine> lines = drain(
+        List<NLine> lines = drain(
             bytes,
             new Partition(0, 1, 0, bytes.length),
             2,
@@ -56,9 +56,9 @@ class PartitionSpliteratorTest {
         );
 
         assertThat(lines).containsExactly(
-            new NpLine("abc", 0, 2),
-            new NpLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3),
-            new NpLine("abc", 0, 4)
+            new NLine("abc", 0, 2),
+            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3),
+            new NLine("abc", 0, 4)
         );
     }
 
@@ -75,16 +75,16 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 2);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0), 2, 8);
-        List<NpLine> lines1 = drain(bytes, partitions.get(1), 2, 8);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 2, 8);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 2, 8);
 
         assertThat(lines0).containsExactly(
-            new NpLine("abc", 0, 2),
-            new NpLine("def", 0, 3),
-            new NpLine("defghidefghidefghidefghidefghidefghidefghi", 0, 4)
+            new NLine("abc", 0, 2),
+            new NLine("def", 0, 3),
+            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 4)
         );
         assertThat(lines1).containsExactly(
-            new NpLine("abc", 1, 1));
+            new NLine("abc", 1, 1));
     }
 
     @Test
@@ -99,17 +99,17 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 3);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
-        List<NpLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
-        List<NpLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
+        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
 
         assertThat(lines0).containsExactly(
-            new NpLine("abc", 0, 2),
-            new NpLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3)
+            new NLine("abc", 0, 2),
+            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3)
         );
         assertThat(lines1).isEmpty();
         assertThat(lines2).containsExactly(
-            new NpLine("abc", 2, 1));
+            new NLine("abc", 2, 1));
     }
 
     @Test
@@ -145,12 +145,12 @@ class PartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 6);
 
-        List<NpLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
-        List<NpLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
-        List<NpLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
-        List<NpLine> lines3 = drain(bytes, partitions.get(3), 10, 16);
-        List<NpLine> lines4 = drain(bytes, partitions.get(4), 10, 16);
-        List<NpLine> lines5 = drain(bytes, partitions.get(5), 10, 16);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
+        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
+        List<NLine> lines3 = drain(bytes, partitions.get(3), 10, 16);
+        List<NLine> lines4 = drain(bytes, partitions.get(4), 10, 16);
+        List<NLine> lines5 = drain(bytes, partitions.get(5), 10, 16);
 
         assertThat(Stream.of(
             lines0,
@@ -189,7 +189,7 @@ class PartitionSpliteratorTest {
         go("mississippiburningvhpictures", 3, 12, 10);
     }
 
-    private static List<NpLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize) {
+    private static List<NLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize) {
         return StreamSupport.stream(spliterator(
                 bytes,
                 partition,
@@ -201,10 +201,10 @@ class PartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
     private static void go(String str, int partitionCount, int size, int bufferSize) {
-        List<List<NpLine>> subLines = IntStream.range(0, partitionCount)
-            .<List<NpLine>>mapToObj(i -> new ArrayList<>())
+        List<List<NLine>> subLines = IntStream.range(0, partitionCount)
+            .<List<NLine>>mapToObj(i -> new ArrayList<>())
             .toList();
-        List<NpLine> lines = new ArrayList<>();
+        List<NLine> lines = new ArrayList<>();
         try {
             List<String> list =
                 IntStream.range(0, size)
@@ -223,16 +223,16 @@ class PartitionSpliteratorTest {
             for (Partition partition : partitions) {
                 PartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
                 do {
-                } while (spliterator0.tryAdvance(npLine -> {
-                    subLines.get(partition.partitionNo()).add(npLine);
-                    lines.add(npLine);
+                } while (spliterator0.tryAdvance(nLine -> {
+                    subLines.get(partition.partitionNo()).add(nLine);
+                    lines.add(nLine);
                 }));
             }
             assertThat(
                 Stream.of(
                         Stream.of("HEADER"),
                         lines.stream()
-                            .map(NpLine::line),
+                            .map(NLine::line),
                         Stream.of("FOOTER")
                     )
                     .flatMap(Function.identity())
@@ -252,8 +252,8 @@ class PartitionSpliteratorTest {
     private static String state(
         int partitionCount,
         int size,
-        List<NpLine> lines,
-        List<List<NpLine>> subLines,
+        List<NLine> lines,
+        List<List<NLine>> subLines,
         int bufferSize
     ) {
         return partitionCount + " partitions of " + size + " lines, buffer size " + bufferSize + ": " +

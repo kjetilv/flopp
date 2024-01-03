@@ -26,7 +26,7 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     }
 
     @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> map(BiFunction<Partition, Stream<NpLine>, T> processor) {
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> map(BiFunction<Partition, Stream<NLine>, T> processor) {
         return streams.streamers()
             .map(streamer ->
                 CompletableFuture.supplyAsync(
@@ -42,7 +42,7 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     }
 
     private static <T> Supplier<T> streamer(
-        BiFunction<Partition, Stream<NpLine>, T> processor,
+        BiFunction<Partition, Stream<NLine>, T> processor,
         PartitionedStreams.Streamer streamer
     ) {
         return () ->

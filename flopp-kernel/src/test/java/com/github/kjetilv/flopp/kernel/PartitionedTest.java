@@ -44,7 +44,7 @@ class PartitionedTest {
         );
         Shape shape = Shape.size(Files.size(pathWithHeaders)).header(1);
 
-        List<NpLine> syncLines = new ArrayList<>();
+        List<NLine> syncLines = new ArrayList<>();
 
         int partitionCount = Runtime.getRuntime()
             .availableProcessors();
@@ -61,7 +61,7 @@ class PartitionedTest {
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-        List<NpLine> asyncLines = new ArrayList<>();
+        List<NLine> asyncLines = new ArrayList<>();
 
         pf2.streams().streamers()
             .map(streamer ->
@@ -74,7 +74,7 @@ class PartitionedTest {
         assertContents(asyncLines);
     }
 
-    private static void assertContents(List<NpLine> lines) {
+    private static void assertContents(List<NLine> lines) {
         String collect = lines.stream()
             .map(Object::toString)
             .collect(Collectors.joining("\n"));
@@ -114,7 +114,7 @@ class PartitionedTest {
         );
         Shape shape = Shape.size(Files.size(pathWithHeaders)).header(3, 2);
 
-        List<NpLine> syncLines = new ArrayList<>();
+        List<NLine> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
 
@@ -129,7 +129,7 @@ class PartitionedTest {
 
         Partitioned<Path> pf2 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
 
-        List<NpLine> asyncLines = new ArrayList<>();
+        List<NLine> asyncLines = new ArrayList<>();
 
         pf2.streams().streamers()
             .map(streamer ->
@@ -166,7 +166,7 @@ class PartitionedTest {
         );
         Shape shape = Shape.size(Files.size(pathWithHeaders)).utf8();
 
-        List<NpLine> syncLines = new ArrayList<>();
+        List<NLine> syncLines = new ArrayList<>();
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         int partitionCount = Runtime.getRuntime().availableProcessors();
@@ -182,7 +182,7 @@ class PartitionedTest {
 
         Partitioned<Path> pf2 = PartitionedPaths.create(pathWithHeaders, shape, partitioning, executorService);
 
-        List<NpLine> asyncLines = new ArrayList<>();
+        List<NLine> asyncLines = new ArrayList<>();
 
         pf2.streams().streamers()
             .map(streamer ->

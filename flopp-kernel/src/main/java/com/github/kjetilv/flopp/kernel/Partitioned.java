@@ -26,7 +26,7 @@ public interface Partitioned<T> extends Closeable {
         LinesWriterFactory<T> linesWriterFactory
     );
 
-    default List<T> mapPartition(BiFunction<Partition, Stream<NpLine>, T> function) {
+    default List<T> mapPartition(BiFunction<Partition, Stream<NLine>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return Futures.awaitCompleted(mapper
                 .map(function)
@@ -35,17 +35,17 @@ public interface Partitioned<T> extends Closeable {
         }
     }
 
-    default void forEachPartition(BiConsumer<Partition, Stream<NpLine>> action) {
+    default void forEachPartition(BiConsumer<Partition, Stream<NLine>> action) {
         try (PartitionedConsumer consumer = consumer()) {
             Futures.awaitCompleted(consumer.forEach(action));
         }
     }
 
     default void forEachLine(Consumer<String> action) {
-        forEachNumberedLine(npLine -> action.accept(npLine.line()));
+        forEachNumberedLine(nLine -> action.accept(nLine.line()));
     }
 
-    default void forEachNumberedLine(Consumer<NpLine> action) {
+    default void forEachNumberedLine(Consumer<NLine> action) {
         try (PartitionedStreams streams = streams()) {
             streams.streamers()
                 .forEach(streamer -> streamer.lines()

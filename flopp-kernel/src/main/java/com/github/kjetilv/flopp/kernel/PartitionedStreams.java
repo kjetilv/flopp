@@ -15,6 +15,6 @@ public interface PartitionedStreams extends Closeable {
 
         Partition partition();
 
-        Stream<NpLine> lines();
+        Stream<NLine> lines();
     }
 }
