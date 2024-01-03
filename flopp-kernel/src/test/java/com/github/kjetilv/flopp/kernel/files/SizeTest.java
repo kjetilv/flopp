@@ -81,7 +81,7 @@ public class SizeTest {
     @Disabled
     @Test
     void realStuff(TestInfo testInfo) {
-        logTime(200, () -> doRealStuff(testInfo, null, OP, 16384));
+        logTime(200, () -> doRealStuff(testInfo, null, OP, 64 * 1024));
     }
 
     @Test

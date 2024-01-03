@@ -127,17 +127,18 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     public boolean tryAdvance(Consumer<? super T> action) {
         try {
             long bytesToRead = byteSource.fill(byteBuffer, slice.offset(), slice.length());
-            int startIndex = 0;
+            int bufferIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
-                for (int i = 0; i < bytesToRead && !firstLineFound; i++) { // Fast forward ...
-                    // Ok, so next byte is ...
-                    if (byteBuffer[i] == '\n') { // Found it!
-                        startIndex = i + 1;
-                        firstLineFound = true;
-                    }
+                for (; bufferIndex < bytesToRead; bufferIndex++) { // Fast forward ...
                     partitionIndex++; // Count up number of bytes processed
+                    // Ok, so next byte is ...
+                    if (byteBuffer[bufferIndex] == '\n') { // Found it!
+                        firstLineFound = true;
+                        bufferIndex++;
+                        break;
+                    }
                 }
-                if (!firstLineFound || startIndex == bytesToRead) { // Still no line!
+                if (!firstLineFound || bufferIndex == bytesToRead) { // Still no line!
                     if (slice.last(limit)) {
                         return false;
                     }
@@ -145,7 +146,6 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                     return true;
                 }
             }
-            int bufferIndex = startIndex;
             if (!trailing) {
                 for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
                     byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
@@ -184,11 +184,9 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                 return done(); // So that's it
             }
             if (slice.last(limit)) { // Oops, it's empty
-                growBuffer();
-                slice = slice.next(computeSliceLength()); // Adjust slice
-            } else {
-                slice = slice.next(limit);
+                limit = growBuffer();
             }
+            slice = slice.next(limit);
             return true; // Keep going!
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
@@ -217,18 +215,18 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
         lineIndex = 0; // Note that we're beginning a new line
     }
 
-    private long computeSliceLength() {
-        return partition.last()
-            ? shape.size() - partition.offset()
-            : partition.count() + maxLineLength;
-    }
-
-    private void growBuffer() {
+    private long growBuffer() {
         maxLineLength *= 2; // Let's double it
         byte[] newCurrentLinebytes = new byte[maxLineLength];
         System.arraycopy(lineBytes, 0, newCurrentLinebytes, 0, lineIndex);
         lineBytes = newCurrentLinebytes; // This new buffer should do
-        limit = computeSliceLength();
+        return computeSliceLength();
+    }
+
+    private long computeSliceLength() {
+        return partition.last()
+            ? shape.size() - partition.offset()
+            : partition.count() + maxLineLength;
     }
 
     @SuppressWarnings("unchecked")
