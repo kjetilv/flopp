@@ -72,7 +72,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     /**
      * The number of bytes we've processed so far
      */
-    protected int pointer;
+    protected int partitionIndex;
 
     /**
      * Line number of next line
@@ -127,17 +127,17 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     public boolean tryAdvance(Consumer<? super T> action) {
         try {
             long bytesToRead = byteSource.fill(byteBuffer, slice.offset(), slice.length());
-            int firstLineIndex = 0;
+            int startIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (int i = 0; i < bytesToRead && !firstLineFound; i++) { // Fast forward ...
                     byte c = byteBuffer[i]; // Ok, so next byte is ...
                     if (c == '\n') { // Found it!
-                        firstLineIndex = i + 1;
+                        startIndex = i + 1;
                         firstLineFound = true;
                     }
-                    pointer++; // Count up number of bytes processed
+                    partitionIndex++; // Count up number of bytes processed
                 }
-                if (!firstLineFound || firstLineIndex == bytesToRead) { // Still no line!
+                if (!firstLineFound || startIndex == bytesToRead) { // Still no line!
                     if (slice.last(limit)) {
                         return false;
                     }
@@ -145,38 +145,42 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                     return true;
                 }
             }
-            for (int i = firstLineIndex; i < bytesToRead; i++) { // Found first line, now onwards!
-                byte c = byteBuffer[i]; // So what's the next byyte then?
-                if (c == '\n') { // We've got a line!
-                    ship(action, item()); // Here it is!
-                    shipped++; // Count up lines shipped
-                    nextLineNo++; // Note the next line number
-                    lineIndex = 0; // Note that we're beginning a new line
-                    if (trailing) { // This was the line on the trailing end of our partition, so we are done
-                        return done();
+            int bufferIndex = startIndex;
+            if (!trailing) {
+                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
+                    byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
+                    if (c == '\n') { // We've got a line!
+                        shipAndReset(action);
+                    } else { // No line yet
+                        handleChar(c);
                     }
-                } else { // No line yet
-                    if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-                        growBuffer();
-                    }
-                    lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
-                    lineIndex++; // Count up our position on the current line
-                }
-                pointer++; // Whatever we did, count up number of bytes processed
-                if (trailing) {
-                    if (pointer > partitionCount + lineIndex) { // What does this mean?
-                        return done(); // Looks like we are done, actually - but why!
-                    }
-                } else {
-                    if (pointer > partitionCount) { // We are past our byte mark!
+                    partitionIndex++; // Whatever we did, count up number of bytes processed
+                    if (partitionIndex > partitionCount) { // We are past our byte mark!
                         if (lastPartition) { // This is the last partition
                             return done(); // So it goes
                         }
                         trailing = true; // Make a note that we are now in the trailing part of the partition
+                        bufferIndex++;
+                        break;
                     }
                 }
             }
-            if (lastPartition && pointer == partitionCount) { // We've exhausted the last partition
+            if (trailing) {
+                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
+                    byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
+                    if (c == '\n') { // We've got a line!
+                        shipAndReset(action);
+                        return done();
+                    } else { // No line yet
+                        handleChar(c);
+                    }
+                    partitionIndex++; // Whatever we did, count up number of bytes processed
+                    if (partitionIndex > partitionCount + lineIndex) { // What does this mean?
+                        return done(); // Looks like we are done, actually - but why!
+                    }
+                }
+            }
+            if (lastPartition && partitionIndex == partitionCount) { // We've exhausted the last partition
                 return done(); // So that's it
             }
             if (slice.last(limit)) { // Oops, it's empty
@@ -197,6 +201,21 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     }
 
     protected abstract T item();
+
+    private void handleChar(byte c) {
+        if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
+            growBuffer();
+        }
+        lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
+        lineIndex++; // Count up our position on the current line
+    }
+
+    private void shipAndReset(Consumer<? super T> action) {
+        ship(action, item()); // Here it is!
+        shipped++; // Count up lines shipped
+        nextLineNo++; // Note the next line number
+        lineIndex = 0; // Note that we're beginning a new line
+    }
 
     private long computeSliceLength() {
         return partition.last()
