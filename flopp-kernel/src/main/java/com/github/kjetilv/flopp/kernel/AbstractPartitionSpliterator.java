@@ -72,12 +72,12 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     /**
      * The number of bytes we've processed so far
      */
-    private int pointer;
+    protected int pointer;
 
     /**
      * Line number of next line
      */
-    long nextLineNo = 1;
+    protected long nextLineNo = 1;
 
     /**
      * Number of lines shipped

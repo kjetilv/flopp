@@ -15,7 +15,7 @@ import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PartitionSpliteratorTest {
+class StringPartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Test
@@ -25,7 +25,7 @@ class PartitionSpliteratorTest {
             CONTNT
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
-        PartitionSpliterator spliterator = new PartitionSpliterator(
+        StringPartitionSpliterator spliterator = new StringPartitionSpliterator(
             new MyByteSource(bytes, 0),
             new Partition(0, 1, 0, bytes.length),
             Shape.size(bytes.length).header(1, 1)
@@ -221,7 +221,7 @@ class PartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
             for (Partition partition : partitions) {
-                PartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
+                StringPartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
                 do {
                 } while (spliterator0.tryAdvance(nLine -> {
                     subLines.get(partition.partitionNo()).add(nLine);
@@ -269,14 +269,14 @@ class PartitionSpliteratorTest {
                    .collect(Collectors.joining());
     }
 
-    private static PartitionSpliterator spliterator(
+    private static StringPartitionSpliterator spliterator(
         byte[] bytes,
         Partition partition,
         int longestLine,
         int bufferSize
     ) {
         MyByteSource bytesProvider = new MyByteSource(bytes, Math.toIntExact(partition.offset()));
-        PartitionSpliterator spliterator = new PartitionSpliterator(
+        StringPartitionSpliterator spliterator = new StringPartitionSpliterator(
             bytesProvider,
             partition,
             Shape.size(bytes.length)
