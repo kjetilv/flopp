@@ -130,8 +130,8 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
             int startIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (int i = 0; i < bytesToRead && !firstLineFound; i++) { // Fast forward ...
-                    byte c = byteBuffer[i]; // Ok, so next byte is ...
-                    if (c == '\n') { // Found it!
+                    // Ok, so next byte is ...
+                    if (byteBuffer[i] == '\n') { // Found it!
                         startIndex = i + 1;
                         firstLineFound = true;
                     }
