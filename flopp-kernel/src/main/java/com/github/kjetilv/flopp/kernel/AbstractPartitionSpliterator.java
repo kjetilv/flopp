@@ -89,6 +89,10 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
      */
     private boolean trailing;
 
+    private final long partitionCount;
+
+    private final boolean lastPartition;
+
     public AbstractPartitionSpliterator(
         int bufferSize,
         ByteSource byteSource,
@@ -115,6 +119,8 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
         this.lineBytes = new byte[maxLineLength];
+        this.partitionCount = this.partition.count();
+        this.lastPartition = this.partition.last();
     }
 
     @Override
@@ -158,19 +164,19 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                 }
                 pointer++; // Whatever we did, count up number of bytes processed
                 if (trailing) {
-                    if (pointer > partition.count() + lineIndex) { // What does this mean?
+                    if (pointer > partitionCount + lineIndex) { // What does this mean?
                         return done(); // Looks like we are done, actually - but why!
                     }
                 } else {
-                    if (pointer > partition.count()) { // We are past our byte mark!
-                        if (partition.last()) { // This is the last partition
+                    if (pointer > partitionCount) { // We are past our byte mark!
+                        if (lastPartition) { // This is the last partition
                             return done(); // So it goes
                         }
                         trailing = true; // Make a note that we are now in the trailing part of the partition
                     }
                 }
             }
-            if (partition.last() && pointer == partition.count()) { // We've exhausted the last partition
+            if (lastPartition && pointer == partitionCount) { // We've exhausted the last partition
                 return done(); // So that's it
             }
             if (slice.last(limit)) { // Oops, it's empty
