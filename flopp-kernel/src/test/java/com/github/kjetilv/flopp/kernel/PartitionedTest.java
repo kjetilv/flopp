@@ -42,7 +42,7 @@ class PartitionedTest {
                 11
                 """.split("\n"))
         );
-        Shape shape = Shape.size(Files.size(pathWithHeaders)).header(1);
+        Shape shape = Shape.size(Files.size(pathWithHeaders)).header(1).longestLine(10);
 
         List<NLine> syncLines = new ArrayList<>();
 

@@ -1,50 +1,86 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.ByteSource;
+import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
+
+import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
 final class FileChannelSource implements ByteSource {
 
-    private final MappedByteBuffer mappedByteBuffer;
+    private final Partition partition;
 
-    FileChannelSource(Partition partition, FileChannel channel, long size) {
-        this.mappedByteBuffer = mappedByteBuffer(partition, channel, size);
+    private final FileChannel channel;
+
+    private final long fileSize;
+
+    private final int padding;
+
+    private MappedByteBuffer mappedByteBuffer;
+
+    private int bytesReadTotal;
+
+    private int bytesReadInBuffer;
+
+    FileChannelSource(Partition partition, FileChannel channel, long fileSize, int padding) {
+        this.partition = Objects.requireNonNull(partition, "partition");
+        this.channel = Objects.requireNonNull(channel, "channel");
+        this.fileSize = Non.negative(fileSize, "fileSize");
+        this.padding = Non.negativeOrZero(padding, "padding");
+        newBuffer(this.partition.offset(), Math.min(
+            this.partition.count() + padding,
+            this.fileSize - this.partition.offset()
+        ));
     }
 
     @Override
-    public long fill(byte[] bytes, long offset, long length) {
-        long bytesToRead = Math.min(length, mappedByteBuffer.limit() - offset);
-        mappedByteBuffer.get(Math.toIntExact(offset), bytes, 0, Math.toIntExact(bytesToRead));
+    public int fill(byte[] bytes, int length) {
+        if (bytesReadTotal >= fileSize) {
+            return -1;
+        }
+        if (mappedByteBuffer == null) {
+            long bytesLeftTotal = fileSize - bytesReadTotal;
+            long limit = Math.min(padding, bytesLeftTotal);
+            newBuffer(bytesReadTotal, limit);
+            this.bytesReadInBuffer = 0;
+        }
+        int bufferLimit = mappedByteBuffer.limit();
+        int bytesToRead = Math.min(
+            bufferLimit - bytesReadInBuffer,
+            length
+        );
+        get(bytes, bytesToRead);
+        if (bytesReadInBuffer >= bufferLimit) {
+            mappedByteBuffer = null;
+        }
         return bytesToRead;
     }
 
-    private static final int DEFAULT_LONGEST_LINE = 1024;
-
-    private static MappedByteBuffer mappedByteBuffer(
-        Partition partition,
-        FileChannel channel,
-        long size
-    ) {
+    private void get(byte[] bytes, int count) {
         try {
-            return channel.map(
-                FileChannel.MapMode.READ_ONLY,
-                partition.offset(),
-                traverseLimit(partition, size)
-            );
+            mappedByteBuffer.get(bytesReadInBuffer, bytes, 0, count);
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " failed to get " + bytesReadTotal + "/" + count + " bytes", e);
+        } finally {
+            bytesReadInBuffer += count;
+            bytesReadTotal += count;
+        }
+    }
+
+    private void newBuffer(long pos, long size) {
+        try {
+            this.mappedByteBuffer = channel.map(READ_ONLY, pos, size);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to open " + channel, e);
         }
     }
 
-    private static long traverseLimit(Partition partition, long size) {
-        return Math.min(
-            partition.count() + (partition.last()
-                ? 0
-                : DEFAULT_LONGEST_LINE),
-            size - partition.offset()
-        );
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + partition + "/" + fileSize + "]";
     }
 }

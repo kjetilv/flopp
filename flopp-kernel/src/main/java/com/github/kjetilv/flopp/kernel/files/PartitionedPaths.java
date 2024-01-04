@@ -58,7 +58,7 @@ public final class PartitionedPaths {
             path,
             fileShape,
             partitioning,
-            new FileChannelSources(path, fileShape.size()),
+            new FileChannelSources(path, fileShape.size(), PADDING),
             executorService == null
                 ? ForkJoinPool.commonPool()
                 : executorService
@@ -101,6 +101,8 @@ public final class PartitionedPaths {
 
         );
     }
+
+    private static final int PADDING = 1024;
 
     private static Shape resolveShape(Path path, Shape shape) {
         return shape == null

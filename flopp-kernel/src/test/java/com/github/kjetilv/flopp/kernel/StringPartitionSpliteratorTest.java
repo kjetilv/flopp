@@ -294,22 +294,29 @@ class StringPartitionSpliteratorTest {
 
         private final int offset;
 
+        private int bytesRead;
+
         private MyByteSource(byte[] source, int offset) {
             this.source = source;
             this.offset = offset;
         }
 
         @Override
-        public long fill(byte[] bytes, long offset, long length) {
-            if (this.offset + offset < source.length) {
-                long toRead = Math.min(source.length - offset, length);
-                System.arraycopy(
-                    source,
-                    Math.toIntExact(this.offset + offset),
-                    bytes,
-                    0,
-                    Math.toIntExact(toRead)
-                );
+        public int fill(byte[] bytes, int length) {
+            if (this.offset + bytesRead < source.length) {
+                int toRead = Math.min(source.length - bytesRead, length);
+                int toReadInt = Math.toIntExact(toRead);
+                try {
+                    System.arraycopy(
+                        source,
+                        Math.toIntExact(this.offset + bytesRead),
+                        bytes,
+                        0,
+                        toReadInt
+                    );
+                } finally {
+                    bytesRead += toReadInt;
+                }
                 return toRead;
             }
             return -1;

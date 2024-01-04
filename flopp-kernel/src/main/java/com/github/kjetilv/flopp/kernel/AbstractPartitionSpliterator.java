@@ -126,7 +126,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     @Override
     public boolean tryAdvance(Consumer<? super T> action) {
         try {
-            long bytesToRead = byteSource.fill(byteBuffer, slice.offset(), slice.length());
+            long bytesToRead = byteSource.fill(byteBuffer, slice.length());
             int bufferIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (; bufferIndex < bytesToRead; bufferIndex++) { // Fast forward ...

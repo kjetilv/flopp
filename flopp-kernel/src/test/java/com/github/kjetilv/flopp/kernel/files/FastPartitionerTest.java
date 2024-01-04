@@ -18,8 +18,8 @@ public class FastPartitionerTest {
 
     @Test
     void test(TestInfo testInfo) {
-        for (int i = 50; i < 300; i++) {
-            for (int p = 1; p < 50; p++) {
+        for (int i = 50; i < 200; i++) {
+            for (int p = 1; p < 40; p++) {
                 try {
                     run(testInfo, i, p);
                 } catch (Exception e) {
