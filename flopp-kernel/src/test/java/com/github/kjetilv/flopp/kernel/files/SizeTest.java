@@ -160,6 +160,19 @@ public class SizeTest {
         return log(testInfo, start);
     }
 
+    private Duration doRealStuffQr(TestInfo testInfo, String qual, Function<String, String> processor, int bufferSize) {
+        long start = System.nanoTime();
+        Path tmp = out(path, testInfo, qual);
+        Partitioning partitioning = new Partitioning(partitions, bufferSize);
+        try (
+            PartitionedProcessor partitioned =
+                PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
+        ) {
+            partitioned.process(processor);
+        }
+        return log(testInfo, start);
+    }
+
     private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<String, String> processor) {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();

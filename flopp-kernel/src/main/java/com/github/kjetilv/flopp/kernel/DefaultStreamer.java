@@ -27,9 +27,30 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     @Override
-    public Stream<NLine> lines() {
+    public Stream<String> lines() {
         return StreamSupport.stream(
-            new StringPartitionSpliterator(source, partition, shape, bufferSize),
+            new RawStringPartitionSpliterator(source, partition, shape, bufferSize),
+            false);
+    }
+
+    @Override
+    public Stream<NLine> nLines() {
+        return StreamSupport.stream(
+            new NLinePartitionSpliterator(source, partition, shape, bufferSize),
+            false);
+    }
+
+    @Override
+    public Stream<RNLine> rawNLines() {
+        return StreamSupport.stream(
+            new RNLinePartitionSpliterator(source, partition, shape, bufferSize),
+            false);
+    }
+
+    @Override
+    public Stream<byte[]> rawByteLines() {
+        return StreamSupport.stream(
+            new RawBytesPartitionSpliterator(source, partition, shape, bufferSize),
             false);
     }
 

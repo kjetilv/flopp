@@ -42,13 +42,17 @@ public interface Partitioned<T> extends Closeable {
     }
 
     default void forEachLine(Consumer<String> action) {
-        forEachNumberedLine(nLine -> action.accept(nLine.line()));
+        try (PartitionedStreams streams = streams()) {
+            streams.streamers()
+                .forEach(streamer -> streamer.lines()
+                    .forEach(action));
+        }
     }
 
     default void forEachNumberedLine(Consumer<NLine> action) {
         try (PartitionedStreams streams = streams()) {
             streams.streamers()
-                .forEach(streamer -> streamer.lines()
+                .forEach(streamer -> streamer.nLines()
                     .forEach(action));
         }
     }

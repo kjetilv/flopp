@@ -59,7 +59,7 @@ public class FastPartitionerTest {
                 LongAdder cont = new LongAdder();
                 partitioned.streams().streamers()
                     .forEach(streamer ->
-                        streamer.lines()
+                        streamer.nLines()
                             .forEach(line ->
                                 cont.increment()));
                 assertThat(cont).hasValue(lineCount);

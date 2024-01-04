@@ -73,19 +73,19 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     private void collect(
-        ResultCollector<P> collector, BiFunction<Partition, Stream<NLine>, P> partitionStreamPBiFunction
+        ResultCollector<P> collector, BiFunction<Partition, Stream<NLine>, P> streamProcessor
     ) {
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () ->
-                partitionedMapper.map(partitionStreamPBiFunction)
+                partitionedMapper.map(streamProcessor)
                     .forEach(collector::collect),
             executorService
         );
         List<CompletableFuture<Void>> transferFutures = collector.streamCollected()
-            .map(partitionResult ->
-                transfers.transfer(partitionResult.partition(), partitionResult.result()))
-            .map(runnable ->
-                CompletableFuture.runAsync(runnable, executorService))
+            .map(result ->
+                transfers.transfer(result.partition(), result.result()))
+            .map(transfer ->
+                CompletableFuture.runAsync(transfer, executorService))
             .toList();
         try {
             transferFutures.forEach(CompletableFuture::join);

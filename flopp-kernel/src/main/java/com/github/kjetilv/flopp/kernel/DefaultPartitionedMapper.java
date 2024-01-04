@@ -46,6 +46,6 @@ class DefaultPartitionedMapper implements PartitionedMapper {
         PartitionedStreams.Streamer streamer
     ) {
         return () ->
-            processor.apply(streamer.partition(), streamer.lines());
+            processor.apply(streamer.partition(), streamer.nLines());
     }
 }

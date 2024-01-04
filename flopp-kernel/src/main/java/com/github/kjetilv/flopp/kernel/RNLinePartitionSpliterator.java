@@ -1,10 +1,9 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class RawPartitionSpliterator extends AbstractPartitionSpliterator<RNLine> {
+final class RNLinePartitionSpliterator extends AbstractPartitionSpliterator<RNLine> {
 
-    RawPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
+    RNLinePartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);
-
     }
 
     @Override
@@ -13,5 +12,4 @@ final class RawPartitionSpliterator extends AbstractPartitionSpliterator<RNLine>
         System.arraycopy(lineBytes, 0, bytes, 0, lineIndex);
         return new RNLine(bytes, partition.partitionNo(), nextLineNo);
     }
-
 }

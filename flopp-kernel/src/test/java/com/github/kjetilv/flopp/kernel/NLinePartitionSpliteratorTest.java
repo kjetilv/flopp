@@ -15,7 +15,7 @@ import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class StringPartitionSpliteratorTest {
+class NLinePartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Test
@@ -25,7 +25,7 @@ class StringPartitionSpliteratorTest {
             CONTNT
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
-        StringPartitionSpliterator spliterator = new StringPartitionSpliterator(
+        NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
             new MyByteSource(bytes, 0),
             new Partition(0, 1, 0, bytes.length),
             Shape.size(bytes.length).header(1, 1)
@@ -221,7 +221,7 @@ class StringPartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
             for (Partition partition : partitions) {
-                StringPartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
+                NLinePartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
                 do {
                 } while (spliterator0.tryAdvance(nLine -> {
                     subLines.get(partition.partitionNo()).add(nLine);
@@ -269,14 +269,14 @@ class StringPartitionSpliteratorTest {
                    .collect(Collectors.joining());
     }
 
-    private static StringPartitionSpliterator spliterator(
+    private static NLinePartitionSpliterator spliterator(
         byte[] bytes,
         Partition partition,
         int longestLine,
         int bufferSize
     ) {
         MyByteSource bytesProvider = new MyByteSource(bytes, Math.toIntExact(partition.offset()));
-        StringPartitionSpliterator spliterator = new StringPartitionSpliterator(
+        NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
             bytesProvider,
             partition,
             Shape.size(bytes.length)

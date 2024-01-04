@@ -52,7 +52,7 @@ class PartitionedTest {
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
-                partitionStreamer.lines()
+                partitionStreamer.nLines()
                     .forEach(syncLines::add));
         pf1.close();
         assertContents(syncLines);
@@ -65,7 +65,7 @@ class PartitionedTest {
 
         pf2.streams().streamers()
             .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
+                CompletableFuture.supplyAsync(streamer::nLines, executorService))
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
                     partitionedLineStream.forEach(asyncLines::add)))
@@ -122,7 +122,7 @@ class PartitionedTest {
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
-                partitionStreamer.lines()
+                partitionStreamer.nLines()
                     .forEach(syncLines::add));
         pf1.close();
         assertContents(syncLines);
@@ -133,7 +133,7 @@ class PartitionedTest {
 
         pf2.streams().streamers()
             .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
+                CompletableFuture.supplyAsync(streamer::nLines, executorService))
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
                     partitionedLineStream.forEach(asyncLines::add)))
@@ -174,7 +174,7 @@ class PartitionedTest {
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning, executorService);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
-                partitionStreamer.lines()
+                partitionStreamer.nLines()
                     .forEach(syncLines::add)
             );
         pf1.close();
@@ -186,7 +186,7 @@ class PartitionedTest {
 
         pf2.streams().streamers()
             .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
+                CompletableFuture.supplyAsync(streamer::nLines, executorService))
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
                     partitionedLineStream.forEach(asyncLines::add)))
