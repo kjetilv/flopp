@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 class DefaultPartitionedMapper implements PartitionedMapper {
@@ -26,11 +25,56 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     }
 
     @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> map(BiFunction<Partition, Stream<NLine>, T> processor) {
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapNLines(
+        BiFunction<Partition, Stream<NLine>, T> processor
+    ) {
         return streams.streamers()
             .map(streamer ->
                 CompletableFuture.supplyAsync(
-                    streamer(processor, streamer),
+                    () ->
+                        processor.apply(streamer.partition(), streamer.nLines()),
+                    this.executorService
+                ).thenApply(result ->
+                    new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRNLines(
+        BiFunction<Partition, Stream<RNLine>, T> processor
+    ) {
+        return streams.streamers()
+            .map(streamer ->
+                CompletableFuture.supplyAsync(
+                    () ->
+                        processor.apply(streamer.partition(), streamer.rnLines()),
+                    this.executorService
+                ).thenApply(result ->
+                    new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapLines(
+        BiFunction<Partition, Stream<String>, T> processor
+    ) {
+        return streams.streamers()
+            .map(streamer ->
+                CompletableFuture.supplyAsync(
+                    () ->
+                        processor.apply(streamer.partition(), streamer.lines()),
+                    this.executorService
+                ).thenApply(result ->
+                    new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRawLines(
+        BiFunction<Partition, Stream<byte[]>, T> processor
+    ) {
+        return streams.streamers()
+            .map(streamer ->
+                CompletableFuture.supplyAsync(
+                    () ->
+                        processor.apply(streamer.partition(), streamer.rawLines()),
                     this.executorService
                 ).thenApply(result ->
                     new PartitionResult<>(streamer.partition(), result)));
@@ -39,13 +83,5 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     @Override
     public void close() {
         sources.close();
-    }
-
-    private static <T> Supplier<T> streamer(
-        BiFunction<Partition, Stream<NLine>, T> processor,
-        PartitionedStreams.Streamer streamer
-    ) {
-        return () ->
-            processor.apply(streamer.partition(), streamer.nLines());
     }
 }

@@ -49,20 +49,20 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     @Override
     public void process(Function<String, String> processor) {
         collect(
-            new ResultCollector<P>(partitionCount, sizer),
+            new ResultCollector<>(partitionCount, sizer),
             (partition, nLines) ->
-                stream(partition, nLines, (consumer, npl) ->
-                    consumer.accept(processor.apply(npl.line())))
+                stream(partition, nLines, (consumer, line) ->
+                    consumer.accept(processor.apply(line)))
         );
     }
 
     @Override
     public void processMulti(Function<String, Stream<String>> processor) {
         collect(
-            new ResultCollector<P>(partitionCount, sizer),
+            new ResultCollector<>(partitionCount, sizer),
             (partition, nLines) ->
-                stream(partition, nLines, (consumer, npl) ->
-                    processor.apply(npl.line())
+                stream(partition, nLines, (consumer, line) ->
+                    processor.apply(line)
                         .forEach(consumer))
         );
     }
@@ -73,11 +73,11 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     private void collect(
-        ResultCollector<P> collector, BiFunction<Partition, Stream<NLine>, P> streamProcessor
+        ResultCollector<P> collector, BiFunction<Partition, Stream<String>, P> streamProcessor
     ) {
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () ->
-                partitionedMapper.map(streamProcessor)
+                partitionedMapper.mapLines(streamProcessor)
                     .forEach(collector::collect),
             executorService
         );
@@ -94,7 +94,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         }
     }
 
-    private P stream(Partition partition, Stream<NLine> nLines, BiConsumer<Consumer<String>, NLine> fun) {
+    private P stream(Partition partition, Stream<String> nLines, BiConsumer<Consumer<String>, String> fun) {
         P target = tempTargets.temp(partition);
         try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
             nLines.forEach(feed(linesWriter, fun));
@@ -104,7 +104,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         return target;
     }
 
-    private static Consumer<NLine> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, NLine> fun) {
+    private static Consumer<String> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, String> fun) {
         return nLine -> fun.accept(linesWriter, nLine);
     }
 }

@@ -15,12 +15,12 @@ public interface PartitionedStreams extends Closeable {
 
         Partition partition();
 
+        Stream<String> lines();
+
+        Stream<byte[]> rawLines();
+
         Stream<NLine> nLines();
 
-        Stream<RNLine> rawNLines();
-
-        Stream<byte[]> rawByteLines();
-
-        Stream<String> lines();
+        Stream<RNLine> rnLines();
     }
 }

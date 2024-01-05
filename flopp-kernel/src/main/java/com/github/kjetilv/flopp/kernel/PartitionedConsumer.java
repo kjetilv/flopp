@@ -6,14 +6,15 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
-@FunctionalInterface
 public interface PartitionedConsumer extends Closeable {
 
-    default void awaitForEach(BiConsumer<Partition, Stream<NLine>> consumer) {
-        Futures.awaitCompleted(forEach(consumer));
-    }
+    Stream<CompletableFuture<PartitionResult<Void>>> forEachLine(BiConsumer<Partition, Stream<String>> consumer);
 
-    Stream<CompletableFuture<PartitionResult<Void>>> forEach(BiConsumer<Partition, Stream<NLine>> consumer);
+    Stream<CompletableFuture<PartitionResult<Void>>> forEachRawLine(BiConsumer<Partition, Stream<byte[]>> consumer);
+
+    Stream<CompletableFuture<PartitionResult<Void>>> forEachNLine(BiConsumer<Partition, Stream<NLine>> consumer);
+
+    Stream<CompletableFuture<PartitionResult<Void>>> forEachRNLine(BiConsumer<Partition, Stream<RNLine>> consumer);
 
     @Override
     default void close() {

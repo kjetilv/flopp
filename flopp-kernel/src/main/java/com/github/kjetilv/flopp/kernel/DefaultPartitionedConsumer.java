@@ -17,10 +17,34 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionResult<Void>>> forEach(
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachLine(BiConsumer<Partition, Stream<String>> consumer) {
+        return mapper.mapLines((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRawLine(BiConsumer<Partition, Stream<byte[]>> consumer) {
+        return mapper.mapRawLines((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRNLine(BiConsumer<Partition, Stream<RNLine>> consumer) {
+        return mapper.mapRNLines((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachNLine(
         BiConsumer<Partition, Stream<NLine>> consumer
     ) {
-        return mapper.map((partition, entries) -> {
+        return mapper.mapNLines((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });

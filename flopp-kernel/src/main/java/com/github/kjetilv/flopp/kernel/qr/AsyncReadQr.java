@@ -26,7 +26,7 @@ final class AsyncReadQr implements ReadQr {
 
     @Override
     public <T> Stream<T> stream(String name, Stream<T> stream, long count, int queueSize, T poisonPill) {
-        Vein<T> vein = new MultiVein<>(
+        Vein<T> vein = new Bloodstream<>(
             name,
             Non.negativeOrZero(queueSize, "queueSize"),
             queuePoll,

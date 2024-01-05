@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-final class MultiVein<T> implements Vein<T> {
+final class Bloodstream<T> implements Vein<T> {
 
     private final String name;
 
@@ -42,7 +42,7 @@ final class MultiVein<T> implements Vein<T> {
 
     private final QueuePool<List<T>> pool;
 
-    MultiVein(String name, int length, Duration queuePoll, T poison) {
+    Bloodstream(String name, int length, Duration queuePoll, T poison) {
         this.name = name;
         this.capacity = Non.negativeOrZero(length, "length");
         this.queuePoll = Objects.requireNonNull(queuePoll, "queuePoll");

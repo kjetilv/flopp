@@ -13,7 +13,7 @@ final class AsynchWriteQr<T> implements WriteQr<T> {
 
     AsynchWriteQr(String name, Consumer<T> sink, int queueLength, Duration queuePoll, T poison) {
         this(
-            new MultiVein<>(name, queueLength, queuePoll, poison),
+            new Bloodstream<>(name, queueLength, queuePoll, poison),
             Objects.requireNonNull(sink, "io")
         );
     }

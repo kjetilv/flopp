@@ -41,14 +41,14 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     @Override
-    public Stream<RNLine> rawNLines() {
+    public Stream<RNLine> rnLines() {
         return StreamSupport.stream(
             new RNLinePartitionSpliterator(source, partition, shape, bufferSize),
             false);
     }
 
     @Override
-    public Stream<byte[]> rawByteLines() {
+    public Stream<byte[]> rawLines() {
         return StreamSupport.stream(
             new RawBytesPartitionSpliterator(source, partition, shape, bufferSize),
             false);

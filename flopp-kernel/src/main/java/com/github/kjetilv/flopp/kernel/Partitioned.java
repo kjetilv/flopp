@@ -29,7 +29,7 @@ public interface Partitioned<T> extends Closeable {
     default List<T> mapPartition(BiFunction<Partition, Stream<NLine>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return Futures.awaitCompleted(mapper
-                .map(function)
+                .mapNLines(function)
                 .map(future ->
                     future.thenApply(PartitionResult::result)));
         }
@@ -37,7 +37,7 @@ public interface Partitioned<T> extends Closeable {
 
     default void forEachPartition(BiConsumer<Partition, Stream<NLine>> action) {
         try (PartitionedConsumer consumer = consumer()) {
-            Futures.awaitCompleted(consumer.forEach(action));
+            Futures.awaitCompleted(consumer.forEachNLine(action));
         }
     }
 

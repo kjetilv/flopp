@@ -91,7 +91,7 @@ public class FastPartitionerTest {
                 )
             ) {
                 LongAdder cont = new LongAdder();
-                partitioned.consumer().forEach(
+                partitioned.consumer().forEachNLine(
                         (partition, entries) ->
                             entries.forEach(line -> cont.increment())
                     )
