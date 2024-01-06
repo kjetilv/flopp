@@ -80,7 +80,7 @@ public final class PartitionedPaths {
         );
     }
 
-    public static PartitionedProcessor processor(
+    public static PartitionedProcessor<String> processor(
         Path path,
         Shape shape,
         Partitioning partitioning,

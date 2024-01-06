@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.*;
 import java.util.stream.Stream;
 
-class DefaultPartitionProcessor<P> implements PartitionedProcessor {
+public abstract class AbstractPartitionProcessor<P, T> implements PartitionedProcessor<T> {
 
     private final PartitionedMapper partitionedMapper;
 
@@ -26,7 +26,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
 
     private final ExecutorService executorService;
 
-    DefaultPartitionProcessor(
+    public AbstractPartitionProcessor(
         PartitionedMapper partitionedMapper,
         Charset charset,
         int partitionCount,
@@ -47,7 +47,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     @Override
-    public void process(Function<String, String> processor) {
+    public void process(Function<T, String> processor) {
         collect(
             new ResultCollector<>(partitionCount, sizer),
             (partition, nLines) ->
@@ -57,7 +57,7 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
     }
 
     @Override
-    public void processMulti(Function<String, Stream<String>> processor) {
+    public void processMulti(Function<T, Stream<String>> processor) {
         collect(
             new ResultCollector<>(partitionCount, sizer),
             (partition, nLines) ->
@@ -72,13 +72,10 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         partitionedMapper.close();
     }
 
-    private void collect(
-        ResultCollector<P> collector, BiFunction<Partition, Stream<String>, P> streamProcessor
-    ) {
+    void collect(ResultCollector<P> collector, BiFunction<Partition, Stream<T>, P> streamProcessor) {
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () ->
-                partitionedMapper.mapLines(streamProcessor)
-                    .forEach(collector::collect),
+                futures(streamProcessor, partitionedMapper).forEach(collector::collect),
             executorService
         );
         List<CompletableFuture<Void>> transferFutures = collector.streamCollected()
@@ -94,17 +91,22 @@ class DefaultPartitionProcessor<P> implements PartitionedProcessor {
         }
     }
 
-    private P stream(Partition partition, Stream<String> nLines, BiConsumer<Consumer<String>, String> fun) {
+    protected abstract Stream<CompletableFuture<PartitionResult<P>>> futures(
+        BiFunction<Partition, Stream<T>, P> streamProcessor,
+        PartitionedMapper partitionedMapper1
+    );
+
+    private P stream(Partition partition, Stream<T> ts, BiConsumer<Consumer<String>, T> fun) {
         P target = tempTargets.temp(partition);
         try (LinesWriter linesWriter = linesWriterFactory.create(target, charset)) {
-            nLines.forEach(feed(linesWriter, fun));
+            ts.forEach(feed(linesWriter, fun));
         } catch (Exception e) {
             throw new RuntimeException("Failed to write " + target, e);
         }
         return target;
     }
 
-    private static Consumer<String> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, String> fun) {
-        return nLine -> fun.accept(linesWriter, nLine);
+    private Consumer<T> feed(Consumer<String> linesWriter, BiConsumer<Consumer<String>, T> fun) {
+        return t -> fun.accept(linesWriter, t);
     }
 }

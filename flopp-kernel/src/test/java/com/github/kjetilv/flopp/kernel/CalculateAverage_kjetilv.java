@@ -23,61 +23,62 @@ import java.nio.file.Path;
 
 public class CalculateAverage_kjetilv {
 
-//    private static final String FILE = "./measurements.txt";
-//
-//    private static record ResultRow(double min, double mean, double max) {
-//        public String toString() {
-//            return round(min) + "/" + round(mean) + "/" + round(max);
-//        }
-//
-//        private double round(double value) {
-//            return Math.round(value * 10.0) / 10.0;
-//        }
-//    };
-//
-//    public static void main(String[] args) throws IOException {
-//        PartitionedPath partitionedPath = PartitionedPaths.create(
-//            Path.of(FILE),
-//            Partitioning.create(Runtime.getRuntime().availableProcessors(), 8192)
-//        );
-//        partitionedPath.consumer().forEachNLine()
-//    }
-//
-//    public static record Row(byte[] name, short value) {}
-//
-//    public static final class Collector {
-//
-//        private  int count;
-//
-//        private  short min;
-//
-//        private  short max;
-//
-//        private int sum;
-//
-//        public Collector() {
-//            this.min = Short.MAX_VALUE;
-//            this.max = Short.MIN_VALUE;
-//        }
-//
-//        void collect(Row row) {
-//            short v = row.value;
-//            if (v < min) {
-//                min = v;
-//            }
-//            if (v > min) {
-//                max = v;
-//            }
-//            sum += v;
-//            count++;
-//        }
-//
-//        public String toString() {
-//            return round(0.1d * min) + "/" + round(0.1d * sum / count) + "/" + round(0.1d * max);
-//        }
-//
-//        private static double round(double value) {
-//            return Math.round(value * 10.0) / 10.0;
-//        }
-//    }
+    private static final String FILE = "./measurements.txt";
+
+    private static record ResultRow(double min, double mean, double max) {
+        public String toString() {
+            return round(min) + "/" + round(mean) + "/" + round(max);
+        }
+
+        private double round(double value) {
+            return Math.round(value * 10.0) / 10.0;
+        }
+    };
+
+    public static void main(String[] args) throws IOException {
+        PartitionedPath partitionedPath = PartitionedPaths.create(
+            Path.of(FILE),
+            Partitioning.create(Runtime.getRuntime().availableProcessors(), 8192)
+        );
+//        partitionedPath.consumer().ma((partition, stream) ->
+//            stream.)
+    }
+
+    public static record Row(byte[] name, short value) {}
+
+    public static final class Collector {
+
+        private  int count;
+
+        private  short min;
+
+        private  short max;
+
+        private int sum;
+
+        public Collector() {
+            this.min = Short.MAX_VALUE;
+            this.max = Short.MIN_VALUE;
+        }
+
+        void collect(Row row) {
+            short v = row.value;
+            if (v < min) {
+                min = v;
+            }
+            if (v > min) {
+                max = v;
+            }
+            sum += v;
+            count++;
+        }
+
+        public String toString() {
+            return round(0.1d * min) + "/" + round(0.1d * sum / count) + "/" + round(0.1d * max);
+        }
+
+        private static double round(double value) {
+            return Math.round(value * 10.0) / 10.0;
+        }
+    }
 }

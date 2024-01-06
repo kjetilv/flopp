@@ -152,7 +152,7 @@ public class SizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
         try (
-            PartitionedProcessor partitioned =
+            PartitionedProcessor<String> partitioned =
                 PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
         ) {
             partitioned.process(processor);
@@ -165,7 +165,7 @@ public class SizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
         try (
-            PartitionedProcessor partitioned =
+            PartitionedProcessor<String> partitioned =
                 PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
         ) {
             partitioned.process(processor);
@@ -271,6 +271,30 @@ public class SizeTest {
 
     @SuppressWarnings("CommentedOutCode")
     public static final Function<String, String> OP = line -> {
+        try {
+            String[] split = line.split(";");
+//            Optional<BigInteger> tail = Arrays.stream(split).skip(1)
+//                .map(BigInteger::new).reduce(BigInteger::add);
+//            Optional<BigInteger> total = Arrays.stream(split)
+//                .map(BigInteger::new).reduce(BigInteger::add);
+//            Optional<BigInteger> bigInteger = tail
+//                .flatMap(ta ->
+//                    total.map(to -> to.subtract(ta)));
+            if (split.length > 0) {
+                return new BigDecimal(split[1]).toPlainString();
+            }
+            return "0";
+//            return Arrays.stream(split).findFirst()
+//                .map(BigInteger::new)
+//                .map(BigInteger::toString)
+//                .orElse("0");
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed", e);
+        }
+    };
+    @SuppressWarnings("CommentedOutCode")
+
+    public static final Function<String, String> RAW_OP = line -> {
         try {
             String[] split = line.split(";");
 //            Optional<BigInteger> tail = Arrays.stream(split).skip(1)

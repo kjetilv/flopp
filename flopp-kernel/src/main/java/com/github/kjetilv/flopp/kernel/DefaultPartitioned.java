@@ -51,13 +51,31 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor processor(
+    public PartitionedProcessor<String> processor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToLongFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new DefaultPartitionProcessor<>(
+        return new StringPartitionProcessor<>(
+            mapper(),
+            shape.charset(),
+            partitioning.partitionCount(),
+            linesWriterFactory,
+            tempTargets,
+            sizer,
+            transfer,
+            executorService
+        );
+    }
+    @Override
+    public PartitionedProcessor<byte[]> bytesProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    ) {
+        return new BytesPartitionProcessor<>(
             mapper(),
             shape.charset(),
             partitioning.partitionCount(),

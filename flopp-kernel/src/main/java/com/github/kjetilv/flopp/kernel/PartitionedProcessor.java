@@ -6,19 +6,19 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 @FunctionalInterface
-public interface PartitionedProcessor extends Closeable {
+public interface PartitionedProcessor<T> extends Closeable {
 
-    default void process(Function<String, String> processor) {
+    default void process(Function<T, String> processor) {
         processMulti(toMulti(processor));
     }
 
-    void processMulti(Function<String, Stream<String>> processor);
+    void processMulti(Function<T, Stream<String>> processor);
 
     @Override
     default void close() {
     }
 
-    private static Function<String, Stream<String>> toMulti(Function<String, String> processor) {
+    private Function<T, Stream<String>> toMulti(Function<T, String> processor) {
         return line -> Stream.of(processor.apply(line));
     }
 }

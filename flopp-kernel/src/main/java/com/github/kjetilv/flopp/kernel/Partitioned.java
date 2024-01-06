@@ -19,7 +19,14 @@ public interface Partitioned<T> extends Closeable {
 
     PartitionedConsumer consumer();
 
-    PartitionedProcessor processor(
+    PartitionedProcessor<String> processor(
+        TempTargets<T> tempTargets,
+        Transfers<T> transfer,
+        ToLongFunction<T> sizer,
+        LinesWriterFactory<T> linesWriterFactory
+    );
+
+    PartitionedProcessor<byte[]> bytesProcessor(
         TempTargets<T> tempTargets,
         Transfers<T> transfer,
         ToLongFunction<T> sizer,
