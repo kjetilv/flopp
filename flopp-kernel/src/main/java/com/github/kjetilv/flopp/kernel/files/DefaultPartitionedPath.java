@@ -24,7 +24,7 @@ class DefaultPartitionedPath extends DefaultPartitioned<Path>
     }
 
     @Override
-    public PartitionedProcessor processor() {
+    public PartitionedProcessor<String> processor() {
         return processor(targets(), transfers(), PartitionedPaths::sizeOf, this::writer);
     }
 

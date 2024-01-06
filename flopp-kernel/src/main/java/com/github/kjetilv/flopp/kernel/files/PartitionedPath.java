@@ -8,7 +8,7 @@ import java.nio.file.Path;
 @SuppressWarnings("unused")
 public interface PartitionedPath extends Partitioned<Path> {
 
-    PartitionedProcessor processor();
+    PartitionedProcessor<String> processor();
 
     long lineCount();
 }

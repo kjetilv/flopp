@@ -23,10 +23,7 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     @Override
     public Stream<Streamer> streamers() {
-        return Partition.partitions(
-                shape.size(),
-                partitioning.partitionCount()
-            )
+        return Partition.partitions(shape.size(), partitioning.partitionCount())
             .stream()
             .filter(Partition::hasData)
             .map(partition ->
