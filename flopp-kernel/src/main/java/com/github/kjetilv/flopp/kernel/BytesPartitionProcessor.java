@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
-class BytesPartitionProcessor<P, T> extends AbstractPartitionProcessor<P, byte[]> {
+class BytesPartitionProcessor<P> extends AbstractPartitionProcessor<P, byte[]> {
 
     BytesPartitionProcessor(
         PartitionedMapper partitionedMapper,
@@ -33,10 +33,10 @@ class BytesPartitionProcessor<P, T> extends AbstractPartitionProcessor<P, byte[]
 
     @Override
     protected Stream<CompletableFuture<PartitionResult<P>>> futures(
-        BiFunction<Partition, Stream<byte[]>, P> streamProcessor,
+        BiFunction<Partition, Stream<byte[]>, P> processor,
         PartitionedMapper mapper
     ) {
-        return mapper.mapRawLines(streamProcessor);
+        return mapper.mapRawLines(processor);
     }
 
 }

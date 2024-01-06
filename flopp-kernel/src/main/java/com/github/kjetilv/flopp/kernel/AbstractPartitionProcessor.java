@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -36,9 +37,9 @@ public abstract class AbstractPartitionProcessor<P, T> implements PartitionedPro
         Transfers<P> transfers,
         ExecutorService executorService
     ) {
-        this.partitionedMapper = partitionedMapper;
-        this.charset = charset;
-        this.partitionCount = partitionCount;
+        this.partitionedMapper = Objects.requireNonNull(partitionedMapper, "partitionedMapper");
+        this.charset = charset == null ? StandardCharsets.UTF_8 : charset;
+        this.partitionCount = Non.negativeOrZero(partitionCount, "partitionCount");
         this.linesWriterFactory = Objects.requireNonNull(linesWriterFactory, "linesWriterFactory");
         this.tempTargets = Objects.requireNonNull(tempTargets, "tempTargets");
         this.sizer = Objects.requireNonNull(sizer, "sizer");
@@ -92,8 +93,8 @@ public abstract class AbstractPartitionProcessor<P, T> implements PartitionedPro
     }
 
     protected abstract Stream<CompletableFuture<PartitionResult<P>>> futures(
-        BiFunction<Partition, Stream<T>, P> streamProcessor,
-        PartitionedMapper partitionedMapper1
+        BiFunction<Partition, Stream<T>, P> processor,
+        PartitionedMapper mapper
     );
 
     private P stream(Partition partition, Stream<T> ts, BiConsumer<Consumer<String>, T> fun) {

@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.*;
 import java.util.stream.Stream;
 
-class StringPartitionProcessor<P, T> extends AbstractPartitionProcessor<P, String> {
+class StringPartitionProcessor<P> extends AbstractPartitionProcessor<P, String> {
 
     StringPartitionProcessor(
         PartitionedMapper partitionedMapper,
@@ -32,10 +32,10 @@ class StringPartitionProcessor<P, T> extends AbstractPartitionProcessor<P, Strin
 
     @Override
     protected Stream<CompletableFuture<PartitionResult<P>>> futures(
-        BiFunction<Partition, Stream<String>, P> streamProcessor,
+        BiFunction<Partition, Stream<String>, P> processor,
         PartitionedMapper mapper
     ) {
-        return mapper.mapLines(streamProcessor);
+        return mapper.mapLines(processor);
     }
 
 }

@@ -65,7 +65,7 @@ public final class PartitionedPaths {
         );
     }
 
-    public static PartitionedProcessor processor(
+    public static PartitionedProcessor<String> processor(
         Path path,
         Shape shape,
         Partitioning partitioning,
@@ -93,6 +93,28 @@ public final class PartitionedPaths {
             partitioning,
             executorService
         ).processor(
+            new FileTempTargets(target),
+            new FileChannelTransfers(target),
+            PartitionedPaths::sizeOf,
+            (p, charset) ->
+                new MemoryMappedByteArrayLinesWriter(p, partitioning.bufferSize(), charset)
+
+        );
+    }
+
+    public static PartitionedProcessor<byte[]> bytesProcessor(
+        Path path,
+        Shape shape,
+        Partitioning partitioning,
+        Path target,
+        ExecutorService executorService
+    ) {
+        return create(
+            path,
+            resolveShape(path, shape),
+            partitioning,
+            executorService
+        ).bytesProcessor(
             new FileTempTargets(target),
             new FileChannelTransfers(target),
             PartitionedPaths::sizeOf,

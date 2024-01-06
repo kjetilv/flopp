@@ -33,6 +33,20 @@ public interface Partitioned<T> extends Closeable {
         LinesWriterFactory<T> linesWriterFactory
     );
 
+    PartitionedProcessor<NLine> nLineProcessor(
+        TempTargets<T> tempTargets,
+        Transfers<T> transfer,
+        ToLongFunction<T> sizer,
+        LinesWriterFactory<T> linesWriterFactory
+    );
+
+    PartitionedProcessor<RNLine> rnLineProcessor(
+        TempTargets<T> tempTargets,
+        Transfers<T> transfer,
+        ToLongFunction<T> sizer,
+        LinesWriterFactory<T> linesWriterFactory
+    );
+
     default List<T> mapPartition(BiFunction<Partition, Stream<NLine>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return Futures.awaitCompleted(mapper

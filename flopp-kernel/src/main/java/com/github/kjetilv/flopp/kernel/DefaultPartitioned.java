@@ -1,8 +1,12 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.nio.file.Path;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.Stream;
 
 public class DefaultPartitioned<P> implements Partitioned<P> {
 
@@ -68,6 +72,63 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             executorService
         );
     }
+
+    @Override
+    public PartitionedProcessor<NLine> nLineProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    ) {
+        return new AbstractPartitionProcessor<>(
+            mapper(),
+            shape.charset(),
+            partitioning.partitionCount(),
+            linesWriterFactory,
+            tempTargets,
+            sizer,
+            transfer,
+            executorService
+        ) {
+
+            @Override
+            protected Stream<CompletableFuture<PartitionResult<P>>> futures(
+                BiFunction<Partition, Stream<NLine>, P> processor,
+                PartitionedMapper mapper
+            ) {
+                return mapper.mapNLines(processor);
+            }
+        };
+    }
+
+    @Override
+    public PartitionedProcessor<RNLine> rnLineProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    ) {
+        return new AbstractPartitionProcessor<>(
+            mapper(),
+            shape.charset(),
+            partitioning.partitionCount(),
+            linesWriterFactory,
+            tempTargets,
+            sizer,
+            transfer,
+            executorService
+        ) {
+
+            @Override
+            protected Stream<CompletableFuture<PartitionResult<P>>> futures(
+                BiFunction<Partition, Stream<RNLine>, P> processor,
+                PartitionedMapper mapper
+            ) {
+                return mapper.mapRNLines(processor);
+            }
+        };
+    }
+
     @Override
     public PartitionedProcessor<byte[]> bytesProcessor(
         TempTargets<P> tempTargets,
