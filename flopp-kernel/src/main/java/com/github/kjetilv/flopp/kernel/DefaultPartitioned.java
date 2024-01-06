@@ -148,6 +148,25 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
+    public PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    ) {
+        return new ByteSegPartitionProcessor<>(
+            mapper(),
+            shape.charset(),
+            partitioning.partitionCount(),
+            linesWriterFactory,
+            tempTargets,
+            sizer,
+            transfer,
+            executorService
+        );
+    }
+
+    @Override
     public void close() {
         sources.close();
     }

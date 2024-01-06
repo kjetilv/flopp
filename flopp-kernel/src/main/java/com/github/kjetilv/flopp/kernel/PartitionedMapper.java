@@ -24,6 +24,10 @@ public interface PartitionedMapper extends Closeable {
         BiFunction<Partition, Stream<RNLine>, T> processor
     );
 
+    <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
+        BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> processor
+    );
+
     @Override
     default void close() {
     }

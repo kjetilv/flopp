@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class NonAllocPartitionSpliterator extends AbstractPartitionSpliterator<NonAllocPartitionSpliterator.ByteSeg> {
+final class ByteSegPartitionSpliterator extends AbstractPartitionSpliterator<ByteSegPartitionSpliterator.ByteSeg> {
 
-    NonAllocPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
+    ByteSegPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);
     }
 

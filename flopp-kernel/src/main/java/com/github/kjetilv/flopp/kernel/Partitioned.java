@@ -10,9 +10,9 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
-public interface Partitioned<T> extends Closeable {
+public interface Partitioned<P> extends Closeable {
 
-    T partitioned();
+    P partitioned();
 
     PartitionedStreams streams();
 
@@ -21,34 +21,41 @@ public interface Partitioned<T> extends Closeable {
     PartitionedConsumer consumer();
 
     PartitionedProcessor<String> processor(
-        TempTargets<T> tempTargets,
-        Transfers<T> transfer,
-        ToLongFunction<T> sizer,
-        LinesWriterFactory<T> linesWriterFactory
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<byte[]> bytesProcessor(
-        TempTargets<T> tempTargets,
-        Transfers<T> transfer,
-        ToLongFunction<T> sizer,
-        LinesWriterFactory<T> linesWriterFactory
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<NLine> nLineProcessor(
-        TempTargets<T> tempTargets,
-        Transfers<T> transfer,
-        ToLongFunction<T> sizer,
-        LinesWriterFactory<T> linesWriterFactory
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<RNLine> rnLineProcessor(
-        TempTargets<T> tempTargets,
-        Transfers<T> transfer,
-        ToLongFunction<T> sizer,
-        LinesWriterFactory<T> linesWriterFactory
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
     );
 
-    default List<T> mapPartition(BiFunction<Partition, Stream<String>, T> function) {
+    PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToLongFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    );
+
+    default <T> List<T> mapPartition(BiFunction<Partition, Stream<String>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapLines(function)
@@ -57,7 +64,7 @@ public interface Partitioned<T> extends Closeable {
         }
     }
 
-    default List<T> mapBytesPartition(BiFunction<Partition, Stream<byte[]>, T> function) {
+    default <T> List<T> mapBytesPartition(BiFunction<Partition, Stream<byte[]>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapRawLines(function)
@@ -65,8 +72,16 @@ public interface Partitioned<T> extends Closeable {
                     future.thenApply(PartitionResult::result)));
         }
     }
+    default <T> List<T> mapSegmentPartition(BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> function) {
+        try (PartitionedMapper mapper = mapper()) {
+            return awaitCompleted(mapper
+                .mapSegments(function)
+                .map(future ->
+                    future.thenApply(PartitionResult::result)));
+        }
+    }
 
-    default List<T> mapNLinePartition(BiFunction<Partition, Stream<NLine>, T> function) {
+    default <T> List<T> mapNLinePartition(BiFunction<Partition, Stream<NLine>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapNLines(function)
@@ -75,7 +90,7 @@ public interface Partitioned<T> extends Closeable {
         }
     }
 
-    default List<T> mapRNLinePartition(BiFunction<Partition, Stream<RNLine>, T> function) {
+    default <T> List<T> mapRNLinePartition(BiFunction<Partition, Stream<RNLine>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapRNLines(function)
@@ -118,6 +133,14 @@ public interface Partitioned<T> extends Closeable {
         try (PartitionedStreams streams = streams()) {
             streams.streamers()
                 .forEach(streamer -> streamer.rnLines()
+                    .forEach(action));
+        }
+    }
+
+    default void forEachSegment(Consumer<ByteSegPartitionSpliterator.ByteSeg> action) {
+        try (PartitionedStreams streams = streams()) {
+            streams.streamers()
+                .forEach(streamer -> streamer.segments()
                     .forEach(action));
         }
     }

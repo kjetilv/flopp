@@ -81,6 +81,20 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     }
 
     @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
+        BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> processor
+    ) {
+        return streams.streamers()
+            .map(streamer ->
+                CompletableFuture.supplyAsync(
+                    () ->
+                        processor.apply(streamer.partition(), streamer.segments()),
+                    this.executorService
+                ).thenApply(result ->
+                    new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    @Override
     public void close() {
         sources.close();
     }
