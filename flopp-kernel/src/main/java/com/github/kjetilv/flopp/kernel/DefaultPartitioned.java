@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
