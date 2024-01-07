@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class ByteSegPartitionSpliterator extends AbstractPartitionSpliterator<ByteSegPartitionSpliterator.ByteSeg> {
+final class ByteSegPartitionSpliterator extends AbstractPartitionSpliterator<ByteSeg> {
 
-    private final ByteSeg byteSeg = new ByteSeg();
+    private final MutableByteSeg byteSeg = new MutableByteSeg();
 
     ByteSegPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);
@@ -13,7 +13,7 @@ final class ByteSegPartitionSpliterator extends AbstractPartitionSpliterator<Byt
         return byteSeg.with(lineBytes, 0, lineIndex);
     }
 
-    public static final class ByteSeg {
+    private static final class MutableByteSeg implements ByteSeg {
 
         private byte[] bytes;
 

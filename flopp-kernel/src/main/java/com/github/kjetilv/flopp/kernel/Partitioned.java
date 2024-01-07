@@ -45,7 +45,7 @@ public interface Partitioned<P> extends Closeable {
         LinesWriterFactory<P> linesWriterFactory
     );
 
-    PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
+    PartitionedProcessor<ByteSeg> segmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
@@ -69,7 +69,7 @@ public interface Partitioned<P> extends Closeable {
                     future.thenApply(PartitionResult::result)));
         }
     }
-    default <T> List<T> mapSegmentPartition(BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> function) {
+    default <T> List<T> mapSegmentPartition(BiFunction<Partition, Stream<ByteSeg>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapSegments(function)
@@ -134,7 +134,7 @@ public interface Partitioned<P> extends Closeable {
         }
     }
 
-    default void forEachSegment(Consumer<ByteSegPartitionSpliterator.ByteSeg> action) {
+    default void forEachSegment(Consumer<ByteSeg> action) {
         try (PartitionedStreams streams = streams()) {
             streams.streamers()
                 .forEach(streamer -> streamer.segments()

@@ -6,6 +6,8 @@ import com.github.kjetilv.flopp.kernel.lc.AsyncLineCounter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
@@ -15,6 +17,7 @@ import java.util.stream.Stream;
 public final class Lc {
 
     public static void main(String[] args) {
+        Instant now = Instant.now();
         if (args.length == 0) {
             System.out.println("Usage:");
             System.out.println("  lc [-r] <file>");
@@ -33,6 +36,7 @@ public final class Lc {
             }
             countAsync(paths(skip, recursive, args), counter, service);
         }
+        System.out.println(Duration.between(now, Instant.now()));
     }
 
     private Lc() {

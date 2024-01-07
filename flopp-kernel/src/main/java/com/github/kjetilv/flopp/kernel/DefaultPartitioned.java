@@ -122,7 +122,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
+    public PartitionedProcessor<ByteSeg> segmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,

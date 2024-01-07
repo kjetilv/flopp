@@ -6,8 +6,18 @@ public record Partitioning(int partitionCount, int bufferSize) {
         return new Partitioning(partitionCount, bufferSize);
     }
 
+    public static Partitioning defaults() {
+        return defaults(DEFAULT_BUFFER);
+    }
+
+    public static Partitioning defaults(int bufferSize) {
+        return new Partitioning(Runtime.getRuntime().availableProcessors(), bufferSize);
+    }
+
     public Partitioning {
         Non.negativeOrZero(partitionCount, "partitionCount");
         Non.negativeOrZero(bufferSize, "bufferSize");
     }
+
+    public static final int DEFAULT_BUFFER = 16 * 1024;
 }

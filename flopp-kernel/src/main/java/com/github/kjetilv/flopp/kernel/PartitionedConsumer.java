@@ -16,6 +16,8 @@ public interface PartitionedConsumer extends Closeable {
 
     Stream<CompletableFuture<PartitionResult<Void>>> forEachRNLine(BiConsumer<Partition, Stream<RNLine>> consumer);
 
+    Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachSegment(BiConsumer<Partition, Stream<ByteSeg>> consumer);
+
     @Override
     default void close() {
     }

@@ -23,6 +23,6 @@ public interface PartitionedStreams extends Closeable {
 
         Stream<RNLine> rnLines();
 
-        Stream<ByteSegPartitionSpliterator.ByteSeg> segments();
+        Stream<ByteSeg> segments();
     }
 }

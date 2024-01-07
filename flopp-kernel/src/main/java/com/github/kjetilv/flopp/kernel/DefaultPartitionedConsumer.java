@@ -17,7 +17,9 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionResult<Void>>> forEachLine(BiConsumer<Partition, Stream<String>> consumer) {
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachLine(
+        BiConsumer<Partition, Stream<String>> consumer
+    ) {
         return mapper.mapLines((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
@@ -25,16 +27,10 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRawLine(BiConsumer<Partition, Stream<byte[]>> consumer) {
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRawLine(
+        BiConsumer<Partition, Stream<byte[]>> consumer
+    ) {
         return mapper.mapRawLines((partition, entries) -> {
-            consumer.accept(partition, entries);
-            return null;
-        });
-    }
-
-    @Override
-    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRNLine(BiConsumer<Partition, Stream<RNLine>> consumer) {
-        return mapper.mapRNLines((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });
@@ -45,6 +41,26 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
         BiConsumer<Partition, Stream<NLine>> consumer
     ) {
         return mapper.mapNLines((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<Void>>> forEachRNLine(
+        BiConsumer<Partition, Stream<RNLine>> consumer
+    ) {
+        return mapper.mapRNLines((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachSegment(
+        BiConsumer<Partition, Stream<ByteSeg>> consumer
+    ) {
+        return mapper.mapSegments((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });

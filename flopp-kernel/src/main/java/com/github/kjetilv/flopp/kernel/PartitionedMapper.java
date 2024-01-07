@@ -25,7 +25,7 @@ public interface PartitionedMapper extends Closeable {
     );
 
     <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
-        BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> processor
+        BiFunction<Partition, Stream<ByteSeg>, T> processor
     );
 
     @Override

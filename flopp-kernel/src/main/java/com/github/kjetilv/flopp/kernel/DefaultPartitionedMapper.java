@@ -82,7 +82,7 @@ class DefaultPartitionedMapper implements PartitionedMapper {
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
-        BiFunction<Partition, Stream<ByteSegPartitionSpliterator.ByteSeg>, T> processor
+        BiFunction<Partition, Stream<ByteSeg>, T> processor
     ) {
         return streams.streamers()
             .map(streamer ->

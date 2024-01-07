@@ -48,7 +48,7 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     @Override
-    public Stream<ByteSegPartitionSpliterator.ByteSeg> segments() {
+    public Stream<ByteSeg> segments() {
         return StreamSupport.stream(
             new ByteSegPartitionSpliterator(source, partition, shape, bufferSize),
             false);
