@@ -38,5 +38,4 @@ class ByteSegPartitionProcessor<P> extends AbstractPartitionProcessor<P, ByteSeg
     ) {
         return mapper.mapSegments(processor);
     }
-
 }

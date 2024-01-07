@@ -37,5 +37,4 @@ class StringPartitionProcessor<P> extends AbstractPartitionProcessor<P, String> 
     ) {
         return mapper.mapLines(processor);
     }
-
 }

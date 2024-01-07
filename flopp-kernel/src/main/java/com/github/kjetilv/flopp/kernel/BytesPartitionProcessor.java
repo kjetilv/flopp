@@ -38,5 +38,4 @@ class BytesPartitionProcessor<P> extends AbstractPartitionProcessor<P, byte[]> {
     ) {
         return mapper.mapRawLines(processor);
     }
-
 }

@@ -79,25 +79,12 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
         ToLongFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new AbstractPartitionProcessor<>(
-            mapper(),
-            shape.charset(),
-            partitioning.partitionCount(),
+        return new NLinetPartitionProcessor(
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
-            executorService
-        ) {
-
-            @Override
-            protected Stream<CompletableFuture<PartitionResult<P>>> futures(
-                BiFunction<Partition, Stream<NLine>, P> processor,
-                PartitionedMapper mapper
-            ) {
-                return mapper.mapNLines(processor);
-            }
-        };
+            transfer
+        );
     }
 
     @Override
@@ -107,25 +94,12 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
         ToLongFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new AbstractPartitionProcessor<>(
-            mapper(),
-            shape.charset(),
-            partitioning.partitionCount(),
+        return new RNLinePartitionProcessor(
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
-            executorService
-        ) {
-
-            @Override
-            protected Stream<CompletableFuture<PartitionResult<P>>> futures(
-                BiFunction<Partition, Stream<RNLine>, P> processor,
-                PartitionedMapper mapper
-            ) {
-                return mapper.mapRNLines(processor);
-            }
-        };
+            transfer
+        );
     }
 
     @Override
@@ -181,5 +155,63 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     protected Shape shape() {
         return shape;
+    }
+
+    private class NLinetPartitionProcessor extends AbstractPartitionProcessor<P, NLine> {
+
+        public NLinetPartitionProcessor(
+            LinesWriterFactory<P> linesWriterFactory,
+            TempTargets<P> tempTargets,
+            ToLongFunction<P> sizer,
+            Transfers<P> transfer
+        ) {
+            super(
+                DefaultPartitioned.this.mapper(),
+                DefaultPartitioned.this.shape.charset(),
+                DefaultPartitioned.this.partitioning.partitionCount(),
+                linesWriterFactory,
+                tempTargets,
+                sizer,
+                transfer,
+                DefaultPartitioned.this.executorService
+            );
+        }
+
+        @Override
+        protected Stream<CompletableFuture<PartitionResult<P>>> futures(
+            BiFunction<Partition, Stream<NLine>, P> processor,
+            PartitionedMapper mapper
+        ) {
+            return mapper.mapNLines(processor);
+        }
+    }
+
+    private class RNLinePartitionProcessor extends AbstractPartitionProcessor<P, RNLine> {
+
+        public RNLinePartitionProcessor(
+            LinesWriterFactory<P> linesWriterFactory,
+            TempTargets<P> tempTargets,
+            ToLongFunction<P> sizer,
+            Transfers<P> transfer
+        ) {
+            super(
+                DefaultPartitioned.this.mapper(),
+                DefaultPartitioned.this.shape.charset(),
+                DefaultPartitioned.this.partitioning.partitionCount(),
+                linesWriterFactory,
+                tempTargets,
+                sizer,
+                transfer,
+                DefaultPartitioned.this.executorService
+            );
+        }
+
+        @Override
+        protected Stream<CompletableFuture<PartitionResult<P>>> futures(
+            BiFunction<Partition, Stream<RNLine>, P> processor,
+            PartitionedMapper mapper
+        ) {
+            return mapper.mapRNLines(processor);
+        }
     }
 }
