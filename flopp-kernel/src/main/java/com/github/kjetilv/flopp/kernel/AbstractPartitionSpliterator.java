@@ -126,6 +126,21 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     @Override
     public boolean tryAdvance(Consumer<? super T> action) {
         try {
+            return process(action);
+        } catch (Exception e) {
+            throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
+        }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + partition + "]";
+    }
+
+    protected abstract T item();
+
+    private boolean process(Consumer<? super T> action) {
+        while (true) {
             long bytesToRead = byteSource.fill(byteBuffer, slice.length());
             int bufferIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
@@ -157,7 +172,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                     partitionIndex++; // Whatever we did, count up number of bytes processed
                     if (partitionIndex > partitionCount) { // We are past our byte mark!
                         if (lastPartition) { // This is the last partition
-                            return done(); // So it goes
+                            return done();
                         }
                         trailing = true; // Make a note that we are now in the trailing part of the partition
                         bufferIndex++;
@@ -176,35 +191,31 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                     }
                     partitionIndex++; // Whatever we did, count up number of bytes processed
                     if (partitionIndex > partitionCount + lineIndex) { // What does this mean?
-                        return done(); // Looks like we are done, actually - but why!
+                        return done();
                     }
                 }
             }
             if (lastPartition && partitionIndex == partitionCount) { // We've exhausted the last partition
-                return done(); // So that's it
+                return done();
             }
             if (slice.last(limit)) { // Oops, it's empty
                 limit = growBuffer();
             }
             slice = slice.next(limit);
-            return true; // Keep going!
-        } catch (Exception e) {
-            throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
         }
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + partition + "]";
-    }
-
-    protected abstract T item();
 
     private void handleChar(byte c) {
-        if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-            growBuffer();
+        try {
+            lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
+        } catch (ArrayIndexOutOfBoundsException e) {
+            if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
+                growBuffer();
+                lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
+            } else {
+                throw new RuntimeException(e);
+            }
         }
-        lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
         lineIndex++; // Count up our position on the current line
     }
 
