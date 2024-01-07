@@ -7,17 +7,17 @@ import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.nio.file.Path;
 
-final class FileChannelSources extends AbstractFileChanneling implements ByteSources {
+public final class FileChannelSources extends AbstractFileChanneling implements ByteSources {
 
     private final long size;
 
     private final int padding;
 
-    FileChannelSources(Path path, long size) {
+    public FileChannelSources(Path path, long size) {
         this(path, size, Math.toIntExact(Math.max(10L, size / 10)));
     }
 
-    FileChannelSources(Path path, long size, int padding) {
+    public FileChannelSources(Path path, long size, int padding) {
         super(path, false);
         this.size = Non.negative(size, "size");
         this.padding = Non.negativeOrZero(padding, "padding");

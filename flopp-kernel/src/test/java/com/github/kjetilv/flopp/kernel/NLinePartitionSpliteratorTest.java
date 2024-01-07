@@ -1,12 +1,14 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.files.FileChannelSources;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -19,15 +21,17 @@ class NLinePartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Test
-    void verySimpleTest() {
+    void verySimpleTest(@TempDir Path dir) {
         byte[] bytes = """
             HEADER
             CONTNT
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
+        Partition partition = new Partition(0, 1, 0, bytes.length);
+        ByteSource byteSource = getByteSource(dir, bytes, partition);
         NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
-            new MyByteSource(bytes, 0),
-            new Partition(0, 1, 0, bytes.length),
+            byteSource,
+            partition,
             Shape.size(bytes.length).header(1, 1)
                 .longestLine(16)
                 .charset(StandardCharsets.US_ASCII),
@@ -40,7 +44,7 @@ class NLinePartitionSpliteratorTest {
     }
 
     @Test
-    void veryLongLineTest() {
+    void veryLongLineTest(@TempDir Path dir) {
         byte[] bytes = """
             HEADER
             abc
@@ -52,7 +56,8 @@ class NLinePartitionSpliteratorTest {
             bytes,
             new Partition(0, 1, 0, bytes.length),
             2,
-            8
+            8,
+            dir
         );
 
         assertThat(lines).containsExactly(
@@ -63,7 +68,7 @@ class NLinePartitionSpliteratorTest {
     }
 
     @Test
-    void veryLongLineTestMultiPartitions() {
+    void veryLongLineTestMultiPartitions(@TempDir Path dir) {
         byte[] bytes = """
             HEADER
             abc
@@ -75,8 +80,8 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 2);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 2, 8);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 2, 8);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 2, 8, dir);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 2, 8, dir);
 
         assertThat(lines0).containsExactly(
             new NLine("abc", 0, 2),
@@ -88,7 +93,7 @@ class NLinePartitionSpliteratorTest {
     }
 
     @Test
-    void veryLongLineTestEmptyPartitions() {
+    void veryLongLineTestEmptyPartitions(@TempDir Path dir) {
         byte[] bytes = """
             HEADER
             abc
@@ -99,9 +104,9 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 3);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
-        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
+        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16, dir);
 
         assertThat(lines0).containsExactly(
             new NLine("abc", 0, 2),
@@ -113,7 +118,7 @@ class NLinePartitionSpliteratorTest {
     }
 
     @Test
-    void veryLongLineTestEmptyPartitionsTrick() {
+    void veryLongLineTestEmptyPartitionsTrick(@TempDir Path dir) {
         byte[] bytes = """
             HEADER
              9piburningvhpicturesthisisthenextbigthing
@@ -145,12 +150,12 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partition.partitions(bytes.length, 6);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16);
-        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16);
-        List<NLine> lines3 = drain(bytes, partitions.get(3), 10, 16);
-        List<NLine> lines4 = drain(bytes, partitions.get(4), 10, 16);
-        List<NLine> lines5 = drain(bytes, partitions.get(5), 10, 16);
+        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
+        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
+        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16, dir);
+        List<NLine> lines3 = drain(bytes, partitions.get(3), 10, 16, dir);
+        List<NLine> lines4 = drain(bytes, partitions.get(4), 10, 16, dir);
+        List<NLine> lines5 = drain(bytes, partitions.get(5), 10, 16, dir);
 
         assertThat(Stream.of(
             lines0,
@@ -165,42 +170,53 @@ class NLinePartitionSpliteratorTest {
     }
 
     @Test
-    void simpleTest() {
+    void simpleTest(@TempDir Path dir) {
         String str = "mississippiburningvhpicturesthisisthenextbigthing";
         for (int size = 6; size < str.length(); size++) {
             for (int partitionCount = 2; partitionCount < size / 3; partitionCount++) {
                 for (int bufferSize = 1; bufferSize < 10; bufferSize++) {
-                    go(str, partitionCount, size, bufferSize);
-                    go(str, partitionCount, size, 4 * bufferSize);
-                    go(str, partitionCount, size, 10 * bufferSize);
+                    go(str, partitionCount, size, bufferSize, dir);
+                    go(str, partitionCount, size, 4 * bufferSize, dir);
+                    go(str, partitionCount, size, 10 * bufferSize, dir);
                 }
             }
         }
     }
 
     @Test
-    void trickyTest() {
+    void trickyTest(@TempDir Path dir) {
         String str = "mississippiburningvhpicturesthisisthenextbigthing";
-        go(str, 2, 9, 10);
+        go(str, 2, 9, 10, dir);
     }
 
     @Test
-    void threeTwelveTest() {
-        go("mississippiburningvhpictures", 3, 12, 10);
+    void threeTwelveTest(@TempDir Path dir) {
+        go("mississippiburningvhpictures", 3, 12, 10, dir);
     }
 
-    private static List<NLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize) {
+    @SuppressWarnings("resource")
+    private static ByteSource getByteSource(Path dir, byte[] bytes, Partition partition) {
+        try {
+            Path path = Files.write(dir.resolve(UUID.randomUUID() + ".bytes"), bytes);
+            return new FileChannelSources(path, Files.size(path)).source(partition);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static List<NLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize, Path dir) {
         return StreamSupport.stream(spliterator(
                 bytes,
                 partition,
                 longestLine,
-                bufferSize
+                bufferSize,
+                dir
             ), false)
             .toList();
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
-    private static void go(String str, int partitionCount, int size, int bufferSize) {
+    private static void go(String str, int partitionCount, int size, int bufferSize, Path dir) {
         List<List<NLine>> subLines = IntStream.range(0, partitionCount)
             .<List<NLine>>mapToObj(i -> new ArrayList<>())
             .toList();
@@ -221,7 +237,7 @@ class NLinePartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
             for (Partition partition : partitions) {
-                NLinePartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize);
+                NLinePartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize, dir);
                 do {
                 } while (spliterator0.tryAdvance(nLine -> {
                     subLines.get(partition.partitionNo()).add(nLine);
@@ -273,9 +289,10 @@ class NLinePartitionSpliteratorTest {
         byte[] bytes,
         Partition partition,
         int longestLine,
-        int bufferSize
+        int bufferSize,
+        Path dir
     ) {
-        MyByteSource bytesProvider = new MyByteSource(bytes, Math.toIntExact(partition.offset()));
+        ByteSource bytesProvider = getByteSource(dir, bytes, partition);
         NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
             bytesProvider,
             partition,
@@ -286,40 +303,5 @@ class NLinePartitionSpliteratorTest {
             bufferSize
         );
         return spliterator;
-    }
-
-    private static final class MyByteSource implements ByteSource {
-
-        private final byte[] source;
-
-        private final int offset;
-
-        private int bytesRead;
-
-        private MyByteSource(byte[] source, int offset) {
-            this.source = source;
-            this.offset = offset;
-        }
-
-        @Override
-        public int fill(byte[] bytes, int length) {
-            if (this.offset + bytesRead < source.length) {
-                int toRead = Math.min(source.length - bytesRead, length);
-                int toReadInt = Math.toIntExact(toRead);
-                try {
-                    System.arraycopy(
-                        source,
-                        Math.toIntExact(this.offset + bytesRead),
-                        bytes,
-                        0,
-                        toReadInt
-                    );
-                } finally {
-                    bytesRead += toReadInt;
-                }
-                return toRead;
-            }
-            return -1;
-        }
     }
 }
