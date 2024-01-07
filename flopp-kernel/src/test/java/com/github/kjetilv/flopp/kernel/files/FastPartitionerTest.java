@@ -47,12 +47,13 @@ public class FastPartitionerTest {
         );
 
         try {
+            Shape shape = Shape.size(Files.size(file)).header(1, 1);
             try (
                 PartitionedPath partitioned = new DefaultPartitionedPath(
                     file,
-                    Shape.size(Files.size(file)).header(1, 1),
+                    shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelSources(file, Shape.size(Files.size(file)).header(1, 1).size()),
+                    new FileChannelSources(file, shape.size()),
                     ForkJoinPool.commonPool()
                 )
             ) {
@@ -81,12 +82,13 @@ public class FastPartitionerTest {
         );
 
         try {
+            Shape shape = Shape.size(Files.size(file)).longestLine(32).header(1, 1);
             try (
                 Partitioned<Path> partitioned = new DefaultPartitioned<>(
                     file,
-                    Shape.size(Files.size(file)).longestLine(32).header(1,1),
+                    shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelSources(file, Shape.size(Files.size(file)).longestLine(32).header(1,1).size()),
+                    new FileChannelSources(file, shape.size()),
                     ForkJoinPool.commonPool()
                 )
             ) {
