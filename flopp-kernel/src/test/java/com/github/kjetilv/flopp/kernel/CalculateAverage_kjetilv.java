@@ -47,13 +47,13 @@ public class CalculateAverage_kjetilv {
 //                    Map<String, Result> map = new HashMap<>();
                     ByteArrayToResultMap m = new ByteArrayToResultMap();
                     segs.forEach(seg -> {
-                        int offset = seg.offset(); //segment.offset();
-                        int length = seg.length(); //segment.length();
+                        short offset = 0; //segment.offset();
+                        short length = (short)seg.length(); //segment.length();
                         byte[] bytes = seg.bytes();
 //                        byte[] bytes = segment.bytes();
                         int splitIndex = -1;
                         int hash = 1;
-                        for (int i = offset; i < length; i++) {
+                        for (short i = offset; i < length; i++) {
                             if (bytes[i] == ';') {
                                 splitIndex = i;
                                 break;
@@ -82,7 +82,7 @@ public class CalculateAverage_kjetilv {
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
                 Path.of(FILE),
-                Partitioning.create(Runtime.getRuntime().availableProcessors() * 2, 65536),
+                Partitioning.create(Runtime.getRuntime().availableProcessors(), 65536),
                 Executors.newVirtualThreadPerTaskExecutor()
             )
         ) {
@@ -91,8 +91,8 @@ public class CalculateAverage_kjetilv {
 //                    Map<String, Result> map = new HashMap<>();
                     Map<String, Result> m = new HashMap<>();
                     segs.forEach(seg -> {
-                        int offset = seg.offset(); //segment.offset();
-                        int length = seg.length(); //segment.length();
+                        int offset = 0; //segment.offset();
+                        short length = (short) seg.length(); //segment.length();
                         byte[] bytes = seg.bytes();
 //                        byte[] bytes = segment.bytes();
                         int splitIndex = -1;
@@ -119,17 +119,18 @@ public class CalculateAverage_kjetilv {
                             Map.Entry::getKey,
                             Map.Entry::getValue,
                             Result::merge,
-                            TreeMap::new)
+                            TreeMap::new
+                        )
                     );
             System.out.println(collect);
             System.out.println(Duration.between(start, Instant.now()));
         }
     }
 
-    private static short parseValue(int length, int splitIndex, byte[] bytes) {
-        short value = bytes[bytes.length - 1];
-        short pos = 1;
-        for (int i = length - 2; i >= splitIndex + 1; i--) {
+    private static short parseValue(short length, int splitIndex, byte[] bytes) {
+        short value = 0;
+        int boundary = splitIndex + 1;
+        for (int i = length - 1, pos = 1; i >= boundary; i--, pos *= 10) {
             byte b = bytes[i];
             if (b == '.') {
                 continue;
@@ -138,10 +139,25 @@ public class CalculateAverage_kjetilv {
                 value *= -1;
                 continue;
             }
-            value += (short) (pos * (b - '0'));
-            pos *= 10;
+            int num = b - '0';
+            value += (short) (num * pos);
         }
         return value;
+    }
+
+    private static boolean diff(byte[] key, byte[] key1, int offset, int size) {
+        if (key[0] != key1[0]) {
+            return true;
+        }
+        if (size > 0 && key[1] != key1[1]) {
+            return true;
+        }
+        for (int i = 2; i < size; i++) {
+            if (key[i] != key1[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     record Entry(byte[] key, Result value) {
@@ -157,7 +173,9 @@ public class CalculateAverage_kjetilv {
             var slotValue = slots[slot];
             // Linear probe for open slot
             while (slotValue != null) {
-                if (!(keys[slot].length != size || diff(keys[slot], key, offset, size))) break;
+                if (!(keys[slot].length != size || diff(keys[slot], key, offset, size))) {
+                    break;
+                }
                 slot = (slot + 1) & (slots.length - 1);
                 slotValue = slots[slot];
             }
@@ -168,14 +186,7 @@ public class CalculateAverage_kjetilv {
                 System.arraycopy(key, offset, bytes, 0, size);
                 keys[slot] = bytes;
             } else {
-                if (temp < value.min) {
-                    value.min = temp;
-                }
-                if (temp > value.max) {
-                    value.max = temp;
-                }
-                value.sum += temp;
-                value.count += 1;
+                value.collect(temp);
             }
         }
 
@@ -192,21 +203,6 @@ public class CalculateAverage_kjetilv {
         }
 
         public static final int MAPSIZE = 1024 * 128;
-    }
-
-    private static boolean diff(byte[] key, byte[] key1, int offset, int size) {
-        if (key[0] != key1[0]) {
-            return true;
-        }
-        if (size > 0 && key[1] != key1[1]) {
-            return true;
-        }
-        for (int i = 2; i < size; i++) {
-            if (key[i] != key1[i]){
-                return true;
-            }
-        }
-        return false;
     }
 
     private static final class Result {
@@ -226,12 +222,16 @@ public class CalculateAverage_kjetilv {
         }
 
         public String toString() {
-            return round(0.1d * min) + "/" + round(0.1d * sum / count) + "/" + round(0.1d * max);
+            return round(min) + "/" + round(1.0 * sum / count) + "/" + round(max);
         }
 
         public Result merge(Result coll) {
-            this.min = coll.min < min ? coll.min : min;
-            this.max = coll.max > max ? coll.max : max;
+            if (coll.min < min) {
+                min = coll.min;
+            }
+            if (coll.max > max) {
+                max = coll.max;
+            }
             this.sum += coll.sum;
             this.count += coll.count;
             return this;
@@ -241,7 +241,7 @@ public class CalculateAverage_kjetilv {
             if (v < min) {
                 min = v;
             }
-            if (v > min) {
+            if (v > max) {
                 max = v;
             }
             sum += v;
@@ -250,7 +250,7 @@ public class CalculateAverage_kjetilv {
         }
 
         private static double round(double value) {
-            return Math.round(value * 10.0) / 10.0;
+            return Math.round(value) / 10.0;
         }
     }
 }

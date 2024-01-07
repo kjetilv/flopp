@@ -14,7 +14,7 @@ class StringPartitionProcessor<P> extends AbstractPartitionProcessor<P, String> 
         int partitionCount,
         LinesWriterFactory<P> linesWriterFactory,
         TempTargets<P> tempTargets,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         Transfers<P> transfers,
         ExecutorService executorService
     ) {

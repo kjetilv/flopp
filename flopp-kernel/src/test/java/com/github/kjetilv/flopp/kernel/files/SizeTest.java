@@ -317,11 +317,11 @@ public class SizeTest {
         }
     };
 
-    private static long sizeOf(Path path1) {
+    private static int sizeOf(Path path) {
         try {
-            return Files.size(path1);
+            return Math.toIntExact(Files.size(path));
         } catch (IOException e) {
-            throw new IllegalStateException(path1.toString(), e);
+            throw new IllegalStateException(path.toString(), e);
         }
     }
 

@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.ToLongFunction;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -9,7 +9,7 @@ class ResultCollector<T>  {
 
     private final ResultConsumerSpliterator<T> consumerSpliterator;
 
-    ResultCollector(int resultsCount, ToLongFunction<T> sizer) {
+    ResultCollector(int resultsCount, ToIntFunction<T> sizer) {
         this.consumerSpliterator = new ResultConsumerSpliterator<>(resultsCount, sizer);
     }
 

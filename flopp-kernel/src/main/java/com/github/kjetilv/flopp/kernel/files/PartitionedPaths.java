@@ -128,11 +128,19 @@ public final class PartitionedPaths {
 
     private static Shape resolveShape(Path path, Shape shape) {
         return shape == null
-            ? Shape.size(sizeOf(path))
-            : shape.sized(() -> sizeOf(path));
+            ? Shape.size(sizeOfFull(path))
+            : shape.sized(() -> sizeOfFull(path));
     }
 
-    static long sizeOf(Path path) {
+    static int sizeOf(Path path) {
+        try {
+            return Math.toIntExact(Files.size(path));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to size " + path + ", expected partition-sized file", e);
+        }
+    }
+
+    static long sizeOfFull(Path path) {
         try {
             return Files.size(path);
         } catch (Exception e) {

@@ -3,10 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.ToLongFunction;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
@@ -23,35 +20,35 @@ public interface Partitioned<P> extends Closeable {
     PartitionedProcessor<String> processor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<byte[]> bytesProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<NLine> nLineProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<RNLine> rnLineProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 
     PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 

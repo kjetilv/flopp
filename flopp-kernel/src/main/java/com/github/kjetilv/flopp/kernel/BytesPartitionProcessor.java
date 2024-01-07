@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
@@ -15,7 +16,7 @@ class BytesPartitionProcessor<P> extends AbstractPartitionProcessor<P, byte[]> {
         int partitionCount,
         LinesWriterFactory<P> linesWriterFactory,
         TempTargets<P> tempTargets,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         Transfers<P> transfers,
         ExecutorService executorService
     ) {

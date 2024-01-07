@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.LongSupplier;
 
 @SuppressWarnings("unused")
 public record Shape(long size, Charset charset, Decor decor, Stats stats) {
@@ -59,9 +59,9 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
         return charset(StandardCharsets.ISO_8859_1);
     }
 
-    public Shape sized(Supplier<Long> sizeSupplier) {
+    public Shape sized(LongSupplier sizeSupplier) {
         return this.size < 0
-            ? new Shape(sizeSupplier.get(), charset(), decor(), stats())
+            ? new Shape(sizeSupplier.getAsLong(), charset(), decor(), stats())
             : this;
     }
 

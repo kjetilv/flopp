@@ -3,7 +3,9 @@ package com.github.kjetilv.flopp.kernel;
 import java.util.ArrayList;
 import java.util.List;
 
-public record Partition(int partitionNo, int partitionCount, long offset, long count)
+import static java.lang.Integer.MAX_VALUE;
+
+public record Partition(int partitionNo, int partitionCount, long offset, int count)
     implements Comparable<Partition> {
 
     public static List<Partition> partitions(long total, int count) {
@@ -12,10 +14,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
                 "Too many partitions for " + total + ": " + count + " partitions");
         }
         if (total > count) {
-            long[] sizes = partitionSizes(total, count);
+            int[] sizes = partitionSizes(total, count);
             return partitions(count, sizes);
         }
-        return singlePartition(total);
+        return singlePartition(intSized(total));
     }
 
     public Partition(
@@ -23,6 +25,15 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         int partitionCount,
         long offset,
         long count
+    ) {
+        this(partitionNo, partitionCount, offset, intSized(count));
+    }
+
+    public Partition(
+        int partitionNo,
+        int partitionCount,
+        long offset,
+        int count
     ) {
         this.partitionNo = Non.negative(partitionNo, "partitionNo");
         this.partitionCount = Non.negativeOrZero(partitionCount, "partitionCount");
@@ -38,7 +49,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return Integer.compare(partitionNo, o.partitionNo);
     }
 
-    public Partition at(long offset, long count) {
+    public Partition at(long offset, int count) {
         return new Partition(partitionNo, partitionCount, offset, count);
     }
 
@@ -60,10 +71,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
                "{" + (partitionNo + 1) + "/" + partitionCount + "}@" + offset + "+" + count + "]";
     }
 
-    private static long[] partitionSizes(long total, int count) {
-        int remainders = Math.toIntExact(total % count);
-        long baseCount = total / count;
-        long[] sizes = new long[count];
+    private static int[] partitionSizes(long total, int count) {
+        int remainders = intSized(total % count);
+        int baseCount = intSized(total / count);
+        int[] sizes = new int[count];
         for (int i = 0; i < remainders; i++) {
             sizes[i] = baseCount + 1;
         }
@@ -73,7 +84,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return sizes;
     }
 
-    private static List<Partition> partitions(int count, long[] sizes) {
+    private static List<Partition> partitions(int count, int[] sizes) {
         long offset = 0;
         List<Partition> partitions = new ArrayList<>();
         for (int i = 0; i < sizes.length; i++) {
@@ -85,7 +96,14 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return partitions;
     }
 
-    private static List<Partition> singlePartition(long total) {
+    private static List<Partition> singlePartition(int total) {
         return List.of(new Partition(0, 1, 0, total));
+    }
+
+    private static int intSized(long count) {
+        if (count > MAX_VALUE) {
+            throw new IllegalStateException("Expected integer-sized partition: " + count + " > " + MAX_VALUE);
+        }
+        return Math.toIntExact(count);
     }
 }

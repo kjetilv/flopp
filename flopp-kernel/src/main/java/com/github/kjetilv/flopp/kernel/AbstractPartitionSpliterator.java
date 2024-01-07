@@ -163,11 +163,11 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
             }
             if (!trailing) {
                 for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
-                    byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
-                    if (c == '\n') { // We've got a line!
+                    // So what's the next byte then?
+                    if (byteBuffer[bufferIndex] == '\n') { // We've got a line!
                         shipAndReset(action);
                     } else { // No line yet
-                        handleChar(c);
+                        handleChar(byteBuffer[bufferIndex]);
                     }
                     partitionIndex++; // Whatever we did, count up number of bytes processed
                     if (partitionIndex > partitionCount) { // We are past our byte mark!

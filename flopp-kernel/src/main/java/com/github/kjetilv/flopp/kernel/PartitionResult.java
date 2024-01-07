@@ -14,7 +14,7 @@ public record PartitionResult<T>(Partition partition, T result) implements Compa
         return partition.compareTo(o.partition());
     }
 
-    public PartitionResult<T> withAdjustedPartition(long offset, long count) {
+    public PartitionResult<T> withAdjustedPartition(long offset, int count) {
         return new PartitionResult<>(partition.at(offset, count), result);
     }
 }

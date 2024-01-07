@@ -21,7 +21,7 @@ public abstract class AbstractPartitionProcessor<P, T> implements PartitionedPro
 
     private final TempTargets<P> tempTargets;
 
-    private final ToLongFunction<P> sizer;
+    private final ToIntFunction<P> sizer;
 
     private final Transfers<P> transfers;
 
@@ -33,7 +33,7 @@ public abstract class AbstractPartitionProcessor<P, T> implements PartitionedPro
         int partitionCount,
         LinesWriterFactory<P> linesWriterFactory,
         TempTargets<P> tempTargets,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         Transfers<P> transfers,
         ExecutorService executorService
     ) {

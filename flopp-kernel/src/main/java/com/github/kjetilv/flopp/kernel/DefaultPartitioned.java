@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
-import java.util.function.ToLongFunction;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public class DefaultPartitioned<P> implements Partitioned<P> {
@@ -57,7 +57,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     public PartitionedProcessor<String> processor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
         return new StringPartitionProcessor<>(
@@ -76,10 +76,10 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     public PartitionedProcessor<NLine> nLineProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new NLinetPartitionProcessor(
+        return new NLinePartitionProcessor(
             linesWriterFactory,
             tempTargets,
             sizer,
@@ -91,7 +91,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     public PartitionedProcessor<RNLine> rnLineProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
         return new RNLinePartitionProcessor(
@@ -106,7 +106,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     public PartitionedProcessor<byte[]> bytesProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
         return new BytesPartitionProcessor<>(
@@ -125,7 +125,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     public PartitionedProcessor<ByteSegPartitionSpliterator.ByteSeg> segmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
-        ToLongFunction<P> sizer,
+        ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
         return new ByteSegPartitionProcessor<>(
@@ -157,12 +157,12 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
         return shape;
     }
 
-    private class NLinetPartitionProcessor extends AbstractPartitionProcessor<P, NLine> {
+    private final class NLinePartitionProcessor extends AbstractPartitionProcessor<P, NLine> {
 
-        public NLinetPartitionProcessor(
+        private NLinePartitionProcessor(
             LinesWriterFactory<P> linesWriterFactory,
             TempTargets<P> tempTargets,
-            ToLongFunction<P> sizer,
+            ToIntFunction<P> sizer,
             Transfers<P> transfer
         ) {
             super(
@@ -186,12 +186,12 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
         }
     }
 
-    private class RNLinePartitionProcessor extends AbstractPartitionProcessor<P, RNLine> {
+    private final class RNLinePartitionProcessor extends AbstractPartitionProcessor<P, RNLine> {
 
-        public RNLinePartitionProcessor(
+        private RNLinePartitionProcessor(
             LinesWriterFactory<P> linesWriterFactory,
             TempTargets<P> tempTargets,
-            ToLongFunction<P> sizer,
+            ToIntFunction<P> sizer,
             Transfers<P> transfer
         ) {
             super(
