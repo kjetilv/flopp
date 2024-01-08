@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.io.Closeable;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @FunctionalInterface
@@ -24,5 +25,7 @@ public interface PartitionedStreams extends Closeable {
         Stream<RNLine> rnLines();
 
         Stream<ByteSeg> segments();
+
+        Stream<Supplier<ByteSeg>> segmentSuppliers();
     }
 }

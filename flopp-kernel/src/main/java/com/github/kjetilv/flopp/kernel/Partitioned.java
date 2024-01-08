@@ -69,10 +69,20 @@ public interface Partitioned<P> extends Closeable {
                     future.thenApply(PartitionResult::result)));
         }
     }
+
     default <T> List<T> mapSegmentPartition(BiFunction<Partition, Stream<ByteSeg>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
                 .mapSegments(function)
+                .map(future ->
+                    future.thenApply(PartitionResult::result)));
+        }
+    }
+
+    default <T> List<T> mapSuppliedSegmentPartition(BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> function) {
+        try (PartitionedMapper mapper = mapper()) {
+            return awaitCompleted(mapper
+                .mapSuppliedSegments(function)
                 .map(future ->
                     future.thenApply(PartitionResult::result)));
         }

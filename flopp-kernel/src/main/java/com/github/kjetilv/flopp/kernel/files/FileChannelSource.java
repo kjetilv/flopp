@@ -81,6 +81,8 @@ final class FileChannelSource implements ByteSource {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + partition + "/" + fileSize + "]";
+        return getClass().getSimpleName() + "[" +
+               partition + "/f:" + fileSize + "/p:" + padding +
+               "]";
     }
 }

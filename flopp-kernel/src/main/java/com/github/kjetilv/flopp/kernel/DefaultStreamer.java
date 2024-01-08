@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -34,6 +35,13 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     @Override
+    public Stream<byte[]> rawLines() {
+        return StreamSupport.stream(
+            new RawBytesPartitionSpliterator(source, partition, shape, bufferSize),
+            false);
+    }
+
+    @Override
     public Stream<NLine> nLines() {
         return StreamSupport.stream(
             new NLinePartitionSpliterator(source, partition, shape, bufferSize),
@@ -55,9 +63,9 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     }
 
     @Override
-    public Stream<byte[]> rawLines() {
+    public Stream<Supplier<ByteSeg>> segmentSuppliers() {
         return StreamSupport.stream(
-            new RawBytesPartitionSpliterator(source, partition, shape, bufferSize),
+            new ByteSegSupPartitionSpliterator(source, partition, shape, bufferSize),
             false);
     }
 

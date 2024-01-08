@@ -4,6 +4,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 class DefaultPartitionedMapper implements PartitionedMapper {
@@ -25,77 +27,65 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     }
 
     @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapNLines(
-        BiFunction<Partition, Stream<NLine>, T> processor
-    ) {
-        return streams.streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(
-                    () ->
-                        processor.apply(streamer.partition(), streamer.nLines()),
-                    this.executorService
-                ).thenApply(result ->
-                    new PartitionResult<>(streamer.partition(), result)));
-    }
-
-    @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRNLines(
-        BiFunction<Partition, Stream<RNLine>, T> processor
-    ) {
-        return streams.streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(
-                    () ->
-                        processor.apply(streamer.partition(), streamer.rnLines()),
-                    this.executorService
-                ).thenApply(result ->
-                    new PartitionResult<>(streamer.partition(), result)));
-    }
-
-    @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapLines(
         BiFunction<Partition, Stream<String>, T> processor
     ) {
-        return streams.streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(
-                    () ->
-                        processor.apply(streamer.partition(), streamer.lines()),
-                    this.executorService
-                ).thenApply(result ->
-                    new PartitionResult<>(streamer.partition(), result)));
+        return futureStream(processor, PartitionedStreams.Streamer::lines);
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRawLines(
         BiFunction<Partition, Stream<byte[]>, T> processor
     ) {
-        return streams.streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(
-                    () ->
-                        processor.apply(streamer.partition(), streamer.rawLines()),
-                    this.executorService
-                ).thenApply(result ->
-                    new PartitionResult<>(streamer.partition(), result)));
+        return futureStream(processor, PartitionedStreams.Streamer::rawLines);
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapNLines(
+        BiFunction<Partition, Stream<NLine>, T> processor
+    ) {
+        return futureStream(processor, PartitionedStreams.Streamer::nLines);
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRNLines(
+        BiFunction<Partition, Stream<RNLine>, T> processor
+    ) {
+        return futureStream(processor, PartitionedStreams.Streamer::rnLines);
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
         BiFunction<Partition, Stream<ByteSeg>, T> processor
     ) {
-        return streams.streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(
-                    () ->
-                        processor.apply(streamer.partition(), streamer.segments()),
-                    this.executorService
-                ).thenApply(result ->
-                    new PartitionResult<>(streamer.partition(), result)));
+        return futureStream(processor, PartitionedStreams.Streamer::segments);
+    }
+
+    @Override
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSuppliedSegments(
+        BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> processor
+    ) {
+        return futureStream(processor, PartitionedStreams.Streamer::segmentSuppliers);
     }
 
     @Override
     public void close() {
         sources.close();
+    }
+
+    private <T, B> Stream<CompletableFuture<PartitionResult<T>>> futureStream(
+        BiFunction<Partition, Stream<B>, T> processor,
+        Function<PartitionedStreams.Streamer, Stream<B>> segmentSuppliers
+    ) {
+        return streams.streamers()
+            .map(streamer ->
+                CompletableFuture
+                    .supplyAsync(
+                        () ->
+                            processor.apply(streamer.partition(), segmentSuppliers.apply(streamer)),
+                        this.executorService
+                    )
+                    .thenApply(result ->
+                        new PartitionResult<>(streamer.partition(), result)));
     }
 }
