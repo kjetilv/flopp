@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 class DefaultPartitionedConsumer implements PartitionedConsumer {
@@ -61,6 +62,16 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
         BiConsumer<Partition, Stream<ByteSeg>> consumer
     ) {
         return mapper.mapSegments((partition, entries) -> {
+            consumer.accept(partition, entries);
+            return null;
+        });
+    }
+
+    @Override
+    public Stream<CompletableFuture<PartitionResult<Supplier<ByteSeg>>>> forEachSuppliedSegment(
+        BiConsumer<Partition, Stream<Supplier<ByteSeg>>> consumer
+    ) {
+        return mapper.mapSuppliedSegments((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });

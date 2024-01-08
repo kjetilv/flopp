@@ -16,11 +16,7 @@ class DefaultPartitionedMapper implements PartitionedMapper {
 
     private final PartitionedStreams streams;
 
-    DefaultPartitionedMapper(
-        PartitionedStreams streams,
-        ByteSources sources,
-        ExecutorService executorService
-    ) {
+    DefaultPartitionedMapper(PartitionedStreams streams, ByteSources sources, ExecutorService executorService) {
         this.streams = Objects.requireNonNull(streams, "streams");
         this.executorService = Objects.requireNonNull(executorService, "executorService");
         this.sources = Objects.requireNonNull(sources, "sources");

@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
@@ -73,6 +74,25 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
+    public PartitionedProcessor<byte[]> bytesProcessor(
+        TempTargets<P> tempTargets,
+        Transfers<P> transfer,
+        ToIntFunction<P> sizer,
+        LinesWriterFactory<P> linesWriterFactory
+    ) {
+        return new BytesPartitionProcessor<>(
+            mapper(),
+            shape.charset(),
+            partitioning.partitionCount(),
+            linesWriterFactory,
+            tempTargets,
+            sizer,
+            transfer,
+            executorService
+        );
+    }
+
+    @Override
     public PartitionedProcessor<NLine> nLineProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
@@ -103,13 +123,13 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor<byte[]> bytesProcessor(
+    public PartitionedProcessor<ByteSeg> segmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new BytesPartitionProcessor<>(
+        return new ByteSegPartitionProcessor<>(
             mapper(),
             shape.charset(),
             partitioning.partitionCount(),
@@ -122,13 +142,13 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor<ByteSeg> segmentProcessor(
+    public PartitionedProcessor<Supplier<ByteSeg>> suppliedSegmentProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
-        return new ByteSegPartitionProcessor<>(
+        return new ByteSegSupPartitionProcessor<>(
             mapper(),
             shape.charset(),
             partitioning.partitionCount(),
