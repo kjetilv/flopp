@@ -19,5 +19,9 @@ public record Partitioning(int partitionCount, int bufferSize) {
         Non.negativeOrZero(bufferSize, "bufferSize");
     }
 
+    public int bufferSizeOr(int defaultSize) {
+        return bufferSize > 0 ? bufferSize : defaultSize;
+    }
+
     public static final int DEFAULT_BUFFER = 16 * 1024;
 }

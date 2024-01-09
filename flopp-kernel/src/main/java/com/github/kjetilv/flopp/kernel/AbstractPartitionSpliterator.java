@@ -45,9 +45,14 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
     protected boolean firstLineFound;
 
     /**
-     * The current slice being processed.
+     * Offset of the chunk being processed
      */
-    protected Slice slice;
+    protected long offset;
+
+    /**
+     * Length of the chunk being processed
+     */
+    protected int length;
 
     /**
      * The current limit for this partition
@@ -111,11 +116,12 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
         );
         this.byteBuffer = new byte[bufferSize];
         this.firstLineFound = this.partition.first();
-        this.limit = computeSliceLength();
-        this.slice = Slice.first(
+        this.limit = computeLength();
+        this.offset = 0;
+        this.length = Math.toIntExact(Math.min(
             Non.negativeOrZero(bufferSize, "bufferSize"),
             this.limit
-        );
+        ));
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
         this.lineBytes = new byte[maxLineLength];
@@ -141,7 +147,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
 
     private boolean process(Consumer<? super T> action) {
         while (true) {
-            long bytesToRead = byteSource.fill(byteBuffer, slice.length());
+            long bytesToRead = byteSource.fill(byteBuffer);
             int bufferIndex = 0;
             if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
                 for (; bufferIndex < bytesToRead; bufferIndex++) { // Fast forward ...
@@ -154,11 +160,11 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
                     }
                 }
                 if (!firstLineFound || bufferIndex == bytesToRead) { // Still no line!
-                    if (slice.last(limit)) {
-                        return false;
+                    if (sliceDone()) {
+                        return done();
                     }
-                    slice = slice.next(limit);
-                    return true;
+                    nextSlice();
+                    continue;
                 }
             }
             if (!trailing) {
@@ -198,10 +204,11 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
             if (lastPartition && partitionIndex == partitionCount) { // We've exhausted the last partition
                 return done();
             }
-            if (slice.last(limit)) { // Oops, it's empty
-                limit = growBuffer();
+            if (sliceDone()) { // Oops, it's empty
+                expandBuffer();
+                limit = computeLength();
             }
-            slice = slice.next(limit);
+            nextSlice();
         }
     }
 
@@ -210,7 +217,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
             lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
         } catch (ArrayIndexOutOfBoundsException e) {
             if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-                growBuffer();
+                expandBuffer();
                 lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
             } else {
                 throw new RuntimeException(e);
@@ -226,18 +233,28 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
         lineIndex = 0; // Note that we're beginning a new line
     }
 
-    private long growBuffer() {
+    private long computeLength() {
+        return partition.last()
+            ? shape.size() - partition.offset()
+            : partition.count() + maxLineLength;
+    }
+
+    private boolean sliceDone() {
+        return limit <= offset + length;
+    }
+
+    private void nextSlice() {
+        long nextOffset = offset + length;
+        int nextLength = Math.toIntExact(Math.min(limit - nextOffset, length));
+        offset = nextOffset;
+        length = nextLength;
+    }
+
+    private void expandBuffer() {
         maxLineLength *= 2; // Let's double it
         byte[] newCurrentLinebytes = new byte[maxLineLength];
         System.arraycopy(lineBytes, 0, newCurrentLinebytes, 0, lineIndex);
         lineBytes = newCurrentLinebytes; // This new buffer should do
-        return computeSliceLength();
-    }
-
-    private long computeSliceLength() {
-        return partition.last()
-            ? shape.size() - partition.offset()
-            : partition.count() + maxLineLength;
     }
 
     @SuppressWarnings("unchecked")

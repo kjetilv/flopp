@@ -50,7 +50,6 @@ public class CalculateAverage_kjetilv {
                         short offset = 0; //segment.offset();
                         short length = (short)seg.length(); //segment.length();
                         byte[] bytes = seg.bytes();
-//                        byte[] bytes = segment.bytes();
                         int splitIndex = -1;
                         int hash = 1;
                         for (short i = offset; i < length; i++) {
@@ -130,7 +129,8 @@ public class CalculateAverage_kjetilv {
     private static short parseValue(short length, int splitIndex, byte[] bytes) {
         short value = 0;
         int boundary = splitIndex + 1;
-        for (int i = length - 1, pos = 1; i >= boundary; i--, pos *= 10) {
+        int pos = 1;
+        for (int i = length - 1; i >= boundary; i--) {
             byte b = bytes[i];
             if (b == '.') {
                 continue;
@@ -141,6 +141,7 @@ public class CalculateAverage_kjetilv {
             }
             int num = b - '0';
             value += (short) (num * pos);
+            pos *= 10;
         }
         return value;
     }

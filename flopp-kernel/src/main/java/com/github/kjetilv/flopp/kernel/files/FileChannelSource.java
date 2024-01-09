@@ -38,7 +38,7 @@ final class FileChannelSource implements ByteSource {
     }
 
     @Override
-    public int fill(byte[] bytes, int length) {
+    public int fill(byte[] bytes) {
         if (bytesReadTotal >= fileSize) {
             return -1;
         }
@@ -51,7 +51,7 @@ final class FileChannelSource implements ByteSource {
         int bufferLimit = mappedByteBuffer.limit();
         int bytesToRead = Math.min(
             bufferLimit - bytesReadInBuffer,
-            length
+            bytes.length
         );
         get(bytes, bytesToRead);
         if (bytesReadInBuffer >= bufferLimit) {

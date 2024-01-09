@@ -31,7 +31,7 @@ class DefaultPartitionedStreams implements PartitionedStreams {
                     sources.source(partition),
                     partition,
                     shape,
-                    partitioning.bufferSize()
+                    partitioning
                 ));
     }
 

@@ -31,29 +31,29 @@ class FileChannelSourceTest {
                 Files.size(tempFile),
                 4
             );
-            byte[] filler = new byte[10];
+            byte[] filler = new byte[8];
 
-            long filled = source.fill(filler, 8);
+            long filled = source.fill(filler);
             assertThat(filled).isEqualTo(8L);
             assertThat(new String(filler, 0, 8)).isEqualTo("abcdefgh");
 
-            filled = source.fill(filler, 8);
+            filled = source.fill(filler);
             assertThat(filled).isEqualTo(6L);
             assertThat(new String(filler, 0, 6)).isEqualTo("ijklmn");
 
-            filled = source.fill(filler, 8);
+            filled = source.fill(filler);
             assertThat(filled).isEqualTo(4L);
             assertThat(new String(filler, 0, 4)).isEqualTo("opqr");
 
-            filled = source.fill(filler, 8);
+            filled = source.fill(filler);
             assertThat(filled).isEqualTo(4L);
             assertThat(new String(filler, 0, 4)).isEqualTo("stuv");
 
-            filled = source.fill(filler, 8);
+            filled = source.fill(filler);
             assertThat(filled).isEqualTo(4L);
             assertThat(new String(filler, 0, 4)).isEqualTo("wxyz");
 
-            filled = source.fill(filler, 8);
+            filled = source.fill(filler);
             assertThat(filled).isEqualTo(-1);
         }
     }

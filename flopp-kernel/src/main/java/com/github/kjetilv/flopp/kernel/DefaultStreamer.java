@@ -11,14 +11,17 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
 
     private final Partition partition;
 
+    private final Partitioning partitioning;
+
     private final int bufferSize;
 
     private final Shape shape;
 
-    DefaultStreamer(ByteSource source, Partition partition, Shape shape, int bufferSize) {
+    DefaultStreamer(ByteSource source, Partition partition, Shape shape, Partitioning partitioning) {
         this.source = Objects.requireNonNull(source, "randomAccessFile");
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.bufferSize = bufferSize > 0 ? bufferSize : DEFAULT_SLICE_SIZE;
+        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
+        this.bufferSize = this.partitioning.bufferSizeOr(DEFAULT_BUFFER_SIZE);
         this.shape = Objects.requireNonNull(shape, "shape");
     }
 
@@ -30,14 +33,14 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     @Override
     public Stream<String> lines() {
         return StreamSupport.stream(
-            new RawStringPartitionSpliterator(source, partition, shape, bufferSize),
+            new StringPartitionSpliterator(source, partition, shape, bufferSize),
             false);
     }
 
     @Override
     public Stream<byte[]> rawLines() {
         return StreamSupport.stream(
-            new RawBytesPartitionSpliterator(source, partition, shape, bufferSize),
+            new BytesPartitionSpliterator(source, partition, shape, bufferSize),
             false);
     }
 
@@ -74,5 +77,5 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
         return getClass().getSimpleName() + "[" + partition + "]";
     }
 
-    private static final int DEFAULT_SLICE_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 }
