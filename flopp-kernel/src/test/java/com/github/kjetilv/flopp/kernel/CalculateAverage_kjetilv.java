@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
 public class CalculateAverage_kjetilv {
 
     public static void main(String[] args) {
-        runSpull();
+//        runSpull();
+        runJava();
     }
 
     private static final String FILE = "./measurements.txt";
@@ -39,8 +40,8 @@ public class CalculateAverage_kjetilv {
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
                 path,
-                Shape.of(path).longestLine(64),
-                Partitioning.create(Runtime.getRuntime().availableProcessors() * 2, 65536),
+                Shape.of(path).longestLine(64, true),
+                Partitioning.create(Runtime.getRuntime().availableProcessors(), 8192),
                 Executors.newVirtualThreadPerTaskExecutor()
             )
         ) {
@@ -59,7 +60,7 @@ public class CalculateAverage_kjetilv {
                                 splitIndex = i;
                                 break;
                             } else {
-                                hash = 31 * hash + 17 * bytes[i];
+                                hash = 31 * hash + bytes[i];
                             }
                         }
                         short value = parseValue(length, splitIndex, bytes);
@@ -80,9 +81,11 @@ public class CalculateAverage_kjetilv {
 
     private static void runJava() {
         Instant start = Instant.now();
+        Path path = Path.of(FILE);
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
-                Path.of(FILE),
+                path,
+                Shape.of(path).longestLine(64, true),
                 Partitioning.create(Runtime.getRuntime().availableProcessors(), 65536),
                 Executors.newVirtualThreadPerTaskExecutor()
             )

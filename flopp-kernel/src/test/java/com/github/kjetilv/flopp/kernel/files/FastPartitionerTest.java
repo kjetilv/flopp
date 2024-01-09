@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,7 +54,7 @@ public class FastPartitionerTest {
                     shape,
                     Partitioning.create(partitionCount, 10),
                     new FileChannelSources(file, shape.size()),
-                    ForkJoinPool.commonPool()
+                    Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {
                 LongAdder cont = new LongAdder();
@@ -89,7 +89,7 @@ public class FastPartitionerTest {
                     shape,
                     Partitioning.create(partitionCount, 10),
                     new FileChannelSources(file, shape.size()),
-                    ForkJoinPool.commonPool()
+                    Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {
                 LongAdder cont = new LongAdder();

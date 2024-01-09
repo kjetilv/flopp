@@ -6,12 +6,7 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
     /**
      * The source of our bytes
      */
-    AbstractLimitedPartitionSpliterator(
-        int bufferSize,
-        ByteSource byteSource,
-        Partition partition,
-        Shape shape
-    ) {
+    AbstractLimitedPartitionSpliterator(int bufferSize, ByteSource byteSource, Partition partition, Shape shape) {
         super(bufferSize, byteSource, partition, shape);
     }
 
@@ -20,17 +15,16 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
         while (true) {
             long bytesToRead = byteSource.fill(byteBuffer);
             int bufferIndex = 0;
-            if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Fast forward ...
-                    partitionIndex++; // Count up number of bytes processed
-                    // Ok, so next byte is ...
-                    if (byteBuffer[bufferIndex] == '\n') { // Found it!
+            if (!firstLineFound) {
+                for (; bufferIndex < bytesToRead; bufferIndex++) {
+                    partitionIndex++;
+                    if (byteBuffer[bufferIndex] == '\n') {
                         firstLineFound = true;
                         bufferIndex++;
                         break;
                     }
                 }
-                if (!firstLineFound || bufferIndex == bytesToRead) { // Still no line!
+                if (!firstLineFound || bufferIndex == bytesToRead) {
                     if (sliceDone()) {
                         return done();
                     }
@@ -39,48 +33,44 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
                 }
             }
             if (!trailing) {
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
-                    // So what's the next byte then?
-                    if (byteBuffer[bufferIndex] == '\n') { // We've got a line!
+                for (; bufferIndex < bytesToRead; bufferIndex++) {
+                    if (byteBuffer[bufferIndex] == '\n') {
                         shipAndReset(action);
-                    } else { // No line yet
-                        handleChar(byteBuffer[bufferIndex]);
+                    } else {
+                        lineBytes[lineIndex] = byteBuffer[bufferIndex];
+                        lineIndex++;
                     }
-                    partitionIndex++; // Whatever we did, count up number of bytes processed
-                    if (partitionIndex > partitionCount) { // We are past our byte mark!
-                        if (lastPartition) { // This is the last partition
+                    partitionIndex++;
+                    if (partitionIndex > partitionCount) {
+                        if (lastPartition) {
                             return done();
                         }
-                        trailing = true; // Make a note that we are now in the trailing part of the partition
+                        trailing = true;
                         bufferIndex++;
                         break;
                     }
                 }
             }
             if (trailing) {
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
-                    byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
-                    if (c == '\n') { // We've got a line!
+                for (; bufferIndex < bytesToRead; bufferIndex++) {
+                    if (byteBuffer[bufferIndex] == '\n') {
                         shipAndReset(action);
                         return done();
-                    } else { // No line yet
-                        handleChar(c);
+                    } else {
+                        lineBytes[lineIndex] = byteBuffer[bufferIndex];
+                        lineIndex++;
                     }
-                    partitionIndex++; // Whatever we did, count up number of bytes processed
-                    if (partitionIndex > partitionCount + lineIndex) { // What does this mean?
+                    partitionIndex++;
+                    if (partitionIndex > partitionCount + lineIndex) {
                         return done();
                     }
                 }
             }
-            if (lastPartition && partitionIndex == partitionCount) { // We've exhausted the last partition
+            if (lastPartition && partitionIndex == partitionCount) {
                 return done();
             }
             nextSlice();
         }
     }
 
-    private void handleChar(byte c) {
-        lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
-        lineIndex++; // Count up our position on the current line
-    }
 }
