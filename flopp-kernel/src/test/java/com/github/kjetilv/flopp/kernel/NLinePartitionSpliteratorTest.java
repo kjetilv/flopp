@@ -29,7 +29,7 @@ class NLinePartitionSpliteratorTest {
             """.getBytes(StandardCharsets.US_ASCII);
         Partition partition = new Partition(0, 1, 0, bytes.length);
         ByteSource byteSource = getByteSource(dir, bytes, partition);
-        NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
+        NLineGrowingPartitionSpliterator spliterator = new NLineGrowingPartitionSpliterator(
             byteSource,
             partition,
             Shape.size(bytes.length).header(1, 1)
@@ -237,7 +237,7 @@ class NLinePartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
             for (Partition partition : partitions) {
-                NLinePartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize, dir);
+                NLineGrowingPartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize, dir);
                 do {
                 } while (spliterator0.tryAdvance(nLine -> {
                     subLines.get(partition.partitionNo()).add(nLine);
@@ -285,7 +285,7 @@ class NLinePartitionSpliteratorTest {
                    .collect(Collectors.joining());
     }
 
-    private static NLinePartitionSpliterator spliterator(
+    private static NLineGrowingPartitionSpliterator spliterator(
         byte[] bytes,
         Partition partition,
         int longestLine,
@@ -293,7 +293,7 @@ class NLinePartitionSpliteratorTest {
         Path dir
     ) {
         ByteSource bytesProvider = getByteSource(dir, bytes, partition);
-        NLinePartitionSpliterator spliterator = new NLinePartitionSpliterator(
+        NLineGrowingPartitionSpliterator spliterator = new NLineGrowingPartitionSpliterator(
             bytesProvider,
             partition,
             Shape.size(bytes.length)

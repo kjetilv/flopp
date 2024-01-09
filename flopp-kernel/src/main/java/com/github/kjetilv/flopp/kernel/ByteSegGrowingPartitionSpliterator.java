@@ -1,18 +1,16 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.util.function.Supplier;
-
-final class ByteSegSupPartitionSpliterator extends AbstractPartitionSpliterator<Supplier<ByteSeg>> {
+final class ByteSegGrowingPartitionSpliterator extends AbstractGrowingPartitionSpliterator<ByteSeg> {
 
     private final MutableByteSeg byteSeg = new MutableByteSeg();
 
-    ByteSegSupPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
+    ByteSegGrowingPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);
     }
 
     @Override
-    protected Supplier<ByteSeg> item() {
-        return () -> byteSeg.with(lineBytes, 0, lineIndex);
+    protected ByteSeg item() {
+        return byteSeg.with(lineBytes, 0, lineIndex);
     }
 
     private static final class MutableByteSeg implements ByteSeg {

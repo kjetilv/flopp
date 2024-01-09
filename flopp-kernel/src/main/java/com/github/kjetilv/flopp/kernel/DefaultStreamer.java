@@ -11,8 +11,6 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
 
     private final Partition partition;
 
-    private final Partitioning partitioning;
-
     private final int bufferSize;
 
     private final Shape shape;
@@ -20,8 +18,8 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     DefaultStreamer(ByteSource source, Partition partition, Shape shape, Partitioning partitioning) {
         this.source = Objects.requireNonNull(source, "randomAccessFile");
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        this.bufferSize = this.partitioning.bufferSizeOr(DEFAULT_BUFFER_SIZE);
+        this.bufferSize = Objects.requireNonNull(partitioning, "partitioning")
+            .bufferSizeOr(DEFAULT_BUFFER_SIZE);
         this.shape = Objects.requireNonNull(shape, "shape");
     }
 
@@ -33,43 +31,59 @@ final class DefaultStreamer implements PartitionedStreams.Streamer {
     @Override
     public Stream<String> lines() {
         return StreamSupport.stream(
-            new StringPartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            shape.limitsLineLength()
+                ? new StringLimitedPartitionSpliterator(source, partition, shape, bufferSize)
+                : new StringGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override
     public Stream<byte[]> rawLines() {
         return StreamSupport.stream(
-            new BytesPartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            shape.limitsLineLength()
+                ? new BytesLimitedPartitionSpliterator(source, partition, shape, bufferSize)
+                : new BytesGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override
     public Stream<NLine> nLines() {
         return StreamSupport.stream(
-            new NLinePartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            shape.limitsLineLength()
+                ? new NLineLimitedPartitionSpliterator(source, partition, shape, bufferSize)
+                : new NLineGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override
     public Stream<RNLine> rnLines() {
         return StreamSupport.stream(
-            new RNLinePartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            shape.limitsLineLength()
+                ? new RNLineLimitedPartitionSpliterator(source, partition, shape, bufferSize)
+                : new RNLineGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override
     public Stream<ByteSeg> segments() {
         return StreamSupport.stream(
-            new ByteSegPartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            shape.limitsLineLength()
+                ? new ByteSegLimitedPartitionSpliterator(source, partition, shape, bufferSize)
+                : new ByteSegGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override
     public Stream<Supplier<ByteSeg>> segmentSuppliers() {
         return StreamSupport.stream(
-            new ByteSegSupPartitionSpliterator(source, partition, shape, bufferSize),
-            false);
+            new ByteSegSupGrowingPartitionSpliterator(source, partition, shape, bufferSize),
+            false
+        );
     }
 
     @Override

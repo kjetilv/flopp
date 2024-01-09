@@ -1,7 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
@@ -14,6 +17,17 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
 
     public static Shape size(long size) {
         return new Shape(size);
+    }
+
+    public static Shape of(Path file) {
+        try {
+            if (Files.isRegularFile(file)) {
+                return Shape.size(Files.size(file));
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Bad file: " + file, e);
+        }
+        throw new IllegalArgumentException("Not a file: " + file);
     }
 
     public Shape(long size) {
@@ -75,6 +89,10 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
 
     public boolean hasStats() {
         return stats != null;
+    }
+
+    public boolean limitsLineLength() {
+        return stats.longestLine() > 0;
     }
 
     public Shape longestLine(int longestLine) {

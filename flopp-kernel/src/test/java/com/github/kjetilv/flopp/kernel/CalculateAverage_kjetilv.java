@@ -35,9 +35,11 @@ public class CalculateAverage_kjetilv {
 
     private static void runSpull() {
         Instant start = Instant.now();
+        Path path = Path.of(FILE);
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
-                Path.of(FILE),
+                path,
+                Shape.of(path).longestLine(64),
                 Partitioning.create(Runtime.getRuntime().availableProcessors() * 2, 65536),
                 Executors.newVirtualThreadPerTaskExecutor()
             )

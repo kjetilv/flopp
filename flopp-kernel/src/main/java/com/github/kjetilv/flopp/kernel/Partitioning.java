@@ -1,6 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
-public record Partitioning(int partitionCount, int bufferSize) {
+@SuppressWarnings("unused")
+public record Partitioning(
+    int partitionCount,
+    int bufferSize
+) {
 
     public static Partitioning create(int partitionCount, int bufferSize) {
         return new Partitioning(partitionCount, bufferSize);

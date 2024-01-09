@@ -84,19 +84,19 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
      */
     protected long nextLineNo = 1;
 
-    /**
-     * Number of lines shipped
-     */
-    private int shipped;
+    protected final long partitionCount;
+
+    protected final boolean lastPartition;
 
     /**
      * Iff true, we're currently past our allocated byte range, and the current line is our last
      */
-    private boolean trailing;
+    protected boolean trailing;
 
-    private final long partitionCount;
-
-    private final boolean lastPartition;
+    /**
+     * Number of lines shipped
+     */
+    private int shipped;
 
     public AbstractPartitionSpliterator(
         int bufferSize,
@@ -104,7 +104,11 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
         Partition partition,
         Shape shape
     ) {
-        super(Long.MAX_VALUE, ORDERED | IMMUTABLE);
+        super(
+            Long.MAX_VALUE,
+            ORDERED | IMMUTABLE
+        );
+
         this.byteSource = requireNonNull(byteSource, "bytesProvider");
         this.partition = requireNonNull(partition, "partition");
         this.shape = requireNonNull(shape, "shape");
@@ -116,8 +120,10 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
         );
         this.byteBuffer = new byte[bufferSize];
         this.firstLineFound = this.partition.first();
-        this.limit = computeLength();
         this.offset = 0;
+        this.limit = computeLength();
+        this.partitionCount = this.partition.count();
+        this.lastPartition = this.partition.last();
         this.length = Math.toIntExact(Math.min(
             Non.negativeOrZero(bufferSize, "bufferSize"),
             this.limit
@@ -125,8 +131,6 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
         this.lineBytes = new byte[maxLineLength];
-        this.partitionCount = this.partition.count();
-        this.lastPartition = this.partition.last();
     }
 
     @Override
@@ -145,124 +149,22 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
 
     protected abstract T item();
 
-    private boolean process(Consumer<? super T> action) {
-        while (true) {
-            long bytesToRead = byteSource.fill(byteBuffer);
-            int bufferIndex = 0;
-            if (!firstLineFound) { // Still haven't found first line, still on the previous partition's trail
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Fast forward ...
-                    partitionIndex++; // Count up number of bytes processed
-                    // Ok, so next byte is ...
-                    if (byteBuffer[bufferIndex] == '\n') { // Found it!
-                        firstLineFound = true;
-                        bufferIndex++;
-                        break;
-                    }
-                }
-                if (!firstLineFound || bufferIndex == bytesToRead) { // Still no line!
-                    if (sliceDone()) {
-                        return done();
-                    }
-                    nextSlice();
-                    continue;
-                }
-            }
-            if (!trailing) {
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
-                    // So what's the next byte then?
-                    if (byteBuffer[bufferIndex] == '\n') { // We've got a line!
-                        shipAndReset(action);
-                    } else { // No line yet
-                        handleChar(byteBuffer[bufferIndex]);
-                    }
-                    partitionIndex++; // Whatever we did, count up number of bytes processed
-                    if (partitionIndex > partitionCount) { // We are past our byte mark!
-                        if (lastPartition) { // This is the last partition
-                            return done();
-                        }
-                        trailing = true; // Make a note that we are now in the trailing part of the partition
-                        bufferIndex++;
-                        break;
-                    }
-                }
-            }
-            if (trailing) {
-                for (; bufferIndex < bytesToRead; bufferIndex++) { // Found first line, now onwards!
-                    byte c = byteBuffer[bufferIndex]; // So what's the next byyte then?
-                    if (c == '\n') { // We've got a line!
-                        shipAndReset(action);
-                        return done();
-                    } else { // No line yet
-                        handleChar(c);
-                    }
-                    partitionIndex++; // Whatever we did, count up number of bytes processed
-                    if (partitionIndex > partitionCount + lineIndex) { // What does this mean?
-                        return done();
-                    }
-                }
-            }
-            if (lastPartition && partitionIndex == partitionCount) { // We've exhausted the last partition
-                return done();
-            }
-            if (sliceDone()) { // Oops, it's empty
-                expandBuffer();
-                limit = computeLength();
-            }
-            nextSlice();
-        }
+    protected abstract boolean process(Consumer<? super T> action);
+
+    protected final long computeLength() {
+        return partition.last()
+            ? shape.size() - partition.offset()
+            : partition.count() + maxLineLength;
     }
 
-    private void handleChar(byte c) {
-        try {
-            lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
-        } catch (ArrayIndexOutOfBoundsException e) {
-            if (lineIndex == maxLineLength) { // This is a big line, we need more space to hold it
-                expandBuffer();
-                lineBytes[lineIndex] = c; // Remember the byte for the upcoming line
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
-        lineIndex++; // Count up our position on the current line
-    }
-
-    private void shipAndReset(Consumer<? super T> action) {
+    protected final void shipAndReset(Consumer<? super T> action) {
         ship(action, item()); // Here it is!
         shipped++; // Count up lines shipped
         nextLineNo++; // Note the next line number
         lineIndex = 0; // Note that we're beginning a new line
     }
 
-    private long computeLength() {
-        return partition.last()
-            ? shape.size() - partition.offset()
-            : partition.count() + maxLineLength;
-    }
-
-    private boolean sliceDone() {
-        return limit <= offset + length;
-    }
-
-    private void nextSlice() {
-        long nextOffset = offset + length;
-        int nextLength = Math.toIntExact(Math.min(limit - nextOffset, length));
-        offset = nextOffset;
-        length = nextLength;
-    }
-
-    private void expandBuffer() {
-        maxLineLength *= 2; // Let's double it
-        byte[] newCurrentLinebytes = new byte[maxLineLength];
-        System.arraycopy(lineBytes, 0, newCurrentLinebytes, 0, lineIndex);
-        lineBytes = newCurrentLinebytes; // This new buffer should do
-    }
-
-    @SuppressWarnings("unchecked")
-    private void ship(Consumer<? super T> action, T t) {
-        lineConsumer.accept((Consumer<T>) action, t);
-    }
-
-    private boolean done() {
+    protected final boolean done() {
         if (partition.first() && shipped < shape.header()) { // Check if we've got a bad partition
             throw new IllegalStateException(this + ": Partition is shorter than header");
         }
@@ -270,6 +172,22 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
             throw new IllegalStateException(this + ": Partition is shorter than footer");
         }
         return false;
+    }
+
+    protected boolean sliceDone() {
+        return limit <= offset + length;
+    }
+
+    protected void nextSlice() {
+        long nextOffset = offset + length;
+        int nextLength = Math.toIntExact(Math.min(limit - nextOffset, length));
+        offset = nextOffset;
+        length = nextLength;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void ship(Consumer<? super T> action, T t) {
+        lineConsumer.accept((Consumer<T>) action, t);
     }
 
     private static final int DEFAULT_LONGEST_LINE = 1024;
