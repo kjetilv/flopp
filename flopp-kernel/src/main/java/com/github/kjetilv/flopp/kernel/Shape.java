@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -22,7 +21,7 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     public static Shape of(Path file) {
         try {
             if (Files.isRegularFile(file)) {
-                return Shape.size(Files.size(file));
+                return size(Files.size(file));
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Bad file: " + file, e);
@@ -92,15 +91,23 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public boolean limitsLineLength() {
-        return stats.longestLine() > 0;
+        return stats != null && stats.limitsLineLength();
     }
 
     public Shape longestLine(int longestLine) {
+        return longestLine(longestLine, false);
+    }
+
+    public Shape longestLineHardLimit(int longestLine) {
+        return longestLine(longestLine, true);
+    }
+
+    public Shape longestLine(int longestLine, boolean hardLimit) {
         return new Shape(
             size,
             charset,
             decor,
-            new Stats(longestLine)
+            new Stats(longestLine, hardLimit)
         );
     }
 
@@ -125,11 +132,20 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public record Stats(
-        int longestLine
+        int longestLine,
+        boolean hardLimit
     ) {
 
-        public Stats(int longestLine) {
-            this.longestLine = Non.negative(longestLine, "longestLine");
+        public Stats {
+            Non.negative(longestLine, "longestLine");
+        }
+
+        public Stats hardLimit(boolean hardLimit) {
+            return new Stats(longestLine, hardLimit);
+        }
+
+        public boolean limitsLineLength() {
+            return hardLimit && longestLine > 0;
         }
     }
 }
