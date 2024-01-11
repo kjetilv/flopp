@@ -16,12 +16,23 @@ java {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
     withSourcesJar()
+    modularity.inferModulePath
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks {
+    withType<JavaCompile> {
+        options.compilerArgs.add("--enable-preview")
+        options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+    }
+    withType<Test>() {
+        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+        useJUnitPlatform()
+    }
+    withType<JavaExec>() {
+        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+    }
 }
 
 publishing {

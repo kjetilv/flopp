@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class StringGrowingPartitionSpliterator extends AbstractGrowingPartitionSpliterator<String> {
+final class StringGrowingPartitionSpliterator extends AbstractGrowingBytesPartitionSpliterator<String> {
 
     StringGrowingPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);

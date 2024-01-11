@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("ProtectedField")
-public abstract class AbstractPartitionSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
     /**
      * The source of our bytes
      */
@@ -98,7 +98,7 @@ public abstract class AbstractPartitionSpliterator<T> extends Spliterators.Abstr
      */
     private int shipped;
 
-    public AbstractPartitionSpliterator(
+    public AbstractBytesPartitionSpliterator(
         int bufferSize,
         ByteSource byteSource,
         Partition partition,

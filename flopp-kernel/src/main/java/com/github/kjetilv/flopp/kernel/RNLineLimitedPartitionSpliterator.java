@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class RNLineLimitedPartitionSpliterator extends AbstractLimitedPartitionSpliterator<RNLine> {
+final class RNLineLimitedPartitionSpliterator extends AbstractLimitedBytesPartitionSpliterator<RNLine> {
 
     RNLineLimitedPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);

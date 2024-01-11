@@ -2,15 +2,13 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.function.Consumer;
 
-abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionSpliterator<T> {
-    /**
-     * The source of our bytes
-     */
-    AbstractLimitedPartitionSpliterator(int bufferSize, ByteSource byteSource, Partition partition, Shape shape) {
+abstract class AbstractGrowingBytesPartitionSpliterator<T> extends AbstractBytesPartitionSpliterator<T> {
+
+    AbstractGrowingBytesPartitionSpliterator(int bufferSize, ByteSource byteSource, Partition partition, Shape shape) {
         super(bufferSize, byteSource, partition, shape);
     }
 
-    @SuppressWarnings("DuplicatedCode")
+    @Override
     protected boolean process(Consumer<? super T> action) {
         while (true) {
             long bytesToRead = byteSource.fill(byteBuffer);
@@ -37,8 +35,7 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
                     if (byteBuffer[bufferIndex] == '\n') {
                         shipAndReset(action);
                     } else {
-                        lineBytes[lineIndex] = byteBuffer[bufferIndex];
-                        lineIndex++;
+                        handleChar(byteBuffer[bufferIndex]);
                     }
                     partitionIndex++;
                     if (partitionIndex > partitionCount) {
@@ -53,12 +50,12 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
             }
             if (trailing) {
                 for (; bufferIndex < bytesToRead; bufferIndex++) {
-                    if (byteBuffer[bufferIndex] == '\n') {
+                    byte c = byteBuffer[bufferIndex];
+                    if (c == '\n') {
                         shipAndReset(action);
                         return done();
                     } else {
-                        lineBytes[lineIndex] = byteBuffer[bufferIndex];
-                        lineIndex++;
+                        handleChar(c);
                     }
                     partitionIndex++;
                     if (partitionIndex > partitionCount + lineIndex) {
@@ -69,8 +66,32 @@ abstract class AbstractLimitedPartitionSpliterator<T> extends AbstractPartitionS
             if (lastPartition && partitionIndex == partitionCount) {
                 return done();
             }
+            if (sliceDone()) {
+                expandBuffer();
+                limit = computeLength();
+            }
             nextSlice();
         }
     }
 
+    private final void handleChar(byte c) {
+        try {
+            lineBytes[lineIndex] = c;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            if (lineIndex == maxLineLength) {
+                expandBuffer();
+                lineBytes[lineIndex] = c;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+        lineIndex++;
+    }
+
+    private void expandBuffer() {
+        maxLineLength *= 2;
+        byte[] newCurrentLinebytes = new byte[maxLineLength];
+        System.arraycopy(lineBytes, 0, newCurrentLinebytes, 0, lineIndex);
+        lineBytes = newCurrentLinebytes;
+    }
 }

@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class ByteSegLimitedPartitionSpliterator extends AbstractLimitedPartitionSpliterator<ByteSeg> {
+final class ByteSegLimitedPartitionSpliterator extends AbstractLimitedBytesPartitionSpliterator<ByteSeg> {
 
     private final MutableByteSeg byteSeg = new MutableByteSeg();
 

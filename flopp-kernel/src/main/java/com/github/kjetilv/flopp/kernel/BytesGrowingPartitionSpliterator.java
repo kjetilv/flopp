@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-final class BytesGrowingPartitionSpliterator extends AbstractGrowingPartitionSpliterator<byte[]> {
+final class BytesGrowingPartitionSpliterator extends AbstractGrowingBytesPartitionSpliterator<byte[]> {
 
     BytesGrowingPartitionSpliterator(ByteSource byteSource, Partition partition, Shape shape, int bufferSize) {
         super(bufferSize, byteSource, partition, shape);

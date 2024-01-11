@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 public class CalculateAverage_kjetilv {
 
     public static void main(String[] args) {
-//        runSpull();
-        runJava();
+        runSpull();
+//        runJava();
     }
 
     private static final String FILE = "./measurements.txt";

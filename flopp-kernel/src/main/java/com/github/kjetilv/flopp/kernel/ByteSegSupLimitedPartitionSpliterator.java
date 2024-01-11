@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.function.Supplier;
 
-final class ByteSegSupLimitedPartitionSpliterator extends AbstractLimitedPartitionSpliterator<Supplier<ByteSeg>> {
+final class ByteSegSupLimitedPartitionSpliterator extends AbstractLimitedBytesPartitionSpliterator<Supplier<ByteSeg>> {
 
     private final MutableByteSeg byteSeg = new MutableByteSeg();
 
