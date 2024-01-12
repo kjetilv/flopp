@@ -9,28 +9,25 @@ import java.nio.file.Path;
 
 final class FileChannelTransfer implements Transfer {
 
-    private final FileChannel channel;
+    private final RandomAccessFile randomAccessFile;
 
     private final Partition partition;
 
     private final Path result;
 
-    FileChannelTransfer(FileChannel channel, Partition partition, Path result) {
-        this.channel = channel;
+    FileChannelTransfer(RandomAccessFile randomAccessFile, Partition partition, Path result) {
+        this.randomAccessFile = randomAccessFile;
         this.partition = partition;
         this.result = result;
     }
 
     @Override
     public void run() {
-        try (
-            RandomAccessFile sourceFile = randomAccess(result);
-            FileChannel sourceChannel = sourceFile.getChannel()
-        ) {
+        try (FileChannel channel = randomAccessFile.getChannel()) {
             long totalTransferred = 0L;
             do {
                 totalTransferred += channel.transferFrom(
-                    sourceChannel,
+                    channel,
                     partition.offset(),
                     partition.count()
                 );
@@ -42,14 +39,14 @@ final class FileChannelTransfer implements Transfer {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + channel + "]";
+        return STR."\{getClass().getSimpleName()}[\{randomAccessFile}]";
     }
 
     private static RandomAccessFile randomAccess(Path path) {
         try {
             return new RandomAccessFile(path.toFile(), "r");
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to open " + "rw" + ": " + path, e);
+            throw new IllegalStateException(STR."Failed to open rw: \{path}", e);
         }
     }
 }

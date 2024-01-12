@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 @FunctionalInterface
 public interface PartitionedStreams extends Closeable {
+
     Stream<Streamer> streamers();
 
     @Override
@@ -27,5 +28,7 @@ public interface PartitionedStreams extends Closeable {
         Stream<ByteSeg> segments();
 
         Stream<Supplier<ByteSeg>> segmentSuppliers();
+
+        Stream<MemorySegments.Line> memorySegments();
     }
 }

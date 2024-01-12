@@ -11,14 +11,18 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     private final ByteSources sources;
 
+    private final MemorySegmentSources memorySegmentSources;
+
     DefaultPartitionedStreams(
         Shape shape,
         Partitioning partitioning,
-        ByteSources sources
+        ByteSources sources,
+        MemorySegmentSources memorySegmentSources
     ) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
         this.sources = Objects.requireNonNull(sources, "sources");
+        this.memorySegmentSources = Objects.requireNonNull(memorySegmentSources, "memorySegmentSources");
     }
 
     @Override
@@ -28,10 +32,11 @@ class DefaultPartitionedStreams implements PartitionedStreams {
             .filter(Partition::hasData)
             .map(partition ->
                 new DefaultStreamer(
-                    sources.source(partition),
                     partition,
                     shape,
-                    partitioning
+                    partitioning,
+                    sources,
+                    memorySegmentSources
                 ));
     }
 

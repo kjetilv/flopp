@@ -1,55 +1,34 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
 abstract sealed class AbstractFileChanneling implements Closeable
-    permits FileChannelSources, FileChannelTransfers {
+    permits FileChannelByteSources, FileChannelTransfers {
 
-    private final Path target;
+    private final Path path;
 
-    private final RandomAccessFile randomAccessFile;
-
-    private final FileChannel channel;
-
-    protected AbstractFileChanneling(Path target, boolean writable) {
-        this.target = Objects.requireNonNull(target, "target");
-        this.randomAccessFile = randomAccess(this.target, writable ? "rw" : "r");
-        this.channel = randomAccessFile.getChannel();
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.channel.close();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to close: " + channel, e);
-        }
-        try {
-            randomAccessFile.close();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to close: " + randomAccessFile, e);
-        }
+    protected AbstractFileChanneling(Path path, boolean writable) {
+        this.path = Objects.requireNonNull(path, "target");
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + target + "]";
+        return STR."\{getClass().getSimpleName()}[\{path}]";
     }
 
-    protected FileChannel channel() {
-        return channel;
+    protected RandomAccessFile randomAccess() {
+        return randomAccess(false);
     }
 
-    protected static RandomAccessFile randomAccess(Path path, String mode) {
+    protected RandomAccessFile randomAccess(boolean writable) {
+        String mode = writable ? "rw" : "r";
         try {
             return new RandomAccessFile(path.toFile(), mode);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to open " + "rw" + ": " + path, e);
+            throw new IllegalStateException(STR."Failed to open in `\{mode}`: \{path}", e);
         }
     }
 }

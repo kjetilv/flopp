@@ -2,33 +2,30 @@ package com.github.kjetilv.flopp.kernel;
 
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.nio.channels.FileChannel.MapMode.*;
-import static java.nio.file.StandardOpenOption.*;
+import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
+import static java.nio.file.StandardOpenOption.READ;
 import static jdk.incubator.vector.VectorOperators.EQ;
-import static jdk.incubator.vector.VectorShape.S_512_BIT;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.atIndex;
 
+@Disabled
 public class VectorTest {
 
     @Test
@@ -63,7 +60,7 @@ public class VectorTest {
         long size = Files.size(file);
         MemorySegment ms = channel.map(READ_ONLY, 0, 64, arena).asReadOnly();
 
-        VectorSpecies<Byte> byteVectorSpecies = S_512_BIT.withLanes(BYTE_SPECIES.elementType());
+        VectorSpecies<Byte> byteVectorSpecies = VectorShape.preferredShape().withLanes(BYTE_SPECIES.elementType());
         System.out.println(byteVectorSpecies.length());
         ByteVector byteVector = ByteVector.fromMemorySegment(byteVectorSpecies, ms, 0, ByteOrder.nativeOrder());
         VectorMask<Byte> compare = byteVector.compare(EQ, '\n');

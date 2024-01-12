@@ -16,22 +16,26 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     private final Partitioning partitioning;
 
+    private final MemorySegmentSources memorySegmentSources;
+
     private final ExecutorService executorService;
 
-    private final ByteSources sources;
+    private final ByteSources byteSources;
 
     public DefaultPartitioned(
         P path,
         Shape shape,
         Partitioning partitioning,
-        ByteSources sources,
+        ByteSources byteSources,
+        MemorySegmentSources memorySegmentSources,
         ExecutorService executorService
     ) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
+        this.memorySegmentSources = Objects.requireNonNull(memorySegmentSources, "memorySegmentSources");
         this.executorService = Objects.requireNonNull(executorService, "executorService");
-        this.sources = Objects.requireNonNull(sources, "sources");
+        this.byteSources = Objects.requireNonNull(byteSources, "sources");
     }
 
     @Override
@@ -41,17 +45,17 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     @Override
     public PartitionedStreams streams() {
-        return new DefaultPartitionedStreams(shape, partitioning, sources);
+        return new DefaultPartitionedStreams(shape, partitioning, byteSources, memorySegmentSources);
     }
 
     @Override
     public PartitionedMapper mapper() {
-        return new DefaultPartitionedMapper(streams(), sources, executorService);
+        return new DefaultPartitionedMapper(streams(), byteSources, executorService);
     }
 
     @Override
     public PartitionedConsumer consumer() {
-        return new DefaultPartitionedConsumer(mapper(), sources);
+        return new DefaultPartitionedConsumer(mapper(), byteSources);
     }
 
     @Override
@@ -123,7 +127,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor<ByteSeg> segmentProcessor(
+    public PartitionedProcessor<ByteSeg> byteSegProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
@@ -142,7 +146,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
-    public PartitionedProcessor<Supplier<ByteSeg>> suppliedSegmentProcessor(
+    public PartitionedProcessor<Supplier<ByteSeg>> suppliedByteSegProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
@@ -162,7 +166,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     @Override
     public void close() {
-        sources.close();
+        byteSources.close();
     }
 
     protected ExecutorService executorService() {

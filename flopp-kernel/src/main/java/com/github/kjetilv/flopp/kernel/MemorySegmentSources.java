@@ -2,10 +2,9 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.io.Closeable;
 
-@FunctionalInterface
-public interface ByteSource extends Closeable {
+public interface MemorySegmentSources extends Closeable {
 
-    int fill(byte[] bytes);
+    MemorySegmentSource source(Partition partition);
 
     @Override
     default void close() {

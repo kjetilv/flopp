@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.files.FileChannelSources;
+import com.github.kjetilv.flopp.kernel.files.FileChannelByteSources;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -198,7 +198,7 @@ class NLinePartitionSpliteratorTest {
     private static ByteSource getByteSource(Path dir, byte[] bytes, Partition partition) {
         try {
             Path path = Files.write(dir.resolve(UUID.randomUUID() + ".bytes"), bytes);
-            return new FileChannelSources(path, Files.size(path)).source(partition);
+            return new FileChannelByteSources(path, Files.size(path)).source(partition);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

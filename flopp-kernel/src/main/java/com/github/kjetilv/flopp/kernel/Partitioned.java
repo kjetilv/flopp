@@ -45,14 +45,14 @@ public interface Partitioned<P> extends Closeable {
         LinesWriterFactory<P> linesWriterFactory
     );
 
-    PartitionedProcessor<ByteSeg> segmentProcessor(
+    PartitionedProcessor<ByteSeg> byteSegProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     );
 
-    PartitionedProcessor<Supplier<ByteSeg>> suppliedSegmentProcessor(
+    PartitionedProcessor<Supplier<ByteSeg>> suppliedByteSegProcessor(
         TempTargets<P> tempTargets,
         Transfers<P> transfer,
         ToIntFunction<P> sizer,

@@ -8,12 +8,12 @@ import java.nio.file.Path;
 
 final class FileChannelTransfers extends AbstractFileChanneling implements Transfers<Path> {
 
-    FileChannelTransfers(Path target) {
-        super(target, true);
+    FileChannelTransfers(Path path) {
+        super(path, true);
     }
 
     @Override
     public Transfer transfer(Partition partition, Path result) {
-        return new FileChannelTransfer(channel(), partition, result);
+        return new FileChannelTransfer(randomAccess(true), partition, result);
     }
 }

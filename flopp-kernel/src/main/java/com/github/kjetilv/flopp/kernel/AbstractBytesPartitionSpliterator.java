@@ -9,6 +9,7 @@ import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("ProtectedField")
 public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+
     /**
      * The source of our bytes
      */
@@ -98,16 +99,8 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
      */
     private int shipped;
 
-    public AbstractBytesPartitionSpliterator(
-        int bufferSize,
-        ByteSource byteSource,
-        Partition partition,
-        Shape shape
-    ) {
-        super(
-            Long.MAX_VALUE,
-            ORDERED | IMMUTABLE
-        );
+    public AbstractBytesPartitionSpliterator(int bufferSize, ByteSource byteSource, Partition partition, Shape shape) {
+        super(Long.MAX_VALUE, ORDERED | IMMUTABLE);
 
         this.byteSource = requireNonNull(byteSource, "bytesProvider");
         this.partition = requireNonNull(partition, "partition");
@@ -124,10 +117,7 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
         this.limit = computeLength();
         this.partitionCount = this.partition.count();
         this.lastPartition = this.partition.last();
-        this.length = Math.toIntExact(Math.min(
-            Non.negativeOrZero(bufferSize, "bufferSize"),
-            this.limit
-        ));
+        this.length = Math.toIntExact(Math.min(Non.negativeOrZero(bufferSize, "bufferSize"), this.limit));
 
         this.maxLineLength = longestLine(this.shape); // If the shape indicates a longest line, make note of it
         this.lineBytes = new byte[maxLineLength];
@@ -139,6 +129,8 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
             return process(action);
         } catch (Exception e) {
             throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
+        } finally {
+            byteSource.close();
         }
     }
 
@@ -166,10 +158,10 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
 
     protected final boolean done() {
         if (partition.first() && shipped < shape.header()) { // Check if we've got a bad partition
-            throw new IllegalStateException(this + ": Partition is shorter than header");
+            throw new IllegalStateException(STR."\{this}: Partition is shorter than header");
         }
         if (partition.last() && shipped < shape.footer()) { // Or a really bad one
-            throw new IllegalStateException(this + ": Partition is shorter than footer");
+            throw new IllegalStateException(STR."\{this}: Partition is shorter than footer");
         }
         return false;
     }

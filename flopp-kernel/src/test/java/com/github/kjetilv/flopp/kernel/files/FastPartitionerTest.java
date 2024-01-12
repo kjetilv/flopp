@@ -53,7 +53,8 @@ public class FastPartitionerTest {
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelSources(file, shape.size()),
+                    new FileChannelByteSources(file, shape.size()),
+                    new FileChannelMemorySegmentSources(file, shape),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {
@@ -88,7 +89,8 @@ public class FastPartitionerTest {
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelSources(file, shape.size()),
+                    new FileChannelByteSources(file, shape.size()),
+                    new FileChannelMemorySegmentSources(file),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {

@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class FileChannelSourceTest {
+class FileChannelByteSourceTest {
 
     @Test
     void shouldFill() throws IOException {
@@ -24,10 +24,10 @@ class FileChannelSourceTest {
             .collect(Collectors.joining());
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
         Files.write(tempFile, string.getBytes());
-        try (RandomAccessFile r = randomAccess(tempFile)) {
-            ByteSource source = new FileChannelSource(
+        try (RandomAccessFile randomAccessFile = randomAccess(tempFile)) {
+            ByteSource source = new FileChannelByteSource(
                 new Partition(0, 2, 0, 10),
-                r.getChannel(),
+                randomAccessFile,
                 Files.size(tempFile),
                 4
             );

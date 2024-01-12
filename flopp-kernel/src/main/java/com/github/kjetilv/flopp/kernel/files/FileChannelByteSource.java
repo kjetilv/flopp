@@ -4,17 +4,21 @@ import com.github.kjetilv.flopp.kernel.ByteSource;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-final class FileChannelSource implements ByteSource {
+final class FileChannelByteSource implements ByteSource {
 
     private final Partition partition;
 
     private final FileChannel channel;
+
+    private final RandomAccessFile randomAccessFile;
 
     private final long fileSize;
 
@@ -26,9 +30,10 @@ final class FileChannelSource implements ByteSource {
 
     private int bytesReadInBuffer;
 
-    FileChannelSource(Partition partition, FileChannel channel, long fileSize, int padding) {
+    FileChannelByteSource(Partition partition, RandomAccessFile randomAccessFile, long fileSize, int padding) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.channel = Objects.requireNonNull(channel, "channel");
+        this.randomAccessFile = Objects.requireNonNull(randomAccessFile, "randomAccessFile");
+        this.channel = randomAccessFile.getChannel();
         this.fileSize = Non.negative(fileSize, "fileSize");
         this.padding = Non.negativeOrZero(padding, "padding");
         newBuffer(this.partition.offset(), Math.min(
@@ -60,11 +65,30 @@ final class FileChannelSource implements ByteSource {
         return bytesToRead;
     }
 
+    @Override
+    public void close() {
+        try {
+            this.channel.close();
+        } catch (IOException e) {
+            throw new IllegalStateException(STR."\{this} failed to close: \{channel}", e);
+        }
+        try {
+            randomAccessFile.close();
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."\{this} failed to close: \{randomAccessFile}", e);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{partition}/f:\{fileSize}/p:\{padding}]";
+    }
+
     private void get(byte[] bytes, int count) {
         try {
             mappedByteBuffer.get(bytesReadInBuffer, bytes, 0, count);
         } catch (Exception e) {
-            throw new IllegalStateException(this + " failed to get " + bytesReadTotal + "/" + count + " bytes", e);
+            throw new IllegalStateException(STR."\{this} failed to get \{bytesReadTotal}/\{count} bytes", e);
         } finally {
             bytesReadInBuffer += count;
             bytesReadTotal += count;
@@ -75,14 +99,7 @@ final class FileChannelSource implements ByteSource {
         try {
             this.mappedByteBuffer = channel.map(READ_ONLY, pos, size);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to open " + channel, e);
+            throw new IllegalStateException(STR."Failed to open \{channel}", e);
         }
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" +
-               partition + "/f:" + fileSize + "/p:" + padding +
-               "]";
     }
 }

@@ -180,18 +180,17 @@ public class SizeTest {
             Partitioned<Path> partitioned = new DefaultPartitioned<>(
                 path, shape,
                 new Partitioning(partitions, 8192),
-                new FileChannelSources(path, shape.size()),
+                new FileChannelByteSources(path, shape.size()),
+                new FileChannelMemorySegmentSources(path),
                 readerExec
             )
         ) {
-            partitioned
-                .processor(
-                    new FileTempTargets(tmp),
-                    new FileChannelTransfers(tmp),
-                    SizeTest::sizeOf,
-                    SimpleLinesWriter::new
-                )
-                .process(processor);
+            partitioned.processor(
+                new FileTempTargets(tmp),
+                new FileChannelTransfers(tmp),
+                SizeTest::sizeOf,
+                SimpleLinesWriter::new
+            ).process(processor);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -292,6 +291,7 @@ public class SizeTest {
             throw new IllegalStateException("Failed", e);
         }
     };
+
     @SuppressWarnings("CommentedOutCode")
 
     public static final Function<String, String> RAW_OP = line -> {
