@@ -42,6 +42,6 @@ final class MutableLine implements MemorySegments.LineSegment {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{lineNo}/\{partitionNo}: \{offset}-\{length}]";
+        return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}-\{length()}]";
     }
 }

@@ -26,9 +26,11 @@ public class VectorPartitionSpliterator
 
     private final boolean allocating;
 
-    private final MutableLine segmentLine = new MutableLine();
+    private final MutableLine segmentLine;
 
     private final int partitionNo;
+
+    private final boolean lastPartition;
 
     public VectorPartitionSpliterator(Partition partition, Shape shape, MemorySegmentSource source) {
         this(partition, shape, source, false);
@@ -41,14 +43,21 @@ public class VectorPartitionSpliterator
         boolean allocating
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
+
         this.partition = Objects.requireNonNull(partition, "partition");
         this.partitionLimit = this.partition.count();
         this.partitionNo = partition.partitionNo();
+        this.lastPartition = partition.last();
+
         this.source = Objects.requireNonNull(source, "memorySegmentSources");
-        this.allocating = allocating || shape.hasOverhead();
 
-        segmentLine.partitionNo = partition.partitionNo();
-
+        this.allocating = allocating || shape != null && shape.hasOverhead();
+        if (this.allocating) {
+            this.segmentLine = null;
+        } else {
+            this.segmentLine = new MutableLine();
+            this.segmentLine.partitionNo = partition.partitionNo();
+        }
         this.lineConsumer = SurroundConsumers.surround(
             this.partition.first() && shape != null && shape.header() > 0 ? shape.header() : 0,
             this.partition.last() && shape != null && shape.footer() > 0 ? shape.footer() : 0
@@ -182,10 +191,7 @@ public class VectorPartitionSpliterator
         return segmentLine;
     }
 
-    public static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
-
-    private static final VectorSpecies<Byte> SPECIES =
-        VectorShape.preferredShape().withLanes(ByteVector.SPECIES_PREFERRED.elementType());
+    private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
 
     private record Line(
         int partitionNo,
@@ -194,5 +200,10 @@ public class VectorPartitionSpliterator
         long offset,
         int length
     ) implements MemorySegments.LineSegment {
+
+        @Override
+        public String toString() {
+            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}-\{length()}]";
+        }
     }
 }

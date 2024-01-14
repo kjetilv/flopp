@@ -62,7 +62,7 @@ public final class MemorySegments {
         int length();
 
         default byte[] asBytes() {
-            return MemorySegments.toBytes(this);
+            return toBytes(this);
         }
     }
 }
