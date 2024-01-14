@@ -10,11 +10,8 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
 
     private final PartitionedMapper mapper;
 
-    private final ByteSources sources;
-
-    DefaultPartitionedConsumer(PartitionedMapper mapper, ByteSources sources) {
-        this.mapper = mapper;
-        this.sources = Objects.requireNonNull(sources, "sources");
+    DefaultPartitionedConsumer(PartitionedMapper mapper) {
+        this.mapper = Objects.requireNonNull(mapper, "mapper");
     }
 
     @Override
@@ -58,27 +55,22 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachSegment(
+    public Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachByteSeg(
         BiConsumer<Partition, Stream<ByteSeg>> consumer
     ) {
-        return mapper.mapSegments((partition, entries) -> {
+        return mapper.mapByteSegs((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionResult<Supplier<ByteSeg>>>> forEachSuppliedSegment(
+    public Stream<CompletableFuture<PartitionResult<Supplier<ByteSeg>>>> forEachSuppliedByteSeg(
         BiConsumer<Partition, Stream<Supplier<ByteSeg>>> consumer
     ) {
-        return mapper.mapSuppliedSegments((partition, entries) -> {
+        return mapper.mapSuppliedByteSegs((partition, entries) -> {
             consumer.accept(partition, entries);
             return null;
         });
-    }
-
-    @Override
-    public void close() {
-        sources.close();
     }
 }

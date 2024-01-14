@@ -12,66 +12,58 @@ class DefaultPartitionedMapper implements PartitionedMapper {
 
     private final ExecutorService executorService;
 
-    private final ByteSources sources;
-
     private final PartitionedStreams streams;
 
-    DefaultPartitionedMapper(PartitionedStreams streams, ByteSources sources, ExecutorService executorService) {
+    DefaultPartitionedMapper(PartitionedStreams streams, ExecutorService executorService) {
         this.streams = Objects.requireNonNull(streams, "streams");
         this.executorService = Objects.requireNonNull(executorService, "executorService");
-        this.sources = Objects.requireNonNull(sources, "sources");
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapLines(
         BiFunction<Partition, Stream<String>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::lines);
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::lines);
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRawLines(
         BiFunction<Partition, Stream<byte[]>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::rawLines);
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::rawLines);
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapNLines(
         BiFunction<Partition, Stream<NLine>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::nLines);
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::nLines);
     }
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapRNLines(
         BiFunction<Partition, Stream<RNLine>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::rnLines);
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::rnLines);
     }
 
     @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapByteSegs(
         BiFunction<Partition, Stream<ByteSeg>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::segments);
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::byteSegs);
     }
 
     @Override
-    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSuppliedSegments(
+    public <T> Stream<CompletableFuture<PartitionResult<T>>> mapSuppliedByteSegs(
         BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> processor
     ) {
-        return futureStream(processor, PartitionedStreams.Streamer::segmentSuppliers);
-    }
-
-    @Override
-    public void close() {
-        sources.close();
+        return futureStream(processor, PartitionedStreams.PartitionStreamer::suppliedByteSegs);
     }
 
     private <T, B> Stream<CompletableFuture<PartitionResult<T>>> futureStream(
         BiFunction<Partition, Stream<B>, T> processor,
-        Function<PartitionedStreams.Streamer, Stream<B>> segmentSuppliers
+        Function<PartitionedStreams.PartitionStreamer, Stream<B>> segmentSuppliers
     ) {
         return streams.streamers()
             .map(streamer ->

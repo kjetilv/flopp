@@ -9,39 +9,43 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     private final Partitioning partitioning;
 
-    private final ByteSources sources;
-
-    private final MemorySegmentSources memorySegmentSources;
+    private final Sources sources;
 
     DefaultPartitionedStreams(
         Shape shape,
         Partitioning partitioning,
-        ByteSources sources,
-        MemorySegmentSources memorySegmentSources
+        Sources sources
     ) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
         this.sources = Objects.requireNonNull(sources, "sources");
-        this.memorySegmentSources = Objects.requireNonNull(memorySegmentSources, "memorySegmentSources");
     }
 
     @Override
-    public Stream<Streamer> streamers() {
+    public Stream<VectorPartitionStreamer> vectorStreamers() {
         return Partition.partitions(shape.size(), partitioning.partitionCount())
             .stream()
             .filter(Partition::hasData)
             .map(partition ->
-                new DefaultStreamer(
-                    partition,
-                    shape,
-                    partitioning,
-                    sources,
-                    memorySegmentSources
-                ));
+                new DefaultVectorPartitionStreamer(partition, shape, sources.memorySegmentSources()));
     }
 
     @Override
     public void close() {
         sources.close();
+    }
+
+    @Override
+    public Stream<PartitionStreamer> streamers() {
+        return Partition.partitions(shape.size(), partitioning.partitionCount())
+            .stream()
+            .filter(Partition::hasData)
+            .map(partition ->
+                new DefaultPartitionStreamer(
+                    partition,
+                    shape,
+                    partitioning,
+                    sources.byteSources()
+                ));
     }
 }

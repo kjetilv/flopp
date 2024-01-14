@@ -46,13 +46,13 @@ public class CalculateAverage_kjetilv {
             )
         ) {
             List<ByteArrayToResultMap> list =
-                partitionedPath.mapSegmentPartition((partition, segs) -> {
+                partitionedPath.mapMemorySegmentPartition((_, segs) -> {
 //                    Map<String, Result> map = new HashMap<>();
                     ByteArrayToResultMap m = new ByteArrayToResultMap();
-                    segs.forEach(seg -> {
+                    segs.forEach(line -> {
                         short offset = 0; //segment.offset();
-                        short length = (short)seg.length(); //segment.length();
-                        byte[] bytes = seg.bytes();
+                        short length = (short)line.length(); //segment.length();
+                        byte[] bytes = line.asBytes();
                         int splitIndex = -1;
                         int hash = 1;
                         for (short i = offset; i < length; i++) {
@@ -62,6 +62,9 @@ public class CalculateAverage_kjetilv {
                             } else {
                                 hash = 31 * hash + bytes[i];
                             }
+                        }
+                        if (splitIndex == -1) {
+                            throw new IllegalStateException(STR."Unparseable: \{new String(bytes)} in \{line}");
                         }
                         short value = parseValue(length, splitIndex, bytes);
                         m.putOrMerge(bytes, 0, splitIndex, value, hash);
@@ -91,7 +94,7 @@ public class CalculateAverage_kjetilv {
             )
         ) {
             List<Map<String, Result>> list =
-                partitionedPath.mapSegmentPartition((partition, segs) -> {
+                partitionedPath.mapByteSegPartition((partition, segs) -> {
 //                    Map<String, Result> map = new HashMap<>();
                     Map<String, Result> m = new HashMap<>();
                     segs.forEach(seg -> {

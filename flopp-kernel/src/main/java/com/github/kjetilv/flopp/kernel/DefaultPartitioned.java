@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -12,30 +13,27 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     private final P path;
 
+
     private final Shape shape;
 
     private final Partitioning partitioning;
 
-    private final MemorySegmentSources memorySegmentSources;
+    private final Sources sources;
 
     private final ExecutorService executorService;
-
-    private final ByteSources byteSources;
 
     public DefaultPartitioned(
         P path,
         Shape shape,
         Partitioning partitioning,
-        ByteSources byteSources,
-        MemorySegmentSources memorySegmentSources,
+        Sources sources,
         ExecutorService executorService
     ) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        this.memorySegmentSources = Objects.requireNonNull(memorySegmentSources, "memorySegmentSources");
+        this.sources = Objects.requireNonNull(sources, "sources");
         this.executorService = Objects.requireNonNull(executorService, "executorService");
-        this.byteSources = Objects.requireNonNull(byteSources, "sources");
     }
 
     @Override
@@ -44,18 +42,28 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     }
 
     @Override
+    public List<Partition> partitions() {
+        return Partition.partitions(shape.size(), partitioning.partitionCount());
+    }
+
+    @Override
     public PartitionedStreams streams() {
-        return new DefaultPartitionedStreams(shape, partitioning, byteSources, memorySegmentSources);
+        return new DefaultPartitionedStreams(shape, partitioning, sources);
+    }
+
+    @Override
+    public VectorPartitionedMapper vectorMapper() {
+        return new DefaultVectorPartitionedMapper(streams(), executorService);
     }
 
     @Override
     public PartitionedMapper mapper() {
-        return new DefaultPartitionedMapper(streams(), byteSources, executorService);
+        return new DefaultPartitionedMapper(streams(), executorService);
     }
 
     @Override
     public PartitionedConsumer consumer() {
-        return new DefaultPartitionedConsumer(mapper(), byteSources);
+        return new DefaultPartitionedConsumer(mapper());
     }
 
     @Override
@@ -162,11 +170,6 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             transfer,
             executorService
         );
-    }
-
-    @Override
-    public void close() {
-        byteSources.close();
     }
 
     protected ExecutorService executorService() {

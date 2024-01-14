@@ -13,7 +13,7 @@ class SurroundConsumersTest {
 
     @Test
     void oneByOne() {
-        BiConsumer<Consumer<Integer>, Integer> consumer = SurroundConsumers.surround(1, 2);
+        BiConsumer<Consumer<? super Integer>, Integer> consumer = SurroundConsumers.surround(1, 2);
         List<Integer> foos = new ArrayList<>();
         consumer.accept( foos::add, 1);
         consumer.accept(foos::add, 2);

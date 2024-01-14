@@ -1,10 +1,10 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.FileSources;
 import com.github.kjetilv.flopp.kernel.PartitionedProcessor;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 
-import java.lang.foreign.Arena;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
@@ -61,8 +61,7 @@ public final class PartitionedPaths {
             path,
             fileShape,
             partitioning,
-            new FileChannelByteSources(path, fileShape.size(), PADDING),
-            new FileChannelMemorySegmentSources(path, shape),
+            new FileSources(path, fileShape, PADDING),
             executorService == null
                 ? ForkJoinPool.commonPool()
                 : executorService
@@ -132,7 +131,7 @@ public final class PartitionedPaths {
         try {
             return Math.toIntExact(Files.size(path));
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to size " + path + ", expected partition-sized file", e);
+            throw new IllegalStateException(STR."Failed to size \{path}, expected partition-sized file", e);
         }
     }
 

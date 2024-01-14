@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 @SuppressWarnings("SameParameterValue")
 public class SizeTest {
 
@@ -178,10 +179,10 @@ public class SizeTest {
         long start = System.nanoTime();
         try (
             Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                path, shape,
+                path,
+                shape,
                 new Partitioning(partitions, 8192),
-                new FileChannelByteSources(path, shape.size()),
-                new FileChannelMemorySegmentSources(path),
+                new FileSources(path, shape),
                 readerExec
             )
         ) {

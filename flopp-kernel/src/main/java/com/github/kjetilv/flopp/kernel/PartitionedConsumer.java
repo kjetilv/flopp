@@ -25,11 +25,11 @@ public interface PartitionedConsumer extends Closeable {
         BiConsumer<Partition, Stream<RNLine>> consumer
     );
 
-    Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachSegment(
+    Stream<CompletableFuture<PartitionResult<ByteSeg>>> forEachByteSeg(
         BiConsumer<Partition, Stream<ByteSeg>> consumer
     );
 
-    Stream<CompletableFuture<PartitionResult<Supplier<ByteSeg>>>> forEachSuppliedSegment(
+    Stream<CompletableFuture<PartitionResult<Supplier<ByteSeg>>>> forEachSuppliedByteSeg(
         BiConsumer<Partition, Stream<Supplier<ByteSeg>>> consumer
     );
 

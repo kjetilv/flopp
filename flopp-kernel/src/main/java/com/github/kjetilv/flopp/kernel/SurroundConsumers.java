@@ -2,12 +2,11 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 final class SurroundConsumers {
 
-    static <T> BiConsumer<Consumer<T>, T> surround(int header, int footer) {
+    static <T> SurroundConsumer<T> surround(int header, int footer) {
         return header == 0 && footer == 0
             ? Consumer::accept
             : new Default<>(header, footer);
@@ -16,7 +15,7 @@ final class SurroundConsumers {
     private SurroundConsumers() {
     }
 
-    private static final class Default<T> implements BiConsumer<Consumer<T>, T> {
+    private static final class Default<T> implements SurroundConsumer<T> {
 
         private final int header;
 
@@ -34,7 +33,7 @@ final class SurroundConsumers {
         }
 
         @Override
-        public void accept(Consumer<T> consumer, T t) {
+        public void accept(Consumer<? super T> consumer, T t) {
             if (headersLeft > 0) {
                 headersLeft--;
                 return;
@@ -43,8 +42,7 @@ final class SurroundConsumers {
                 consumer.accept(t);
                 return;
             }
-            int queued = deque.size();
-            if (queued < footer) {
+            if (deque.size() < footer) {
                 deque.offerFirst(t);
                 return;
             }
@@ -57,11 +55,11 @@ final class SurroundConsumers {
         public String toString() {
             boolean h = header > 0;
             boolean f = deque != null;
-            return getClass().getSimpleName() + "[" + (h || f ?
-                (h ? headersLeft + "/" + header : "") +
-                    (f ? (h ? " " : "") + "q:" + deque.size() : "")
-                : "") +
-                "]";
+            return STR."\{getClass().getSimpleName()}[\{
+                h || f ?
+                    (h ? STR."\{headersLeft}/\{header}" : "") +
+                    (f ? STR."\{h ? " " : ""}q:\{deque.size()}" : "")
+                    : ""}]";
         }
     }
 }

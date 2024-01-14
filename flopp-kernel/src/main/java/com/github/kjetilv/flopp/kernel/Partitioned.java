@@ -11,7 +11,11 @@ public interface Partitioned<P> extends Closeable {
 
     P partitioned();
 
+    List<Partition> partitions();
+
     PartitionedStreams streams();
+
+    VectorPartitionedMapper vectorMapper();
 
     PartitionedMapper mapper();
 
@@ -95,42 +99,53 @@ public interface Partitioned<P> extends Closeable {
         }
     }
 
-    default <T> List<T> mapSegmentPartition(BiFunction<Partition, Stream<ByteSeg>, T> function) {
+    default <T> List<T> mapByteSegPartition(BiFunction<Partition, Stream<ByteSeg>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
-                .mapSegments(function)
+                .mapByteSegs(function)
                 .map(future ->
                     future.thenApply(PartitionResult::result)));
         }
     }
 
-    default <T> List<T> mapSuppliedSegmentPartition(BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> function) {
+    default <T> List<T> mapSuppliedByteSegPartition(BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> function) {
         try (PartitionedMapper mapper = mapper()) {
             return awaitCompleted(mapper
-                .mapSuppliedSegments(function)
+                .mapSuppliedByteSegs(function)
+                .map(future ->
+                    future.thenApply(PartitionResult::result)));
+        }
+    }
+
+    default <T> List<T> mapMemorySegmentPartition(
+        BiFunction<Partition, Stream<MemorySegments.LineSegment>, T> function
+    ) {
+        try (VectorPartitionedMapper mapper = vectorMapper()) {
+            return awaitCompleted(mapper
+                .mapLines(function)
                 .map(future ->
                     future.thenApply(PartitionResult::result)));
         }
     }
 
     default void forEachLine(Consumer<String> action) {
-        forEach(action, PartitionedStreams.Streamer::lines);
+        forEach(action, PartitionedStreams.PartitionStreamer::lines);
     }
 
     default void forEachRawLine(Consumer<byte[]> action) {
-        forEach(action, PartitionedStreams.Streamer::rawLines);
+        forEach(action, PartitionedStreams.PartitionStreamer::rawLines);
     }
 
     default void forEachNLine(Consumer<NLine> action) {
-        forEach(action, PartitionedStreams.Streamer::nLines);
+        forEach(action, PartitionedStreams.PartitionStreamer::nLines);
     }
 
     default void forEachRNLine(Consumer<RNLine> action) {
-        forEach(action, PartitionedStreams.Streamer::rnLines);
+        forEach(action, PartitionedStreams.PartitionStreamer::rnLines);
     }
 
-    default void forEachSegment(Consumer<ByteSeg> action) {
-        forEach(action, PartitionedStreams.Streamer::segments);
+    default void forEachByteSeg(Consumer<ByteSeg> action) {
+        forEach(action, PartitionedStreams.PartitionStreamer::byteSegs);
     }
 
     default void forEachLinePartition(BiConsumer<Partition, Stream<String>> action) {
@@ -157,16 +172,17 @@ public interface Partitioned<P> extends Closeable {
         }
     }
 
-    default void forEachSegmentPartition(BiConsumer<Partition, Stream<ByteSeg>> action) {
+    default void forEachByteSegPartition(BiConsumer<Partition, Stream<ByteSeg>> action) {
         try (PartitionedConsumer consumer = consumer()) {
-            awaitCompleted(consumer.forEachSegment(action));
+            awaitCompleted(consumer.forEachByteSeg(action));
         }
     }
 
     @Override
-    void close();
+    default void close() {
+    }
 
-    private <B> void forEach(Consumer<B> action, Function<PartitionedStreams.Streamer, Stream<B>> fun) {
+    private <B> void forEach(Consumer<B> action, Function<PartitionedStreams.PartitionStreamer, Stream<B>> fun) {
         try (PartitionedStreams streams = streams()) {
             streams.streamers()
                 .forEach(streamer -> fun.apply(streamer)

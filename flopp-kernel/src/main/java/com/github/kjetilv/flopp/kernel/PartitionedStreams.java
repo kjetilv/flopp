@@ -4,16 +4,28 @@ import java.io.Closeable;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-@FunctionalInterface
 public interface PartitionedStreams extends Closeable {
 
-    Stream<Streamer> streamers();
+    Stream<PartitionStreamer> streamers();
+
+    Stream<VectorPartitionStreamer> vectorStreamers();
 
     @Override
     default void close() {
     }
 
-    interface Streamer {
+    interface VectorPartitionStreamer extends Closeable {
+
+        Partition partition();
+
+        Stream<MemorySegments.LineSegment> memorySegments();
+
+        @Override
+        default void close() {
+        }
+    }
+
+    interface PartitionStreamer extends Closeable {
 
         Partition partition();
 
@@ -25,10 +37,12 @@ public interface PartitionedStreams extends Closeable {
 
         Stream<RNLine> rnLines();
 
-        Stream<ByteSeg> segments();
+        Stream<ByteSeg> byteSegs();
 
-        Stream<Supplier<ByteSeg>> segmentSuppliers();
+        Stream<Supplier<ByteSeg>> suppliedByteSegs();
 
-        Stream<MemorySegments.Line> memorySegments();
+        @Override
+        default void close() {
+        }
     }
 }

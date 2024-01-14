@@ -17,16 +17,14 @@ class DefaultPartitionedPath extends DefaultPartitioned<Path>
         Path path,
         Shape shape,
         Partitioning partitioning,
-        ByteSources byteSources,
-        MemorySegmentSources memorySegmentSources,
+        Sources sources,
         ExecutorService executorService
     ) {
         super(
             path,
             shape,
             partitioning,
-            byteSources,
-            memorySegmentSources,
+            sources,
             executorService
         );
     }

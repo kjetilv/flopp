@@ -1,18 +1,13 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.MemorySegmentSource;
-import com.github.kjetilv.flopp.kernel.MemorySegmentSources;
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
-
-import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
 public class FileChannelMemorySegmentSources implements MemorySegmentSources {
 
@@ -20,62 +15,58 @@ public class FileChannelMemorySegmentSources implements MemorySegmentSources {
 
     private final Shape shape;
 
+    private final int padding;
+
+    private final Arena arena;
+
+    private final FileChannel channel;
+
     public FileChannelMemorySegmentSources(Path path) {
-        this(path, null);
+        this(path, null, null, 0);
     }
 
-    public FileChannelMemorySegmentSources(Path path, Shape shape) {
-        this(path, shape, null);
-    }
-
-    public FileChannelMemorySegmentSources(Path path, Shape shape, Arena arena) {
+    public FileChannelMemorySegmentSources(Path path, Shape shape, Arena arena, int padding) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
+        try {
+            this.channel = FileChannel.open(path, StandardOpenOption.READ);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(STR."Failed to channel \{path}", e);
+        }
+        this.arena = Objects.requireNonNull(arena, "arena");
+        this.padding = Non.negative(padding, "padding");
     }
 
     @Override
     public MemorySegmentSource source(Partition partition) {
-        FileChannel channel = channel();
-        Arena arena = Arena.ofAuto();
-        MemorySegment ms = memorySegment(partition, channel, arena);
-        return new MemorySegmentSource() {
-
-            @Override
-            public MemorySegment get() {
-                return ms;
-            }
-
-            @Override
-            public void close() {
-                try {
-                    channel.close();
-                } catch (Exception e) {
-                    throw new IllegalStateException(STR."\{this} failed to close \{channel}", e);
-                } finally {
-                    arena.close();
-                }
-            }
-        };
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{path}]";
-    }
-
-    private FileChannel channel() {
         try {
-            return FileChannel.open(path, StandardOpenOption.READ);
+            return new FileChannelMemorySegmentSource(
+                shape,
+                partition,
+                this.channel,
+                this.arena,
+                this.padding
+            );
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed to open channel: \{path}", e);
         }
     }
 
-    private MemorySegment memorySegment(Partition partition, FileChannel channel, Arena arena) {
+    @Override
+    public void close() {
         try {
-            return channel.map(READ_ONLY, partition.offset(), this.shape.size(), arena).asReadOnly();
+            arena.close();
+        } catch (UnsupportedOperationException e) {
+            if (!arena.equals(Arena.global())) {
+                throw new IllegalStateException(STR."\{this} failed to close \{arena}", e);
+            }
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this}: Could not open", e);
+            throw new IllegalStateException(STR."\{this} failed to close \{arena}", e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{path}]";
     }
 }

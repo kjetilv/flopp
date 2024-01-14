@@ -23,7 +23,7 @@ public class FastPartitionerTest {
                 try {
                     run(testInfo, i, p);
                 } catch (Exception e) {
-                    throw new IllegalStateException("Failed " + i + " lines with " + p + " partitions", e);
+                    throw new IllegalStateException(STR."Failed \{i} lines with \{p} partitions", e);
                 }
             }
         }
@@ -53,8 +53,7 @@ public class FastPartitionerTest {
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelByteSources(file, shape.size()),
-                    new FileChannelMemorySegmentSources(file, shape),
+                    new FileSources(file, shape),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {
@@ -62,7 +61,7 @@ public class FastPartitionerTest {
                 partitioned.streams().streamers()
                     .forEach(streamer ->
                         streamer.nLines()
-                            .forEach(line ->
+                            .forEach(_ ->
                                 cont.increment()));
                 assertThat(cont).hasValue(lineCount);
             }
@@ -89,15 +88,14 @@ public class FastPartitionerTest {
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileChannelByteSources(file, shape.size()),
-                    new FileChannelMemorySegmentSources(file),
+                    new FileSources(file, shape),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {
                 LongAdder cont = new LongAdder();
                 partitioned.consumer().forEachNLine(
-                        (partition, entries) ->
-                            entries.forEach(line -> cont.increment())
+                        (_, entries) ->
+                            entries.forEach(_ -> cont.increment())
                     )
                     .toList()
                     .forEach(CompletableFuture::join);

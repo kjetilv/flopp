@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,15 +37,16 @@ public class Vector2Test {
         );
 
         try (
-            MemorySegmentSources memorySegmentSources = new FileChannelMemorySegmentSources(file);
+            MemorySegmentSources memorySegmentSources = new FileChannelMemorySegmentSources(file)
         ) {
-            Partition prtn = new Partition(1, 10, 4, 80);
+            Partition partition = new Partition(1, 10, 4, 80);
 
             MemorySegmentPartitionSpliterator spliterator =
                 new MemorySegmentPartitionSpliterator(
-                    prtn,
-                    memorySegmentSources
-                );
+                    partition,
+                    Shape.of(file),
+                    () ->
+                        memorySegment(partition, memorySegmentSources));
 
             spliterator.tryAdvance(line ->
                 {
@@ -59,7 +60,7 @@ public class Vector2Test {
         }
     }
 
-    private Path getFile(Path dir, String... lines) throws IOException {
+    private static Path getFile(Path dir, String... lines) throws IOException {
         Stream<String> content = lines.length > 0 ? Arrays.stream(lines) : IntStream.range(5, 15)
             .mapToObj(i ->
                 IntStream.range(5, 15).mapToObj(j -> {
@@ -84,5 +85,15 @@ public class Vector2Test {
 
         System.out.println(new String(Files.readAllBytes(file)));
         return file;
+    }
+
+    private static MemorySegmentSource.Segment memorySegment(
+        Partition partition,
+        MemorySegmentSources memorySegmentSources
+    ) {
+        return Objects.requireNonNull(
+            memorySegmentSources,
+            "memorySegmentSources"
+        ).source(partition).get();
     }
 }

@@ -33,7 +33,7 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
     /**
      * A convenient consumer for the lines, managing header/footer counts.
      */
-    protected final BiConsumer<Consumer<T>, T> lineConsumer;
+    protected final SurroundConsumer<T> lineConsumer;
 
     /**
      * Buffer holding the current working set of bytes
@@ -128,7 +128,7 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
         try {
             return process(action);
         } catch (Exception e) {
-            throw new IllegalStateException(this + ": Failed to advance in partition", e); // SOMETHING's up.
+            throw new IllegalStateException(STR."\{this}: Failed to advance in partition", e); // SOMETHING's up.
         } finally {
             byteSource.close();
         }

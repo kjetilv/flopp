@@ -25,11 +25,11 @@ public interface PartitionedMapper extends Closeable {
         BiFunction<Partition, Stream<RNLine>, T> processor
     );
 
-    <T> Stream<CompletableFuture<PartitionResult<T>>> mapSegments(
+    <T> Stream<CompletableFuture<PartitionResult<T>>> mapByteSegs(
         BiFunction<Partition, Stream<ByteSeg>, T> processor
     );
 
-    <T> Stream<CompletableFuture<PartitionResult<T>>> mapSuppliedSegments(
+    <T> Stream<CompletableFuture<PartitionResult<T>>> mapSuppliedByteSegs(
         BiFunction<Partition, Stream<Supplier<ByteSeg>>, T> processor
     );
 

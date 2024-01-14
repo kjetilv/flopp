@@ -111,6 +111,10 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
         );
     }
 
+    public boolean hasOverhead() {
+        return decor().size() > 0;
+    }
+
     public record Decor(int header, int footer) {
 
         public Decor() {

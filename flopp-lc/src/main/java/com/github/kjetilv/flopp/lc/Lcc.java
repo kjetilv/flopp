@@ -51,7 +51,7 @@ public final class Lcc {
     private static Count count(Path path) {
         LongAdder count = new LongAdder();
         PartitionedPaths.create(path, PARTITIONING, EXECUTOR_SERVICE)
-            .mapSuppliedSegmentPartition((__, stream) -> stream.count())
+            .mapSuppliedByteSegPartition((__, stream) -> stream.count())
             .forEach(count::add);
         return new Count(path, count.longValue());
     }

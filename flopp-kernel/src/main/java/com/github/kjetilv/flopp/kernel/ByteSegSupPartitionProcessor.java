@@ -37,6 +37,6 @@ class ByteSegSupPartitionProcessor<P> extends AbstractPartitionProcessor<P, Supp
         BiFunction<Partition, Stream<Supplier<ByteSeg>>, P> processor,
         PartitionedMapper mapper
     ) {
-        return mapper.mapSuppliedSegments(processor);
+        return mapper.mapSuppliedByteSegs(processor);
     }
 }

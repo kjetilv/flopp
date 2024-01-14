@@ -197,7 +197,7 @@ class NLinePartitionSpliteratorTest {
     @SuppressWarnings("resource")
     private static ByteSource getByteSource(Path dir, byte[] bytes, Partition partition) {
         try {
-            Path path = Files.write(dir.resolve(UUID.randomUUID() + ".bytes"), bytes);
+            Path path = Files.write(dir.resolve(STR."\{UUID.randomUUID()}.bytes"), bytes);
             return new FileChannelByteSources(path, Files.size(path)).source(partition);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -218,7 +218,7 @@ class NLinePartitionSpliteratorTest {
     @SuppressWarnings("StatementWithEmptyBody")
     private static void go(String str, int partitionCount, int size, int bufferSize, Path dir) {
         List<List<NLine>> subLines = IntStream.range(0, partitionCount)
-            .<List<NLine>>mapToObj(i -> new ArrayList<>())
+            .<List<NLine>>mapToObj(_ -> new ArrayList<>())
             .toList();
         List<NLine> lines = new ArrayList<>();
         try {
