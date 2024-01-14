@@ -23,11 +23,12 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     @Override
     public Stream<VectorPartitionStreamer> vectorStreamers() {
+        MemorySegmentSources sources = this.sources.memorySegmentSources();
         return Partition.partitions(shape.size(), partitioning.partitionCount())
             .stream()
             .filter(Partition::hasData)
             .map(partition ->
-                new DefaultVectorPartitionStreamer(partition, shape, sources.memorySegmentSources()));
+                new DefaultVectorPartitionStreamer(partition, shape, sources));
     }
 
     @Override

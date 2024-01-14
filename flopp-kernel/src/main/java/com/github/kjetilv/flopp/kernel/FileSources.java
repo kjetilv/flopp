@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.files.FileChannelMemorySegmentSources;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +29,12 @@ public final class FileSources implements Sources {
 
     public FileSources(Path path, Shape shape, int padding) {
         this.path = Objects.requireNonNull(path, "path");
+        if (!Files.isRegularFile(path)) {
+            throw new IllegalStateException(STR."Not a valid path: \{path}");
+        }
+        if (!Files.isReadable(path)) {
+            throw new IllegalStateException(STR."Not a readable path: \{path}");
+        }
         this.shape = shape == null ? Shape.of(this.path) : shape;
         this.padding = Non.negative(padding, "padding");
     }
@@ -48,7 +55,8 @@ public final class FileSources implements Sources {
 
     @Override
     public void close() {
-        Stream.of(bytesSources, memorySegmentSources).map(AtomicReference::get)
+        Stream.of(bytesSources, memorySegmentSources)
+            .map(AtomicReference::get)
             .filter(Objects::nonNull)
             .forEach(closeable -> {
                 try {

@@ -4,11 +4,10 @@ import java.io.Closeable;
 
 public interface Sources extends Closeable {
 
-    public MemorySegmentSources memorySegmentSources();
+    MemorySegmentSources memorySegmentSources();
 
-    public ByteSources byteSources();
+    ByteSources byteSources();
 
     @Override
-    default void close() {
-    }
+    void close();
 }

@@ -5,8 +5,6 @@ import com.github.kjetilv.flopp.kernel.ByteSources;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 
 public final class FileChannelByteSources extends AbstractFileChanneling implements ByteSources {
@@ -22,7 +20,7 @@ public final class FileChannelByteSources extends AbstractFileChanneling impleme
     public FileChannelByteSources(Path path, long size, int padding) {
         super(path, false);
         this.size = Non.negative(size, "size");
-        this.padding = Non.negativeOrZero(padding, "padding");
+        this.padding = Non.negative(padding, "padding");
     }
 
     @Override

@@ -4,9 +4,6 @@ import com.github.kjetilv.flopp.kernel.MemorySegmentSource;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
-import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.VectorShape;
-import jdk.incubator.vector.VectorSpecies;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
@@ -45,23 +42,13 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
     @Override
     public Segment get() {
         long length = Math.min(shape.size() - partition.offset(), partition.count() + padding);
-        long paddedLength = Math.max(SPECIES.length(), length);
+        long paddedLength = Math.max(MemorySegmentSource.SPECIES.length(), length);
         int shift = Math.toIntExact(paddedLength - length);
         try {
-            return new Segment(getMemorySegment(shift, paddedLength), shift);
+            return new Segment(memorySegment(shift, paddedLength), shift);
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this}: Could not open with length \{length}", e);
         }
-    }
-
-    private MemorySegment getMemorySegment(int shift, long paddedLength) throws IOException {
-        MemorySegment segment = channel.map(
-            READ_ONLY,
-            partition.offset() - shift,
-            paddedLength,
-            arena
-        ).asReadOnly();
-        return segment;
     }
 
     @Override
@@ -73,6 +60,21 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
         }
     }
 
-    private static final VectorSpecies<Byte> SPECIES =
-        VectorShape.preferredShape().withLanes(ByteVector.SPECIES_PREFERRED.elementType());
+    private MemorySegment memorySegment(int shift, long paddedLength) {
+        try {
+            return channel.map(
+                READ_ONLY,
+                partition.offset() - shift,
+                paddedLength,
+                arena
+            ).asReadOnly();
+        } catch (IOException e) {
+            throw new IllegalStateException(STR."\{this} failed to open \{channel}", e);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{shape} \{partition}, padding=\{padding}]";
+    }
 }

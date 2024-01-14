@@ -41,8 +41,8 @@ public class Vector2Test {
         ) {
             Partition partition = new Partition(1, 10, 4, 80);
 
-            MemorySegmentPartitionSpliterator spliterator =
-                new MemorySegmentPartitionSpliterator(
+            VectorPartitionSpliterator spliterator =
+                new VectorPartitionSpliterator(
                     partition,
                     Shape.of(file),
                     () ->

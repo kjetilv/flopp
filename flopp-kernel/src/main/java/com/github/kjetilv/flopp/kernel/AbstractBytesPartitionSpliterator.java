@@ -129,8 +129,6 @@ public abstract class AbstractBytesPartitionSpliterator<T> extends Spliterators.
             return process(action);
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this}: Failed to advance in partition", e); // SOMETHING's up.
-        } finally {
-            byteSource.close();
         }
     }
 

@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 import static jdk.incubator.vector.VectorOperators.EQ;
 
-public class MemorySegmentPartitionSpliterator
+public class VectorPartitionSpliterator
     extends Spliterators.AbstractSpliterator<MemorySegments.LineSegment> {
 
     private final Partition partition;
@@ -30,11 +30,11 @@ public class MemorySegmentPartitionSpliterator
 
     private final int partitionNo;
 
-    public MemorySegmentPartitionSpliterator(Partition partition, Shape shape, MemorySegmentSource source) {
+    public VectorPartitionSpliterator(Partition partition, Shape shape, MemorySegmentSource source) {
         this(partition, shape, source, false);
     }
 
-    public MemorySegmentPartitionSpliterator(
+    public VectorPartitionSpliterator(
         Partition partition,
         Shape shape,
         MemorySegmentSource source,
@@ -78,8 +78,8 @@ public class MemorySegmentPartitionSpliterator
 
         long linesServed = 0;
         while (true) {
-            ByteVector vector;
             int shift = 0;
+            ByteVector vector;
             try {
                 if (offset > limit) {
                     shift = Math.toIntExact(offset - limit);

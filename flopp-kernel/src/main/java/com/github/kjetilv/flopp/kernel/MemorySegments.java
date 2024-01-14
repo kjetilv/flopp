@@ -22,7 +22,7 @@ public final class MemorySegments {
 
     public static Stream<LineSegment> lineSegments(Partition partition, Shape shape, MemorySegment memorySegment) {
         return StreamSupport.stream(
-            new MemorySegmentPartitionSpliterator(partition, shape, () ->
+            new VectorPartitionSpliterator(partition, shape, () ->
                 new MemorySegmentSource.Segment(memorySegment, 0)),
             false
         );

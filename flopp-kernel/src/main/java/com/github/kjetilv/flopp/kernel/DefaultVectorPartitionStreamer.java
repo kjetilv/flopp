@@ -24,20 +24,17 @@ final class DefaultVectorPartitionStreamer implements PartitionedStreams.VectorP
     }
 
     @Override
-    public void close() {
-        sources.close();
+    public Stream<MemorySegments.LineSegment> memorySegments() {
+        MemorySegmentSource source = sources.source(partition);
+        return StreamSupport.stream(
+            new VectorPartitionSpliterator(partition, shape, source),
+            false
+        );
     }
 
     @Override
-    public Stream<MemorySegments.LineSegment> memorySegments() {
-        return StreamSupport.stream(
-            new MemorySegmentPartitionSpliterator(
-                partition,
-                shape,
-                sources.source(partition)
-            ),
-            false
-        );
+    public void close() {
+        sources.close();
     }
 
     @Override

@@ -172,6 +172,11 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
         );
     }
 
+    @Override
+    public void close() {
+        sources.close();
+    }
+
     protected ExecutorService executorService() {
         return executorService;
     }
