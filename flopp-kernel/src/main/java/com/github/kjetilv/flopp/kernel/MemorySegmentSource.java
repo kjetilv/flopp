@@ -26,6 +26,11 @@ public interface MemorySegmentSource extends Closeable {
         public long limit() {
             return memorySegment.byteSize() - SPECIES.length();
         }
+
+        @Override
+        public String toString() {
+            return STR."\{getClass().getSimpleName()}[\{memorySegment}/\{shift}]";
+        }
     }
 
     VectorSpecies<Byte> SPECIES = VectorShape.preferredShape().withLanes(ByteVector.SPECIES_PREFERRED.elementType());
