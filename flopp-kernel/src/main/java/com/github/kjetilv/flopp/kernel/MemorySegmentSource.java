@@ -12,13 +12,9 @@ import java.util.Objects;
 
 import static jdk.incubator.vector.VectorOperators.EQ;
 
-public interface MemorySegmentSource extends Closeable {
+public interface MemorySegmentSource  {
 
     Segment get();
-
-    @Override
-    default void close() {
-    }
 
     @SuppressWarnings("MethodMayBeStatic")
     record Segment(MemorySegment memorySegment, int shift) {

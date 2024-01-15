@@ -18,8 +18,6 @@ final class FileChannelByteSource implements ByteSource {
 
     private final FileChannel channel;
 
-    private final RandomAccessFile randomAccessFile;
-
     private final long fileSize;
 
     private final int padding;
@@ -30,10 +28,9 @@ final class FileChannelByteSource implements ByteSource {
 
     private int bytesReadInBuffer;
 
-    FileChannelByteSource(Partition partition, RandomAccessFile randomAccessFile, long fileSize, int padding) {
+    FileChannelByteSource(Partition partition, FileChannel channel, long fileSize, int padding) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.randomAccessFile = Objects.requireNonNull(randomAccessFile, "randomAccessFile");
-        this.channel = randomAccessFile.getChannel();
+        this.channel = channel;
         this.fileSize = Non.negative(fileSize, "fileSize");
         this.padding = Non.negative(padding, "padding");
         newBuffer(this.partition.offset(), Math.min(
@@ -66,20 +63,6 @@ final class FileChannelByteSource implements ByteSource {
             mappedByteBuffer = null;
         }
         return bytesToRead;
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.channel.close();
-        } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} failed to close: \{channel}", e);
-        }
-        try {
-            randomAccessFile.close();
-        } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to close: \{randomAccessFile}", e);
-        }
     }
 
     @Override

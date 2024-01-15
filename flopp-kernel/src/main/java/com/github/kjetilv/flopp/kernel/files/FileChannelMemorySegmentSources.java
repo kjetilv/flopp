@@ -49,6 +49,11 @@ public class FileChannelMemorySegmentSources implements MemorySegmentSources {
     @Override
     public void close() {
         try {
+            this.channel.close();
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."\{this} failed to close \{channel}", e);
+        }
+        try {
             arena.close();
         } catch (UnsupportedOperationException ignore) {
         } catch (Exception e) {

@@ -53,15 +53,6 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
         }
     }
 
-    @Override
-    public void close() {
-        try {
-            channel.close();
-        } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to close \{channel}", e);
-        }
-    }
-
     private MemorySegment memorySegment(long length, int shift) {
         try {
             return channel.map(

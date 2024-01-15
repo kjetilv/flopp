@@ -1,13 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.io.Closeable;
-
 @FunctionalInterface
-public interface ByteSource extends Closeable {
+public interface ByteSource {
 
     int fill(byte[] bytes);
-
-    @Override
-    default void close() {
-    }
 }

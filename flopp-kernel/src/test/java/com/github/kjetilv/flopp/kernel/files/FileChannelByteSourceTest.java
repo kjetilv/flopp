@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -24,10 +25,13 @@ class FileChannelByteSourceTest {
             .collect(Collectors.joining());
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
         Files.write(tempFile, string.getBytes());
-        try (RandomAccessFile randomAccessFile = randomAccess(tempFile)) {
+        try (
+            RandomAccessFile randomAccessFile = randomAccess(tempFile);
+            FileChannel channel = randomAccessFile.getChannel();
+        ) {
             ByteSource source = new FileChannelByteSource(
                 new Partition(0, 2, 0, 10),
-                randomAccessFile,
+                channel,
                 Files.size(tempFile),
                 4
             );
