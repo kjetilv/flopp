@@ -2,8 +2,6 @@ package com.github.kjetilv.flopp.kernel;
 
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorMask;
-import jdk.incubator.vector.VectorShape;
-import jdk.incubator.vector.VectorSpecies;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
@@ -32,6 +30,8 @@ public class VectorPartitionSpliterator
 
     private final boolean lastPartition;
 
+    private final boolean firstPartition;
+
     public VectorPartitionSpliterator(Partition partition, Shape shape, MemorySegmentSource source) {
         this(partition, shape, source, false);
     }
@@ -47,6 +47,8 @@ public class VectorPartitionSpliterator
         this.partition = Objects.requireNonNull(partition, "partition");
         this.partitionLimit = this.partition.count();
         this.partitionNo = partition.partitionNo();
+
+        this.firstPartition = partition.first();
         this.lastPartition = partition.last();
 
         this.source = Objects.requireNonNull(source, "memorySegmentSources");
@@ -80,100 +82,100 @@ public class VectorPartitionSpliterator
 
     private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
         MemorySegmentSource.Segment segment = source.get();
-        long limit = segment.limit();
-        long offset = nextLine(segment, limit);
-        long nextLine = offset;
-        int skip = 0;
+        long segmentOffset = firstLineOffset(segment);
+        long lineMarker = segmentOffset;
 
-        long linesServed = 0;
+        int pending = 0;
+
+        long lines = 0;
         while (true) {
-            int shift = 0;
-            ByteVector vector;
+            int backshift = 0;
+            VectorMask<Byte> mask;
             try {
-                if (offset > limit) {
-                    shift = Math.toIntExact(offset - limit);
+                if (segmentOffset > segment.maxReadOffset()) {
+                    backshift = Math.toIntExact(segmentOffset - segment.maxReadOffset());
                 }
-                vector = vector(segment, Math.min(limit, offset));
+                mask = segment.lineMask(segmentOffset - backshift);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            VectorMask<Byte> mask = vector.compare(EQ, '\n');
-            if (mask.anyTrue()) {
-                int zeroes = Long.numberOfTrailingZeros(mask.toLong() >>> shift);
-                int length = skip * mask.length() + zeroes;
-                MemorySegments.LineSegment lineSegment = lineSegment(
-                    linesServed,
-                    segment,
-                    nextLine,
-                    length
-                );
-                try {
-                    lineConsumer.accept(action, lineSegment);
-                } finally {
-                    linesServed++;
+            int maskOffset = backshift;
+            while (true) {
+                int zeroes = Long.numberOfTrailingZeros(mask.toLong() >>> backshift);
+                if (zeroes < BYTES_IN_LONG) {
+                    int length = pending + zeroes - maskOffset + backshift;
+                    MemorySegments.LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
+                    try {
+                        lineConsumer.accept(action, lineSegment.validate());
+                    } catch (Exception e) {
+                        throw new IllegalStateException(
+                            STR."\{this} failed to ship \{lineSegment} to \{lineConsumer}", e);
+                    }
+                    lines++;
+                    int advance = length + 1;
+                    lineMarker += advance;
+                    if (exhausted(segment, lineMarker)) {
+                        return false;
+                    }
+                    maskOffset += advance - pending;
+                    pending = 0;
+                    mask = mask.andNot(VectorMask.fromLong(segment.species(), 1L << maskOffset - 1));
+                } else {
+                    segmentOffset += mask.length() - backshift;
+                    pending += mask.length() - maskOffset;
+                    break;
                 }
-                offset += zeroes + 1;
-                nextLine = offset;
-                skip = 0;
-                if (exhausted(segment, offset)) {
-                    return false;
-                }
-            } else {
-                offset += mask.length();
-                skip += 1;
             }
         }
     }
 
-    private long nextLine(MemorySegmentSource.Segment segment, long limit) {
-        if (partition.first()) {
+    private long firstLineOffset(MemorySegmentSource.Segment segment) {
+        if (firstPartition) {
             return 0;
         }
         long offset = 0;
         while (true) {
-            ByteVector vector = vector(segment, offset);
-            VectorMask<Byte> mask = vector.compare(EQ, '\n');
-            int leadingZeros = Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
-            if (leadingZeros == mask.length()) {
+            VectorMask<Byte> mask = segment.lineMask(offset);
+            int zeroes = trailingZeroes(segment, mask);
+            if (zeroes < Long.BYTES) {
+                return offset + zeroes + 1 + segment.shift();
+            } else {
                 offset += Long.BYTES;
-                continue;
             }
-            offset += leadingZeros + 1;
-            break;
         }
-        return offset + segment.shift();
     }
 
-    private ByteVector vector(MemorySegmentSource.Segment segment, long offset) {
+    private static int trailingZeroes(
+        MemorySegmentSource.Segment segment,
+        VectorMask<Byte> mask
+    ) {
+        return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
+    }
+
+    private ByteVector vector(MemorySegmentSource.Segment segment, long start) {
         try {
             return ByteVector.fromMemorySegment(
-                SPECIES,
+                segment.species(),
                 segment.memorySegment(),
-                offset,
+                start,
                 NATIVE_ORDER
             );
         } catch (Exception e) {
             throw new IllegalStateException(
-                STR."\{this} failed to open vector @ \{offset}: \{segment}", e);
+                STR."\{this} failed to open vector @ \{start}: \{segment}", e);
         }
     }
 
     private boolean exhausted(MemorySegmentSource.Segment segment, long offset) {
         long segmentOffset = offset - segment.shift();
-        if (segmentOffset < partitionLimit) {
-            return false;
-        }
         if (segmentOffset == partitionLimit) {
-            return partition.last();
+            return lastPartition;
         }
-        return true;
+        return segmentOffset >= partitionLimit;
     }
 
     private MemorySegments.LineSegment lineSegment(
-        long lineNo,
-        MemorySegmentSource.Segment segment,
-        long offset,
-        int length
+        MemorySegmentSource.Segment segment, long offset, int length, long lineNo
     ) {
         if (allocating) {
             return new Line(
@@ -190,6 +192,8 @@ public class VectorPartitionSpliterator
         segmentLine.length = length;
         return segmentLine;
     }
+
+    public static final int BYTES_IN_LONG = Long.BYTES * 8;
 
     private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
 

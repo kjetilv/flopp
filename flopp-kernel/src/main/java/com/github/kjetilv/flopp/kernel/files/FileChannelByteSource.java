@@ -35,7 +35,7 @@ final class FileChannelByteSource implements ByteSource {
         this.randomAccessFile = Objects.requireNonNull(randomAccessFile, "randomAccessFile");
         this.channel = randomAccessFile.getChannel();
         this.fileSize = Non.negative(fileSize, "fileSize");
-        this.padding = Non.negativeOrZero(padding, "padding");
+        this.padding = Non.negative(padding, "padding");
         newBuffer(this.partition.offset(), Math.min(
             this.partition.count() + padding,
             this.fileSize - this.partition.offset()

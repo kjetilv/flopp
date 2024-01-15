@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SegmentedPartitionedTest {
@@ -51,11 +52,14 @@ class SegmentedPartitionedTest {
         Partitioning partitioning = new Partitioning(partitionCount, 16);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().vectorStreamers()
-            .forEach(partitionStreamer ->
+            .forEach(partitionStreamer -> {
                 partitionStreamer.memorySegments()
                     .map(MemorySegments::toString)
-                    .forEach(e ->
-                        syncLines.add(e)));
+                    .forEach(e -> {
+                        assertThat(e).doesNotContain("\n");
+                        syncLines.add(e);
+                    });
+            });
         pf1.close();
         assertContents(syncLines);
 
@@ -74,17 +78,6 @@ class SegmentedPartitionedTest {
             .forEach(CompletableFuture::join);
         pf2.close();
         assertContents(asyncLines);
-    }
-
-    private static void assertContents(List<String> lines) {
-        String collect = lines.stream()
-            .map(Object::toString)
-            .collect(Collectors.joining("\n"));
-        assertEquals(14, lines.size(),
-            collect
-        );
-        assertEquals("1a", lines.getFirst(), collect);
-        assertEquals("11", lines.get(13), collect);
     }
 
     @Test
@@ -203,5 +196,16 @@ class SegmentedPartitionedTest {
             .forEach(CompletableFuture::join);
         pf2.close();
         assertContents(asyncLines);
+    }
+
+    private static void assertContents(List<String> lines) {
+        String collect = lines.stream()
+            .map(Object::toString)
+            .collect(Collectors.joining("\n"));
+        assertEquals(14, lines.size(),
+            collect
+        );
+        assertEquals("1a", lines.getFirst(), collect);
+        assertEquals("11", lines.get(13), collect);
     }
 }

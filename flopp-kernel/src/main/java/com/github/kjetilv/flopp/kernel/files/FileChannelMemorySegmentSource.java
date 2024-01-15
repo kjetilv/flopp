@@ -41,13 +41,15 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     @Override
     public Segment get() {
-        long length = Math.min(shape.size() - partition.offset(), partition.count() + padding);
-        long paddedLength = Math.max(MemorySegmentSource.SPECIES.length(), length);
-        int shift = Math.toIntExact(paddedLength - length);
+        int remainingSize = Math.toIntExact(shape.size() - partition.offset());
+        int wantedSize = partition.count() + padding;
+        int logicalLength = Math.min(remainingSize, wantedSize);
+        int physicalLength = Math.max(SPECIES_LENGTH, logicalLength);
+        int shift = Math.toIntExact(physicalLength - logicalLength);
         try {
-            return new Segment(memorySegment(shift, paddedLength), shift);
+            return new Segment(memorySegment(physicalLength, shift), shift);
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this}: Could not open with length \{length}", e);
+            throw new IllegalStateException(STR."\{this}: Could not open with length \{logicalLength}", e);
         }
     }
 
@@ -60,12 +62,12 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
         }
     }
 
-    private MemorySegment memorySegment(int shift, long paddedLength) {
+    private MemorySegment memorySegment(long length, int shift) {
         try {
             return channel.map(
                 READ_ONLY,
                 partition.offset() - shift,
-                paddedLength,
+                length,
                 arena
             ).asReadOnly();
         } catch (IOException e) {
@@ -77,4 +79,6 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{shape} \{partition}, padding=\{padding}]";
     }
+
+    public static final int SPECIES_LENGTH = MemorySegmentSource.SPECIES.length();
 }

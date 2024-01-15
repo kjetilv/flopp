@@ -64,5 +64,12 @@ public final class MemorySegments {
         default byte[] asBytes() {
             return toBytes(this);
         }
+
+        default LineSegment validate() {
+            if (length() < 0) {
+                throw new IllegalStateException(STR."\{this} has negative length");
+            }
+            return this;
+        }
     }
 }

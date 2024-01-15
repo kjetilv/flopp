@@ -14,12 +14,12 @@ public final class FileBuilder {
 
     public static Path file(Path tmp, String base, int lineCount, int columnCount, Shape.Decor decor) {
         try {
-            Path path = tmp.resolve(base + "-data.txt");
+            Path path = tmp.resolve(STR."\{base}-data.txt");
             Iterable<String> lines = lines(lineCount, columnCount, decor);
             Files.write(path, lines, WRITE, CREATE);
             return path;
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to create file with " + lineCount + " lines", e);
+            throw new IllegalStateException(STR."Failed to create file with \{lineCount} lines", e);
         }
     }
 
