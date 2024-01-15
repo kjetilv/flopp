@@ -67,13 +67,23 @@ class DefaultPartitionedMapper implements PartitionedMapper {
     ) {
         return streams.streamers()
             .map(streamer ->
-                CompletableFuture
-                    .supplyAsync(
-                        () ->
-                            processor.apply(streamer.partition(), segmentSuppliers.apply(streamer)),
+                CompletableFuture.supplyAsync(
+                        supplier(streamer, segmentSuppliers, processor),
                         this.executorService
                     )
                     .thenApply(result ->
                         new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    private static <T, B> Supplier<T> supplier(
+        PartitionedStreams.PartitionStreamer streamer,
+        Function<PartitionedStreams.PartitionStreamer, Stream<B>> segmentSuppliers,
+        BiFunction<Partition, Stream<B>, T> processor
+    ) {
+        return () ->
+            processor.apply(
+                streamer.partition(),
+                segmentSuppliers.apply(streamer)
+            );
     }
 }

@@ -101,7 +101,6 @@ public final class PartitionedPaths {
             PartitionedPaths::sizeOf,
             (p, charset) ->
                 new MemoryMappedByteArrayLinesWriter(p, partitioning.bufferSize(), charset)
-
         );
     }
 

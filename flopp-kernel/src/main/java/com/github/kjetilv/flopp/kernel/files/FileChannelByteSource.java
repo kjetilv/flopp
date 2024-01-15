@@ -48,6 +48,9 @@ final class FileChannelByteSource implements ByteSource {
             return -1;
         }
         if (mappedByteBuffer == null) {
+            if (padding == 0) {
+                throw new IllegalStateException(STR."\{this} has no padding");
+            }
             long bytesLeftTotal = fileSize - bytesReadTotal;
             long limit = Math.min(padding, bytesLeftTotal);
             newBuffer(bytesReadTotal, limit);

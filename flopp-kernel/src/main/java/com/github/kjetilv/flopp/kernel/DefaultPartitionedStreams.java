@@ -22,6 +22,15 @@ class DefaultPartitionedStreams implements PartitionedStreams {
     }
 
     @Override
+    public Stream<PartitionStreamer> streamers() {
+        return Partition.partitions(shape.size(), partitioning.partitionCount())
+            .stream()
+            .filter(Partition::hasData)
+            .map(partition ->
+                new DefaultPartitionStreamer(partition, shape, partitioning, sources.byteSources()));
+    }
+
+    @Override
     public Stream<VectorPartitionStreamer> vectorStreamers() {
         MemorySegmentSources sources = this.sources.memorySegmentSources();
         return Partition.partitions(shape.size(), partitioning.partitionCount())
@@ -34,19 +43,5 @@ class DefaultPartitionedStreams implements PartitionedStreams {
     @Override
     public void close() {
         sources.close();
-    }
-
-    @Override
-    public Stream<PartitionStreamer> streamers() {
-        return Partition.partitions(shape.size(), partitioning.partitionCount())
-            .stream()
-            .filter(Partition::hasData)
-            .map(partition ->
-                new DefaultPartitionStreamer(
-                    partition,
-                    shape,
-                    partitioning,
-                    sources.byteSources()
-                ));
     }
 }

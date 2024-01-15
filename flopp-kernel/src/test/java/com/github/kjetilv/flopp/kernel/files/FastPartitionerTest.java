@@ -48,17 +48,18 @@ public class FastPartitionerTest {
 
         try {
             Shape shape = Shape.size(Files.size(file)).header(1, 1);
+            LongAdder cont = new LongAdder();
             try (
                 PartitionedPath partitioned = new DefaultPartitionedPath(
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileSources(file, shape),
+                    new FileSources(file, shape, 1024),
                     Executors.newVirtualThreadPerTaskExecutor()
-                )
+                );
+                PartitionedStreams streams = partitioned.streams();
             ) {
-                LongAdder cont = new LongAdder();
-                partitioned.streams().streamers()
+                streams.streamers()
                     .forEach(streamer ->
                         streamer.nLines()
                             .forEach(_ ->
@@ -88,7 +89,7 @@ public class FastPartitionerTest {
                     file,
                     shape,
                     Partitioning.create(partitionCount, 10),
-                    new FileSources(file, shape),
+                    new FileSources(file, shape, 1024),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
             ) {

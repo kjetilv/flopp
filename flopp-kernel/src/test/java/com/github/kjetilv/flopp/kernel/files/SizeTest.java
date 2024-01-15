@@ -148,7 +148,7 @@ public class SizeTest {
         readerExec = null;
     }
 
-    private Duration doRealStuff(TestInfo testInfo, String qual, Function<String, String> processor, int bufferSize) {
+    private Duration doRealStuff(TestInfo testInfo, String qual, Function<String, String> fun, int bufferSize) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
@@ -156,7 +156,7 @@ public class SizeTest {
             PartitionedProcessor<String> partitioned =
                 PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
         ) {
-            partitioned.process(processor);
+            partitioned.process(fun);
         }
         return log(testInfo, start);
     }
@@ -174,7 +174,7 @@ public class SizeTest {
         return log(testInfo, start);
     }
 
-    private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<String, String> processor) {
+    private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<String, String> fun) {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
         try (
@@ -182,16 +182,17 @@ public class SizeTest {
                 path,
                 shape,
                 new Partitioning(partitions, 8192),
-                new FileSources(path, shape),
+                new FileSources(path, shape, 1024),
                 readerExec
-            )
-        ) {
-            partitioned.processor(
+            );
+            PartitionedProcessor<String> proc = partitioned.processor(
                 new FileTempTargets(tmp),
                 new FileChannelTransfers(tmp),
                 SizeTest::sizeOf,
                 SimpleLinesWriter::new
-            ).process(processor);
+            );
+        ) {
+            proc.process(fun);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

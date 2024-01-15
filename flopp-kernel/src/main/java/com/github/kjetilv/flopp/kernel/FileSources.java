@@ -37,6 +37,9 @@ public final class FileSources implements Sources {
         }
         this.shape = shape == null ? Shape.of(this.path) : shape;
         this.padding = Non.negative(padding, "padding");
+        if (!this.shape.limitsLineLength() && padding == 0) {
+            throw new IllegalStateException(STR."\{shape} does not limit line length, so padding must be positive");
+        }
     }
 
     @Override

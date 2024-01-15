@@ -73,4 +73,9 @@ class DefaultPartitionedConsumer implements PartitionedConsumer {
             return null;
         });
     }
+
+    @Override
+    public void close() {
+        mapper.close();
+    }
 }
