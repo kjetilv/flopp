@@ -67,8 +67,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, int co
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[#" + partitionNo +
-               "{" + (partitionNo + 1) + "/" + partitionCount + "}@" + offset + "+" + count + "]";
+        return STR."\{getClass().getSimpleName()}[\{partitionNo + 1}/\{partitionCount}@\{offset}+\{count}]";
     }
 
     private static int[] partitionSizes(long total, int count) {

@@ -106,7 +106,8 @@ public class VectorPartitionSpliterator
                     int length = pending + zeroes - maskOffset + backshift;
                     MemorySegments.LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
                     try {
-                        lineConsumer.accept(action, lineSegment.validate());
+                        MemorySegments.LineSegment validated = lineSegment.validate();
+                        lineConsumer.accept(action, validated);
                     } catch (Exception e) {
                         throw new IllegalStateException(
                             STR."\{this} failed to ship \{lineSegment} to \{lineConsumer}", e);
@@ -119,7 +120,8 @@ public class VectorPartitionSpliterator
                     }
                     maskOffset += advance - pending;
                     pending = 0;
-                    mask = mask.andNot(VectorMask.fromLong(segment.species(), 1L << maskOffset - 1));
+                    VectorMask<Byte> negated = VectorMask.fromLong(segment.species(), 1L << maskOffset - 1);
+                    mask = mask.andNot(negated);
                 } else {
                     segmentOffset += mask.length() - backshift;
                     pending += mask.length() - maskOffset;

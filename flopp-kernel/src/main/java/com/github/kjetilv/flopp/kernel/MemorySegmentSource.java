@@ -5,7 +5,6 @@ import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
 
-import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -37,12 +36,13 @@ public interface MemorySegmentSource  {
         }
 
         public VectorMask<Byte> charMask(long offset, char c) {
-            return vector(offset).compare(EQ, c);
+            ByteVector vector = vector(offset);
+            return vector.compare(EQ, c);
         }
 
         private ByteVector vector(long offset) {
             try {
-                return ByteVector.fromMemorySegment(species(), memorySegment(), offset, NATIVE_ORDER);
+                return ByteVector.fromMemorySegment(SPECIES, memorySegment, offset, NATIVE_ORDER);
             } catch (Exception e) {
                 throw new IllegalStateException(
                     STR."\{this} failed to open vector @ \{offset}", e);

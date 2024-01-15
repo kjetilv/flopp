@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 public class CalculateAverage_kjetilv {
 
     public static void main(String[] args) {
-        runSpull();
-//        runJava();
+//        runSpull();
+        runJava();
     }
 
     private static final String FILE = "./measurements.txt";
@@ -94,22 +94,17 @@ public class CalculateAverage_kjetilv {
             )
         ) {
             List<Map<String, Result>> list =
-                partitionedPath.mapByteSegPartition((partition, segs) -> {
+                partitionedPath.mapMemorySegmentPartition((partition, segs) -> {
 //                    Map<String, Result> map = new HashMap<>();
-                    Map<String, Result> m = new HashMap<>();
+                    Map<String, Result> m = new HashMap<>(1024, 1.0f);
                     segs.forEach(seg -> {
-                        int offset = 0; //segment.offset();
                         short length = (short) seg.length(); //segment.length();
-                        byte[] bytes = seg.bytes();
-//                        byte[] bytes = segment.bytes();
+                        byte[] bytes = MemorySegments.toBytes(seg);
                         int splitIndex = -1;
-                        int hash = 1;
-                        for (int i = offset; i < length; i++) {
+                        for (int i = length - 3;  i >= 0; i--) {
                             if (bytes[i] == ';') {
                                 splitIndex = i;
                                 break;
-                            } else {
-                                hash = 31 * hash + 17 * bytes[i];
                             }
                         }
                         short value = parseValue(length, splitIndex, bytes);

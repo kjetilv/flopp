@@ -5,7 +5,6 @@ import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 
-import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
@@ -26,14 +25,14 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
     private final int padding;
 
     FileChannelMemorySegmentSource(
-        Shape shape,
         Partition partition,
+        Shape shape,
         FileChannel channel,
         Arena arena,
         int padding
     ) {
-        this.shape = Objects.requireNonNull(shape, "shape");
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.shape = Objects.requireNonNull(shape, "shape");
         this.channel = Objects.requireNonNull(channel, "channel");
         this.arena = Objects.requireNonNull(arena, "arena");
         this.padding = Non.negative(padding, "padding");
@@ -41,34 +40,35 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     @Override
     public Segment get() {
-        int remainingSize = Math.toIntExact(shape.size() - partition.offset());
-        int wantedSize = partition.count() + padding;
-        int logicalLength = Math.min(remainingSize, wantedSize);
-        int physicalLength = Math.max(SPECIES_LENGTH, logicalLength);
+        long logicalLength = logicalLength();
+        long physicalLength = Math.max(SPECIES_LENGTH, logicalLength);
         int shift = Math.toIntExact(physicalLength - logicalLength);
+        MemorySegment memorySegment;
         try {
-            return new Segment(memorySegment(physicalLength, shift), shift);
-        } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this}: Could not open with length \{logicalLength}", e);
-        }
-    }
-
-    private MemorySegment memorySegment(long length, int shift) {
-        try {
-            return channel.map(
+            memorySegment = channel.map(
                 READ_ONLY,
                 partition.offset() - shift,
-                length,
+                physicalLength,
                 arena
             ).asReadOnly();
-        } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} failed to open \{channel}", e);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                STR."\{this}: Could not open with length \{physicalLength}, shift \{shift}", e);
         }
+        return new Segment(memorySegment, shift);
     }
 
     @Override
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{shape} \{partition}, padding=\{padding}]";
+    }
+
+    private long logicalLength() {
+        long ideallength = shape.limitsLineLength()
+            ? partition.count() + shape.stats().longestLine() + 1
+            : partition.count() + padding;
+        long lengthAvailable = shape.size() - partition.offset();
+        return Math.min(ideallength, lengthAvailable);
     }
 
     public static final int SPECIES_LENGTH = MemorySegmentSource.SPECIES.length();

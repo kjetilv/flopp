@@ -40,7 +40,13 @@ public class FileChannelMemorySegmentSources implements MemorySegmentSources {
     @Override
     public MemorySegmentSource source(Partition partition) {
         try {
-            return new FileChannelMemorySegmentSource(shape, partition, this.channel, this.arena, this.padding);
+            return new FileChannelMemorySegmentSource(
+                partition,
+                this.shape,
+                this.channel,
+                this.arena,
+                this.padding
+            );
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed to open channel: \{path}", e);
         }
