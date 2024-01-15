@@ -5,9 +5,13 @@ import com.github.kjetilv.flopp.kernel.ByteSources;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 
+import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import java.util.Objects;
 
-public final class FileChannelByteSources extends AbstractFileChanneling implements ByteSources {
+public final class FileChannelByteSources implements ByteSources {
+
+    private final Path path;
 
     private final long size;
 
@@ -18,7 +22,7 @@ public final class FileChannelByteSources extends AbstractFileChanneling impleme
     }
 
     public FileChannelByteSources(Path path, long size, int padding) {
-        super(path, false);
+        this.path = Objects.requireNonNull(path, "path");
         this.size = Non.negative(size, "size");
         this.padding = Non.negative(padding, "padding");
     }
@@ -26,5 +30,18 @@ public final class FileChannelByteSources extends AbstractFileChanneling impleme
     @Override
     public ByteSource source(Partition partition) {
         return new FileChannelByteSource(partition, randomAccess(), size, padding);
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{path}]";
+    }
+
+    private RandomAccessFile randomAccess() {
+        try {
+            return new RandomAccessFile(path.toFile(), "r");
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."Failed to open \{path}", e);
+        }
     }
 }

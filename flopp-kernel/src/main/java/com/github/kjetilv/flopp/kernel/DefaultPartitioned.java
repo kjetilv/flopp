@@ -69,7 +69,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     @Override
     public PartitionedProcessor<String> processor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -80,7 +80,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
+            transfers,
             executorService
         );
     }
@@ -88,7 +88,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     @Override
     public PartitionedProcessor<byte[]> bytesProcessor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -99,7 +99,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
+            transfers,
             executorService
         );
     }
@@ -107,7 +107,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     @Override
     public PartitionedProcessor<NLine> nLineProcessor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -115,14 +115,14 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer
+            transfers
         );
     }
 
     @Override
     public PartitionedProcessor<RNLine> rnLineProcessor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -130,14 +130,14 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer
+            transfers
         );
     }
 
     @Override
     public PartitionedProcessor<ByteSeg> byteSegProcessor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -148,7 +148,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
+            transfers,
             executorService
         );
     }
@@ -156,7 +156,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
     @Override
     public PartitionedProcessor<Supplier<ByteSeg>> suppliedByteSegProcessor(
         TempTargets<P> tempTargets,
-        Transfers<P> transfer,
+        Transfers<P> transfers,
         ToIntFunction<P> sizer,
         LinesWriterFactory<P> linesWriterFactory
     ) {
@@ -167,7 +167,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             linesWriterFactory,
             tempTargets,
             sizer,
-            transfer,
+            transfers,
             executorService
         );
     }

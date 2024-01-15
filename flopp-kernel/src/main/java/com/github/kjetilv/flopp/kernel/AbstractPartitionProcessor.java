@@ -71,6 +71,7 @@ public abstract class AbstractPartitionProcessor<P, T> implements PartitionedPro
     @Override
     public void close() {
         partitionedMapper.close();
+        transfers.close();
     }
 
     void collect(ResultCollector<P> collector, BiFunction<Partition, Stream<T>, P> streamProcessor) {
