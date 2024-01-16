@@ -1,10 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
-import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorMask;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -51,7 +49,7 @@ public class VectorPartitionSpliterator
 
         this.source = Objects.requireNonNull(source, "memorySegmentSources");
 
-        this.allocating = allocating || shape != null && shape.hasOverhead();
+        this.allocating = allocating || shape != null && shape.footer() > 0;
         if (this.allocating) {
             this.segmentLine = null;
         } else {
@@ -145,20 +143,6 @@ public class VectorPartitionSpliterator
         }
     }
 
-    private ByteVector vector(MemorySegmentSource.Segment segment, long start) {
-        try {
-            return ByteVector.fromMemorySegment(
-                segment.species(),
-                segment.memorySegment(),
-                start,
-                NATIVE_ORDER
-            );
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                STR."\{this} failed to open vector @ \{start}: \{segment}", e);
-        }
-    }
-
     private boolean exhausted(MemorySegmentSource.Segment segment, long offset) {
         long segmentOffset = offset - segment.shift();
         if (segmentOffset == partitionLimit) {
@@ -188,8 +172,6 @@ public class VectorPartitionSpliterator
 
     public static final int BYTES_IN_LONG = Long.BYTES * 8;
 
-    private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
-
     private static int trailingZeroes(
         MemorySegmentSource.Segment segment,
         VectorMask<Byte> mask
@@ -197,7 +179,7 @@ public class VectorPartitionSpliterator
         return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
     }
 
-    private record Line(
+    record Line(
         int partitionNo,
         long lineNo,
         MemorySegment memorySegment,

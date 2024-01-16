@@ -45,15 +45,11 @@ public final class MemorySegments {
     private MemorySegments() {
     }
 
-    public interface LineSegment {
+    public sealed interface LineSegment permits MutableLine, VectorPartitionSpliterator.Line {
 
-        default int partitionNo() {
-            return -1;
-        }
+        int partitionNo();
 
-        default long lineNo() {
-            return -1L;
-        }
+        long lineNo();
 
         MemorySegment memorySegment();
 
