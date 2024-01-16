@@ -27,10 +27,13 @@ class SegmentedPartitionedTest {
         List<String> lines = Arrays.asList("""
             1
             2a
+            
             3bb
-            4ccc
-            5dd
-            dd
+            4c
+            d
+            
+            5e
+            6ff
             """.split("\n"));
         Files.write(
             pathWithHeaders,

@@ -6,6 +6,7 @@ import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Objects;
 
@@ -33,6 +34,10 @@ public interface MemorySegmentSource  {
         public VectorMask<Byte> charMask(long offset, byte c) {
             ByteVector vector = vector(offset);
             return vector.compare(EQ, c);
+        }
+
+        public long longAt(long offset) {
+            return memorySegment.get(ValueLayout.JAVA_LONG, offset);
         }
 
         private ByteVector vector(long offset) {
