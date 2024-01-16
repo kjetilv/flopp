@@ -15,7 +15,6 @@ public interface MemorySegmentSource  {
 
     Segment get();
 
-    @SuppressWarnings("MethodMayBeStatic")
     record Segment(MemorySegment memorySegment, int shift) {
 
         public Segment {
@@ -25,10 +24,6 @@ public interface MemorySegmentSource  {
 
         public long maxReadOffset() {
             return memorySegment.byteSize() - SPECIES.length();
-        }
-
-        public VectorSpecies<Byte> species() {
-            return SPECIES;
         }
 
         public VectorMask<Byte> lineMask(long offset) {

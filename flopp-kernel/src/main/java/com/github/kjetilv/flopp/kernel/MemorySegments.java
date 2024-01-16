@@ -1,9 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import jdk.incubator.vector.ByteVector;
-import jdk.incubator.vector.VectorShape;
-import jdk.incubator.vector.VectorSpecies;
-
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.stream.Stream;
@@ -38,9 +34,6 @@ public final class MemorySegments {
             .toArray(ValueLayout.JAVA_BYTE);
 
     }
-
-    private static final VectorSpecies<Byte> SPECIES =
-        VectorShape.preferredShape().withLanes(ByteVector.SPECIES_PREFERRED.elementType());
 
     private MemorySegments() {
     }
