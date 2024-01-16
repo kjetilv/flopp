@@ -9,8 +9,6 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-import static jdk.incubator.vector.VectorOperators.EQ;
-
 public class VectorPartitionSpliterator
     extends Spliterators.AbstractSpliterator<MemorySegments.LineSegment> {
 
@@ -99,9 +97,10 @@ public class VectorPartitionSpliterator
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+            long maskLong = mask.toLong();
             int maskOffset = backshift;
             while (true) {
-                int zeroes = Long.numberOfTrailingZeros(mask.toLong() >>> backshift);
+                int zeroes = maskOffset - backshift + Long.numberOfTrailingZeros(maskLong >>> maskOffset);
                 if (zeroes < BYTES_IN_LONG) {
                     int length = pending + zeroes - maskOffset + backshift;
                     MemorySegments.LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
@@ -120,11 +119,10 @@ public class VectorPartitionSpliterator
                     }
                     maskOffset += advance - pending;
                     pending = 0;
-                    VectorMask<Byte> negated = VectorMask.fromLong(segment.species(), 1L << maskOffset - 1);
-                    mask = mask.andNot(negated);
                 } else {
-                    segmentOffset += mask.length() - backshift;
-                    pending += mask.length() - maskOffset;
+                    int length = mask.length();
+                    segmentOffset += length - backshift;
+                    pending += length - maskOffset;
                     break;
                 }
             }
@@ -145,13 +143,6 @@ public class VectorPartitionSpliterator
                 offset += Long.BYTES;
             }
         }
-    }
-
-    private static int trailingZeroes(
-        MemorySegmentSource.Segment segment,
-        VectorMask<Byte> mask
-    ) {
-        return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
     }
 
     private ByteVector vector(MemorySegmentSource.Segment segment, long start) {
@@ -198,6 +189,13 @@ public class VectorPartitionSpliterator
     public static final int BYTES_IN_LONG = Long.BYTES * 8;
 
     private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
+
+    private static int trailingZeroes(
+        MemorySegmentSource.Segment segment,
+        VectorMask<Byte> mask
+    ) {
+        return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
+    }
 
     private record Line(
         int partitionNo,

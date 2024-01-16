@@ -32,10 +32,10 @@ public interface MemorySegmentSource  {
         }
 
         public VectorMask<Byte> lineMask(long offset) {
-            return charMask(offset, '\n');
+            return charMask(offset, (byte) '\n');
         }
 
-        public VectorMask<Byte> charMask(long offset, char c) {
+        public VectorMask<Byte> charMask(long offset, byte c) {
             ByteVector vector = vector(offset);
             return vector.compare(EQ, c);
         }
