@@ -22,6 +22,41 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SegmentedPartitionedTest {
 
     @Test
+    void testWithSimple(@TempDir Path tempDir) throws IOException {
+        Path pathWithHeaders = tempDir.resolve(STR."\{UUID.randomUUID()}.test");
+        List<String> lines = Arrays.asList("""
+            1
+            2a
+            3bb
+            4ccc
+            5dd
+            dd
+            """.split("\n"));
+        Files.write(
+            pathWithHeaders,
+            lines
+        );
+        Shape shape = Shape.size(Files.size(pathWithHeaders)).longestLine(10);
+
+        List<String> syncLines = new ArrayList<>();
+
+        int partitionCount = 1; //Runtime.getRuntime().availableProcessors();
+        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
+        pf1.streams().vectorStreamers()
+            .forEach(partitionStreamer -> {
+                partitionStreamer.memorySegments()
+                    .map(MemorySegments::toString)
+                    .forEach(e -> {
+                        assertThat(e).doesNotContain("\n");
+                        syncLines.add(e);
+                    });
+            });
+        pf1.close();
+        assertThat(syncLines).containsExactlyElementsOf(lines);
+    }
+
+    @Test
     void testWithHeader(@TempDir Path tempDir) throws IOException {
         Path pathWithHeaders = tempDir.resolve(STR."\{UUID.randomUUID()}.test");
         Files.write(
