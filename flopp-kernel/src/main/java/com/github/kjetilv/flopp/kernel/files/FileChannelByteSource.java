@@ -4,8 +4,6 @@ import com.github.kjetilv.flopp.kernel.ByteSource;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Objects;

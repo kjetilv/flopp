@@ -51,7 +51,7 @@ public class FastVectorPartitionerTest {
                     new FileSources(file, shape, 1024),
                     Executors.newVirtualThreadPerTaskExecutor()
                 );
-                PartitionedStreams streams = partitioned.streams();
+                PartitionedStreams streams = partitioned.streams()
             ) {
                 streams.vectorStreamers()
                     .forEach(streamer ->

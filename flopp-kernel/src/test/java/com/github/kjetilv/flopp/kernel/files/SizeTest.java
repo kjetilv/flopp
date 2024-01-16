@@ -190,7 +190,7 @@ public class SizeTest {
                 new FileChannelTransfers(tmp),
                 SizeTest::sizeOf,
                 SimpleLinesWriter::new
-            );
+            )
         ) {
             proc.process(fun);
         } catch (Exception e) {

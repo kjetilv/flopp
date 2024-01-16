@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class FileChannelByteSourceTest {
 
+    @SuppressWarnings("ReuseOfLocalVariable")
     @Test
     void shouldFill() throws IOException {
         String string = IntStream.range('a', 'z' + 1)
@@ -27,7 +28,7 @@ class FileChannelByteSourceTest {
         Files.write(tempFile, string.getBytes());
         try (
             RandomAccessFile randomAccessFile = randomAccess(tempFile);
-            FileChannel channel = randomAccessFile.getChannel();
+            FileChannel channel = randomAccessFile.getChannel()
         ) {
             ByteSource source = new FileChannelByteSource(
                 new Partition(0, 2, 0, 10),
