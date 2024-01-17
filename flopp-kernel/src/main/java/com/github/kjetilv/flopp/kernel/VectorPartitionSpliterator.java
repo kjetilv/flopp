@@ -12,7 +12,7 @@ public class VectorPartitionSpliterator
 
     private final Partition partition;
 
-    private final int partitionLimit;
+    private final long partitionLimit;
 
     private final MemorySegmentSource source;
 

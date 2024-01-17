@@ -42,7 +42,7 @@ public class BitwiseSpliteratorTest {
 
         Path file = Files.writeString(
             dir.resolve(STR."\{UUID.randomUUID()}.bin"),
-            content.collect(Collectors.joining("\n"))
+            content.collect(Collectors.joining("\n")) + "\n"
         );
 
         Partitioning partitioning = Partitioning.longAlignedDefaults(3);
@@ -61,8 +61,7 @@ public class BitwiseSpliteratorTest {
                     new BitwisePartitionSpliterator(
                         partition,
                         Shape.of(file),
-                        () ->
-                            memorySegmentSources.source(partition).get()
+                        memorySegmentSources.source(partition).get().memorySegment()
                     );
 
                 spliterator.tryAdvance(line ->
@@ -74,7 +73,7 @@ public class BitwiseSpliteratorTest {
                         System.out.println(x);
                     }
                 );
-                System.out.println("Done with " + partition);
+                System.out.println(STR."Done with \{partition}");
             }
         }
     }
