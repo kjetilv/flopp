@@ -38,7 +38,8 @@ public final class MemorySegments {
     private MemorySegments() {
     }
 
-    public sealed interface LineSegment permits MutableLine, VectorPartitionSpliterator.Line {
+    public sealed interface LineSegment
+        permits BitwisePartitionSpliterator.Line, MutableLine, VectorPartitionSpliterator.Line {
 
         int partitionNo();
 

@@ -37,7 +37,7 @@ public class Vector2Test {
         );
 
         try (
-            MemorySegmentSources memorySegmentSources = new FileChannelMemorySegmentSources(file)
+            MemorySegmentSources memorySegmentSources = new FileChannelMemorySegmentSources(file, 2)
         ) {
             Partition partition = new Partition(1, 10, 4, 80);
 

@@ -40,6 +40,10 @@ public interface MemorySegmentSource  {
             return memorySegment.get(ValueLayout.JAVA_LONG, offset);
         }
 
+        public long limit(ValueLayout.OfLong javaLong) {
+            return memorySegment.byteSize() / javaLong.byteSize() * javaLong.byteSize();
+        }
+
         private ByteVector vector(long offset) {
             try {
                 return ByteVector.fromMemorySegment(SPECIES, memorySegment, offset, NATIVE_ORDER);

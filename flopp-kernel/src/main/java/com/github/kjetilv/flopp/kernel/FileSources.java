@@ -45,7 +45,7 @@ public final class FileSources implements Sources {
     @Override
     public MemorySegmentSources memorySegmentSources() {
         return bytesSources.updateAndGet(existing -> existing == null
-            ? new FileChannelMemorySegmentSources(path, shape, Arena.ofAuto(), padding)
+            ? new FileChannelMemorySegmentSources(path, shape, padding)
             : existing);
     }
 

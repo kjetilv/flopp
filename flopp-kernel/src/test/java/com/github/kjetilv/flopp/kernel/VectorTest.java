@@ -32,22 +32,26 @@ public class VectorTest {
     void test(@TempDir Path dir) throws IOException {
         Arena arena = Arena.ofConfined();
 
-        Stream<String> content = IntStream.range(5, 15)
-            .mapToObj(i ->
-                IntStream.range(5, 15).mapToObj(j -> {
-                    String n = IntStream.range(j, j + i)
-                        .map(x -> x % 10)
-                        .mapToObj(Integer::toString)
-                        .collect(Collectors.joining());
-                    String l = IntStream.range(j, j + i)
-                        .map(x -> x % 26)
-                        .map(x -> (int) x + 'a')
-                        .mapToObj(x -> (char)x)
-                        .map(Object::toString)
-                        .collect(Collectors.joining());
-                    return STR."\{l}\{n}";
-                }))
-            .flatMap(Function.identity());
+        Stream<String> content =
+            Stream.concat(
+                Stream.of("a", "bb", "c"),
+                IntStream.range(1, 5)
+                    .mapToObj(i ->
+                        IntStream.range(1, 5).mapToObj(j -> {
+                            String n = IntStream.range(j, j + i)
+                                .map(x -> x % 10)
+                                .mapToObj(Integer::toString)
+                                .collect(Collectors.joining());
+                            String l = IntStream.range(j, j + i)
+                                .map(x -> x % 26)
+                                .map(x -> (int) x + 'a')
+                                .mapToObj(x -> (char) x)
+                                .map(Object::toString)
+                                .collect(Collectors.joining());
+                            return STR."\{l}\{n}";
+                        }))
+                    .flatMap(Function.identity())
+            );
 
         Path file = Files.writeString(
             dir.resolve(UUID.randomUUID() + ".bin"),

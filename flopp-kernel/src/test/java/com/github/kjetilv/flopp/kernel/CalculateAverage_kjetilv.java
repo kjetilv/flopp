@@ -37,11 +37,12 @@ public class CalculateAverage_kjetilv {
     private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
+        int partitionCount = Runtime.getRuntime().availableProcessors();
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
                 path,
                 Shape.of(path).longestLine(64, true),
-                Partitioning.create(Runtime.getRuntime().availableProcessors(), 65536),
+                new Partitioning(partitionCount, 65536),
                 Executors.newVirtualThreadPerTaskExecutor()
             )
         ) {

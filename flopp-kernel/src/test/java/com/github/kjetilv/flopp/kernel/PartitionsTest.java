@@ -15,6 +15,18 @@ class PartitionsTest {
     }
 
     @Test
+    public void testLongAligned() {
+        List<Partition> partitions = Partition.partitions(65, 3, 16);
+        assertSizes(partitions, 32L, 16L, 17L);
+    }
+
+    @Test
+    public void testLongAlignedShort() {
+        List<Partition> partitions = Partition.partitions(46, 4, 16);
+        assertSizes(partitions, 16L, 16L, 30L);
+    }
+
+    @Test
     public void test12zero() {
         List<Partition> partitions = Partition.partitions(12, 4);
         assertSizes(partitions, 3L, 3L, 3L, 3L);

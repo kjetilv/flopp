@@ -21,8 +21,12 @@ public class FileChannelMemorySegmentSources implements MemorySegmentSources {
 
     private final FileChannel channel;
 
-    public FileChannelMemorySegmentSources(Path path) {
-        this(path, null, null, 0);
+    public FileChannelMemorySegmentSources(Path path, int padding) {
+        this(path, null, null, padding);
+    }
+
+    public FileChannelMemorySegmentSources(Path path, Shape shape, int padding) {
+        this(path, shape, null, padding);
     }
 
     public FileChannelMemorySegmentSources(Path path, Shape shape, Arena arena, int padding) {
@@ -33,7 +37,7 @@ public class FileChannelMemorySegmentSources implements MemorySegmentSources {
         } catch (IOException e) {
             throw new IllegalArgumentException(STR."Failed to channel \{path}", e);
         }
-        this.arena = Objects.requireNonNull(arena, "arena");
+        this.arena = arena == null ? Arena.ofAuto() : arena;
         this.padding = Non.negative(padding, "padding");
     }
 

@@ -53,7 +53,7 @@ public class FastPartitionerTest {
                 PartitionedPath partitioned = new DefaultPartitionedPath(
                     file,
                     shape,
-                    Partitioning.create(partitionCount, 10),
+                    new Partitioning(partitionCount, 10),
                     new FileSources(file, shape, 1024),
                     Executors.newVirtualThreadPerTaskExecutor()
                 );
@@ -88,7 +88,7 @@ public class FastPartitionerTest {
                 Partitioned<Path> partitioned = new DefaultPartitioned<>(
                     file,
                     shape,
-                    Partitioning.create(partitionCount, 10),
+                    new Partitioning(partitionCount, 10),
                     new FileSources(file, shape, 1024),
                     Executors.newVirtualThreadPerTaskExecutor()
                 )
