@@ -11,11 +11,11 @@ public class BitwisePartitionSpliterator
 
     private final Partition partition;
 
-    private final int partitionLimit;
+    private final long partitionLimit;
 
     private final MemorySegmentSource source;
 
-    private final SurroundConsumer<MemorySegments.LineSegment> lineConsumer;
+    private final SurroundConsumer<MemorySegments.LineSegment> publisher;
 
     private final boolean allocating;
 
@@ -23,23 +23,14 @@ public class BitwisePartitionSpliterator
 
     private final int partitionNo;
 
-    private final boolean lastPartition;
-
     private final boolean firstPartition;
 
     private MemorySegmentSource.Segment segment;
-
-    private long limit;
 
     /**
      * Current byte.
      */
     private long current;
-
-    /**
-     * How much of {@link #current} is processed
-     */
-    private long localByteOffset;
 
     /**
      * How much of {@link #partitionLimit} is processed
@@ -75,11 +66,11 @@ public class BitwisePartitionSpliterator
         }
 
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.partitionLimit = this.partition.count();
+        this.partitionLimit = this.partition.offset() + this.partition.count();
         this.partitionNo = partition.partitionNo();
 
         this.firstPartition = partition.first();
-        this.lastPartition = partition.last();
+        boolean lastPartition = partition.last();
 
         this.source = Objects.requireNonNull(source, "memorySegmentSources");
 
@@ -92,7 +83,7 @@ public class BitwisePartitionSpliterator
             this.segmentLine = new MutableLine();
             this.segmentLine.partitionNo = partition.partitionNo();
         }
-        this.lineConsumer = SurroundConsumers.surround(
+        this.publisher = SurroundConsumers.surround(
             this.partition.first() && shape != null && shape.header() > 0 ? shape.header() : 0,
             this.partition.last() && shape != null && shape.footer() > 0 ? shape.footer() : 0
         );
@@ -114,81 +105,70 @@ public class BitwisePartitionSpliterator
 
     private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
         segment = source.get();
-        limit = segment.limit(ValueLayout.JAVA_LONG);
-        long lineNo = 0;
+        current = segment.longAt(0);
         if (!firstPartition) {
-            jumpToLineByte(segment);
+            jumpToLine();
         }
-        while (byteOffset < limit) {
+        while (true) {
             if (ln()) {
                 long length = byteOffset - previousLineStartByte;
-                MemorySegments.LineSegment lineSegment = lineSegment(
-                    segment,
-                    previousLineStartByte,
-                    length,
-                    lineNo
-                );
-                action.accept(lineSegment);
-                previousLineStartByte += length + 1;
-                lineNo++;
+                publisher.accept(action, lineSegment(length));
                 if (done()) {
                     return false;
                 }
+                newLine(length);
             }
             advance();
         }
-        return true;
     }
 
-    private boolean done() {
-        return byteOffset > partitionLimit;
+    private void jumpToLine() {
+        while (true) {
+            if (ln()) {
+                advance();
+                previousLineStartByte = byteOffset;
+                return;
+            }
+            advance();
+        }
+    }
+
+    private void advance() {
+        byteOffset++;
+        if (byteOffset % 8 == 0) {
+            current = segment.longAt(byteOffset);
+        } else {
+            current >>= 8;
+        }
     }
 
     private boolean ln() {
         return (current & '\n') == '\n';
     }
 
-    private void jumpToLineByte(MemorySegmentSource.Segment segment) {
-        current = segment.longAt(0);
-        localByteOffset = 0;
-        while (true) {
-            for (int i = 0; i < 16; i++) {
-                if (ln()) {
-                    previousLineStartByte = byteOffset + 1;
-                    advance();
-                    return;
-                }
-                advance();
-            }
-        }
+    private boolean done() {
+        return byteOffset > partitionLimit;
     }
 
-    private void advance() {
-        byteOffset++;
-        if (localByteOffset == 7) {
-            localByteOffset = 0L;
-            current = segment.longAt(byteOffset);
-        } else {
-            localByteOffset++;
-            current >>= 8;
-        }
+    private void newLine(long length) {
+        previousLineStartByte += length + 1;
+        lineNo++;
     }
 
-    private MemorySegments.LineSegment lineSegment(
-        MemorySegmentSource.Segment segment, long offset, long length, long lineNo
-    ) {
+    private MemorySegments.LineSegment lineSegment(long length) {
+        MemorySegment memorySegment = segment.memorySegment();
         if (allocating) {
             return new Line(
                 partitionNo,
                 lineNo,
-                segment.memorySegment(),
-                offset,
+                memorySegment,
+                previousLineStartByte,
                 Math.toIntExact(length)
             );
         }
-        segmentLine.memorySegment = segment.memorySegment();
+        segmentLine.memorySegment = memorySegment;
         segmentLine.lineNo = lineNo;
-        segmentLine.offset = offset;
+        segmentLine.offset = previousLineStartByte;
         segmentLine.length = Math.toIntExact(length);
         return segmentLine;
     }
@@ -205,7 +185,7 @@ public class BitwisePartitionSpliterator
 
         @Override
         public String toString() {
-            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}-\{length()}]";
+            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}+\{length()}]";
         }
     }
 }

@@ -9,7 +9,6 @@ import java.lang.foreign.ValueLayout;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,7 +62,7 @@ public class BitwiseSpliteratorTest {
                         partition,
                         Shape.of(file),
                         () ->
-                            memorySegment(partition, memorySegmentSources)
+                            memorySegmentSources.source(partition).get()
                     );
 
                 spliterator.tryAdvance(line ->
@@ -78,15 +77,5 @@ public class BitwiseSpliteratorTest {
                 System.out.println("Done with " + partition);
             }
         }
-    }
-
-    private static MemorySegmentSource.Segment memorySegment(
-        Partition partition,
-        MemorySegmentSources memorySegmentSources
-    ) {
-        return Objects.requireNonNull(
-            memorySegmentSources,
-            "memorySegmentSources"
-        ).source(partition).get();
     }
 }
