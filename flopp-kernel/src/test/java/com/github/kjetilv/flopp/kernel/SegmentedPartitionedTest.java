@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,6 +61,42 @@ class SegmentedPartitionedTest {
     }
 
     @Test
+    void testWithSimpleEdge(@TempDir Path tempDir) throws IOException {
+        Path pathWithHeaders = tempDir.resolve(STR."\{UUID.randomUUID()}.test");
+        List<String> lines = Arrays.asList("""
+            12345678
+            2a
+            2a
+            2a
+            2a
+            2a
+            2a
+            """.split("\n"));
+        Files.write(
+            pathWithHeaders,
+            lines
+        );
+        Shape shape = Shape.size(Files.size(pathWithHeaders)).longestLine(10);
+
+        List<String> syncLines = new ArrayList<>();
+
+        int partitionCount = 1; //Runtime.getRuntime().availableProcessors();
+        Partitioning partitioning = Partitioning.longAligned(partitionCount);
+        Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
+        pf1.streams().vectorStreamers()
+            .forEach(partitionStreamer -> {
+                partitionStreamer.memorySegments()
+                    .map(MemorySegments::toString)
+                    .forEach(e -> {
+                        assertThat(e).doesNotContain("\n");
+                        syncLines.add(e);
+                    });
+            });
+        pf1.close();
+        assertThat(syncLines).containsExactlyElementsOf(lines);
+    }
+
+    @Test
     void testWithHeader(@TempDir Path tempDir) throws IOException {
         Path pathWithHeaders = tempDir.resolve(STR."\{UUID.randomUUID()}.test");
         Files.write(
@@ -87,7 +124,7 @@ class SegmentedPartitionedTest {
         List<String> syncLines = new ArrayList<>();
 
         int partitionCount = 3; //Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = Partitioning.longAligned(partitionCount);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().vectorStreamers()
             .forEach(partitionStreamer -> {
@@ -149,7 +186,7 @@ class SegmentedPartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = Partitioning.longAligned(2);
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
@@ -157,9 +194,7 @@ class SegmentedPartitionedTest {
             .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
                     .map(MemorySegments::toString)
-                    .forEach(e -> {
-                        syncLines.add(e);
-                    }));
+                    .forEach(syncLines::add));
         pf1.close();
         assertContents(syncLines);
 
@@ -207,8 +242,7 @@ class SegmentedPartitionedTest {
         List<String> syncLines = new ArrayList<>();
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
-        int partitionCount = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = Partitioning.longAligned(5);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning, executorService);
         pf1.streams().vectorStreamers()
             .forEach(partitionStreamer ->

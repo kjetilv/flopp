@@ -4,9 +4,9 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
-final class SurroundConsumers {
+public final class SurroundConsumers {
 
-    static <T> SurroundConsumer<T> surround(int header, int footer) {
+    public static <T> SurroundConsumer<T> surround(int header, int footer) {
         return header == 0 && footer == 0
             ? Consumer::accept
             : new Default<>(header, footer);

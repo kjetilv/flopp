@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.nio.charset.Charset;
 import java.util.Spliterators;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;

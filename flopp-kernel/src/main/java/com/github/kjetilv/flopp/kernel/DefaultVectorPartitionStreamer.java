@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;

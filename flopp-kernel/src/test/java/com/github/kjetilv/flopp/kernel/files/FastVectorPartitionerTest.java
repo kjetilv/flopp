@@ -17,8 +17,8 @@ public class FastVectorPartitionerTest {
 
     @Test
     void test(TestInfo testInfo) {
-        for (int i = 50; i < 200; i++) {
-            for (int p = 1; p < 40; p++) {
+        for (int i = 50; i < 2000; i++) {
+            for (int p = 1; p < 15; p++) {
                 try {
                     run(testInfo, i, p);
                 } catch (Exception e) {

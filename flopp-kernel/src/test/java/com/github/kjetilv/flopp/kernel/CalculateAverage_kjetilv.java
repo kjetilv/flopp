@@ -15,6 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPath;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 
@@ -37,12 +38,11 @@ public class CalculateAverage_kjetilv {
     private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
-        int partitionCount = Runtime.getRuntime().availableProcessors();
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
                 path,
                 Shape.of(path).longestLine(64, true),
-                new Partitioning(partitionCount, 65536),
+                Partitioning.longAligned(),
                 Executors.newVirtualThreadPerTaskExecutor()
             )
         ) {
@@ -60,7 +60,8 @@ public class CalculateAverage_kjetilv {
                             }
                         }
                         int value = parseValue(length, splitIndex, bytes);
-                        m.compute(new String(bytes, 0, splitIndex), (_, result) ->
+                        String key = new String(bytes, 0, splitIndex);
+                        m.compute(key, (_, result) ->
                             result == null ? new Result(value) : result.collect(value));
                     });
                     return m;
@@ -115,6 +116,7 @@ public class CalculateAverage_kjetilv {
             this.min = value;
             this.max = value;
             this.sum += value;
+            this.count = 1;
         }
 
         public String toString() {

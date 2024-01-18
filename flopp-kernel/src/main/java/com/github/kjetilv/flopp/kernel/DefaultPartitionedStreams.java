@@ -11,11 +11,7 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     private final Sources sources;
 
-    DefaultPartitionedStreams(
-        Shape shape,
-        Partitioning partitioning,
-        Sources sources
-    ) {
+    DefaultPartitionedStreams(Shape shape, Partitioning partitioning, Sources sources) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
         this.sources = Objects.requireNonNull(sources, "sources");
@@ -23,7 +19,7 @@ class DefaultPartitionedStreams implements PartitionedStreams {
 
     @Override
     public Stream<PartitionStreamer> streamers() {
-        return Partition.partitions(shape.size(), partitioning.partitionCount())
+        return partitioning.of(shape.size())
             .stream()
             .filter(Partition::hasData)
             .map(partition ->
@@ -33,9 +29,8 @@ class DefaultPartitionedStreams implements PartitionedStreams {
     @Override
     public Stream<VectorPartitionStreamer> vectorStreamers() {
         MemorySegmentSources sources = this.sources.memorySegmentSources();
-        return Partition.partitions(shape.size(), partitioning.partitionCount())
+        return Partitioning.longAligned(partitioning.partitionCount()).of(shape.size())
             .stream()
-            .filter(Partition::hasData)
             .map(partition ->
                 new DefaultVectorPartitionStreamer(partition, shape, sources));
     }
@@ -43,5 +38,14 @@ class DefaultPartitionedStreams implements PartitionedStreams {
     @Override
     public void close() {
         sources.close();
+    }
+
+    private Stream<VectorPartitionStreamer> vectorBase() {
+        MemorySegmentSources sources = this.sources.memorySegmentSources();
+        return partitioning.of(shape.size())
+            .stream()
+            .filter(Partition::hasData)
+            .map(partition ->
+                new DefaultVectorPartitionStreamer(partition, shape, sources));
     }
 }

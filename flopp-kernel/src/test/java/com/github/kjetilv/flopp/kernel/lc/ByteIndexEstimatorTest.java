@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.lc;
 
-import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Test;
@@ -31,7 +30,7 @@ class ByteIndexEstimatorTest {
         List<PartitionBytes> partitionBytes = tracker.bytesPartitions();
         partitionBytes.forEach(System.out::println);
 
-        Partition.partitions(lineCount, partitioning.partitionCount())
+        Partitioning.count(partitioning.partitionCount()).of(lineCount)
             .forEach(System.out::println);
     }
 }

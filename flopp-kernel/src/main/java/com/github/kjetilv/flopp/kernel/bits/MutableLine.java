@@ -1,9 +1,9 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
 @SuppressWarnings("PackageVisibleField")
-final class MutableLine implements MemorySegments.LineSegment {
+public final class MutableLine implements MemorySegments.LineSegment {
 
     int partitionNo;
 

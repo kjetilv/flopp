@@ -78,7 +78,7 @@ class NLinePartitionSpliteratorTest {
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
 
-        List<Partition> partitions = Partition.partitions(bytes.length, 2);
+        List<Partition> partitions = Partitioning.count(2).of(bytes.length);
 
         List<NLine> lines0 = drain(bytes, partitions.get(0), 2, 8, dir);
         List<NLine> lines1 = drain(bytes, partitions.get(1), 2, 8, dir);
@@ -102,7 +102,7 @@ class NLinePartitionSpliteratorTest {
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
 
-        List<Partition> partitions = Partition.partitions(bytes.length, 3);
+        List<Partition> partitions = Partitioning.count(3).of(bytes.length);
 
         List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
         List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
@@ -148,7 +148,7 @@ class NLinePartitionSpliteratorTest {
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
 
-        List<Partition> partitions = Partition.partitions(bytes.length, 6);
+        List<Partition> partitions = Partitioning.count(6).of(bytes.length);
 
         List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
         List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
@@ -235,7 +235,7 @@ class NLinePartitionSpliteratorTest {
                 .toList();
             byte[] bytes = (String.join("\n", contents) + "\n")
                 .getBytes(StandardCharsets.US_ASCII);
-            List<Partition> partitions = Partition.partitions(bytes.length, partitionCount);
+            List<Partition> partitions = Partitioning.count(partitionCount).of(bytes.length);
             for (Partition partition : partitions) {
                 NLineGrowingPartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize, dir);
                 do {

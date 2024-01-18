@@ -10,58 +10,61 @@ class PartitionsTest {
 
     @Test
     public void test1418() {
-        List<Partition> partitions = Partition.partitions(18, 4);
+        List<Partition> partitions = Partitioning.count(4).of(18);
         assertSizes(partitions, 5L, 5L, 4L, 4L);
     }
 
     @Test
+    public void test692() {
+        List<Partition> partitions = Partitioning.longAligned(6).of(104);
+        assertSizes(partitions, 24L, 16L, 16L, 16L, 16L, 16L);
+    }
+
+    @Test
     public void testLongAligned() {
-        List<Partition> partitions = Partition.partitions(65, 3, 16);
-        assertSizes(partitions, 32L, 16L, 17L);
+        List<Partition> partitions = Partitioning.longAligned(3).of(65);
+        assertSizes(partitions, 24L, 24L, 17L);
     }
 
     @Test
     public void testLongAlignedShort() {
-        List<Partition> partitions = Partition.partitions(46, 4, 16);
-        assertSizes(partitions, 16L, 16L, 30L);
+        List<Partition> partitions = Partitioning.longAligned(3).of(52);
+        assertSizes(partitions, 16L, 16L, 20L);
     }
 
     @Test
     public void test12zero() {
-        List<Partition> partitions = Partition.partitions(12, 4);
+        List<Partition> partitions = Partitioning.count(4).of(12);
         assertSizes(partitions, 3L, 3L, 3L, 3L);
     }
 
     @Test
     public void test12one() {
-        List<Partition> partitions = Partition.partitions(
-            13,
-            4
-        );
+        List<Partition> partitions = Partitioning.count(4).of(13);
         assertSizes(partitions, 4L, 3L, 3L, 3L);
     }
 
     @Test
     public void test1216() {
-        List<Partition> partitions = Partition.partitions(16, 3);
+        List<Partition> partitions = Partitioning.count(3).of(16);
         assertSizes(partitions, 6L, 5L, 5L);
     }
 
     @Test
     public void testALot() {
-        List<Partition> partitions = Partition.partitions(100_004, 4);
+        List<Partition> partitions = Partitioning.count(4).of(100_004);
         assertSizes(partitions, 25_001L, 25_001L, 25_001L, 25_001L);
     }
 
     @Test
     public void testALotPlus1() {
-        List<Partition> partitions = Partition.partitions(100_005, 4);
+        List<Partition> partitions = Partitioning.count(4).of(100_005);
         assertSizes(partitions, 25_002L, 25_001L, 25_001L, 25_001L);
     }
 
     @Test
     public void testALotMin1() {
-        List<Partition> partitions = Partition.partitions(100_003, 4);
+        List<Partition> partitions = Partitioning.count(4).of(100_003);
         assertSizes(partitions, 25_001L, 25_001L, 25_001L, 25_000L);
     }
 

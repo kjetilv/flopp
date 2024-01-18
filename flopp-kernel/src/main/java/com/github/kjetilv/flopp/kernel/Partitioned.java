@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+
 import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

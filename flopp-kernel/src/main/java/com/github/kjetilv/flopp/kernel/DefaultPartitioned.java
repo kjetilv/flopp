@@ -43,7 +43,7 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
 
     @Override
     public List<Partition> partitions() {
-        return Partition.partitions(shape.size(), partitioning.partitionCount());
+        return partitioning.of(shape.size());
     }
 
     @Override

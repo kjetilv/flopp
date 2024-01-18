@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionSpliterator;
 import com.github.kjetilv.flopp.kernel.files.FileChannelMemorySegmentSources;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,7 +46,7 @@ public class BitwiseSpliteratorTest {
             content.collect(Collectors.joining("\n")) + "\n"
         );
 
-        Partitioning partitioning = Partitioning.longAlignedDefaults(3);
+        Partitioning partitioning = Partitioning.longAligned(3);
         List<Partition> partitions = partitioning.of(Shape.of(file).size());
 
         System.out.println(new String(Files.readAllBytes(file)));
