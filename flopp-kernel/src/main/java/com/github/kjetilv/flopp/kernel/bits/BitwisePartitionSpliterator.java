@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.SurroundConsumer;
-import com.github.kjetilv.flopp.kernel.SurroundConsumers;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -20,19 +17,15 @@ public class BitwisePartitionSpliterator
 
     private final MemorySegment memorySegment;
 
-    private final SurroundConsumer<MemorySegments.LineSegment> publisher;
-
-    private final boolean allocating;
-
     private final MutableLine segmentLine;
-
-    private final int partitionNo;
 
     private final boolean firstPartition;
 
     private final boolean lastPartition;
 
     private final int trail;
+
+    private final long lastLimit;
 
     /**
      * Current byte.
@@ -54,16 +47,7 @@ public class BitwisePartitionSpliterator
      */
     private long lineNo;
 
-    public BitwisePartitionSpliterator(Partition partition, Shape shape, MemorySegment memorySegment) {
-        this(partition, shape, memorySegment, false);
-    }
-
-    public BitwisePartitionSpliterator(
-        Partition partition,
-        Shape shape,
-        MemorySegment memorySegment,
-        boolean allocating
-    ) {
+    public BitwisePartitionSpliterator(Partition partition, MemorySegment memorySegment) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         if (!(partition.last() || partition.isAligned(BYTES_IN_LONG))) {
@@ -75,22 +59,14 @@ public class BitwisePartitionSpliterator
 
         this.trail = Math.toIntExact(this.partition.count() % partition.alignment());
         this.partitionLimit = this.partition.count() - this.trail;
-        this.partitionNo = this.partition.partitionNo();
+        this.lastLimit = partitionLimit + trail;
+
         this.firstPartition = this.partition.first();
         this.lastPartition = this.partition.last();
         this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources");
 
-        this.allocating = allocating || shape != null && shape.footer() > 0;
-        if (this.allocating) {
-            this.segmentLine = null;
-        } else {
-            this.segmentLine = new MutableLine();
-            this.segmentLine.partitionNo = partition.partitionNo();
-        }
-        this.publisher = SurroundConsumers.surround(
-            this.partition.first() && shape != null && shape.header() > 0 ? shape.header() : 0,
-            this.partition.last() && shape != null && shape.footer() > 0 ? shape.footer() : 0
-        );
+        this.segmentLine = new MutableLine();
+        this.segmentLine.partitionNo = partition.partitionNo();
     }
 
     @Override
@@ -100,11 +76,6 @@ public class BitwisePartitionSpliterator
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed to process", e);
         }
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{lineNo}, offset \{byteOffset} in \{partition}]";
     }
 
     private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
@@ -124,7 +95,7 @@ public class BitwisePartitionSpliterator
         while (true) {
             if (ln()) {
                 long length = shipLine(action);
-                if (done()) {
+                if (byteOffset >= partitionLimit) {
                     return;
                 }
                 newLine(length);
@@ -135,18 +106,29 @@ public class BitwisePartitionSpliterator
 
     @SuppressWarnings("SameReturnValue")
     private void tailSensitiveProcessing(Consumer<? super MemorySegments.LineSegment> action) {
-        boolean trailing = false;
+        if (processToEnd(action)) {
+            return;
+        }
+        while (true) {
+            if (ln()) {
+                shipLine(action);
+                return;
+            }
+            advance();
+        }
+    }
+
+    private boolean processToEnd(Consumer<? super MemorySegments.LineSegment> action) {
         while (true) {
             if (ln()) {
                 long length = shipLine(action);
-                if (lastDone()) {
-                    return;
+                if (byteOffset == lastLimit) {
+                    return true;
                 }
                 newLine(length);
             }
-            trailing = trailing | advanceLast();
-            if (trailing && lastDone()) {
-                return;
+            if (foundTail()) {
+                return false;
             }
         }
     }
@@ -154,7 +136,7 @@ public class BitwisePartitionSpliterator
     private long shipLine(Consumer<? super MemorySegments.LineSegment> action) {
         long length = byteOffset - previousLineStartByte;
         MemorySegments.LineSegment lineSegment = lineSegment(length);
-        publisher.accept(action, lineSegment);
+        action.accept(lineSegment);
         return length;
     }
 
@@ -174,7 +156,7 @@ public class BitwisePartitionSpliterator
         slideCurrent();
     }
 
-    private boolean advanceLast() {
+    private boolean foundTail() {
         byteOffset++;
         if (byteOffset == partitionLimit) {
             current = 0L;
@@ -207,49 +189,23 @@ public class BitwisePartitionSpliterator
         return (current & 0xFF) == '\n';
     }
 
-    private boolean done() {
-        return byteOffset >= partitionLimit;
-    }
-
-    private boolean lastDone() {
-        return byteOffset == partitionLimit + trail;
-    }
-
     private void newLine(long length) {
         previousLineStartByte += length + 1;
         lineNo++;
     }
 
     private MemorySegments.LineSegment lineSegment(long length) {
-        if (allocating) {
-            return new Line(
-                partitionNo,
-                lineNo,
-                memorySegment,
-                previousLineStartByte,
-                Math.toIntExact(length)
-            );
-        }
         segmentLine.memorySegment = memorySegment;
         segmentLine.lineNo = lineNo;
         segmentLine.offset = previousLineStartByte;
-        segmentLine.length = Math.toIntExact(length);
+        segmentLine.length = length;
         return segmentLine;
     }
 
     public static final long BYTES_IN_LONG = ValueLayout.JAVA_LONG.byteSize();
 
-    record Line(
-        int partitionNo,
-        long lineNo,
-        MemorySegment memorySegment,
-        long offset,
-        int length
-    ) implements MemorySegments.LineSegment {
-
-        @Override
-        public String toString() {
-            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}+\{length()}]";
-        }
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{lineNo}, offset \{byteOffset} in \{partition}]";
     }
 }

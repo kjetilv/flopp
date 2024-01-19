@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
@@ -10,21 +9,18 @@ import java.util.stream.StreamSupport;
 
 public final class BitwisePartitionStreamer {
 
-    private final Shape shape;
-
     private final MemorySegment memorySegment;
 
     private final Partition partition;
 
-    public BitwisePartitionStreamer(Partition partition, Shape shape, MemorySegment memorySegment) {
+    public BitwisePartitionStreamer(Partition partition, MemorySegment memorySegment) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.shape = Objects.requireNonNull(shape, "shape");
         this.memorySegment = memorySegment;
     }
 
     public Stream<MemorySegments.LineSegment> memorySegments() {
         return StreamSupport.stream(
-            new BitwisePartitionSpliterator(partition, shape, memorySegment),
+            new BitwisePartitionSpliterator(partition, memorySegment),
             false
         );
     }

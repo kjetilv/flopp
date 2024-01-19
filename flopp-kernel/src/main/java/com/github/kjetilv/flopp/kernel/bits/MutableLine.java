@@ -13,7 +13,7 @@ public final class MutableLine implements MemorySegments.LineSegment {
 
     long offset;
 
-    int length;
+    long length;
 
     @Override
     public int partitionNo() {
@@ -36,7 +36,7 @@ public final class MutableLine implements MemorySegments.LineSegment {
     }
 
     @Override
-    public int length() {
+    public long length() {
         return length;
     }
 

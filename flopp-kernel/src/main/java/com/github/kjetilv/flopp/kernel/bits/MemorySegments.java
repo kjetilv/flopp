@@ -29,7 +29,7 @@ public final class MemorySegments {
 
         long offset();
 
-        int length();
+        long length();
 
         default byte[] asBytes() {
             return toBytes(this);

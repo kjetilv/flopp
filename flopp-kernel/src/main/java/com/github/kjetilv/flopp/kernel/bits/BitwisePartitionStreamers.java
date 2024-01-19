@@ -48,7 +48,6 @@ public final class BitwisePartitionStreamers implements Closeable {
                 try {
                     return new BitwisePartitionStreamer(
                         partition,
-                        shape,
                         fileChannel.map(
                             READ_ONLY,
                             partition.offset(),
@@ -57,7 +56,7 @@ public final class BitwisePartitionStreamers implements Closeable {
                         )
                     );
                 } catch (Exception e) {
-                    throw new IllegalStateException("Failed to stream partition " + partition, e);
+                    throw new IllegalStateException(STR."Failed to stream partition \{partition}", e);
                 }
             });
     }

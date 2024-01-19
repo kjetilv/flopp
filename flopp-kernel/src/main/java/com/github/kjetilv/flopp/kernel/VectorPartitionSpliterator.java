@@ -185,7 +185,7 @@ public class VectorPartitionSpliterator
         long lineNo,
         MemorySegment memorySegment,
         long offset,
-        int length
+        long length
     ) implements MemorySegments.LineSegment {
 
         @Override
@@ -205,7 +205,7 @@ public class VectorPartitionSpliterator
 
         long offset;
 
-        int length;
+        long length;
 
         @Override
         public int partitionNo() {
@@ -228,7 +228,7 @@ public class VectorPartitionSpliterator
         }
 
         @Override
-        public int length() {
+        public long length() {
             return length;
         }
 

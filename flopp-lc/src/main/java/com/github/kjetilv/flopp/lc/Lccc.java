@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
@@ -37,7 +36,7 @@ public final class Lccc {
     }
 
     public static final Partitioning PARTITIONING =
-        Partitioning.longAligned(Runtime.getRuntime().availableProcessors());
+        Partitioning.longAligned(Runtime.getRuntime().availableProcessors() * 2);
 
     public static final ExecutorService EXECUTOR_SERVICE =
         new ForkJoinPool(PARTITIONING.partitionCount());

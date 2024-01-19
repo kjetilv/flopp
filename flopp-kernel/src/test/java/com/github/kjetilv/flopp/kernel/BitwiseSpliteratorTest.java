@@ -61,7 +61,6 @@ public class BitwiseSpliteratorTest {
                 BitwisePartitionSpliterator spliterator =
                     new BitwisePartitionSpliterator(
                         partition,
-                        Shape.of(file),
                         memorySegmentSources.source(partition).get().memorySegment()
                     );
 

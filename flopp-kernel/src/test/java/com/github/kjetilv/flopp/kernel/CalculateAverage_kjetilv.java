@@ -50,16 +50,16 @@ public class CalculateAverage_kjetilv {
                 partitionedPath.mapMemorySegmentPartition((_, segs) -> {
                     Map<String, Result> m = new HashMap<>(1024, 1.0f);
                     segs.forEach(seg -> {
-                        int length = seg.length(); //segment.length();
+                        long length = seg.length(); //segment.length();
                         byte[] bytes = MemorySegments.toBytes(seg);
                         int splitIndex = -1;
-                        for (int i = length - 3; i >= 0; i--) {
+                        for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
                             if (bytes[i] == ';') {
                                 splitIndex = i;
                                 break;
                             }
                         }
-                        int value = parseValue(length, splitIndex, bytes);
+                        int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
                         String key = new String(bytes, 0, splitIndex);
                         m.compute(key, (_, result) ->
                             result == null ? new Result(value) : result.collect(value));
