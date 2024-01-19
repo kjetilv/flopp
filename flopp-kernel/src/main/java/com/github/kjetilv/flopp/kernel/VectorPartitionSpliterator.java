@@ -156,13 +156,7 @@ public class VectorPartitionSpliterator
         MemorySegmentSource.Segment segment, long offset, int length, long lineNo
     ) {
         if (allocating) {
-            return new Line(
-                partitionNo,
-                lineNo,
-                segment.memorySegment(),
-                offset,
-                length
-            );
+            return new Line(segment.memorySegment(), offset, length);
         }
         segmentLine.memorySegment = segment.memorySegment();
         segmentLine.lineNo = lineNo;
@@ -180,20 +174,6 @@ public class VectorPartitionSpliterator
         return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
     }
 
-    record Line(
-        int partitionNo,
-        long lineNo,
-        MemorySegment memorySegment,
-        long offset,
-        long length
-    ) implements MemorySegments.LineSegment {
-
-        @Override
-        public String toString() {
-            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}+\{length()}]";
-        }
-    }
-
     @SuppressWarnings("PackageVisibleField")
     public static final class MutableLine implements MemorySegments.LineSegment {
 
@@ -206,16 +186,6 @@ public class VectorPartitionSpliterator
         long offset;
 
         long length;
-
-        @Override
-        public int partitionNo() {
-            return partitionNo;
-        }
-
-        @Override
-        public long lineNo() {
-            return lineNo;
-        }
 
         @Override
         public MemorySegment memorySegment() {
@@ -234,6 +204,19 @@ public class VectorPartitionSpliterator
 
         @Override
         public String toString() {
-            return STR."\{getClass().getSimpleName()}[\{lineNo()}/\{partitionNo()}: \{offset()}+\{length()}]";
+            return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
         }
-    }}
+    }
+
+    record Line(
+        MemorySegment memorySegment,
+        long offset,
+        long length
+    ) implements MemorySegments.LineSegment {
+
+        @Override
+        public String toString() {
+            return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
+        }
+    }
+}

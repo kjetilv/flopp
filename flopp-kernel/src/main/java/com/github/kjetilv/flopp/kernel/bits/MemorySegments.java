@@ -21,19 +21,11 @@ public final class MemorySegments {
 
     public interface LineSegment {
 
-        int partitionNo();
-
-        long lineNo();
-
         MemorySegment memorySegment();
 
         long offset();
 
         long length();
-
-        default byte[] asBytes() {
-            return toBytes(this);
-        }
 
         default LineSegment validate() {
             if (length() < 0) {

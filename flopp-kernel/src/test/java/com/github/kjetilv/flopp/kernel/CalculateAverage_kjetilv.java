@@ -22,9 +22,11 @@ import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ForkJoinPool;
 
 public class CalculateAverage_kjetilv {
 
@@ -43,7 +45,7 @@ public class CalculateAverage_kjetilv {
                 path,
                 Shape.of(path).longestLine(64, true),
                 Partitioning.longAligned(),
-                Executors.newVirtualThreadPerTaskExecutor()
+                new ForkJoinPool(Runtime.getRuntime().availableProcessors())
             )
         ) {
             List<Map<String, Result>> list =
@@ -66,18 +68,20 @@ public class CalculateAverage_kjetilv {
                     });
                     return m;
                 });
-            Map<String, Result> collect =
-                list.stream().flatMap(byteArrayToResultMap ->
-                        byteArrayToResultMap.entrySet().stream())
-                    .collect(
-                        Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue,
-                            Result::merge,
-                            TreeMap::new
-                        )
-                    );
-            System.out.println(collect);
+            Map<String, Result> map = list.stream().<Map<String, Result>>reduce(
+                new TreeMap<>(),
+                (m1, m2) -> {
+                    m2.forEach((k, v) -> {
+                        m1.compute(k, (_, r1) ->
+                            r1 == null ? v : r1.merge(v));
+                    });
+                    return m1;
+                },
+                (_, _) -> {
+                    throw new IllegalStateException();
+                }
+            );
+            System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
     }

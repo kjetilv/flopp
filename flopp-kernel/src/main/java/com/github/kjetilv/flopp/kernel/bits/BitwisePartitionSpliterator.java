@@ -15,9 +15,9 @@ public class BitwisePartitionSpliterator
 
     private final long partitionLimit;
 
-    private final MemorySegment memorySegment;
+    private final MemorySegment ms;
 
-    private final MutableLine segmentLine;
+    private final MutableLine ml;
 
     private final boolean firstPartition;
 
@@ -42,12 +42,7 @@ public class BitwisePartitionSpliterator
      */
     private long previousLineStartByte;
 
-    /**
-     * Line no of upcoming line, 0-indexed
-     */
-    private long lineNo;
-
-    public BitwisePartitionSpliterator(Partition partition, MemorySegment memorySegment) {
+    public BitwisePartitionSpliterator(Partition partition, MemorySegment ms) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         if (!(partition.last() || partition.isAligned(BYTES_IN_LONG))) {
@@ -63,10 +58,11 @@ public class BitwisePartitionSpliterator
 
         this.firstPartition = this.partition.first();
         this.lastPartition = this.partition.last();
-        this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources");
 
-        this.segmentLine = new MutableLine();
-        this.segmentLine.partitionNo = partition.partitionNo();
+        this.ms = Objects.requireNonNull(ms, "memorySegmentSources");
+        this.ml = new MutableLine();
+        this.ml.partitionNo = partition.partitionNo();
+        this.ml.memorySegment = ms;
     }
 
     @Override
@@ -84,28 +80,27 @@ public class BitwisePartitionSpliterator
             jumpToLine();
         }
         if (lastPartition) {
-            tailSensitiveProcessing(action);
+            tailSensitive(action);
         } else {
-            normalProcessing(action);
+            fullSpeed(action);
         }
         return false;
     }
 
-    private void normalProcessing(Consumer<? super MemorySegments.LineSegment> action) {
+    private void fullSpeed(Consumer<? super MemorySegments.LineSegment> action) {
         while (true) {
             if (ln()) {
-                long length = shipLine(action);
+                shipLine(action);
                 if (byteOffset >= partitionLimit) {
                     return;
                 }
-                newLine(length);
             }
             advance();
         }
     }
 
     @SuppressWarnings("SameReturnValue")
-    private void tailSensitiveProcessing(Consumer<? super MemorySegments.LineSegment> action) {
+    private void tailSensitive(Consumer<? super MemorySegments.LineSegment> action) {
         if (processToEnd(action)) {
             return;
         }
@@ -121,11 +116,10 @@ public class BitwisePartitionSpliterator
     private boolean processToEnd(Consumer<? super MemorySegments.LineSegment> action) {
         while (true) {
             if (ln()) {
-                long length = shipLine(action);
+                shipLine(action);
                 if (byteOffset == lastLimit) {
                     return true;
                 }
-                newLine(length);
             }
             if (foundTail()) {
                 return false;
@@ -133,11 +127,12 @@ public class BitwisePartitionSpliterator
         }
     }
 
-    private long shipLine(Consumer<? super MemorySegments.LineSegment> action) {
+    private void shipLine(Consumer<? super MemorySegments.LineSegment> action) {
         long length = byteOffset - previousLineStartByte;
-        MemorySegments.LineSegment lineSegment = lineSegment(length);
-        action.accept(lineSegment);
-        return length;
+        ml.offset = previousLineStartByte;
+        ml.length = length;
+        action.accept(ml);
+        previousLineStartByte += length + 1;
     }
 
     private void jumpToLine() {
@@ -153,7 +148,7 @@ public class BitwisePartitionSpliterator
 
     private void advance() {
         byteOffset++;
-        slideCurrent();
+        advanceCurrent();
     }
 
     private boolean foundTail() {
@@ -161,15 +156,15 @@ public class BitwisePartitionSpliterator
         if (byteOffset == partitionLimit) {
             current = 0L;
             for (int i = trail - 1; i >= 0; i--) {
-                current = (current << 8) + (long) memorySegment.get(ValueLayout.JAVA_BYTE, byteOffset + i);
+                current = (current << 8) + ms.get(ValueLayout.JAVA_BYTE, byteOffset + i);
             }
             return true;
         }
-        slideCurrent();
+        advanceCurrent();
         return false;
     }
 
-    private void slideCurrent() {
+    private void advanceCurrent() {
         if (byteOffset % 8 == 0) {
             current = next();
         } else {
@@ -179,9 +174,9 @@ public class BitwisePartitionSpliterator
 
     private long next() {
         try {
-            return memorySegment.get(ValueLayout.JAVA_LONG, byteOffset);
+            return ms.get(ValueLayout.JAVA_LONG, byteOffset);
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to advance from \{byteOffset} in \{memorySegment}", e);
+            throw new IllegalStateException(STR."\{this} failed to advance from \{byteOffset} in \{ms}", e);
         }
     }
 
@@ -189,23 +184,10 @@ public class BitwisePartitionSpliterator
         return (current & 0xFF) == '\n';
     }
 
-    private void newLine(long length) {
-        previousLineStartByte += length + 1;
-        lineNo++;
-    }
-
-    private MemorySegments.LineSegment lineSegment(long length) {
-        segmentLine.memorySegment = memorySegment;
-        segmentLine.lineNo = lineNo;
-        segmentLine.offset = previousLineStartByte;
-        segmentLine.length = length;
-        return segmentLine;
-    }
-
     public static final long BYTES_IN_LONG = ValueLayout.JAVA_LONG.byteSize();
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{lineNo}, offset \{byteOffset} in \{partition}]";
+        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
     }
 }
