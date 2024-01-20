@@ -45,7 +45,7 @@ public class BitwisePartitionSpliterator
     public BitwisePartitionSpliterator(Partition partition, MemorySegment ms) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
-        if (!(partition.last() || partition.isAligned(BYTES_IN_LONG))) {
+        if (!(partition.last() || partition.isAligned())) {
             throw new IllegalArgumentException(
                 STR."Not a valid partition, should be aligned @\{BYTES_IN_LONG}: \{partition}"
             );

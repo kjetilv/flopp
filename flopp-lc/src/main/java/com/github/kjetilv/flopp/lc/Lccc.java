@@ -35,11 +35,8 @@ public final class Lccc {
 
     }
 
-    public static final Partitioning PARTITIONING =
-        Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
-
     public static final ExecutorService EXECUTOR_SERVICE =
-        new ForkJoinPool(PARTITIONING.partitionCount(true));
+        new ForkJoinPool(Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64).partitionCount(true));
 
     @SuppressWarnings("unused")
     private static long count(Stream<Path> paths) {
@@ -56,12 +53,10 @@ public final class Lccc {
 
     private static Count count(Path path) {
         List<CompletableFuture<Long>> futures;
+        Shape shape = Shape.of(path).longestLine(100);
+        Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
         try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(
-                path,
-                PARTITIONING,
-                Shape.of(path).longestLine(100)
-            )
+            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape)
         ) {
             futures = streamers.streamers()
                 .map(streamer ->

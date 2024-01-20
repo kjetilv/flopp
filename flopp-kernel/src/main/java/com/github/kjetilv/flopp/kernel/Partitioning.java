@@ -69,9 +69,6 @@ public record Partitioning(
 
     private List<Partition> partitions(long total) {
         Non.negativeOrZero(total, "total");
-        if (shortTail > total) {
-            throw new IllegalArgumentException(STR."\{this} requires a tail of at least \{shortTail}");
-        }
         if (partitionCount > total) {
             throw new IllegalStateException(
                 STR."Too many partitions for \{total}: \{partitionCount} partitions"
@@ -80,43 +77,62 @@ public record Partitioning(
         if (total > partitionCount) {
             return partitions(partitionSizes(total));
         }
-        return singlePartition(intSized(total));
+        return singlePartition(total);
     }
 
-    private int[] partitionSizes(long total) {
-        if (alignment == 1) {
-            return partitionSizesSimple(total);
-        }
-        if (total / partitionCount < alignment * 2L) {
+    private long[] partitionSizes(long total) {
+        if (alignment > 1 && total / partitionCount < alignment * 2L) {
             throw new IllegalArgumentException(
                 STR."Too many partitions for \{total} bytes with alignment \{alignment}: \{partitionCount}");
         }
-        long availableTotal = total - shortTail;
-        int overshoot = Math.toIntExact(availableTotal % alignment);
-        int alignedSlices = Math.toIntExact(availableTotal / alignment + (overshoot > 0 ? 1 : 0));
-        if (alignedSlices < partitionCount) {
-            int[] sizes = new int[alignedSlices];
-            Arrays.fill(sizes, alignment);
-            if (overshoot != 0) {
-                sizes[alignedSlices - 1] += overshoot;
-            }
-            return sizes;
+        if (alignment > 1 && shortTail > 0) {
+            return alignedSizesWithShortTail(total);
         }
-        long totalInFullSlices = availableTotal / alignment * alignment;
-        int[] sizes = partitionSizesSimple(totalInFullSlices / alignment);
-        for (int i = 0; i < sizes.length; i++) {
-            sizes[i] *= alignment;
+        if (alignment > 1) {
+            return alignedSizes(total);
         }
+        return defaultDistributed(total);
+    }
+
+    private long[] alignedSizes(long total) {
+        long overshoot = total % alignment;
+        long alignedSlices = total / alignment;
+        long[] sizes = defaultDistributedAlignmentScaled(alignedSlices);
         if (overshoot != 0) {
-            sizes[Math.toIntExact(partitionCount - 1)] += overshoot;
+            sizes[sizes.length - 1] += overshoot;
         }
         return sizes;
     }
 
-    private int[] partitionSizesSimple(long total) {
-        int remainders = intSized(total % partitionCount);
-        int baseCount = intSized(total / partitionCount);
-        int[] sizes = new int[Math.toIntExact(partitionCount)];
+    private long[] alignedSizesWithShortTail(long total) {
+        long overshoot = total % alignment;
+        long alignedSlices = total / alignment;
+        if (overshoot == 0) {
+            return defaultDistributedAlignmentScaled(alignedSlices);
+        }
+        long headTotal = total - shortTail;
+        long alignedHeadSlices = headTotal / alignment;
+        long headOvershoot = headTotal % alignment;
+        long overshootTail = shortTail + headOvershoot;
+        long[] headSizes = defaultDistributedAlignmentScaled(alignedHeadSlices);
+        long[] sizes = new long[headSizes.length + 1];
+        System.arraycopy(headSizes, 0, sizes, 0, headSizes.length);
+        sizes[sizes.length - 1] = overshootTail;
+        return sizes;
+    }
+
+    private long[] defaultDistributedAlignmentScaled(long alignedSlices) {
+        long[] sizes = defaultDistributed(alignedSlices);
+        for (int i = 0; i < sizes.length; i++) {
+            sizes[i] *= alignment;
+        }
+        return sizes;
+    }
+
+    private long[] defaultDistributed(long total) {
+        long remainders = intSized(total % partitionCount);
+        long baseCount = intSized(total / partitionCount);
+        long[] sizes = new long[Math.toIntExact(partitionCount)];
         Arrays.fill(sizes, baseCount);
         for (int i = 0; i < remainders; i++) {
             sizes[i] += 1;
@@ -124,39 +140,21 @@ public record Partitioning(
         return sizes;
     }
 
-    private List<Partition> partitions(int[] sizes) {
+    private List<Partition> partitions(long[] sizes) {
         long offset = 0;
         int additional = shortTail > 0 ? 1 : 0;
         List<Partition> partitions = new ArrayList<>(sizes.length + additional);
         int count = partitionCount + additional;
-        int adjustment;
-        if (shortTail > 0) {
-            adjustment = sizes[sizes.length - 1] % (alignment * 2);
-            sizes[sizes.length - 1] -= adjustment;
-        } else {
-            adjustment = 0;
-        }
         for (int i = 0; i < sizes.length; i++) {
             partitions.add(
                 new Partition(i, count, offset, sizes[i], alignment)
             );
             offset += sizes[i];
         }
-        if (shortTail > 0) {
-            partitions.add(
-                new Partition(
-                    sizes.length,
-                    count,
-                    offset,
-                    shortTail + adjustment,
-                    alignment
-                )
-            );
-        }
         return partitions;
     }
 
-    private List<Partition> singlePartition(int total) {
+    private List<Partition> singlePartition(long total) {
         return List.of(new Partition(0, 1, 0, total, alignment));
     }
 

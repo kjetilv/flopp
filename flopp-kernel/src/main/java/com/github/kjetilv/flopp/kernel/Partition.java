@@ -37,7 +37,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return count > 0;
     }
 
-    public boolean isAligned(long alignment) {
+    public boolean isAligned() {
         return !last() && count % alignment == 0;
     }
 
