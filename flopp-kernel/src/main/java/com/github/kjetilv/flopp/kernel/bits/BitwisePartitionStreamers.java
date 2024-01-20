@@ -7,6 +7,7 @@ import com.github.kjetilv.flopp.kernel.Shape;
 import java.io.Closeable;
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -44,27 +45,7 @@ public final class BitwisePartitionStreamers implements Closeable {
         return partitioning.of(shape.size())
             .stream()
             .map(partition ->
-            {
-                try {
-                    return new BitwisePartitionStreamer(
-                        partition,
-                        fileChannel.map(
-                            READ_ONLY,
-                            partition.offset(),
-                            length(partition),
-                            arena
-                        )
-                    );
-                } catch (Exception e) {
-                    throw new IllegalStateException(STR."Failed to stream partition \{partition}", e);
-                }
-            });
-    }
-
-    private long length(Partition partition) {
-        long max = partition.count() + shape.stats().longestLine();
-        long min = shape.size() - partition.offset();
-        return Math.min(min, max);
+                new BitwisePartitionStreamer(partition, segment(partition)));
     }
 
     @Override
@@ -80,5 +61,25 @@ public final class BitwisePartitionStreamers implements Closeable {
     @Override
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/\{partitioning}]";
+    }
+
+    private MemorySegment segment(Partition partition) {
+        try {
+            return fileChannel.map(
+                READ_ONLY,
+                partition.offset(),
+                length(partition),
+                arena
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."Failed to stream partition \{partition}", e);
+        }
+    }
+
+    private long length(Partition partition) {
+        return Math.min(
+            shape.size() - partition.offset(),
+            partition.count() + shape.stats().longestLine()
+        );
     }
 }
