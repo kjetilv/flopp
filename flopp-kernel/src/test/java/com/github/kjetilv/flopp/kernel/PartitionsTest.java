@@ -9,6 +9,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PartitionsTest {
 
     @Test
+    public void testShortTail() {
+        List<Partition> partitions = Partitioning.longAligned(3, 80).of(2000);
+        assertSizes(partitions, 640L, 640L, 640L, 80L);
+    }
+
+    @Test
+    public void testShortTailAligned() {
+        List<Partition> partitions = Partitioning.longAligned(3, 80).of(1996);
+        assertSizes(partitions, 640L, 640L, 624L, 92L);
+    }
+
+    @Test
     public void test1418() {
         List<Partition> partitions = Partitioning.count(4).of(18);
         assertSizes(partitions, 5L, 5L, 4L, 4L);

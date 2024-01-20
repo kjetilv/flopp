@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Stream;
 
 public class CalculateAverage_kjetilvlong {
 
@@ -39,12 +41,13 @@ public class CalculateAverage_kjetilvlong {
     private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
+        Shape shape = Shape.of(path).longestLine(64, true);
+        Partitioning partitioning = Partitioning.longAligned(
+            Runtime.getRuntime().availableProcessors(),
+            shape.stats().longestLine() + 2);
         try (
-            BitwisePartitionStreamers bitwisePartitionStreamers = new BitwisePartitionStreamers(
-                path,
-                Partitioning.longAligned(),
-                Shape.of(path).longestLine(64, true)
-            );
+            BitwisePartitionStreamers bitwisePartitionStreamers =
+                new BitwisePartitionStreamers(path, partitioning, shape);
         ) {
             List<CompletableFuture<Map<String, Result>>> list = bitwisePartitionStreamers.streamers()
                 .map(streamer ->
@@ -67,7 +70,9 @@ public class CalculateAverage_kjetilvlong {
                                     result == null ? new Result(value) : result.collect(value));
                             });
                         return m;
-                    }))
+                    },
+                        new ForkJoinPool(partitioning.partitionCount(true))
+                    ))
                 .toList();
             Map<String, Result> map = list.stream().map(CompletableFuture::join).<Map<String, Result>>reduce(
                 new TreeMap<>(),
