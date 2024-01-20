@@ -56,10 +56,7 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         }
     }
 
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
-    }
+    abstract boolean advance(Consumer<? super MemorySegments.LineSegment> action);
 
     final boolean cycleDone(Consumer<? super MemorySegments.LineSegment> action) {
         if (ln()) {
@@ -74,11 +71,10 @@ abstract sealed class AbstractBitwisePartitionSpliterator
     }
 
     final void shipLine(Consumer<? super MemorySegments.LineSegment> action) {
-        long length = byteOffset - previousLineStartByte;
         ml.offset = previousLineStartByte;
-        ml.length = length;
+        ml.length = byteOffset - previousLineStartByte;
         action.accept(ml);
-        previousLineStartByte += length + 1;
+        previousLineStartByte += ml.length + 1;
     }
 
     final void advanceCurrent() {
@@ -113,8 +109,6 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         }
     }
 
-    abstract boolean advance(Consumer<? super MemorySegments.LineSegment> action);
-
     protected void processToTail(Consumer<? super MemorySegments.LineSegment> action, int tail) {
         while (true) {
             if (ln()) {
@@ -134,5 +128,10 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         for (int i = tail - 1; i >= 0; i--) {
             current = (current << 8) + ms.get(ValueLayout.JAVA_BYTE, byteOffset + i);
         }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
     }
 }
