@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
-import java.util.stream.Stream;
 
 public class CalculateAverage_kjetilvlong {
 

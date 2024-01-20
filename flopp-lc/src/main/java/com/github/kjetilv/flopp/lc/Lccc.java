@@ -36,10 +36,10 @@ public final class Lccc {
     }
 
     public static final Partitioning PARTITIONING =
-        Partitioning.longAligned(Runtime.getRuntime().availableProcessors() * 2);
+        Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
 
     public static final ExecutorService EXECUTOR_SERVICE =
-        new ForkJoinPool(PARTITIONING.partitionCount());
+        new ForkJoinPool(PARTITIONING.partitionCount(true));
 
     @SuppressWarnings("unused")
     private static long count(Stream<Path> paths) {

@@ -11,7 +11,7 @@ import static java.lang.Integer.MAX_VALUE;
 public record Partitioning(
     int partitionCount,
     int alignment,
-    int shortTail,
+    long shortTail,
     int bufferSize
 ) {
     public static Partitioning longAligned() {
@@ -22,7 +22,7 @@ public record Partitioning(
         return longAligned(partitionCount, 0);
     }
 
-    public static Partitioning longAligned(int partitionCount, int shortTail) {
+    public static Partitioning longAligned(int partitionCount, long shortTail) {
         return new Partitioning(
             Non.negative(partitionCount, "partitionCount") > 0
                 ? partitionCount

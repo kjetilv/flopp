@@ -1,6 +1,9 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionSpliterator;
+import com.github.kjetilv.flopp.kernel.MemorySegmentSources;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.files.FileChannelMemorySegmentSources;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,8 +61,8 @@ public class BitwiseSpliteratorTest {
         ) {
             for (Partition partition : partitions) {
 
-                BitwisePartitionSpliterator spliterator =
-                    new BitwisePartitionSpliterator(
+                BitwiseAlignedPartitionSpliterator spliterator =
+                    new BitwiseAlignedPartitionSpliterator(
                         partition,
                         memorySegmentSources.source(partition).get().memorySegment()
                     );
