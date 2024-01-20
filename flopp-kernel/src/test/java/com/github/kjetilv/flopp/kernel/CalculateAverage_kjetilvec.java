@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 
-public class CalculateAverage_kjetilv {
+public class CalculateAverage_kjetilvec {
 
     public static void main(String[] args) {
 //        runSpull();

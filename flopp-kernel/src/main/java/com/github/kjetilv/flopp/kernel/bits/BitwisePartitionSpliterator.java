@@ -74,46 +74,43 @@ public class BitwisePartitionSpliterator
         }
     }
 
+    @SuppressWarnings({"StatementWithEmptyBody", "SameReturnValue"})
     private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
         current = next();
         if (!firstPartition) {
             jumpToLine();
         }
         if (lastPartition) {
-            tailSensitive(action);
-        } else {
-            fullSpeed(action);
+            for (long i = 0; i < partitionLimit / BYTES_IN_LONG && !cycleDone(action); i++);
+            if (processedToEnd(action)) {
+                return false;
+            }
+            while (true) {
+                if (cycleDone(action)) {
+                    return false;
+                }
+            }
         }
+        while (true) {
+            if (cycleDone(action)) {
+                return false;
+            }
+        }
+    }
+
+    private boolean cycleDone(Consumer<? super MemorySegments.LineSegment> action) {
+        if (ln()) {
+            shipLine(action);
+            if (byteOffset >= partitionLimit) {
+                return true;
+            }
+        }
+        byteOffset++;
+        advanceCurrent();
         return false;
     }
 
-    private void fullSpeed(Consumer<? super MemorySegments.LineSegment> action) {
-        while (true) {
-            if (ln()) {
-                shipLine(action);
-                if (byteOffset >= partitionLimit) {
-                    return;
-                }
-            }
-            advance();
-        }
-    }
-
-    @SuppressWarnings("SameReturnValue")
-    private void tailSensitive(Consumer<? super MemorySegments.LineSegment> action) {
-        if (processToEnd(action)) {
-            return;
-        }
-        while (true) {
-            if (ln()) {
-                shipLine(action);
-                return;
-            }
-            advance();
-        }
-    }
-
-    private boolean processToEnd(Consumer<? super MemorySegments.LineSegment> action) {
+    private boolean processedToEnd(Consumer<? super MemorySegments.LineSegment> action) {
         while (true) {
             if (ln()) {
                 shipLine(action);
@@ -121,9 +118,11 @@ public class BitwisePartitionSpliterator
                     return true;
                 }
             }
-            if (foundTail()) {
+            byteOffset++;
+            if (tailRemains()) {
                 return false;
             }
+            advanceCurrent();
         }
     }
 
@@ -137,22 +136,17 @@ public class BitwisePartitionSpliterator
 
     private void jumpToLine() {
         while (true) {
+            byteOffset++;
             if (ln()) {
-                advance();
+                advanceCurrent();
                 previousLineStartByte = byteOffset;
                 return;
             }
-            advance();
+            advanceCurrent();
         }
     }
 
-    private void advance() {
-        byteOffset++;
-        advanceCurrent();
-    }
-
-    private boolean foundTail() {
-        byteOffset++;
+    private boolean tailRemains() {
         if (byteOffset == partitionLimit) {
             current = 0L;
             for (int i = trail - 1; i >= 0; i--) {
@@ -160,7 +154,6 @@ public class BitwisePartitionSpliterator
             }
             return true;
         }
-        advanceCurrent();
         return false;
     }
 
