@@ -59,7 +59,7 @@ final class Bloodstream<T> implements Vein<T> {
     @Override
     public void inject(Collection<T> ts) {
         if (ts != null) {
-            for (T t : Objects.requireNonNull(ts, "ts")) {
+            for (T t : ts) {
                 addAudited(t);
             }
         }
@@ -115,20 +115,20 @@ final class Bloodstream<T> implements Vein<T> {
         }
     }
 
-    private static void await(Condition condition) {
-        try {
-            condition.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted", e);
-        }
-    }
-
     @Override
     public void close() {
         if (poisoned.compareAndSet(false, true)) {
             add(poison);
         }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{name == null ? hashCode() : name}:\{capacity}\{
+            poisoned.get()
+                ? ", shutdown"
+                : ""
+            }]";
     }
 
     private void addAudited(T t) {
@@ -147,7 +147,7 @@ final class Bloodstream<T> implements Vein<T> {
             ts.put(t);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(this + " interrupted", e);
+            throw new IllegalStateException(STR."\{this} interrupted", e);
         }
     }
 
@@ -166,10 +166,12 @@ final class Bloodstream<T> implements Vein<T> {
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" +
-            (name == null ? hashCode() : name) + ":" + capacity + (poisoned.get() ? ", shutdown" : "") +
-            "]";
+    private static void await(Condition condition) {
+        try {
+            condition.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted", e);
+        }
     }
 }

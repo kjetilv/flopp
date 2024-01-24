@@ -50,7 +50,7 @@ final class AsynchWriteQr<T> implements WriteQr<T> {
                 }
             }
         } catch (Exception e) {
-            throw new IllegalStateException("Unknown failure: " + this, e);
+            throw new IllegalStateException(STR."Unknown failure: \{this}", e);
         }
     }
 
@@ -61,6 +61,6 @@ final class AsynchWriteQr<T> implements WriteQr<T> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + vein + "]";
+        return STR."\{getClass().getSimpleName()}[\{vein}]";
     }
 }

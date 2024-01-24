@@ -74,7 +74,7 @@ final class AsyncReadQr implements ReadQr {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[[" + vein + "] <- " + stream + "]";
+            return STR."\{getClass().getSimpleName()}[[\{vein}] <- \{stream}]";
         }
     }
 
@@ -98,19 +98,19 @@ final class AsyncReadQr implements ReadQr {
         public boolean tryAdvance(Consumer<? super T> consumer) {
             Throwable failure = this.failure.get();
             if (failure != null) {
-                throw new IllegalStateException("Stream failed in reading thread: " + failure);
+                throw new IllegalStateException(STR."Stream failed in reading thread: \{failure}");
             }
             try (Vial<T> vial = vein.tap()) {
                 vial.contents().forEach(consumer);
                 return !vial.done();
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to tap " + vein, e);
+                throw new IllegalStateException(STR."Failed to tap \{vein}", e);
             }
         }
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[" + vein + "]";
+            return STR."\{getClass().getSimpleName()}[\{vein}]";
         }
     }
 }

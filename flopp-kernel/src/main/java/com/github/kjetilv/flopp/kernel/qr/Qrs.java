@@ -34,7 +34,6 @@ public final class Qrs {
     }
 
     private Qrs() {
-
     }
 
     private static final Duration QUEUE_POLL = Duration.ofSeconds(1);
