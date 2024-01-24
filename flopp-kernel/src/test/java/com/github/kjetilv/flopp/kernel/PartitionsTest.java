@@ -12,7 +12,7 @@ class PartitionsTest {
     @Test
     public void testShortTail() {
         List<Partition> partitions = Partitioning.longAligned(3, 80).of(2000);
-        assertSizes(partitions, 84 * 8L, 83 * 8L, 83 * 8L);
+        assertSizes(partitions, 640L, 640L, 640L, 80L);
     }
 
     @Test

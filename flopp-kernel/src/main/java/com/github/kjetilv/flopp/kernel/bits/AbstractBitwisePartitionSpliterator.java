@@ -8,46 +8,45 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-@SuppressWarnings("ProtectedField")
 abstract sealed class AbstractBitwisePartitionSpliterator
     extends Spliterators.AbstractSpliterator<LineSegment>
     permits BitwiseLineSeekPartitionSpliterator,
     BitwiseInitialPartitionSpliterator,
     BitwiseTrailingPartitionSpliterator {
 
-    protected final Partition partition;
+    private final Partition partition;
 
-    protected final MutableLine l;
-
-    protected MemorySegment ms;
-
-    protected long current;
-
-    protected long longOffset;
-
-    protected long byteOffset;
-
-    protected long currentLineStart;
-
-    protected long currentMask;
-
-    private int leap;
-
-    private final int alignment;
+    private final MemorySegment memorySegment;
 
     private final long limit;
 
-    AbstractBitwisePartitionSpliterator(Partition partition, MemorySegment ms) {
+    private final int alignment;
+
+    private final MutableLine line;
+
+    private long current;
+
+    private long longOffset;
+
+    private long byteOffset;
+
+    private long lineStart;
+
+    private long mask;
+
+    private int leap;
+
+    AbstractBitwisePartitionSpliterator(Partition partition, MemorySegment memorySegment) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
-        this.ms = Objects.requireNonNull(ms, "memorySegmentSources");
+        this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources");
 
         this.partition = Objects.requireNonNull(partition, "partition");
         this.alignment = this.partition.alignment();
         this.limit = partition.count();
 
-        this.l = new MutableLine();
-        this.l.partitionNo = partition.partitionNo();
-        this.l.memorySegment = ms;
+        this.line = new MutableLine();
+        this.line.partitionNo = partition.partitionNo();
+        this.line.memorySegment = memorySegment;
     }
 
     @Override
@@ -75,78 +74,77 @@ abstract sealed class AbstractBitwisePartitionSpliterator
     }
 
     protected final void shipLine(Consumer<? super LineSegment> action) {
-        long length = byteOffset - currentLineStart - 1;
+        long shift = byteOffset - lineStart;
+        lineStart += shift;
 
-        l.offset = currentLineStart;
-        l.length = length;
-        action.accept(l);
-        currentLineStart += length + 1;
+        line.offset = lineStart;
+        line.length = shift - 1;
+        action.accept(this.line);
     }
 
     protected void clearLeap() {
-        if (leap == alignment - 1) {
-            currentMask = 0;
+        if (leap == alignment) {
+            mask = 0;
         } else {
-            currentMask >>>= (leap + 1) * alignment;
+            mask >>>= leap * alignment;
         }
     }
 
     protected void progressMask() {
-        leap = Bits.trailingBytes(currentMask);
-        byteOffset += leap + 1;
+        byteOffset += leap = Bits.trailingBytes(mask) + 1;
     }
 
     protected final void loadLong() {
         try {
-            current = ms.get(ValueLayout.JAVA_LONG, longOffset);
+            current = memorySegment.get(ValueLayout.JAVA_LONG, longOffset);
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to load from \{longOffset} in \{ms}", e);
+            throw new IllegalStateException(STR."Failed to load from \{longOffset} in \{memorySegment}", e);
         }
         byteOffset = longOffset;
         longOffset += alignment;
-        currentMask = Bits.currentLongMask(current);
+        mask = Bits.mask(current);
     }
 
     protected void skipToStart() {
         do {
             loadLong();
-        } while (currentMask == 0);
+        } while (mask == 0);
         partitionStarted();
     }
 
     protected void partitionStarted() {
         progressMask();
         clearLeap();
-        currentLineStart = byteOffset;
+        lineStart = byteOffset;
     }
 
     protected void processAligned(Consumer<? super LineSegment> action) {
         while (byteOffset <= limit) {
             do {
                 loadLong();
-            } while (currentMask == 0);
+            } while (mask == 0);
             do {
                 progressMask();
                 shipLine(action);
                 clearLeap();
-            } while (currentMask != 0);
+            } while (mask != 0);
         }
     }
 
     protected void processTail(Consumer<? super LineSegment> action, int tail) {
         long lastLongOffset = limit - tail - alignment;
         while (byteOffset < limit) {
-            while (currentMask == 0 && byteOffset < lastLongOffset) {
+            while (mask == 0 && byteOffset < lastLongOffset) {
                 loadLong();
             }
-            if (currentMask == 0 && tail > 0) {
+            if (mask == 0 && tail > 0) {
                 loadTail(tail);
             }
             do {
                 progressMask();
                 shipLine(action);
                 clearLeap();
-            } while (currentMask != 0);
+            } while (mask != 0);
         }
     }
 
@@ -154,9 +152,9 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         current = 0L;
         byteOffset = longOffset;
         for (int i = tail - 1; i >= 0; i--) {
-            byte b = ms.get(ValueLayout.JAVA_BYTE, byteOffset + i);
+            byte b = memorySegment.get(ValueLayout.JAVA_BYTE, byteOffset + i);
             current = (current << alignment) + b;
         }
-        currentMask = Bits.currentLongMask(current);
+        mask = Bits.mask(current);
     }
 }
