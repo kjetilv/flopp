@@ -75,11 +75,12 @@ abstract sealed class AbstractBitwisePartitionSpliterator
 
     protected final void shipLine(Consumer<? super LineSegment> action) {
         long shift = byteOffset - lineStart;
-        lineStart += shift;
 
         line.offset = lineStart;
         line.length = shift - 1;
-        action.accept(this.line);
+        action.accept(line);
+
+        lineStart += shift;
     }
 
     protected void clearLeap() {
@@ -91,7 +92,8 @@ abstract sealed class AbstractBitwisePartitionSpliterator
     }
 
     protected void progressMask() {
-        byteOffset += leap = Bits.trailingBytes(mask) + 1;
+        leap = Bits.trailingBytes(mask);
+        byteOffset += leap;
     }
 
     protected final void loadLong() {

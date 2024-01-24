@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Stream;
 
 public final class CalculateAverage_kjetilvlong {
 
@@ -35,7 +36,7 @@ public final class CalculateAverage_kjetilvlong {
         runJava();
     }
 
-    private static final String FILE = "./measurements.txt";
+    private static final String FILE = "./measurements_1_000_000.txt";
 
     private static void runJava() {
         Instant start = Instant.now();
@@ -49,7 +50,7 @@ public final class CalculateAverage_kjetilvlong {
             BitwisePartitionStreamers bitwisePartitionStreamers =
                 new BitwisePartitionStreamers(path, partitioning, shape)
         ) {
-            List<CompletableFuture<Map<String, Result>>> list = bitwisePartitionStreamers.streamers()
+            Stream<CompletableFuture<Map<String, Result>>> list = bitwisePartitionStreamers.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(
                         () -> {
@@ -73,9 +74,9 @@ public final class CalculateAverage_kjetilvlong {
                             return m;
                         },
                         new ForkJoinPool(partitioning.partitionCount(true))
-                    ))
-                .toList();
-            Map<String, Result> map = list.stream()
+                    ));
+//                .toList();
+            Map<String, Result> map = list //.stream()
                 .map(CompletableFuture::join).<Map<String, Result>>reduce(
                     new TreeMap<>(),
                     (m1, m2) -> {

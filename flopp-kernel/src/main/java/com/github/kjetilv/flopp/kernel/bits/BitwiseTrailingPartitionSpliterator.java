@@ -9,14 +9,14 @@ public final class BitwiseTrailingPartitionSpliterator extends AbstractBitwisePa
 
     private final int tail;
 
-    public BitwiseTrailingPartitionSpliterator(Partition partition, MemorySegment ms) {
-        super(partition, ms);
-        this.tail = Math.toIntExact(partition.count() % partition.alignment());
-    }
-
     @Override
     protected String toStringAddendum() {
         return STR."+\{tail}";
+    }
+
+    public BitwiseTrailingPartitionSpliterator(Partition partition, MemorySegment ms) {
+        super(partition, ms);
+        this.tail = Math.toIntExact(partition.count() % partition.alignment());
     }
 
     @Override
@@ -25,4 +25,5 @@ public final class BitwiseTrailingPartitionSpliterator extends AbstractBitwisePa
         processTail(action, tail);
         return false;
     }
+
 }
