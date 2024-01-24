@@ -58,12 +58,6 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         }
     }
 
-    abstract boolean advance(Consumer<? super LineSegment> action);
-
-    protected String toStringAddendum() {
-        return "";
-    }
-
     @Override
     public String toString() {
         String stringAddendum = toStringAddendum();
@@ -71,6 +65,12 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         return stringAddendum == null || stringAddendum.isBlank()
             ? STR."\{name}[offset:\{byteOffset} \{partition}]"
             : STR."\{name}[offset:\{byteOffset} \{partition} \{stringAddendum.trim()}]";
+    }
+
+    abstract boolean advance(Consumer<? super LineSegment> action);
+
+    protected String toStringAddendum() {
+        return "";
     }
 
     protected final void processAligned(Consumer<? super LineSegment> action) {
@@ -134,11 +134,7 @@ abstract sealed class AbstractBitwisePartitionSpliterator
     }
 
     private final void loadLong() {
-        try {
-            current = memorySegment.get(ValueLayout.JAVA_LONG, longOffset);
-        } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to load from \{longOffset} in \{memorySegment}", e);
-        }
+        current = memorySegment.get(ValueLayout.JAVA_LONG, longOffset);
         byteOffset = longOffset;
         longOffset += alignment;
         mask = Bits.mask(current);

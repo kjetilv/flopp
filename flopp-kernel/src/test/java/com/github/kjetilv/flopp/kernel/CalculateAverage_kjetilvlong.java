@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
@@ -52,7 +54,7 @@ public final class CalculateAverage_kjetilvlong {
                 new BitwisePartitionStreamers(path, partitioning, shape)
         ) {
             Stream<CompletableFuture<BitwisePartitionStreamer>> streamers = bitwisePartitionStreamers.streamers(
-                new ForkJoinPool(partitioning.partitionCount(true))
+                Executors.newVirtualThreadPerTaskExecutor()
             );
             List<CompletableFuture<Map<String, Result>>> list = streamers
                 .map(streamerFuture ->
