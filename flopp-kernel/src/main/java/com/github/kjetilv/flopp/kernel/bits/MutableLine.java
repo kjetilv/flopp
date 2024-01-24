@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import java.lang.foreign.MemorySegment;
 
 @SuppressWarnings("PackageVisibleField")
-public final class MutableLine implements MemorySegments.LineSegment {
+final class MutableLine implements LineSegment {
 
     int partitionNo;
 

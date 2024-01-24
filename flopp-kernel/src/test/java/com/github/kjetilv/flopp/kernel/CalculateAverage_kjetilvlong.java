@@ -16,7 +16,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -28,7 +28,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
-public class CalculateAverage_kjetilvlong {
+public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
 //        runSpull();
@@ -43,49 +43,51 @@ public class CalculateAverage_kjetilvlong {
         Shape shape = Shape.of(path).longestLine(64, true);
         Partitioning partitioning = Partitioning.longAligned(
             Runtime.getRuntime().availableProcessors(),
-            shape.stats().longestLine() + 2);
+            shape.stats().longestLine() + 2
+        );
         try (
             BitwisePartitionStreamers bitwisePartitionStreamers =
-                new BitwisePartitionStreamers(path, partitioning, shape);
+                new BitwisePartitionStreamers(path, partitioning, shape)
         ) {
             List<CompletableFuture<Map<String, Result>>> list = bitwisePartitionStreamers.streamers()
                 .map(streamer ->
-                    CompletableFuture.supplyAsync(() -> {
-                        Map<String, Result> m = new HashMap<>(1024, 1.0f);
-                        streamer.memorySegments()
-                            .forEach(seg -> {
-                                long length = seg.length(); //segment.length();
-                                byte[] bytes = MemorySegments.toBytes(seg);
-                                int splitIndex = -1;
-                                for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
-                                    if (bytes[i] == ';') {
-                                        splitIndex = i;
-                                        break;
+                    CompletableFuture.supplyAsync(
+                        () -> {
+                            Map<String, Result> m = new HashMap<>(1024, 1.0f);
+                            streamer.memorySegments()
+                                .forEach(seg -> {
+                                    long length = seg.length(); //segment.length();
+                                    byte[] bytes = LineSegments.toBytes(seg);
+                                    int splitIndex = -1;
+                                    for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
+                                        if (bytes[i] == ';') {
+                                            splitIndex = i;
+                                            break;
+                                        }
                                     }
-                                }
-                                int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
-                                String key = new String(bytes, 0, splitIndex);
-                                m.compute(key, (_, result) ->
-                                    result == null ? new Result(value) : result.collect(value));
-                            });
-                        return m;
-                    },
+                                    int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
+                                    String key = new String(bytes, 0, splitIndex);
+                                    m.compute(key, (_, result) ->
+                                        result == null ? new Result(value) : result.collect(value));
+                                });
+                            return m;
+                        },
                         new ForkJoinPool(partitioning.partitionCount(true))
                     ))
                 .toList();
-            Map<String, Result> map = list.stream().map(CompletableFuture::join).<Map<String, Result>>reduce(
-                new TreeMap<>(),
-                (m1, m2) -> {
-                    m2.forEach((k, v) -> {
-                        m1.compute(k, (_, r1) ->
-                            r1 == null ? v : r1.merge(v));
-                    });
-                    return m1;
-                },
-                (_, _) -> {
-                    throw new IllegalStateException();
-                }
-            );
+            Map<String, Result> map = list.stream()
+                .map(CompletableFuture::join).<Map<String, Result>>reduce(
+                    new TreeMap<>(),
+                    (m1, m2) -> {
+                        m2.forEach((k, v) ->
+                            m1.compute(k, (_, r1) ->
+                                r1 == null ? v : r1.merge(v)));
+                        return m1;
+                    },
+                    (_, _) -> {
+                        throw new IllegalStateException();
+                    }
+                );
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }

@@ -10,45 +10,48 @@ import java.util.function.Consumer;
 
 @SuppressWarnings("ProtectedField")
 abstract sealed class AbstractBitwisePartitionSpliterator
-    extends Spliterators.AbstractSpliterator<MemorySegments.LineSegment>
-    permits BitwiseAlignedPartitionSpliterator, BitwiseTrailingPartitionSpliterator {
+    extends Spliterators.AbstractSpliterator<LineSegment>
+    permits BitwiseLineSeekPartitionSpliterator,
+    BitwiseInitialPartitionSpliterator,
+    BitwiseTrailingPartitionSpliterator {
 
     protected final Partition partition;
 
-    protected final MemorySegment ms;
+    protected final MutableLine l;
 
-    protected final MutableLine ml;
+    protected MemorySegment ms;
 
-    protected long partitionLimit;
-
-    /**
-     * Current byte.
-     */
     protected long current;
 
-    /**
-     * How much of {@link #partitionLimit} is processed
-     */
+    protected long longOffset;
+
     protected long byteOffset;
 
-    /**
-     * Position of byte starting current line
-     */
-    private long previousLineStartByte;
+    protected long currentLineStart;
+
+    protected long currentMask;
+
+    private int leap;
+
+    private final int alignment;
+
+    private final long limit;
 
     AbstractBitwisePartitionSpliterator(Partition partition, MemorySegment ms) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.ms = Objects.requireNonNull(ms, "memorySegmentSources");
 
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.alignment = this.partition.alignment();
+        this.limit = partition.count();
 
-        this.ml = new MutableLine();
-        this.ml.partitionNo = partition.partitionNo();
-        this.ml.memorySegment = ms;
+        this.l = new MutableLine();
+        this.l.partitionNo = partition.partitionNo();
+        this.l.memorySegment = ms;
     }
 
     @Override
-    public final boolean tryAdvance(Consumer<? super MemorySegments.LineSegment> action) {
+    public final boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
             return advance(action);
         } catch (Exception e) {
@@ -58,73 +61,102 @@ abstract sealed class AbstractBitwisePartitionSpliterator
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
+        String stringAddendum = toStringAddendum();
+        String name = getClass().getSimpleName();
+        return stringAddendum == null || stringAddendum.isBlank()
+            ? STR."\{name}[offset:\{byteOffset} \{partition}]"
+            : STR."\{name}[offset:\{byteOffset} \{partition} \{stringAddendum.trim()}]";
     }
 
-    abstract boolean advance(Consumer<? super MemorySegments.LineSegment> action);
+    abstract boolean advance(Consumer<? super LineSegment> action);
 
-    final boolean cycleDone(Consumer<? super MemorySegments.LineSegment> action) {
-        if (ln()) {
-            shipLine(action);
-            if (byteOffset >= partitionLimit) {
-                return true;
-            }
-        }
-        byteOffset++;
-        advanceCurrent();
-        return false;
+    protected String toStringAddendum() {
+        return "";
     }
 
-    final void shipLine(Consumer<? super MemorySegments.LineSegment> action) {
-        ml.offset = previousLineStartByte;
-        ml.length = byteOffset - previousLineStartByte;
-        action.accept(ml);
-        previousLineStartByte += ml.length + 1;
+    protected final void shipLine(Consumer<? super LineSegment> action) {
+        long length = byteOffset - currentLineStart - 1;
+
+        l.offset = currentLineStart;
+        l.length = length;
+        action.accept(l);
+        currentLineStart += length + 1;
     }
 
-    final void advanceCurrent() {
-        if (byteOffset % 8 == 0) {
-            current = ms.get(ValueLayout.JAVA_LONG, byteOffset);
+    protected void clearLeap() {
+        if (leap == alignment - 1) {
+            currentMask = 0;
         } else {
-            current >>= 8;
+            currentMask >>>= (leap + 1) * alignment;
         }
     }
 
-    final boolean ln() {
-        return (current & 0xFF) == '\n';
+    protected void progressMask() {
+        leap = Bits.trailingBytes(currentMask);
+        byteOffset += leap + 1;
     }
 
-    final void jumpToLine() {
-        while (true) {
-            byteOffset++;
-            if (ln()) {
-                advanceCurrent();
-                previousLineStartByte = byteOffset;
-                return;
-            }
-            advanceCurrent();
+    protected final void loadLong() {
+        try {
+            current = ms.get(ValueLayout.JAVA_LONG, longOffset);
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."Failed to load from \{longOffset} in \{ms}", e);
         }
+        byteOffset = longOffset;
+        longOffset += alignment;
+        currentMask = Bits.currentLongMask(current);
     }
 
-    protected void processToTail(Consumer<? super MemorySegments.LineSegment> action, int tail) {
-        while (true) {
-            if (ln()) {
+    protected void skipToStart() {
+        do {
+            loadLong();
+        } while (currentMask == 0);
+        partitionStarted();
+    }
+
+    protected void partitionStarted() {
+        progressMask();
+        clearLeap();
+        currentLineStart = byteOffset;
+    }
+
+    protected void processAligned(Consumer<? super LineSegment> action) {
+        while (byteOffset <= limit) {
+            do {
+                loadLong();
+            } while (currentMask == 0);
+            do {
+                progressMask();
                 shipLine(action);
-            }
-            byteOffset++;
-            if (byteOffset == partitionLimit) {
-                loadTail(tail);
-                return;
-            }
-            advanceCurrent();
+                clearLeap();
+            } while (currentMask != 0);
         }
     }
 
-    private void loadTail(int tail) {
+    protected void processTail(Consumer<? super LineSegment> action, int tail) {
+        long lastLongOffset = limit - tail - alignment;
+        while (byteOffset < limit) {
+            while (currentMask == 0 && byteOffset < lastLongOffset) {
+                loadLong();
+            }
+            if (currentMask == 0 && tail > 0) {
+                loadTail(tail);
+            }
+            do {
+                progressMask();
+                shipLine(action);
+                clearLeap();
+            } while (currentMask != 0);
+        }
+    }
+
+    protected void loadTail(int tail) {
         current = 0L;
+        byteOffset = longOffset;
         for (int i = tail - 1; i >= 0; i--) {
             byte b = ms.get(ValueLayout.JAVA_BYTE, byteOffset + i);
-            current = (current << 8) + b;
+            current = (current << alignment) + b;
         }
+        currentMask = Bits.currentLongMask(current);
     }
 }

@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.io.Closeable;
 import java.util.List;
@@ -120,7 +120,7 @@ public interface Partitioned<P> extends Closeable {
     }
 
     default <T> List<T> mapMemorySegmentPartition(
-        BiFunction<Partition, Stream<MemorySegments.LineSegment>, T> function
+        BiFunction<Partition, Stream<LineSegment>, T> function
     ) {
         try (VectorPartitionedMapper mapper = vectorMapper()) {
             return awaitCompleted(mapper

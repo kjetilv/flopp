@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import jdk.incubator.vector.VectorMask;
 
 import java.lang.foreign.MemorySegment;
@@ -9,7 +9,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 public class VectorPartitionSpliterator
-    extends Spliterators.AbstractSpliterator<MemorySegments.LineSegment> {
+    extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
@@ -17,13 +17,11 @@ public class VectorPartitionSpliterator
 
     private final MemorySegmentSource source;
 
-    private final SurroundConsumer<MemorySegments.LineSegment> lineConsumer;
+    private final SurroundConsumer<LineSegment> lineConsumer;
 
     private final boolean allocating;
 
     private final MutableLine segmentLine;
-
-    private final int partitionNo;
 
     private final boolean lastPartition;
 
@@ -43,7 +41,6 @@ public class VectorPartitionSpliterator
 
         this.partition = Objects.requireNonNull(partition, "partition");
         this.partitionLimit = this.partition.count();
-        this.partitionNo = partition.partitionNo();
 
         this.firstPartition = partition.first();
         this.lastPartition = partition.last();
@@ -64,7 +61,7 @@ public class VectorPartitionSpliterator
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super MemorySegments.LineSegment> action) {
+    public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
             return process(action);
         } catch (Exception e) {
@@ -77,7 +74,7 @@ public class VectorPartitionSpliterator
         return STR."\{getClass().getSimpleName()}[\{partition}]";
     }
 
-    private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
+    private boolean process(Consumer<? super LineSegment> action) {
         MemorySegmentSource.Segment segment = source.get();
         long segmentOffset = firstLineOffset(segment);
         long lineMarker = segmentOffset;
@@ -102,9 +99,9 @@ public class VectorPartitionSpliterator
                 int zeroes = maskOffset - backshift + Long.numberOfTrailingZeros(maskLong >>> maskOffset);
                 if (zeroes < BYTES_IN_LONG) {
                     int length = pending + zeroes - maskOffset + backshift;
-                    MemorySegments.LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
+                    LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
                     try {
-                        MemorySegments.LineSegment validated = lineSegment.validate();
+                        LineSegment validated = lineSegment.validate();
                         lineConsumer.accept(action, validated);
                     } catch (Exception e) {
                         throw new IllegalStateException(
@@ -152,7 +149,7 @@ public class VectorPartitionSpliterator
         return segmentOffset >= partitionLimit;
     }
 
-    private MemorySegments.LineSegment lineSegment(
+    private LineSegment lineSegment(
         MemorySegmentSource.Segment segment, long offset, int length, long lineNo
     ) {
         if (allocating) {
@@ -175,7 +172,7 @@ public class VectorPartitionSpliterator
     }
 
     @SuppressWarnings("PackageVisibleField")
-    public static final class MutableLine implements MemorySegments.LineSegment {
+    public static final class MutableLine implements LineSegment {
 
         int partitionNo;
 
@@ -212,7 +209,7 @@ public class VectorPartitionSpliterator
         MemorySegment memorySegment,
         long offset,
         long length
-    ) implements MemorySegments.LineSegment {
+    ) implements LineSegment {
 
         @Override
         public String toString() {

@@ -9,7 +9,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 public class BitwisePartitionSpliterator
-    extends Spliterators.AbstractSpliterator<MemorySegments.LineSegment> {
+    extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
@@ -66,7 +66,7 @@ public class BitwisePartitionSpliterator
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super MemorySegments.LineSegment> action) {
+    public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
             return process(action);
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class BitwisePartitionSpliterator
     }
 
     @SuppressWarnings({"StatementWithEmptyBody", "SameReturnValue"})
-    private boolean process(Consumer<? super MemorySegments.LineSegment> action) {
+    private boolean process(Consumer<? super LineSegment> action) {
         current = next();
         if (!firstPartition) {
             jumpToLine();
@@ -98,7 +98,7 @@ public class BitwisePartitionSpliterator
         }
     }
 
-    private boolean cycleDone(Consumer<? super MemorySegments.LineSegment> action) {
+    private boolean cycleDone(Consumer<? super LineSegment> action) {
         if (ln()) {
             shipLine(action);
             if (byteOffset >= partitionLimit) {
@@ -110,7 +110,7 @@ public class BitwisePartitionSpliterator
         return false;
     }
 
-    private boolean processedToEnd(Consumer<? super MemorySegments.LineSegment> action) {
+    private boolean processedToEnd(Consumer<? super LineSegment> action) {
         while (true) {
             if (ln()) {
                 shipLine(action);
@@ -126,7 +126,7 @@ public class BitwisePartitionSpliterator
         }
     }
 
-    private void shipLine(Consumer<? super MemorySegments.LineSegment> action) {
+    private void shipLine(Consumer<? super LineSegment> action) {
         long length = byteOffset - previousLineStartByte;
         ml.offset = previousLineStartByte;
         ml.length = length;

@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,11 +28,11 @@ class SegmentedPartitionedTest {
         List<String> lines = Arrays.asList("""
             1
             2a
-            
+                        
             3bb
             4c
             d
-            
+                        
             5e
             6ff
             """.split("\n"));
@@ -48,14 +48,13 @@ class SegmentedPartitionedTest {
         Partitioning partitioning = new Partitioning(partitionCount, 16);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().vectorStreamers()
-            .forEach(partitionStreamer -> {
+            .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(MemorySegments::toString)
+                    .map(LineSegments::toString)
                     .forEach(e -> {
                         assertThat(e).doesNotContain("\n");
                         syncLines.add(e);
-                    });
-            });
+                    }));
         pf1.close();
         assertThat(syncLines).containsExactlyElementsOf(lines);
     }
@@ -84,14 +83,13 @@ class SegmentedPartitionedTest {
         Partitioning partitioning = Partitioning.longAligned(partitionCount);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().vectorStreamers()
-            .forEach(partitionStreamer -> {
+            .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(MemorySegments::toString)
+                    .map(LineSegments::toString)
                     .forEach(e -> {
                         assertThat(e).doesNotContain("\n");
                         syncLines.add(e);
-                    });
-            });
+                    }));
         pf1.close();
         assertThat(syncLines).containsExactlyElementsOf(lines);
     }
@@ -127,14 +125,13 @@ class SegmentedPartitionedTest {
         Partitioning partitioning = Partitioning.longAligned(partitionCount);
         Partitioned<Path> pf1 = PartitionedPaths.create(pathWithHeaders, shape, partitioning);
         pf1.streams().vectorStreamers()
-            .forEach(partitionStreamer -> {
+            .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(MemorySegments::toString)
+                    .map(LineSegments::toString)
                     .forEach(e -> {
                         assertThat(e).doesNotContain("\n");
                         syncLines.add(e);
-                    });
-            });
+                    }));
         pf1.close();
         assertContents(syncLines);
 
@@ -149,7 +146,8 @@ class SegmentedPartitionedTest {
                 CompletableFuture.supplyAsync(streamer::memorySegments, executorService))
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
-                    partitionedLineStream.map(MemorySegments::toString).forEach(asyncLines::add)))
+                    partitionedLineStream.map(LineSegments::toString)
+                        .forEach(asyncLines::add)))
             .forEach(CompletableFuture::join);
         pf2.close();
         assertContents(asyncLines);
@@ -185,7 +183,6 @@ class SegmentedPartitionedTest {
         Shape shape = Shape.size(Files.size(pathWithHeaders)).header(3, 2);
 
         List<String> syncLines = new ArrayList<>();
-        int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = Partitioning.longAligned(2);
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -193,7 +190,7 @@ class SegmentedPartitionedTest {
         pf1.streams().vectorStreamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(MemorySegments::toString)
+                    .map(LineSegments::toString)
                     .forEach(syncLines::add));
         pf1.close();
         assertContents(syncLines);
@@ -208,7 +205,7 @@ class SegmentedPartitionedTest {
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
                     partitionedLineStream
-                        .map(MemorySegments::toString)
+                        .map(LineSegments::toString)
                         .forEach(asyncLines::add)))
             .forEach(CompletableFuture::join);
         pf2.close();
@@ -247,7 +244,7 @@ class SegmentedPartitionedTest {
         pf1.streams().vectorStreamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(MemorySegments::toString)
+                    .map(LineSegments::toString)
                     .forEach(syncLines::add)
             );
         pf1.close();
@@ -263,7 +260,7 @@ class SegmentedPartitionedTest {
             .map(future ->
                 future.thenAccept(partitionedLineStream ->
                     partitionedLineStream
-                        .map(MemorySegments::toString)
+                        .map(LineSegments::toString)
                         .forEach(asyncLines::add)))
             .forEach(CompletableFuture::join);
         pf2.close();

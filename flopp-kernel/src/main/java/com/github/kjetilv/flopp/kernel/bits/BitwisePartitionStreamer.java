@@ -18,11 +18,11 @@ public final class BitwisePartitionStreamer {
         this.memorySegment = memorySegment;
     }
 
-    public Stream<MemorySegments.LineSegment> memorySegments() {
+    public Stream<LineSegment> memorySegments() {
         return StreamSupport.stream(
-            aligned()
-                ? new BitwiseAlignedPartitionSpliterator(partition, memorySegment)
-                : new BitwiseTrailingPartitionSpliterator(partition, memorySegment),
+            partition.first() ? new BitwiseInitialPartitionSpliterator(partition, memorySegment)
+                : !partition.last() ? new BitwiseLineSeekPartitionSpliterator(partition, memorySegment)
+                    : new BitwiseTrailingPartitionSpliterator(partition, memorySegment),
             false
         );
     }
@@ -34,9 +34,5 @@ public final class BitwisePartitionStreamer {
     @Override
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{partition}]";
-    }
-
-    private boolean aligned() {
-        return !(partition.last() && !partition.isAligned());
     }
 }

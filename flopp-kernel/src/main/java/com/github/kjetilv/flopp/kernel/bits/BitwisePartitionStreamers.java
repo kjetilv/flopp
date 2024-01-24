@@ -45,7 +45,10 @@ public final class BitwisePartitionStreamers implements Closeable {
         return partitioning.of(shape.size())
             .stream()
             .map(partition ->
-                new BitwisePartitionStreamer(partition, segment(partition)));
+                new BitwisePartitionStreamer(
+                    partition,
+                    segment(partition)
+                ));
     }
 
     @Override
@@ -64,13 +67,10 @@ public final class BitwisePartitionStreamers implements Closeable {
     }
 
     private MemorySegment segment(Partition partition) {
+        long offset = partition.offset();
+        long length = length(partition);
         try {
-            return fileChannel.map(
-                READ_ONLY,
-                partition.offset(),
-                length(partition),
-                arena
-            );
+            return fileChannel.map(READ_ONLY, offset, length, arena);
         } catch (Exception e) {
             throw new IllegalStateException(STR."Failed to stream partition \{partition}", e);
         }
@@ -79,7 +79,7 @@ public final class BitwisePartitionStreamers implements Closeable {
     private long length(Partition partition) {
         return Math.min(
             shape.size() - partition.offset(),
-            partition.count() + shape.stats().longestLine()
+            partition.bufferedTo(shape.stats().longestLine() + 1)
         );
     }
 }

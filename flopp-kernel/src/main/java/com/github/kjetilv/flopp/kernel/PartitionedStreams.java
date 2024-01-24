@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.io.Closeable;
 import java.util.function.Supplier;
@@ -20,7 +20,7 @@ public interface PartitionedStreams extends Closeable {
 
         Partition partition();
 
-        Stream<MemorySegments.LineSegment> memorySegments();
+        Stream<LineSegment> memorySegments();
 
         @Override
         default void close() {

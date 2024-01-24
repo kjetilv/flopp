@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PartitionsTest {
@@ -86,8 +87,10 @@ class PartitionsTest {
             assertEquals(
                 expectedSizes[i],
                 partitions.get(i).count(),
-                "Partition had wrong size #" + i + ": " + partitions.get(i)
+                STR."Partition had wrong size #\{i}: \{partitions.get(i)}"
             );
         }
+        assertThat(partitions.getFirst().first()).isTrue();
+        assertThat(partitions.getLast().last()).isTrue();
     }
 }

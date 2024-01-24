@@ -70,6 +70,22 @@ public final class Lccc {
         return new Count(path, sum);
     }
 
+    @SuppressWarnings("unused")
+    private static Count countSync(Path path) {
+        List<Long> futures;
+        Shape shape = Shape.of(path).longestLine(100);
+        Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
+        try (
+            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape)
+        ) {
+            futures = streamers.streamers()
+                .map(Lccc::count)
+                .toList();
+        }
+        long sum = futures.stream().mapToLong(Long::longValue).sum();
+        return new Count(path, sum);
+    }
+
     private static long count(BitwisePartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
         streamer.memorySegments()

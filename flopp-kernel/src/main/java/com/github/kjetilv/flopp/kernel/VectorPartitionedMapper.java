@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 public interface VectorPartitionedMapper extends Closeable {
 
     <T> Stream<CompletableFuture<PartitionResult<T>>> mapLines(
-        BiFunction<Partition, Stream<MemorySegments.LineSegment>, T> processor
+        BiFunction<Partition, Stream<LineSegment>, T> processor
     );
 
     @Override

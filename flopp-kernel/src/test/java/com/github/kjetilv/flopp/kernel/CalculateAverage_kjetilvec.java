@@ -15,7 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPath;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 
-public class CalculateAverage_kjetilvec {
+public final class CalculateAverage_kjetilvec {
 
     public static void main(String[] args) {
 //        runSpull();
@@ -53,7 +53,7 @@ public class CalculateAverage_kjetilvec {
                     Map<String, Result> m = new HashMap<>(1024, 1.0f);
                     segs.forEach(seg -> {
                         long length = seg.length(); //segment.length();
-                        byte[] bytes = MemorySegments.toBytes(seg);
+                        byte[] bytes = LineSegments.toBytes(seg);
                         int splitIndex = -1;
                         for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
                             if (bytes[i] == ';') {
@@ -71,10 +71,9 @@ public class CalculateAverage_kjetilvec {
             Map<String, Result> map = list.stream().<Map<String, Result>>reduce(
                 new TreeMap<>(),
                 (m1, m2) -> {
-                    m2.forEach((k, v) -> {
+                    m2.forEach((k, v) ->
                         m1.compute(k, (_, r1) ->
-                            r1 == null ? v : r1.merge(v));
-                    });
+                            r1 == null ? v : r1.merge(v)));
                     return m1;
                 },
                 (_, _) -> {

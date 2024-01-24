@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -21,7 +21,7 @@ class DefaultVectorPartitionedMapper implements VectorPartitionedMapper {
 
     @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> mapLines(
-        BiFunction<Partition, Stream<MemorySegments.LineSegment>, T> processor
+        BiFunction<Partition, Stream<LineSegment>, T> processor
     ) {
         return streams.vectorStreamers()
             .map(streamer ->

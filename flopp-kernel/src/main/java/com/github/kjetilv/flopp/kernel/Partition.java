@@ -47,7 +47,18 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{partitionNo + 1}/\{partitionCount}@\{offset}+\{count}]";
+        String pos = first() ? "<"
+            : last() ? ">"
+                : "";
+        String frac = first() || last() ? "" : STR."/\{partitionCount}";
+        return STR."\{getClass().getSimpleName()}[\{pos}\{partitionNo + 1}\{frac}@\{offset}+\{count}]";
     }
 
+    public long bufferedTo(int size) {
+        long simpleBuffer = count + size;
+        if (alignment == 1 || simpleBuffer % alignment == 0) {
+            return simpleBuffer;
+        }
+        return (simpleBuffer / alignment + 1) * alignment;
+    }
 }

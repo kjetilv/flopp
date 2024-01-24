@@ -60,11 +60,31 @@ public record Partitioning(
     }
 
     public List<Partition> of(long total) {
-        return partitions(total);
+        return checked(partitions(total));
     }
 
     public int bufferSizeOr(int defaultSize) {
         return bufferSize > 0 ? bufferSize : defaultSize;
+    }
+
+    private static List<Partition> checked(List<Partition> partitions) {
+        if (!partitions.getFirst().first()) {
+            throw new IllegalStateException(STR."First not first: \{partitions}");
+        }
+        if (!partitions.getLast().last()) {
+            throw new IllegalStateException(STR."First not first: \{partitions}");
+        }
+        partitions.stream().skip(1).forEach(partition -> {
+            if (partition.first()) {
+                throw new IllegalStateException(partition + " is first");
+            }
+        });
+        partitions.stream().limit(partitions.size() - 1).forEach(partition -> {
+            if (partition.last()) {
+                throw new IllegalStateException(partition + " is last");
+            }
+        });
+        return partitions;
     }
 
     private List<Partition> partitions(long total) {
@@ -75,7 +95,8 @@ public record Partitioning(
             );
         }
         if (total > partitionCount) {
-            return partitions(partitionSizes(total));
+            long[] sizes = partitionSizes(total);
+            return partitions(sizes);
         }
         return singlePartition(total);
     }
@@ -107,7 +128,7 @@ public record Partitioning(
     private long[] alignedSizesWithShortTail(long total) {
         long overshoot = total % alignment;
         long alignedSlices = total / alignment;
-        if (overshoot == 0) {
+        if (overshoot == 0 && shortTail == 0) {
             return defaultDistributedAlignmentScaled(alignedSlices);
         }
         long headTotal = total - shortTail;
@@ -142,12 +163,10 @@ public record Partitioning(
 
     private List<Partition> partitions(long[] sizes) {
         long offset = 0;
-        int additional = shortTail > 0 ? 1 : 0;
-        List<Partition> partitions = new ArrayList<>(sizes.length + additional);
-        int count = partitionCount + additional;
+        List<Partition> partitions = new ArrayList<>(sizes.length);
         for (int i = 0; i < sizes.length; i++) {
             partitions.add(
-                new Partition(i, count, offset, sizes[i], alignment)
+                new Partition(i, sizes.length, offset, sizes[i], alignment)
             );
             offset += sizes[i];
         }

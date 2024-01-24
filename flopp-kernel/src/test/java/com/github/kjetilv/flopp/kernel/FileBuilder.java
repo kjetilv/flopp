@@ -47,7 +47,7 @@ public final class FileBuilder {
                     return "FOOTER";
                 }
                 return LongStream.range(0, colCount)
-                    .map(l -> c + l).mapToObj(Long::toString)
+                    .map(l -> c * c + l).mapToObj(Long::toString)
                     .collect(joining(";"));
             }
         };
