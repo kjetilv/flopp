@@ -56,7 +56,7 @@ public class BitwiseSpliteratorTest {
             BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(file, partitioning, shape)
         ) {
             streamers.streamers().forEach(streamer -> {
-                streamer.memorySegments().forEach(line -> {
+                streamer.lines().forEach(line -> {
                     byte[] utf8String = line.memorySegment()
                         .asSlice(line.offset(), line.length())
                         .toArray(ValueLayout.JAVA_BYTE);

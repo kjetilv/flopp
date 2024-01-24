@@ -10,6 +10,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
@@ -28,27 +32,41 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     private final RandomAccessFile randomAccessFile;
 
+    private final List<Partition> partitions;
+
     public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape) {
+        this(path, partitioning, shape, null);
+    }
+
+    public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape, Arena arena) {
         this.path = path;
         this.partitioning = partitioning;
         this.shape = shape;
-        try {
-            randomAccessFile = new RandomAccessFile(path.toFile(), "r");
-        } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} could not access file", e);
-        }
+        this.randomAccessFile = openRandomAccess(path);
         this.fileChannel = randomAccessFile.getChannel();
+        this.partitions = partitioning.of(shape.size());
         this.arena = Arena.ofAuto();
     }
 
-    public Stream<BitwisePartitionStreamer> streamers() {
-        return partitioning.of(shape.size())
-            .stream()
+    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(
+        ExecutorService executorService
+    ) {
+        return partitions.stream()
             .map(partition ->
-                new BitwisePartitionStreamer(
-                    partition,
-                    segment(partition)
-                ));
+                CompletableFuture.supplyAsync(
+                        () ->
+                            segment(partition),
+                        executorService == null
+                            ? ForkJoinPool.commonPool()
+                            : executorService
+                    )
+                    .thenApply(segment ->
+                        new BitwisePartitionStreamer(partition, segment)));
+    }
+
+    public Stream<BitwisePartitionStreamer> streamers() {
+        return partitions.stream()
+            .map(this::streamer);
     }
 
     @Override
@@ -64,6 +82,18 @@ public final class BitwisePartitionStreamers implements Closeable {
     @Override
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/\{partitioning}]";
+    }
+
+    private RandomAccessFile openRandomAccess(Path path) {
+        try {
+            return new RandomAccessFile(path.toFile(), "r");
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."\{this} could not access file", e);
+        }
+    }
+
+    private BitwisePartitionStreamer streamer(Partition partition) {
+        return new BitwisePartitionStreamer(partition, segment(partition));
     }
 
     private MemorySegment segment(Partition partition) {

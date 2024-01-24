@@ -15,6 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamer;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
 import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 
@@ -36,7 +37,7 @@ public final class CalculateAverage_kjetilvlong {
         runJava();
     }
 
-    private static final String FILE = "./measurements_1_000_000.txt";
+    private static final String FILE = "./measurements.txt";
 
     private static void runJava() {
         Instant start = Instant.now();
@@ -50,33 +51,14 @@ public final class CalculateAverage_kjetilvlong {
             BitwisePartitionStreamers bitwisePartitionStreamers =
                 new BitwisePartitionStreamers(path, partitioning, shape)
         ) {
-            Stream<CompletableFuture<Map<String, Result>>> list = bitwisePartitionStreamers.streamers()
-                .map(streamer ->
-                    CompletableFuture.supplyAsync(
-                        () -> {
-                            Map<String, Result> m = new HashMap<>(1024, 1.0f);
-                            streamer.memorySegments()
-                                .forEach(seg -> {
-                                    long length = seg.length(); //segment.length();
-                                    byte[] bytes = LineSegments.toBytes(seg);
-                                    int splitIndex = -1;
-                                    for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
-                                        if (bytes[i] == ';') {
-                                            splitIndex = i;
-                                            break;
-                                        }
-                                    }
-                                    int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
-                                    String key = new String(bytes, 0, splitIndex);
-                                    m.compute(key, (_, result) ->
-                                        result == null ? new Result(value) : result.collect(value));
-                                });
-                            return m;
-                        },
-                        new ForkJoinPool(partitioning.partitionCount(true))
-                    ));
-//                .toList();
-            Map<String, Result> map = list //.stream()
+            Stream<CompletableFuture<BitwisePartitionStreamer>> streamers = bitwisePartitionStreamers.streamers(
+                new ForkJoinPool(partitioning.partitionCount(true))
+            );
+            List<CompletableFuture<Map<String, Result>>> list = streamers
+                .map(streamerFuture ->
+                    streamerFuture.thenApply(CalculateAverage_kjetilvlong::toMap))
+                .toList();
+            Map<String, Result> map = list.stream()
                 .map(CompletableFuture::join).<Map<String, Result>>reduce(
                     new TreeMap<>(),
                     (m1, m2) -> {
@@ -92,6 +74,27 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
+    }
+
+    private static Map<String, Result> toMap(BitwisePartitionStreamer streamer) {
+        Map<String, Result> m = new HashMap<>(1024, 1.0f);
+        streamer.lines()
+            .forEach(seg -> {
+                long length = seg.length(); //segment.length();
+                byte[] bytes = LineSegments.toBytes(seg);
+                int splitIndex = -1;
+                for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
+                    if (bytes[i] == ';') {
+                        splitIndex = i;
+                        break;
+                    }
+                }
+                int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
+                String key = new String(bytes, 0, splitIndex);
+                m.compute(key, (_, result) ->
+                    result == null ? new Result(value) : result.collect(value));
+            });
+        return m;
     }
 
     private static int parseValue(int length, int splitIndex, byte[] bytes) {

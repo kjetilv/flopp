@@ -21,4 +21,8 @@ public interface LineSegment {
     default String tooString() {
         return LineSegments.toString(this);
     }
+
+    default byte[] byteArray() {
+        return LineSegments.toBytes(this);
+    }
 }

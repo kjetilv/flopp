@@ -18,7 +18,7 @@ public final class BitwisePartitionStreamer {
         this.memorySegment = memorySegment;
     }
 
-    public Stream<LineSegment> memorySegments() {
+    public Stream<LineSegment> lines() {
         return StreamSupport.stream(
             partition.first() ? new BitwiseInitialPartitionSpliterator(partition, memorySegment)
                 : !partition.last() ? new BitwiseLineSeekPartitionSpliterator(partition, memorySegment)

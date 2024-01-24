@@ -52,20 +52,14 @@ public final class Lccc {
     }
 
     private static Count count(Path path) {
-        List<CompletableFuture<Long>> futures;
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
-        try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape)
-        ) {
-            futures = streamers.streamers()
-                .map(streamer ->
-                    CompletableFuture.supplyAsync(
-                        () -> count(streamer),
-                        EXECUTOR_SERVICE
-                    ))
-                .toList();
-        }
+        BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape);
+        List<CompletableFuture<Long>> futures = streamers.streamers(EXECUTOR_SERVICE)
+            .map(completableStreamer ->
+                completableStreamer.thenApply(Lccc::count))
+            .onClose(streamers::close)
+            .toList();
         long sum = futures.stream().mapToLong(CompletableFuture::join).sum();
         return new Count(path, sum);
     }
@@ -88,7 +82,7 @@ public final class Lccc {
 
     private static long count(BitwisePartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
-        streamer.memorySegments()
+        streamer.lines()
             .forEach(lineSegment -> longAdder.increment());
         return longAdder.longValue();
     }

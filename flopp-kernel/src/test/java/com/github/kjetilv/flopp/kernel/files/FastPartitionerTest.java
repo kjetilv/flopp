@@ -163,7 +163,7 @@ public class FastPartitionerTest {
                 LongAdder cont = new LongAdder();
                 bitwisePartitionStreamers.streamers()
                     .forEach(bitwisePartitionStreamer ->
-                        bitwisePartitionStreamer.memorySegments()
+                        bitwisePartitionStreamer.lines()
                             .forEach(l -> {
                                 cont.increment();
                                 System.out.println(LineSegments.toString(l));
