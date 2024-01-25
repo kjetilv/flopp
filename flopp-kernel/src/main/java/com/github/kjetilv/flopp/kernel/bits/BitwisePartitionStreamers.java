@@ -48,14 +48,12 @@ public final class BitwisePartitionStreamers implements Closeable {
         return partitions.stream()
             .map(partition ->
                 CompletableFuture.supplyAsync(
-                        () ->
-                            segment(partition),
-                        executorService == null
-                            ? ForkJoinPool.commonPool()
-                            : executorService
-                    )
-                    .thenApply(segment ->
-                        new BitwisePartitionStreamer(partition, segment)));
+                    () ->
+                        new BitwisePartitionStreamer(partition, segment(partition)),
+                    executorService == null
+                        ? ForkJoinPool.commonPool()
+                        : executorService
+                ));
     }
 
     public Stream<BitwisePartitionStreamer> streamers() {
