@@ -14,21 +14,17 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     private final MemorySegment memorySegment;
 
-    private final long limit;
-
     private final int alignment;
 
     private final MutableLine line;
 
-    private final int tail;
+    private long currentLong;
 
-    private long current;
+    private int currentLongOffset;
 
-    private int currentOffset;
+    private long longAlignedOffset;
 
-    private long longOffset;
-
-    private long byteOffset;
+    private long offset;
 
     private long lineStart;
 
@@ -41,13 +37,10 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         this.partition = Objects.requireNonNull(partition, "partition");
 
         this.alignment = this.partition.alignment();
-        this.limit = partition.count();
 
         this.line = new MutableLine();
         this.line.partitionNo = partition.partitionNo();
         this.line.memorySegment = memorySegment;
-
-        this.tail = partition.last() ? Math.toIntExact(partition.count() % partition.alignment()) : 0;
     }
 
     @Override
@@ -58,7 +51,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         }
         skipToStart();
         if (partition.last()) {
-            processTail(action, tail);
+            processTail(action);
             return false;
         }
         processAligned(action);
@@ -67,11 +60,12 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} \{partition}]";
+        return STR."\{getClass().getSimpleName()}[offset:\{offset} \{partition}]";
     }
 
     private void processAligned(Consumer<? super LineSegment> action) {
-        while (byteOffset <= limit) {
+        long partitionLimit = partition.count();
+        while (offset <= partitionLimit) {
             do {
                 loadLong();
             } while (mask == 0);
@@ -79,14 +73,16 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         }
     }
 
-    private void processTail(Consumer<? super LineSegment> action, int tail) {
-        long lastLongOffset = limit - tail - alignment;
-        while (byteOffset < limit) {
-            while (mask == 0 && byteOffset < lastLongOffset) {
+    private void processTail(Consumer<? super LineSegment> action) {
+        long partitionLimit = partition.count();
+        long tail = partition.last() ? partition.count() % partition.alignment() : 0L;
+        long lastLongOffset = partitionLimit - tail - alignment;
+        while (offset < partitionLimit) {
+            while (mask == 0 && offset < lastLongOffset) {
                 loadLong();
             }
             if (mask == 0 && tail > 0) {
-                loadTail();
+                loadTail(tail);
             }
             drainTo(action);
         }
@@ -106,11 +102,11 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         } while (mask == 0);
         progressMask();
         clearLn();
-        lineStart = byteOffset;
+        lineStart = offset;
     }
 
     private void shipLine(Consumer<? super LineSegment> action) {
-        long shift = byteOffset - lineStart;
+        long shift = offset - lineStart;
 
         line.offset = lineStart;
         line.length = shift - 1;
@@ -120,38 +116,38 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     }
 
     private void clearLn() {
-        mask &= CLEARED[currentOffset];
+        mask &= CLEARED[currentLongOffset];
     }
 
     private void progressMask() {
         int leap = Long.numberOfTrailingZeros(mask) / 8 + 1;
-        byteOffset += leap - currentOffset;
-        currentOffset = leap;
+        offset += leap - currentLongOffset;
+        currentLongOffset = leap;
     }
 
     private void loadLong() {
-        set(memorySegment.get(ValueLayout.JAVA_LONG, longOffset));
-        longOffset += alignment;
+        set(memorySegment.get(ValueLayout.JAVA_LONG, longAlignedOffset));
+        longAlignedOffset += alignment;
         mask = mask();
     }
 
-    private void loadTail() {
+    private void loadTail(long tail) {
         set(0L);
-        for (int i = tail - 1; i >= 0; i--) {
-            byte b = memorySegment.get(ValueLayout.JAVA_BYTE, byteOffset + i);
-            current = (current << alignment) + b;
+        for (long i = tail - 1; i >= 0; i--) {
+            byte b = memorySegment.get(ValueLayout.JAVA_BYTE, offset + i);
+            currentLong = (currentLong << alignment) + b;
         }
         mask = mask();
     }
 
     private void set(long l) {
-        current = l;
-        currentOffset = 0;
-        byteOffset = longOffset;
+        currentLong = l;
+        currentLongOffset = 0;
+        offset = longAlignedOffset;
     }
 
     private long mask() {
-        long masked = current ^ 0x0A0A0A0A0A0A0A0AL;
+        long masked = currentLong ^ 0x0A0A0A0A0A0A0A0AL;
         long underflown = masked - 0x0101010101010101L;
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & 0x8080808080808080L;
