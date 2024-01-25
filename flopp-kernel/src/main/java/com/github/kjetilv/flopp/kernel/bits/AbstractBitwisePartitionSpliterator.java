@@ -96,7 +96,9 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         do {
             loadLong();
         } while (mask == 0);
-        partitionStarted();
+        progressMask();
+        clearLn();
+        lineStart = byteOffset;
     }
 
     private void shipLine(Consumer<? super LineSegment> action) {
@@ -114,34 +116,30 @@ abstract sealed class AbstractBitwisePartitionSpliterator
     }
 
     private void progressMask() {
-        int leap = Bits.trailingBytes(mask);
+        int leap = trailingBytes(mask);
         byteOffset += leap - currentOffset;
         currentOffset = leap;
     }
 
     private void loadLong() {
-        current = memorySegment.get(ValueLayout.JAVA_LONG, longOffset);
-        currentOffset = 0;
-        byteOffset = longOffset;
+        newLong(memorySegment.get(ValueLayout.JAVA_LONG, longOffset));
         longOffset += alignment;
-        mask = Bits.mask(current);
+        mask = mask(current);
     }
 
-    private void partitionStarted() {
-        progressMask();
-        clearLn();
-        lineStart = byteOffset;
+    private void newLong(long l) {
+        current = l;
+        currentOffset = 0;
+        byteOffset = longOffset;
     }
 
     private void loadTail(int tail) {
-        current = 0L;
-        currentOffset = 0;
-        byteOffset = longOffset;
+        newLong(0L);
         for (int i = tail - 1; i >= 0; i--) {
             byte b = memorySegment.get(ValueLayout.JAVA_BYTE, byteOffset + i);
             current = (current << alignment) + b;
         }
-        mask = Bits.mask(current);
+        mask = mask(current);
     }
 
     private static final long[] ALL_CLEAR = {
@@ -155,4 +153,15 @@ abstract sealed class AbstractBitwisePartitionSpliterator
         0x8000000000000000L,
         0x0000000000000000L,
     };
+
+    private static long mask(long l) {
+        long masked = l ^ 0x0A0A0A0A0A0A0A0AL;
+        long underflown = masked - 0x0101010101010101L;
+        long clearedHighBits = underflown & ~masked;
+        return clearedHighBits & 0x8080808080808080L;
+    }
+
+    private static int trailingBytes(long mask) {
+        return Long.numberOfTrailingZeros(mask) / 8 + 1;
+    }
 }
