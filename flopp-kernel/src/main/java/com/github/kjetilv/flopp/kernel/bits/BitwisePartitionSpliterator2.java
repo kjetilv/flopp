@@ -65,16 +65,17 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         return false;
     }
 
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} \{partition}]";
+    }
+
     private void processAligned(Consumer<? super LineSegment> action) {
         while (byteOffset <= limit) {
             do {
                 loadLong();
             } while (mask == 0);
-            do {
-                progressMask();
-                shipLine(action);
-                clearLn();
-            } while (mask != 0);
+            drainTo(action);
         }
     }
 
@@ -87,12 +88,16 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
             if (mask == 0 && tail > 0) {
                 loadTail();
             }
-            do {
-                progressMask();
-                shipLine(action);
-                clearLn();
-            } while (mask != 0);
+            drainTo(action);
         }
+    }
+
+    private void drainTo(Consumer<? super LineSegment> action) {
+        do {
+            progressMask();
+            shipLine(action);
+            clearLn();
+        } while (mask != 0);
     }
 
     private void skipToStart() {
@@ -163,9 +168,4 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         0xFF00000000000000L,
         0x0000000000000000L,
     };
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} \{partition}]";
-    }
 }
