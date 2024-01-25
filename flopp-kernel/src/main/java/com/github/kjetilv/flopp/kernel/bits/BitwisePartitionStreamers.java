@@ -35,10 +35,6 @@ public final class BitwisePartitionStreamers implements Closeable {
     private final List<Partition> partitions;
 
     public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape) {
-        this(path, partitioning, shape, null);
-    }
-
-    public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape, Arena arena) {
         this.path = path;
         this.partitioning = partitioning;
         this.shape = shape;
