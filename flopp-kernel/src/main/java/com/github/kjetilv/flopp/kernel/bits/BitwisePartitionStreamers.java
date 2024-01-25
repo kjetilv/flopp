@@ -48,9 +48,7 @@ public final class BitwisePartitionStreamers implements Closeable {
         this.arena = Arena.ofAuto();
     }
 
-    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(
-        ExecutorService executorService
-    ) {
+    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(ExecutorService executorService) {
         return partitions.stream()
             .map(partition ->
                 CompletableFuture.supplyAsync(
