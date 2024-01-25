@@ -92,7 +92,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         do {
             progressMask();
             shipLine(action);
-            clearLn();
+            clear();
         } while (mask != 0);
     }
 
@@ -101,7 +101,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
             loadLong();
         } while (mask == 0);
         progressMask();
-        clearLn();
+        clear();
         lineStart = offset;
     }
 
@@ -115,14 +115,14 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         lineStart += shift;
     }
 
-    private void clearLn() {
-        mask &= CLEARED[currentLongOffset];
-    }
-
     private void progressMask() {
-        int leap = Long.numberOfTrailingZeros(mask) / 8 + 1;
+        int leap = Long.numberOfTrailingZeros(mask) / BYTES_IN_LONG + 1;
         offset += leap - currentLongOffset;
         currentLongOffset = leap;
+    }
+
+    private void clear() {
+        mask &= CLEARED[currentLongOffset];
     }
 
     private void loadLong() {
@@ -152,6 +152,8 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & 0x8080808080808080L;
     }
+
+    private static final int BYTES_IN_LONG = 8;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFFFFL,
