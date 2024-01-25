@@ -55,6 +55,15 @@ public record Partitioning(
         Non.negativeOrZero(bufferSize, "bufferSize");
     }
 
+    public Partitioning scaled(int scale) {
+        return new Partitioning(
+            partitionCount * scale,
+            alignment,
+            shortTail,
+            bufferSize
+        );
+    }
+
     public int partitionCount(boolean tailed) {
         return partitionCount + (tailed && shortTail > 0 ? 1 : 0);
     }
