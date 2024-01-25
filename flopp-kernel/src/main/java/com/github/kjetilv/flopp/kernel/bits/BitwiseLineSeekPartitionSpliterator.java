@@ -13,7 +13,7 @@ final class BitwiseLineSeekPartitionSpliterator
     }
 
     @Override
-    boolean advance(Consumer<? super LineSegment> action) {
+    public boolean tryAdvance(Consumer<? super LineSegment> action) {
         skipToStart();
         processAligned(action);
         return false;

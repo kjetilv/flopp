@@ -13,7 +13,7 @@ final class BitwiseInitialPartitionSpliterator
     }
 
     @Override
-    boolean advance(Consumer<? super LineSegment> action) {
+    public boolean tryAdvance(Consumer<? super LineSegment> action) {
         processAligned(action);
         return false;
     }

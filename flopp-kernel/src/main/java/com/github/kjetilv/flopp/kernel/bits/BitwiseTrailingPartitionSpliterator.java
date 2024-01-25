@@ -20,10 +20,9 @@ public final class BitwiseTrailingPartitionSpliterator extends AbstractBitwisePa
     }
 
     @Override
-    boolean advance(Consumer<? super LineSegment> action) {
+    public boolean tryAdvance(Consumer<? super LineSegment> action) {
         skipToStart();
         processTail(action, tail);
         return false;
     }
-
 }
