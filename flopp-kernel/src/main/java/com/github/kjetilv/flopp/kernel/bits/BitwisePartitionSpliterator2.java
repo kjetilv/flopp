@@ -128,16 +128,20 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     private void loadLong() {
         set(memorySegment.get(ValueLayout.JAVA_LONG, longAlignedOffset));
         longAlignedOffset += alignment;
-        mask = mask();
+        mask();
     }
 
     private void loadTail(long tail) {
         set(0L);
-        for (long i = tail - 1; i >= 0; i--) {
+        loadBytes(tail);
+        mask();
+    }
+
+    private void loadBytes(long count) {
+        for (long i = count - 1; i >= 0; i--) {
             byte b = memorySegment.get(ValueLayout.JAVA_BYTE, offset + i);
             currentLong = (currentLong << alignment) + b;
         }
-        mask = mask();
     }
 
     private void set(long l) {
@@ -146,11 +150,11 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         offset = longAlignedOffset;
     }
 
-    private long mask() {
+    private void mask() {
         long masked = currentLong ^ 0x0A0A0A0A0A0A0A0AL;
         long underflown = masked - 0x0101010101010101L;
         long clearedHighBits = underflown & ~masked;
-        return clearedHighBits & 0x8080808080808080L;
+        mask = clearedHighBits & 0x8080808080808080L;
     }
 
     private static final int BYTES_IN_LONG = 8;

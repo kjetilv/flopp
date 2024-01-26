@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
+@SuppressWarnings("preview")
 public class BitwisePartitionSpliterator
     extends Spliterators.AbstractSpliterator<LineSegment> {
 
