@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -16,9 +17,7 @@ public class BitwisePartitionSpliterator
 
     private final long partitionLimit;
 
-    private final MemorySegment ms;
-
-    private final MutableLine ml;
+    private final MutableLine ml = new MutableLine();
 
     private final boolean firstPartition;
 
@@ -43,7 +42,13 @@ public class BitwisePartitionSpliterator
      */
     private long previousLineStartByte;
 
-    public BitwisePartitionSpliterator(Partition partition, MemorySegment ms) {
+    private final Mediator<LineSegment> mediator;
+
+    public BitwisePartitionSpliterator(
+        Partition partition,
+        MemorySegment memorySegment,
+        Mediator<LineSegment> mediator
+    ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         if (!(partition.last() || partition.isAligned())) {
@@ -52,6 +57,8 @@ public class BitwisePartitionSpliterator
             );
         }
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.ml.memorySegment = memorySegment.asReadOnly();
+        this.mediator = mediator;
 
         this.trail = Math.toIntExact(this.partition.count() % partition.alignment());
         this.partitionLimit = this.partition.count() - this.trail;
@@ -59,30 +66,38 @@ public class BitwisePartitionSpliterator
 
         this.firstPartition = this.partition.first();
         this.lastPartition = this.partition.last();
-
-        this.ms = Objects.requireNonNull(ms, "memorySegmentSources");
-        this.ml = new MutableLine();
-        this.ml.partitionNo = partition.partitionNo();
-        this.ml.memorySegment = ms;
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            return process(action);
+            return process(mediate(action));
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed to process", e);
         }
     }
 
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
+    }
+
+    @SuppressWarnings("unchecked")
+    private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
+        if (mediator == null) {
+            return (Consumer<LineSegment>) action;
+        }
+        return (Consumer<LineSegment>) mediator.apply(action);
+    }
+
     @SuppressWarnings({"StatementWithEmptyBody", "SameReturnValue"})
-    private boolean process(Consumer<? super LineSegment> action) {
+    private boolean process(Consumer<LineSegment> action) {
         current = next();
         if (!firstPartition) {
             jumpToLine();
         }
         if (lastPartition) {
-            for (long i = 0; i < partitionLimit / BYTES_IN_LONG && !cycleDone(action); i++);
+            for (long i = 0; i < partitionLimit / BYTES_IN_LONG && !cycleDone(action); i++) ;
             if (processedToEnd(action)) {
                 return false;
             }
@@ -99,7 +114,7 @@ public class BitwisePartitionSpliterator
         }
     }
 
-    private boolean cycleDone(Consumer<? super LineSegment> action) {
+    private boolean cycleDone(Consumer<LineSegment> action) {
         if (ln()) {
             shipLine(action);
             if (byteOffset >= partitionLimit) {
@@ -111,7 +126,7 @@ public class BitwisePartitionSpliterator
         return false;
     }
 
-    private boolean processedToEnd(Consumer<? super LineSegment> action) {
+    private boolean processedToEnd(Consumer<LineSegment> action) {
         while (true) {
             if (ln()) {
                 shipLine(action);
@@ -127,7 +142,7 @@ public class BitwisePartitionSpliterator
         }
     }
 
-    private void shipLine(Consumer<? super LineSegment> action) {
+    private void shipLine(Consumer<LineSegment> action) {
         long length = byteOffset - previousLineStartByte;
         ml.offset = previousLineStartByte;
         ml.length = length;
@@ -151,7 +166,7 @@ public class BitwisePartitionSpliterator
         if (byteOffset == partitionLimit) {
             current = 0L;
             for (int i = trail - 1; i >= 0; i--) {
-                current = (current << 8) + ms.get(ValueLayout.JAVA_BYTE, byteOffset + i);
+                current = (current << 8) + ml.memorySegment().get(ValueLayout.JAVA_BYTE, byteOffset + i);
             }
             return true;
         }
@@ -168,9 +183,12 @@ public class BitwisePartitionSpliterator
 
     private long next() {
         try {
-            return ms.get(ValueLayout.JAVA_LONG, byteOffset);
+            return ml.memorySegment().get(ValueLayout.JAVA_LONG, byteOffset);
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to advance from \{byteOffset} in \{ms}", e);
+            throw new IllegalStateException(
+                STR."\{this} failed to advance from \{byteOffset} in \{ml.memorySegment()}",
+                e
+            );
         }
     }
 
@@ -179,9 +197,4 @@ public class BitwisePartitionSpliterator
     }
 
     public static final long BYTES_IN_LONG = ValueLayout.JAVA_LONG.byteSize();
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
-    }
 }

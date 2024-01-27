@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
+import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -29,7 +30,11 @@ final class DefaultVectorPartitionStreamer implements PartitionedStreams.VectorP
     public Stream<LineSegment> memorySegments() {
         MemorySegmentSource source = sources.source(partition);
         return StreamSupport.stream(
-            new VectorPartitionSpliterator(partition, shape, source),
+            new VectorPartitionSpliterator(
+                partition,
+                source,
+                LineSegments.mediator(partition, shape)
+            ),
             false
         );
     }

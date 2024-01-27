@@ -1,8 +1,17 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.Mediator;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionMediator;
+import com.github.kjetilv.flopp.kernel.Shape;
+
 import java.lang.foreign.ValueLayout;
 
 public final class LineSegments {
+
+    public static Mediator<LineSegment> mediator(Partition partition, Shape shape) {
+        return PartitionMediator.create(partition, shape, LineSegment::immutable);
+    }
 
     public static String toString(LineSegment line) {
         return new String(toBytes(line));

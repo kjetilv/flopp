@@ -5,8 +5,6 @@ import java.lang.foreign.MemorySegment;
 @SuppressWarnings("PackageVisibleField")
 final class MutableLine implements LineSegment {
 
-    int partitionNo;
-
     MemorySegment memorySegment;
 
     long offset;

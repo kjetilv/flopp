@@ -43,7 +43,6 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         this.line = new MutableLine();
-        this.line.partitionNo = partition.partitionNo();
         this.line.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources").asReadOnly();
         this.partition = Objects.requireNonNull(partition, "partition");
         this.mediator = mediator;

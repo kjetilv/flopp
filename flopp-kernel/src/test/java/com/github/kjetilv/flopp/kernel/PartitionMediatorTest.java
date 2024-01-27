@@ -8,13 +8,14 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class HeaderFooterMediatorTest {
+class PartitionMediatorTest {
 
     @Test
     void oneByOne() {
-        HeaderFooterMediator<Integer> med = new HeaderFooterMediator<>(1, 2, null);
+        Mediator<Integer> mediator =
+            PartitionMediator.create(new Partition(0, 1, 0, 100), Shape.size(100).header(1, 2), null);
         List<Integer> foos = new ArrayList<>();
-        Consumer<Integer> consumer = (Consumer<Integer>) med.apply(foos::add);
+        Consumer<Integer> consumer = (Consumer<Integer>) mediator.apply(foos::add);
         consumer.accept(1);
         consumer.accept(2);
         consumer.accept(3);

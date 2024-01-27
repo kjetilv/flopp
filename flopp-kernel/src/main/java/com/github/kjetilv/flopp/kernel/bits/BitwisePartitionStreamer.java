@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.HeaderFooterMediator;
 import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
@@ -29,7 +28,7 @@ public final class BitwisePartitionStreamer {
     }
 
     public Stream<LineSegment> lines() {
-        Mediator<LineSegment> mediator = mediator();
+        Mediator<LineSegment> mediator = LineSegments.mediator(partition, shape);
         return StreamSupport.stream(
             new BitwisePartitionSpliterator2(partition, memorySegment, mediator),
             false
@@ -45,21 +44,4 @@ public final class BitwisePartitionStreamer {
         return STR."\{getClass().getSimpleName()}[\{partition}]";
     }
 
-    private Mediator<LineSegment> mediator() {
-        boolean overhead = shape != null && shape.hasOverhead();
-        if (overhead) {
-            boolean first = partition.first();
-            boolean last = partition.last();
-            if (first && last) {
-                return new HeaderFooterMediator<>(shape.header(), shape.footer(), LineSegment::immutable);
-            }
-            if (first) {
-                return new HeaderFooterMediator<>(shape.header());
-            }
-            if (last) {
-                return new HeaderFooterMediator<>(shape.footer(), LineSegment::immutable);
-            }
-        }
-        return t -> t;
-    }
 }

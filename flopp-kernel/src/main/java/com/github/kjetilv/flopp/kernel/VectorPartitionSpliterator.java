@@ -13,51 +13,33 @@ public class VectorPartitionSpliterator
 
     private final Partition partition;
 
+    private final Mediator<LineSegment> mediator;
+
     private final long partitionLimit;
 
     private final MemorySegmentSource source;
 
-    private final SurroundConsumer<LineSegment> lineConsumer;
-
-    private final boolean allocating;
-
-    private final MutableLine segmentLine;
+    private final MutableLine segmentLine = new MutableLine();
 
     private final boolean lastPartition;
 
     private final boolean firstPartition;
 
-    public VectorPartitionSpliterator(Partition partition, Shape shape, MemorySegmentSource source) {
-        this(partition, shape, source, false);
-    }
-
     public VectorPartitionSpliterator(
         Partition partition,
-        Shape shape,
         MemorySegmentSource source,
-        boolean allocating
+        Mediator<LineSegment> mediator
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.mediator = mediator;
         this.partitionLimit = this.partition.count();
 
         this.firstPartition = partition.first();
         this.lastPartition = partition.last();
 
         this.source = Objects.requireNonNull(source, "memorySegmentSources");
-
-        this.allocating = allocating || shape != null && shape.footer() > 0;
-        if (this.allocating) {
-            this.segmentLine = null;
-        } else {
-            this.segmentLine = new MutableLine();
-            this.segmentLine.partitionNo = partition.partitionNo();
-        }
-        this.lineConsumer = SurroundConsumers.surround(
-            this.partition.first() && shape != null && shape.header() > 0 ? shape.header() : 0,
-            this.partition.last() && shape != null && shape.footer() > 0 ? shape.footer() : 0
-        );
     }
 
     @Override
@@ -75,13 +57,13 @@ public class VectorPartitionSpliterator
     }
 
     private boolean process(Consumer<? super LineSegment> action) {
+        Consumer<LineSegment> consumer = mediate(action);
         MemorySegmentSource.Segment segment = source.get();
         long segmentOffset = firstLineOffset(segment);
         long lineMarker = segmentOffset;
 
         int pending = 0;
 
-        long lines = 0;
         while (true) {
             int backshift = 0;
             VectorMask<Byte> mask;
@@ -99,15 +81,14 @@ public class VectorPartitionSpliterator
                 int zeroes = maskOffset - backshift + Long.numberOfTrailingZeros(maskLong >>> maskOffset);
                 if (zeroes < BYTES_IN_LONG) {
                     int length = pending + zeroes - maskOffset + backshift;
-                    LineSegment lineSegment = lineSegment(segment, lineMarker, length, lines);
+                    LineSegment lineSegment = lineSegment(segment, lineMarker, length);
                     try {
                         LineSegment validated = lineSegment.validate();
-                        lineConsumer.accept(action, validated);
+                        consumer.accept(validated);
                     } catch (Exception e) {
                         throw new IllegalStateException(
-                            STR."\{this} failed to ship \{lineSegment} to \{lineConsumer}", e);
+                            STR."\{this} failed to ship \{lineSegment} to \{action}", e);
                     }
-                    lines++;
                     int advance = length + 1;
                     lineMarker += advance;
                     if (exhausted(segment, lineMarker)) {
@@ -123,6 +104,14 @@ public class VectorPartitionSpliterator
                 }
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
+        if (mediator == null) {
+            return (Consumer<LineSegment>) action;
+        }
+        return (Consumer<LineSegment>) mediator.apply(action);
     }
 
     private long firstLineOffset(MemorySegmentSource.Segment segment) {
@@ -150,13 +139,9 @@ public class VectorPartitionSpliterator
     }
 
     private LineSegment lineSegment(
-        MemorySegmentSource.Segment segment, long offset, int length, long lineNo
+        MemorySegmentSource.Segment segment, long offset, int length
     ) {
-        if (allocating) {
-            return new ImmutableLine(segment.memorySegment(), offset, length);
-        }
         segmentLine.memorySegment = segment.memorySegment();
-        segmentLine.lineNo = lineNo;
         segmentLine.offset = offset;
         segmentLine.length = length;
         return segmentLine;
@@ -171,12 +156,7 @@ public class VectorPartitionSpliterator
         return Long.numberOfTrailingZeros(mask.toLong() >>> segment.shift());
     }
 
-    @SuppressWarnings("PackageVisibleField")
-    public static final class MutableLine implements LineSegment {
-
-        int partitionNo;
-
-        long lineNo;
+    private static final class MutableLine implements LineSegment {
 
         MemorySegment memorySegment;
 

@@ -6,7 +6,31 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class HeaderFooterMediator<T> implements Mediator<T> {
+public final class PartitionMediator<T> implements Mediator<T> {
+
+    public static <T> Mediator<T> create(
+        Partition partition,
+        Shape shape,
+        Function<T, T> copy
+    ) {
+        if (shape != null) {
+            boolean overhead = shape.hasOverhead();
+            if (overhead) {
+                boolean first = partition.first();
+                boolean last = partition.last();
+                if (first && last) {
+                    return new PartitionMediator<>(shape.header(), shape.footer(), copy);
+                }
+                if (first) {
+                    return new PartitionMediator<>(shape.header(), 0, null);
+                }
+                if (last && shape.footer() > 0) {
+                    return new PartitionMediator<>(0, shape.footer(), copy);
+                }
+            }
+        }
+        return null;
+    }
 
     private final int header;
 
@@ -14,33 +38,34 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
 
     private final Function<T, T> copy;
 
-    public HeaderFooterMediator(int header) {
-        this(header, 0, null);
-    }
-
-    public HeaderFooterMediator(int header, int footer) {
-        this(header, footer, null);
-    }
-
-    public HeaderFooterMediator(int footer, Function<T, T> copy) {
-        this(0, footer, copy);
-    }
-
-    public HeaderFooterMediator(int header, int footer, Function<T, T> copy) {
+    private PartitionMediator(int header, int footer, Function<T, T> copy) {
         this.header = header;
         this.footer = footer;
-        this.copy = footer > 0 && copy != null ? copy
-            : footer > 0 ? Function.identity()
-                : null;
+        this.copy = footer > 0 ? copy : null;
     }
 
     @Override
     public Consumer<? super T> apply(Consumer<? super T> consumer) {
         Objects.requireNonNull(consumer, "consumer");
-        return header == 0 && footer == 0 ? consumer
-            : header > 0 && footer > 0 ? new Both(consumer)
-                : header > 0 ? new HeaderOnly(consumer)
-                    : new FooterOnly(consumer);
+        if (header > 0 && footer > 0) {
+            return new Both(consumer);
+        }
+        if (header > 0) {
+            return new HeaderOnly(consumer);
+        }
+        return new FooterOnly(consumer);
+    }
+
+    private T copyOf(T t) {
+        return copy == null ? t : copy.apply(t);
+    }
+
+    private void cycle(Consumer<? super T> con, Deque<T> deq, T t) {
+        if (deq.size() == footer) {
+            T delayed = deq.pollLast();
+            con.accept(delayed);
+        }
+        deq.offerFirst(copyOf(t));
     }
 
     @SuppressWarnings("DuplicatedCode")
@@ -55,11 +80,11 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
         }
 
         public void accept(T t) {
-            if (headersLeft > 0) {
+            if (headersLeft == 0) {
+                consumer.accept(t);
+            } else {
                 headersLeft--;
-                return;
             }
-            consumer.accept(t);
         }
 
         @Override
@@ -74,7 +99,7 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
 
         private final Consumer<? super T> consumer;
 
-        private final Deque<T> deque = new ArrayDeque<>();
+        private final Deque<T> deque = new ArrayDeque<>(footer);
 
         private int headersLeft = header;
 
@@ -83,17 +108,11 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
         }
 
         public void accept(T t) {
-            if (headersLeft > 0) {
+            if (headersLeft == 0) {
+                cycle(consumer, deque, t);
+            } else {
                 headersLeft--;
-                return;
             }
-            if (deque.size() < footer) {
-                deque.offerFirst(copy.apply(t));
-                return;
-            }
-            T delayed = deque.pollLast();
-            consumer.accept(delayed);
-            deque.offerFirst(t);
         }
 
         @Override
@@ -117,13 +136,7 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
         }
 
         public void accept(T t) {
-            if (deque.size() < footer) {
-                deque.offerFirst(copy.apply(t));
-                return;
-            }
-            T delayed = deque.pollLast();
-            consumer.accept(delayed);
-            deque.offerFirst(t);
+            cycle(consumer, deque, t);
         }
 
         @Override

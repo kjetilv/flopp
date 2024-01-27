@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import org.junit.jupiter.api.Test;
@@ -190,8 +191,10 @@ class SegmentedPartitionedTest {
         pf1.streams().vectorStreamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.memorySegments()
-                    .map(LineSegments::toString)
-                    .forEach(syncLines::add));
+                    .map(LineSegment::asString)
+                    .forEach(e -> {
+                        syncLines.add(e);
+                    }));
         pf1.close();
         assertContents(syncLines);
 

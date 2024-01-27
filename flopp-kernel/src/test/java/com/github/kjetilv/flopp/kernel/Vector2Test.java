@@ -44,9 +44,9 @@ public class Vector2Test {
             VectorPartitionSpliterator spliterator =
                 new VectorPartitionSpliterator(
                     partition,
-                    Shape.of(file),
                     () ->
-                        memorySegment(partition, memorySegmentSources));
+                        memorySegment(partition, memorySegmentSources),
+                    null);
 
             spliterator.tryAdvance(line ->
                 {
