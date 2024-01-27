@@ -60,6 +60,6 @@ public final class BitwisePartitionStreamer {
                 return new HeaderFooterMediator<>(shape.footer(), LineSegment::immutable);
             }
         }
-        return null;
+        return t -> t;
     }
 }

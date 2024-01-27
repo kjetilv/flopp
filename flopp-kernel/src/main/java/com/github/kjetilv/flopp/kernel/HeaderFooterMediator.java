@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.LinkedList;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -34,10 +34,10 @@ public final class HeaderFooterMediator<T> implements Mediator<T> {
                 : null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Consumer<? extends T> apply(Consumer<? super T> consumer) {
-        return header == 0 && footer == 0 ? (Consumer<? extends T>) consumer
+    public Consumer<? super T> apply(Consumer<? super T> consumer) {
+        Objects.requireNonNull(consumer, "consumer");
+        return header == 0 && footer == 0 ? consumer
             : header > 0 && footer > 0 ? new Both(consumer)
                 : header > 0 ? new HeaderOnly(consumer)
                     : new FooterOnly(consumer);
