@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
 import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -19,6 +20,9 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FastPartitionerTest {
+
+    @TempDir
+    Path tmp;
 
     @Test
     void test(TestInfo testInfo) {
@@ -61,84 +65,76 @@ public class FastPartitionerTest {
         }
     }
 
-    private static void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
+    private void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
 
         Method method = testInfo.getTestMethod().orElseThrow();
 
         Path file = FileBuilder.file(
-            Files.createTempDirectory(method.getName()),
+            tmp,
             method.getName(),
             lineCount,
             4,
             new Shape.Decor(1, 1)
         );
 
-        try {
-            Shape shape = Shape.size(Files.size(file)).header(1, 1);
+        Shape shape = Shape.size(Files.size(file)).header(1, 1);
+        LongAdder cont = new LongAdder();
+        try (
+            PartitionedPath partitioned = new DefaultPartitionedPath(
+                file,
+                shape,
+                new Partitioning(partitionCount, 10),
+                new FileSources(file, shape, 1024),
+                Executors.newVirtualThreadPerTaskExecutor()
+            );
+            PartitionedStreams streams = partitioned.streams()
+        ) {
+            streams.streamers()
+                .forEach(streamer ->
+                    streamer.nLines()
+                        .forEach(_ ->
+                            cont.increment()));
+            assertThat(cont).hasValue(lineCount);
+        }
+    }
+
+    private void run2(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
+        Method method = testInfo.getTestMethod().orElseThrow();
+
+        Path file = FileBuilder.file(
+            tmp,
+            method.getName(),
+            lineCount,
+            4,
+            new Shape.Decor(1, 1)
+        );
+
+        Shape shape = Shape.size(Files.size(file)).longestLine(32).header(1, 1);
+        try (
+            Partitioned<Path> partitioned = new DefaultPartitioned<>(
+                file,
+                shape,
+                new Partitioning(partitionCount, 10),
+                new FileSources(file, shape, 1024),
+                Executors.newVirtualThreadPerTaskExecutor()
+            )
+        ) {
             LongAdder cont = new LongAdder();
-            try (
-                PartitionedPath partitioned = new DefaultPartitionedPath(
-                    file,
-                    shape,
-                    new Partitioning(partitionCount, 10),
-                    new FileSources(file, shape, 1024),
-                    Executors.newVirtualThreadPerTaskExecutor()
-                );
-                PartitionedStreams streams = partitioned.streams()
-            ) {
-                streams.streamers()
-                    .forEach(streamer ->
-                        streamer.nLines()
-                            .forEach(_ ->
-                                cont.increment()));
-                assertThat(cont).hasValue(lineCount);
-            }
-        } finally {
-            Files.delete(file);
-        }
-    }
-
-    private static void run2(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
-        Method method = testInfo.getTestMethod().orElseThrow();
-
-        Path file = FileBuilder.file(
-            Files.createTempDirectory(method.getName()),
-            method.getName(),
-            lineCount,
-            4,
-            new Shape.Decor(1, 1)
-        );
-
-        try {
-            Shape shape = Shape.size(Files.size(file)).longestLine(32).header(1, 1);
-            try (
-                Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                    file,
-                    shape,
-                    new Partitioning(partitionCount, 10),
-                    new FileSources(file, shape, 1024),
-                    Executors.newVirtualThreadPerTaskExecutor()
+            partitioned.consumer().forEachNLine(
+                    (_, entries) ->
+                        entries.forEach(_ -> cont.increment())
                 )
-            ) {
-                LongAdder cont = new LongAdder();
-                partitioned.consumer().forEachNLine(
-                        (_, entries) ->
-                            entries.forEach(_ -> cont.increment())
-                    )
-                    .toList()
-                    .forEach(CompletableFuture::join);
-                assertThat(cont).hasValue(lineCount);
-            }
-        } finally {
-            Files.delete(file);
+                .toList()
+                .forEach(CompletableFuture::join);
+            assertThat(cont).hasValue(lineCount);
         }
     }
 
-    private static void run3(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
+    private void run3(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
         Method method = testInfo.getTestMethod().orElseThrow();
 
         Path file = FileBuilder.file(
-            Files.createTempDirectory(method.getName()),
+            tmp,
             method.getName(),
             lineCount,
             4,
@@ -155,25 +151,21 @@ public class FastPartitionerTest {
 
         Partitioning partitioning = Partitioning.longAligned(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).header(1, 1);
-        try {
-            try (
-                BitwisePartitionStreamers bitwisePartitionStreamers =
-                    new BitwisePartitionStreamers(file, partitioning, shape)
-            ) {
-                LongAdder cont = new LongAdder();
-                bitwisePartitionStreamers.streamers()
-                    .forEach(bitwisePartitionStreamer ->
-                        bitwisePartitionStreamer.lines()
-                            .forEach(l -> {
-                                cont.increment();
-                                System.out.println(LineSegments.toString(l));
-                            }));
-                assertThat(cont)
-                    .describedAs(STR."lineCount \{lineCount} partitionCount \{partitionCount}")
-                    .hasValue(lineCount + 2);
-            }
-        } finally {
-            Files.delete(file);
+        try (
+            BitwisePartitionStreamers bitwisePartitionStreamers =
+                new BitwisePartitionStreamers(file, partitioning, shape)
+        ) {
+            LongAdder cont = new LongAdder();
+            bitwisePartitionStreamers.streamers()
+                .forEach(bitwisePartitionStreamer ->
+                    bitwisePartitionStreamer.lines()
+                        .forEach(l -> {
+                            cont.increment();
+                            System.out.println(LineSegments.toString(l));
+                        }));
+            assertThat(cont)
+                .describedAs(STR."lineCount \{lineCount} partitionCount \{partitionCount}")
+                .hasValue(lineCount);
         }
     }
 }

@@ -153,7 +153,7 @@ public class VectorPartitionSpliterator
         MemorySegmentSource.Segment segment, long offset, int length, long lineNo
     ) {
         if (allocating) {
-            return new Line(segment.memorySegment(), offset, length);
+            return new ImmutableLine(segment.memorySegment(), offset, length);
         }
         segmentLine.memorySegment = segment.memorySegment();
         segmentLine.lineNo = lineNo;
@@ -198,18 +198,6 @@ public class VectorPartitionSpliterator
         public long length() {
             return length;
         }
-
-        @Override
-        public String toString() {
-            return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
-        }
-    }
-
-    record Line(
-        MemorySegment memorySegment,
-        long offset,
-        long length
-    ) implements LineSegment {
 
         @Override
         public String toString() {

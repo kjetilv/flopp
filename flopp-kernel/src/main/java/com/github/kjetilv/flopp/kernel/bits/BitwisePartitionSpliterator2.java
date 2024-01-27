@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -11,6 +12,8 @@ import java.util.function.Consumer;
 final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
+
+    private final Mediator<LineSegment> mediator;
 
     private final MemorySegment memorySegment;
 
@@ -31,30 +34,41 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     private long mask;
 
     BitwisePartitionSpliterator2(Partition partition, MemorySegment memorySegment) {
+        this(partition, memorySegment, null);
+    }
+
+    BitwisePartitionSpliterator2(
+        Partition partition,
+        MemorySegment memorySegment,
+        Mediator<LineSegment> mediator
+    ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
 
         this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources");
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.mediator = mediator;
 
         this.alignment = this.partition.alignment();
 
         this.line = new MutableLine();
         this.line.partitionNo = partition.partitionNo();
-        this.line.memorySegment = memorySegment;
+        this.line.memorySegment = this.memorySegment;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
+        Consumer<LineSegment> consumer = (Consumer<LineSegment>) (mediator == null ? action : mediator.apply(action));
         if (partition.first()) {
-            processAligned(action);
+            processAligned(consumer);
             return false;
         }
         skipToStart();
         if (partition.last()) {
-            processTail(action);
+            processTail(consumer);
             return false;
         }
-        processAligned(action);
+        processAligned(consumer);
         return false;
     }
 
@@ -63,7 +77,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         return STR."\{getClass().getSimpleName()}[offset:\{offset} \{partition}]";
     }
 
-    private void processAligned(Consumer<? super LineSegment> action) {
+    private void processAligned(Consumer<LineSegment> action) {
         long partitionLimit = partition.count();
         while (offset <= partitionLimit) {
             do {
@@ -73,7 +87,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         }
     }
 
-    private void processTail(Consumer<? super LineSegment> action) {
+    private void processTail(Consumer<LineSegment> action) {
         long partitionLimit = partition.count();
         long tail = partition.last() ? partition.count() % partition.alignment() : 0L;
         long lastLongOffset = partitionLimit - tail - alignment;
@@ -88,7 +102,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         }
     }
 
-    private void drainTo(Consumer<? super LineSegment> action) {
+    private void drainTo(Consumer<LineSegment> action) {
         do {
             progressMask();
             shipLine(action);
@@ -105,7 +119,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         lineStart = offset;
     }
 
-    private void shipLine(Consumer<? super LineSegment> action) {
+    private void shipLine(Consumer<LineSegment> action) {
         long shift = offset - lineStart;
 
         line.offset = lineStart;

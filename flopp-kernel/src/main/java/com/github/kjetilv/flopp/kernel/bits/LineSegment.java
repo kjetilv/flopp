@@ -1,5 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.ImmutableLine;
+import com.github.kjetilv.flopp.kernel.ImmutableSliceLine;
+
 import java.lang.foreign.MemorySegment;
 
 @SuppressWarnings("unused")
@@ -24,5 +27,18 @@ public interface LineSegment {
 
     default byte[] byteArray() {
         return LineSegments.toBytes(this);
+    }
+
+    default LineSegment immutable() {
+        return new ImmutableLine(memorySegment(), offset(), length());
+    }
+
+    default LineSegment immutableSlice() {
+        MemorySegment slice = memorySegment().asSlice(offset(), length());
+        return new ImmutableSliceLine(slice, length());
+    }
+
+    default String asString() {
+        return LineSegments.toString(this);
     }
 }

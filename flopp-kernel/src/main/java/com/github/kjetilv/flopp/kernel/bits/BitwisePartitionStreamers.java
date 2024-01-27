@@ -11,6 +11,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -34,31 +35,34 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     private final List<Partition> partitions;
 
+    public BitwisePartitionStreamers(Path path, Partitioning partitioning) {
+        this(path, partitioning, null);
+    }
+
     public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape) {
-        this.path = path;
-        this.partitioning = partitioning;
-        this.shape = shape;
+        this.path = Objects.requireNonNull(path, "path");
+        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
+        this.shape = shape == null ? Shape.of(path) : shape;
         this.randomAccessFile = openRandomAccess(path);
         this.fileChannel = randomAccessFile.getChannel();
-        this.partitions = partitioning.of(shape.size());
+        this.partitions = partitioning.of(this.shape.size());
         this.arena = Arena.ofAuto();
     }
 
-    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(ExecutorService executorService) {
+    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(ExecutorService executor) {
         return partitions.stream()
             .map(partition ->
                 CompletableFuture.supplyAsync(
                     () ->
-                        new BitwisePartitionStreamer(partition, segment(partition)),
-                    executorService == null
+                        new BitwisePartitionStreamer(partition, shape, segment(partition)),
+                    executor == null
                         ? ForkJoinPool.commonPool()
-                        : executorService
+                        : executor
                 ));
     }
 
     public Stream<BitwisePartitionStreamer> streamers() {
-        return partitions.stream()
-            .map(this::streamer);
+        return partitions.stream().map(this::streamer);
     }
 
     @Override
@@ -85,7 +89,7 @@ public final class BitwisePartitionStreamers implements Closeable {
     }
 
     private BitwisePartitionStreamer streamer(Partition partition) {
-        return new BitwisePartitionStreamer(partition, segment(partition));
+        return new BitwisePartitionStreamer(partition, shape, segment(partition));
     }
 
     private MemorySegment segment(Partition partition) {

@@ -24,9 +24,9 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
                 return size(Files.size(file));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Bad file: " + file, e);
+            throw new IllegalArgumentException(STR."Bad file: \{file}", e);
         }
-        throw new IllegalArgumentException("Not a file: " + file);
+        throw new IllegalArgumentException(STR."Not a file: \{file}");
     }
 
     public Shape(long size) {
