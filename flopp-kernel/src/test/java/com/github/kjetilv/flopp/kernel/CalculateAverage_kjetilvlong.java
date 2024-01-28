@@ -17,6 +17,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamer;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 
 import java.nio.file.Path;
@@ -47,19 +48,35 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.stats().longestLine() + 2
         );
+        List<Partition> partitions = partitioning.of(shape.size());
         try (
-            BitwisePartitionStreamers bitwisePartitionStreamers =
-                new BitwisePartitionStreamers(path, shape, partitioning.of(shape.size()))
+            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape, partitions)
         ) {
-            Stream<CompletableFuture<BitwisePartitionStreamer>> streamers = bitwisePartitionStreamers.streamers(
-                Executors.newVirtualThreadPerTaskExecutor()
-            );
-            List<CompletableFuture<Map<String, Result>>> list = streamers
-                .map(streamerFuture ->
-                    streamerFuture.thenApply(CalculateAverage_kjetilvlong::toMap))
+            System.out.println(Duration.between(start, Instant.now()));
+            List<CompletableFuture<Map<String, Result>>> list = streamers.streamers()
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(
+                        streamer::lines,
+                        Executors.newVirtualThreadPerTaskExecutor()
+                    ))
+                .map(future ->
+                    future.thenApply(
+                        CalculateAverage_kjetilvlong::toMap))
                 .toList();
-            Map<String, Result> map = list.stream()
-                .map(CompletableFuture::join).<Map<String, Result>>reduce(
+//            List<CompletableFuture<Map<String, Result>>> list = streamers.streamers(Executors.newVirtualThreadPerTaskExecutor())
+//                .map(future ->
+//                    future
+//                        .thenApply(BitwisePartitionStreamer::lines)
+//                            .thenApply(CalculateAverage_kjetilvlong::toMap))
+//                .toList();
+            System.out.println(Duration.between(start, Instant.now()));
+
+            List<Map<String, Result>> maps = list.stream()
+                .map(CompletableFuture::join)
+                .toList();
+            System.out.println(Duration.between(start, Instant.now()));
+            Map<String, Result> map = maps.stream()
+                .<Map<String, Result>>reduce(
                     new TreeMap<>(),
                     (m1, m2) -> {
                         m2.forEach((k, v) ->
@@ -67,34 +84,34 @@ public final class CalculateAverage_kjetilvlong {
                                 r1 == null ? v : r1.merge(v)));
                         return m1;
                     },
-                    (_, _) -> {
-                        throw new IllegalStateException();
-                    }
+                    (_, _) -> null
                 );
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
     }
 
-    private static Map<String, Result> toMap(BitwisePartitionStreamer streamer) {
-        Map<String, Result> m = new HashMap<>(1024, 1.0f);
-        streamer.lines()
-            .forEach(seg -> {
-                long length = seg.length(); //segment.length();
-                byte[] bytes = LineSegments.toBytes(seg);
-                int splitIndex = -1;
-                for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
-                    if (bytes[i] == ';') {
-                        splitIndex = i;
-                        break;
+    private static Map<String, Result> toMap(Stream<LineSegment> lines) {
+        try (lines) {
+            Map<String, Result> m = new HashMap<>(1024, 1.0f);
+            lines
+                .forEach(seg -> {
+                    long length = seg.length(); //segment.length();
+                    byte[] bytes = LineSegments.toBytes(seg);
+                    int splitIndex = -1;
+                    for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
+                        if (bytes[i] == ';') {
+                            splitIndex = i;
+                            break;
+                        }
                     }
-                }
-                int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
-                String key = new String(bytes, 0, splitIndex);
-                m.compute(key, (_, result) ->
-                    result == null ? new Result(value) : result.collect(value));
-            });
-        return m;
+                    int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
+                    String key = new String(bytes, 0, splitIndex);
+                    m.compute(key, (_, result) ->
+                        result == null ? new Result(value) : result.collect(value));
+                });
+            return m;
+        }
     }
 
     private static int parseValue(int length, int splitIndex, byte[] bytes) {

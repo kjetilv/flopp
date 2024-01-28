@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -12,6 +11,8 @@ import java.util.function.Consumer;
 final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
+
+    private final MemorySegmentSource memorySegmentSource;
 
     private final Mediator<LineSegment> mediator;
 
@@ -33,21 +34,21 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     BitwisePartitionSpliterator2(
         Partition partition,
-        MemorySegment memorySegment,
+        MemorySegmentSource memorySegmentSource,
         Mediator<LineSegment> mediator
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
+        this.partition = Objects.requireNonNull(partition, "partition");
+        this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
+        this.mediator = mediator;
+        this.alignment = this.partition.alignment();
 
         this.line = new MutableLine();
-        this.line.memorySegment = Objects.requireNonNull(memorySegment, "memorySegmentSources").asReadOnly();
-        this.partition = Objects.requireNonNull(partition, "partition");
-        this.mediator = mediator;
-
-        this.alignment = this.partition.alignment();
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
+        line.memorySegment = memorySegmentSource.open(partition);
         try {
             if (partition.first()) {
                 processAligned(mediate(action));

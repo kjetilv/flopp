@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class BitwisePartitionedMapper {
@@ -34,15 +35,15 @@ public class BitwisePartitionedMapper {
     ) {
         return streams.streamers()
             .map(streamer ->
-                CompletableFuture.supplyAsync(
-                        () ->
-                            processor.apply(
-                                streamer.partition(),
-                                streamer.lines()
-                            ),
-                        executorService
-                    )
+                CompletableFuture.supplyAsync(lines(processor, streamer), executorService)
                     .thenApply(result ->
                         new PartitionResult<>(streamer.partition(), result)));
+    }
+
+    private static <T> Supplier<T> lines(
+        BiFunction<Partition, Stream<LineSegment>, T> processor,
+        BitwisePartitionStreamer streamer
+    ) {
+        return () -> processor.apply(streamer.partition(), streamer.lines());
     }
 }

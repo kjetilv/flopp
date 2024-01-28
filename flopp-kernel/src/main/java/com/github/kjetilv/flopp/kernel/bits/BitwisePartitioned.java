@@ -19,7 +19,11 @@ public class BitwisePartitioned {
 
     private final List<Partition> partitions;
 
-    public BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
+    public BitwisePartitioned(
+        Path path,
+        Partitioning partitioning,
+        Shape shape
+    ) {
         this.path = path;
         this.partitioning = partitioning;
         this.shape = shape;
