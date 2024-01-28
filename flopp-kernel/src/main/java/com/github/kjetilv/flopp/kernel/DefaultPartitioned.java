@@ -198,14 +198,14 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             Transfers<P> transfer
         ) {
             super(
-                DefaultPartitioned.this.mapper(),
-                DefaultPartitioned.this.shape.charset(),
-                DefaultPartitioned.this.partitioning.partitionCount(),
+                mapper(),
+                shape.charset(),
+                partitioning.partitionCount(),
                 linesWriterFactory,
                 tempTargets,
                 sizer,
                 transfer,
-                DefaultPartitioned.this.executorService
+                executorService
             );
         }
 
@@ -227,14 +227,14 @@ public class DefaultPartitioned<P> implements Partitioned<P> {
             Transfers<P> transfer
         ) {
             super(
-                DefaultPartitioned.this.mapper(),
-                DefaultPartitioned.this.shape.charset(),
-                DefaultPartitioned.this.partitioning.partitionCount(),
+                mapper(),
+                shape.charset(),
+                partitioning.partitionCount(),
                 linesWriterFactory,
                 tempTargets,
                 sizer,
                 transfer,
-                DefaultPartitioned.this.executorService
+                executorService
             );
         }
 

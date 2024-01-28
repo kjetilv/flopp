@@ -48,21 +48,22 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
-        line.memorySegment = memorySegmentSource.open(partition);
         try {
+            line.memorySegment = memorySegmentSource.open(partition);
             if (!partition.first()) {
                 skipToStart();
             }
             long limit = partition.count();
+            Consumer<LineSegment> consumer = mediate(action);
             if (!partition.last()) {
-                processAligned(mediate(action), limit);
+                processAligned(consumer, limit);
             } else {
-                processTail(mediate(action), limit);
+                processTail(consumer, limit);
             }
+            return false;
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
-        return false;
     }
 
     @Override
@@ -72,17 +73,18 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     @SuppressWarnings("unchecked")
     private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
-        if (mediator == null) {
-            return (Consumer<LineSegment>) action;
-        }
-        return (Consumer<LineSegment>) mediator.apply(action);
+        return (Consumer<LineSegment>) (
+            mediator == null
+                ? action
+                : mediator.apply(action)
+        );
     }
 
     private void processAligned(Consumer<LineSegment> action, long limit) {
         while (offset <= limit) {
-            do {
+            while (mask == 0) {
                 loadLong();
-            } while (mask == 0);
+            }
             drainTo(action);
         }
     }
