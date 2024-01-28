@@ -15,10 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamer;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
-import com.github.kjetilv.flopp.kernel.bits.LineSegment;
-import com.github.kjetilv.flopp.kernel.bits.LineSegments;
+import com.github.kjetilv.flopp.kernel.bits.*;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -48,9 +45,9 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.stats().longestLine() + 2
         );
-        List<Partition> partitions = partitioning.of(shape.size());
+        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape, partitions)
+            BitwisePartitionStreamers streamers = bitwisePartitioned.streamers();
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             List<CompletableFuture<Map<String, Result>>> list = streamers.streamers()
@@ -63,12 +60,6 @@ public final class CalculateAverage_kjetilvlong {
                     future.thenApply(
                         CalculateAverage_kjetilvlong::toMap))
                 .toList();
-//            List<CompletableFuture<Map<String, Result>>> list = streamers.streamers(Executors.newVirtualThreadPerTaskExecutor())
-//                .map(future ->
-//                    future
-//                        .thenApply(BitwisePartitionStreamer::lines)
-//                            .thenApply(CalculateAverage_kjetilvlong::toMap))
-//                .toList();
             System.out.println(Duration.between(start, Instant.now()));
 
             List<Map<String, Result>> maps = list.stream()

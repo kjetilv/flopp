@@ -50,15 +50,14 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         line.memorySegment = memorySegmentSource.open(partition);
         try {
-            if (partition.first()) {
-                processAligned(mediate(action));
-            } else {
+            if (!partition.first()) {
                 skipToStart();
-                if (partition.last()) {
-                    processTail(mediate(action));
-                } else {
-                    processAligned(mediate(action));
-                }
+            }
+            long limit = partition.count();
+            if (!partition.last()) {
+                processAligned(mediate(action), limit);
+            } else {
+                processTail(mediate(action), limit);
             }
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
@@ -79,9 +78,8 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         return (Consumer<LineSegment>) mediator.apply(action);
     }
 
-    private void processAligned(Consumer<LineSegment> action) {
-        long partitionLimit = partition.count();
-        while (offset <= partitionLimit) {
+    private void processAligned(Consumer<LineSegment> action, long limit) {
+        while (offset <= limit) {
             do {
                 loadLong();
             } while (mask == 0);
@@ -89,11 +87,10 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         }
     }
 
-    private void processTail(Consumer<LineSegment> action) {
-        long partitionLimit = partition.count();
+    private void processTail(Consumer<LineSegment> action, long limit) {
         long tail = partition.last() ? partition.count() % partition.alignment() : 0L;
-        long lastLongOffset = partitionLimit - tail - alignment;
-        while (offset < partitionLimit) {
+        long lastLongOffset = limit - tail - alignment;
+        while (offset < limit) {
             while (mask == 0 && offset < lastLongOffset) {
                 loadLong();
             }
@@ -109,7 +106,7 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
             progressMask();
             shipLine(action);
             clear();
-        };
+        }
     }
 
     private void skipToStart() {
