@@ -40,7 +40,7 @@ public final class FileBuilder {
             @Override
             public String next() {
                 long c = countdown.get();
-                if (c - lineCount >= header) {
+                if (c - lineCount + 1 >= header) {
                     return "HEADER";
                 }
                 if (c < footer) {

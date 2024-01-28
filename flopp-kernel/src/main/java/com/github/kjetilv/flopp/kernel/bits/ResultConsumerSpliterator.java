@@ -1,4 +1,7 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
+
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +15,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
     implements Consumer<CompletableFuture<PartitionResult<T>>> {
@@ -23,7 +26,7 @@ class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<Part
 
     private final Map<Integer, PartitionResult<T>> completed;
 
-    private final ToIntFunction<T> sizer;
+    private final ToLongFunction<T> sizer;
 
     private final AtomicReference<Throwable> failure = new AtomicReference<>();
 
@@ -31,9 +34,9 @@ class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<Part
 
     private final Condition updated = updateLock.newCondition();
 
-    private final Map<T, Integer> cachedSizes = new ConcurrentHashMap<>();
+    private final Map<T, Long> cachedSizes = new ConcurrentHashMap<>();
 
-    ResultConsumerSpliterator(int resultsCount, ToIntFunction<T> sizer) {
+    ResultConsumerSpliterator(int resultsCount, ToLongFunction<T> sizer) {
         super(resultsCount, SIZED | IMMUTABLE | ORDERED);
         this.resultsCount = resultsCount;
         this.completed = new HashMap<>(resultsCount);
@@ -79,8 +82,13 @@ class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<Part
         Objects.requireNonNull(future, "future");
         updateLock.lock();
         try {
-            completed.put(future.partition().partitionNo(), future);
-            updated.signalAll();
+            PartitionResult<T> duplicate = completed.putIfAbsent(future.partition().partitionNo(), future);
+            if (duplicate == null) {
+                updated.signalAll();
+            } else {
+                throw new IllegalStateException(
+                    STR."Partition \{future.partition().partitionNo()} already present: \{duplicate}");
+            }
         } finally {
             updateLock.unlock();
         }
@@ -116,7 +124,7 @@ class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<Part
             .sum();
     }
 
-    private int size(T path) {
-        return cachedSizes.computeIfAbsent(path, sizer::applyAsInt);
+    private long size(T path) {
+        return cachedSizes.computeIfAbsent(path, sizer::applyAsLong);
     }
 }

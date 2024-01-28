@@ -42,14 +42,14 @@ public final class CalculateAverage_kjetilvlong {
     private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
-        Shape shape = Shape.of(path).longestLine(64, true);
+        Shape shape = Shape.of(path).longestLine(64);
         Partitioning partitioning = Partitioning.longAligned(
             Runtime.getRuntime().availableProcessors(),
             shape.stats().longestLine() + 2
         );
         try (
             BitwisePartitionStreamers bitwisePartitionStreamers =
-                new BitwisePartitionStreamers(path, partitioning, shape)
+                new BitwisePartitionStreamers(path, shape, partitioning.of(shape.size()))
         ) {
             Stream<CompletableFuture<BitwisePartitionStreamer>> streamers = bitwisePartitionStreamers.streamers(
                 Executors.newVirtualThreadPerTaskExecutor()

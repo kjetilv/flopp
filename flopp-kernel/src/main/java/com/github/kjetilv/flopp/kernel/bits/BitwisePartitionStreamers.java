@@ -23,8 +23,6 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     private final Path path;
 
-    private final Partitioning partitioning;
-
     private final Shape shape;
 
     private final FileChannel fileChannel;
@@ -35,34 +33,31 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     private final List<Partition> partitions;
 
-    public BitwisePartitionStreamers(Path path, Partitioning partitioning) {
-        this(path, partitioning, null);
-    }
-
-    public BitwisePartitionStreamers(Path path, Partitioning partitioning, Shape shape) {
+    public BitwisePartitionStreamers(Path path, Shape shape, List<Partition> partitions) {
         this.path = Objects.requireNonNull(path, "path");
-        this.partitioning = Objects.requireNonNull(partitioning, "partitioning");
-        this.shape = shape == null ? Shape.of(path) : shape;
+        this.shape = Objects.requireNonNull(shape, "shape");
         this.randomAccessFile = openRandomAccess(path);
         this.fileChannel = randomAccessFile.getChannel();
-        this.partitions = partitioning.of(this.shape.size());
+        this.partitions = partitions;
         this.arena = Arena.ofAuto();
     }
 
-    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(ExecutorService executor) {
+    public Stream<BitwisePartitionStreamer> streamers() {
+        return partitions.stream().map(this::streamer);
+    }
+
+    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(
+        ExecutorService executorService
+    ) {
         return partitions.stream()
             .map(partition ->
                 CompletableFuture.supplyAsync(
                     () ->
                         new BitwisePartitionStreamer(partition, shape, segment(partition)),
-                    executor == null
+                    executorService == null
                         ? ForkJoinPool.commonPool()
-                        : executor
+                        : executorService
                 ));
-    }
-
-    public Stream<BitwisePartitionStreamer> streamers() {
-        return partitions.stream().map(this::streamer);
     }
 
     @Override
@@ -77,7 +72,7 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/\{partitioning}]";
+        return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/ partitions:\{partitions.size()}]";
     }
 
     private RandomAccessFile openRandomAccess(Path path) {
@@ -103,9 +98,12 @@ public final class BitwisePartitionStreamers implements Closeable {
     }
 
     private long length(Partition partition) {
-        return Math.min(
-            shape.size() - partition.offset(),
-            partition.bufferedTo(shape.stats().longestLine() + 1)
-        );
+        if (shape.limitsLineLength()) {
+            return Math.min(
+                shape.size() - partition.offset(),
+                partition.bufferedTo(shape.stats().longestLine() + 1)
+            );
+        }
+        throw new IllegalStateException(STR."Shape does not specify max line length: \{shape}");
     }
 }

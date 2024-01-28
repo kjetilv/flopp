@@ -153,7 +153,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).header(1, 1);
         try (
             BitwisePartitionStreamers bitwisePartitionStreamers =
-                new BitwisePartitionStreamers(file, partitioning, shape)
+                new BitwisePartitionStreamers(file, shape, partitioning.of(shape.size()))
         ) {
             LongAdder cont = new LongAdder();
             bitwisePartitionStreamers.streamers()

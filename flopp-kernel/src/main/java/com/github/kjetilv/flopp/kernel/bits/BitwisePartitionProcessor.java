@@ -1,0 +1,96 @@
+package com.github.kjetilv.flopp.kernel.bits;
+
+import com.github.kjetilv.flopp.kernel.*;
+
+import java.io.Closeable;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+public class BitwisePartitionProcessor implements Closeable {
+
+    private final BitwisePartitionedMapper bitwisePartitionedMapper;
+
+    private final LinesWriterFactory<Path> linesWriterFactory;
+
+    private final TempTargets<Path> tempTargets;
+
+    private final Transfers<Path> transfers;
+
+    private final List<Partition> partitions;
+
+    private final Charset charset;
+
+    public BitwisePartitionProcessor(
+        BitwisePartitionedMapper bitwisePartitionedMapper,
+        List<Partition> partitions,
+        Charset charset,
+        LinesWriterFactory<Path> linesWriterFactory,
+        TempTargets<Path> tempTargets,
+        Transfers<Path> transfers
+    ) {
+        this.bitwisePartitionedMapper = Objects.requireNonNull(bitwisePartitionedMapper, "partitionedMapper");
+        this.linesWriterFactory = Objects.requireNonNull(linesWriterFactory, "linesWriterFactory");
+        this.tempTargets = Objects.requireNonNull(tempTargets, "tempTargets");
+        this.transfers = Objects.requireNonNull(transfers, "transfers");
+        this.partitions = partitions;
+        this.charset = charset;
+    }
+
+    public void process(Function<LineSegment, String> processor, ExecutorService executorService) {
+        ResultCollector<Path> collector =
+            new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
+        CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
+            () ->
+            {
+                BiFunction<Partition, Stream<LineSegment>, Path> processing =
+                    (partition, lines) -> {
+                        Path tempTaget = tempTargets.temp(partition);
+                        try (LinesWriter linesWriter = linesWriterFactory.create(tempTaget, charset)) {
+                            lines.forEach(line ->
+                                linesWriter.accept(processor.apply(line)));
+                        } catch (Exception e) {
+                            throw new RuntimeException(STR."Failed to write \{tempTaget}", e);
+                        }
+                        return tempTaget;
+                    };
+                futures(
+                    processing,
+                    bitwisePartitionedMapper,
+                    executorService
+                ).forEach(collector::collect);
+            },
+            executorService
+        );
+        List<CompletableFuture<Void>> transferFutures = collector.streamCollected()
+            .map(result ->
+                transfers.transfer(result.partition(), result.result()))
+            .map(transfer ->
+                CompletableFuture.runAsync(transfer, executorService))
+            .toList();
+        try {
+            transferFutures.forEach(CompletableFuture::join);
+        } finally {
+            streamFuture.join();
+        }
+    }
+
+    @Override
+    public void close() {
+        transfers.close();
+    }
+
+    private static Stream<CompletableFuture<PartitionResult<Path>>> futures(
+        BiFunction<Partition, Stream<LineSegment>, Path> processor,
+        BitwisePartitionedMapper mapper,
+        ExecutorService executorService
+    ) {
+        return mapper.map(processor, executorService);
+    }
+}

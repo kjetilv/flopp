@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionProcessor;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
 import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
 import org.junit.jupiter.api.*;
@@ -33,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Disabled
 @SuppressWarnings("SameParameterValue")
-public class SizeTest {
+public class BitwiseSizeTest {
 
     private ExecutorService readerExec;
 
@@ -104,18 +107,18 @@ public class SizeTest {
     @Disabled
     @Test
     void theStraightStory(TestInfo testInfo) {
-        logTime(100, () -> doTheStraightStory(testInfo, OP));
+        logTime(100, () -> doTheStraightStory(testInfo, OPS));
     }
 
     @Disabled
     @Test
     void theStraightStoryParallel(TestInfo testInfo) {
-        logTime(15, () -> doTheStraightStoryParallel(testInfo, OP));
+        logTime(15, () -> doTheStraightStoryParallel(testInfo, OPS));
     }
 
     @BeforeEach
     void setUp(TestInfo testInfo) throws IOException {
-        linesCount = 500_000;
+        linesCount = 10_000_000;
         columnCount = 10;
         ioQueueSize = 10;
         readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
@@ -131,8 +134,8 @@ public class SizeTest {
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
-        shape = Shape.size(Files.size(path)).header(header, footer);
-        partitions = Runtime.getRuntime().availableProcessors() * 2;
+        shape = Shape.size(Files.size(path)).header(header, footer).longestLine(256);
+        partitions = Runtime.getRuntime().availableProcessors();
     }
 
     @AfterEach
@@ -148,15 +151,15 @@ public class SizeTest {
         readerExec = null;
     }
 
-    private Duration doRealStuff(TestInfo testInfo, String qual, Function<String, String> fun, int bufferSize) {
+    private Duration doRealStuff(TestInfo testInfo, String qual, Function<LineSegment, String> fun, int bufferSize) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        Partitioning partitioning = new Partitioning(partitions, bufferSize);
+        Partitioning partitioning = Partitioning.longAligned(partitions);
+        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            PartitionedProcessor<String> partitioned =
-                PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
+            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
         ) {
-            partitioned.process(fun);
+            processor.process(fun, readerExec);
         }
         return log(testInfo, start);
     }
@@ -174,47 +177,34 @@ public class SizeTest {
         return log(testInfo, start);
     }
 
-    private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<String, String> fun) {
+    private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
+        Partitioning partitioning = new Partitioning(partitions, 8192);
+        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            Partitioned<Path> partitioned = new DefaultPartitioned<>(
-                path,
-                shape,
-                new Partitioning(partitions, 8192),
-                new FileSources(path, shape, 1024),
-                readerExec
-            );
-            PartitionedProcessor<String> proc = partitioned.processor(
-                new FileTempTargets(tmp),
-                new FileChannelTransfers(tmp),
-                SizeTest::sizeOf,
-                SimpleLinesWriter::new
-            )
+            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
         ) {
-            proc.process(fun);
+            processor.process(fun, readerExec);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return log(testInfo, start);
     }
 
-    private Duration doRealStuffVerified(TestInfo testInfo, String qual, Function<String, String> processor) {
-        Path verified = straightUp(testInfo, processor, "verified");
+    private Duration doRealStuffVerified(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
+        Path verified = straightUp(testInfo, OPS, "verified");
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
-        Partitioning partitioning = new Partitioning(partitions, 8192);
+        Partitioning partitioning = Partitioning
+            .longAligned(partitions)
+            .shortTail(shape.longestLine())
+            .bufferSize(8192);
+        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.create(path, shape, partitioning)
+            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
         ) {
-            partitioned.processor(
-                    new FileTempTargets(tmp),
-                    new FileChannelTransfers(tmp),
-                    SizeTest::sizeOf,
-                    (target, charset) ->
-                        new MemoryMappedByteArrayLinesWriter(target, 1024, charset)
-                )
-                .process(processor);
+            processor.process(fun, readerExec);
         }
         Duration time = log(testInfo, start);
         assertThat(tmp).hasSameTextualContentAs(verified);
@@ -260,9 +250,9 @@ public class SizeTest {
     private Path out(Path path, TestInfo testInfo, Partition partition, String qual) {
         String name = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
-        Path tmp = Path.of(path.getFileName() + "-" + name + (qual == null ? "" : "-" + qual) + (partition == null
+        Path tmp = Path.of(STR."\{path.getFileName()}-\{name}\{qual == null ? "" : STR."-\{qual}"}\{partition == null
             ? ""
-            : "-" + partition.partitionNo()) + ".txt");
+            : STR."-\{partition.partitionNo()}"}.txt");
         return tempDirectory.resolve(tmp);
     }
 
@@ -271,7 +261,7 @@ public class SizeTest {
     }
 
     @SuppressWarnings("CommentedOutCode")
-    public static final Function<String, String> OP = line -> {
+    public static final Function<String, String> OPS = line -> {
         try {
             String[] split = line.split(";");
 //            Optional<BigInteger> tail = Arrays.stream(split).skip(1)
@@ -294,38 +284,9 @@ public class SizeTest {
         }
     };
 
-    @SuppressWarnings("CommentedOutCode")
+    private static final Function<LineSegment, String> TOS = LineSegment::asString;
 
-    public static final Function<String, String> RAW_OP = line -> {
-        try {
-            String[] split = line.split(";");
-//            Optional<BigInteger> tail = Arrays.stream(split).skip(1)
-//                .map(BigInteger::new).reduce(BigInteger::add);
-//            Optional<BigInteger> total = Arrays.stream(split)
-//                .map(BigInteger::new).reduce(BigInteger::add);
-//            Optional<BigInteger> bigInteger = tail
-//                .flatMap(ta ->
-//                    total.map(to -> to.subtract(ta)));
-            if (split.length > 0) {
-                return new BigDecimal(split[1]).toPlainString();
-            }
-            return "0";
-//            return Arrays.stream(split).findFirst()
-//                .map(BigInteger::new)
-//                .map(BigInteger::toString)
-//                .orElse("0");
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed", e);
-        }
-    };
-
-    private static int sizeOf(Path path) {
-        try {
-            return Math.toIntExact(Files.size(path));
-        } catch (IOException e) {
-            throw new IllegalStateException(path.toString(), e);
-        }
-    }
+    public static final Function<LineSegment, String> OP = TOS.andThen(OPS);
 
     private static void logTime(int times, Supplier<Duration> doer) {
         Duration duration = Duration.ZERO;
@@ -381,7 +342,7 @@ public class SizeTest {
             .chars()
             .mapToObj(c ->
                 isUpperCase(c) ?
-                    " " + Character.toString(toLowerCase(c))
+                    STR." \{Character.toString(toLowerCase(c))}"
                     : Character.toString(c))
             .collect(joining());
         System.out.printf("%s: %s%n", method, time);

@@ -10,14 +10,18 @@ import java.nio.file.Path;
 
 final class FileChannelTransfer implements Transfer {
 
-    private final FileChannel channel;
+    private final FileChannel receivingChannel;
 
     private final Partition partition;
 
     private final Path source;
 
-    FileChannelTransfer(FileChannel channel, Partition partition, Path source) {
-        this.channel = channel;
+    FileChannelTransfer(
+        FileChannel receivingChannel,
+        Partition partition,
+        Path source
+    ) {
+        this.receivingChannel = receivingChannel;
         this.partition = partition;
         this.source = source;
     }
@@ -26,12 +30,12 @@ final class FileChannelTransfer implements Transfer {
     public void run() {
         try (
             RandomAccessFile sourceFile = randomAccess(source);
-            FileChannel sourceChannel = sourceFile.getChannel()
+            FileChannel donorChannel = sourceFile.getChannel()
         ) {
             long totalTransferred = 0L;
             do {
-                totalTransferred += channel.transferFrom(
-                    sourceChannel,
+                totalTransferred += receivingChannel.transferFrom(
+                    donorChannel,
                     partition.offset(),
                     partition.count()
                 );
@@ -49,9 +53,9 @@ final class FileChannelTransfer implements Transfer {
     @Override
     public void close() {
         try {
-            channel.close();
+            receivingChannel.close();
         } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} failed to close \{channel}", e);
+            throw new IllegalStateException(STR."\{this} failed to close \{receivingChannel}", e);
         }
     }
 

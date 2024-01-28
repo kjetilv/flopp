@@ -53,7 +53,9 @@ public class BitwiseSpliteratorTest {
         System.out.println(new String(Files.readAllBytes(file)));
 
         try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(file, partitioning, shape)
+            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(file, shape,
+                partitioning.of(shape.size())
+            )
         ) {
             streamers.streamers().forEach(streamer -> {
                 streamer.lines().forEach(line -> {

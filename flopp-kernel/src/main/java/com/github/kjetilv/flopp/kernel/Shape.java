@@ -94,21 +94,15 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
         return stats != null && stats.limitsLineLength();
     }
 
+    public int longestLine() {
+        if (stats == null ) {
+            throw new IllegalStateException(STR."No stats defined in \{this}");
+        }
+        return stats.longestLine();
+    }
+
     public Shape longestLine(int longestLine) {
-        return longestLine(longestLine, false);
-    }
-
-    public Shape longestLineHardLimit(int longestLine) {
-        return longestLine(longestLine, true);
-    }
-
-    public Shape longestLine(int longestLine, boolean hardLimit) {
-        return new Shape(
-            size,
-            charset,
-            decor,
-            new Stats(longestLine, hardLimit)
-        );
+        return new Shape(size, charset, decor, new Stats(longestLine));
     }
 
     public boolean hasOverhead() {
@@ -136,20 +130,15 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public record Stats(
-        int longestLine,
-        boolean hardLimit
+        int longestLine
     ) {
 
         public Stats {
             Non.negative(longestLine, "longestLine");
         }
 
-        public Stats hardLimit(boolean hardLimit) {
-            return new Stats(longestLine, hardLimit);
-        }
-
         public boolean limitsLineLength() {
-            return hardLimit && longestLine > 0;
+            return longestLine > 0;
         }
     }
 }

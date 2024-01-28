@@ -54,7 +54,9 @@ public final class Lccc {
     private static Count count(Path path) {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
-        BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape);
+        BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape,
+            partitioning.of(shape.size())
+        );
         List<CompletableFuture<Long>> futures = streamers.streamers(EXECUTOR_SERVICE)
             .map(completableStreamer ->
                 completableStreamer.thenApply(Lccc::count))
@@ -70,7 +72,9 @@ public final class Lccc {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
         try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, partitioning, shape)
+            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape,
+                partitioning.of(shape.size())
+            )
         ) {
             futures = streamers.streamers()
                 .map(Lccc::count)

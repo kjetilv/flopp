@@ -43,5 +43,4 @@ public final class BitwisePartitionStreamer {
     public String toString() {
         return STR."\{getClass().getSimpleName()}[\{partition}]";
     }
-
 }

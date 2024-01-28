@@ -31,10 +31,6 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     private long mask;
 
-    BitwisePartitionSpliterator2(Partition partition, MemorySegment memorySegment) {
-        this(partition, memorySegment, null);
-    }
-
     BitwisePartitionSpliterator2(
         Partition partition,
         MemorySegment memorySegment,
@@ -52,15 +48,19 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
-        if (partition.first()) {
-            processAligned(mediate(action));
-        } else {
-            skipToStart();
-            if (partition.last()) {
-                processTail(mediate(action));
-            } else {
+        try {
+            if (partition.first()) {
                 processAligned(mediate(action));
+            } else {
+                skipToStart();
+                if (partition.last()) {
+                    processTail(mediate(action));
+                } else {
+                    processAligned(mediate(action));
+                }
             }
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
         return false;
     }
@@ -104,11 +104,11 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     }
 
     private void drainTo(Consumer<LineSegment> action) {
-        do {
+        while (mask != 0) {
             progressMask();
             shipLine(action);
             clear();
-        } while (mask != 0);
+        };
     }
 
     private void skipToStart() {
@@ -183,6 +183,6 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
         0xFFFFFF0000000000L,
         0xFFFF000000000000L,
         0xFF00000000000000L,
-        0x0000000000000000L,
+        0x0000000000000000L
     };
 }

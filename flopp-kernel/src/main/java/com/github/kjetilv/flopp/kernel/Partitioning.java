@@ -14,6 +14,7 @@ public record Partitioning(
     long shortTail,
     int bufferSize
 ) {
+
     public static Partitioning longAligned() {
         return longAligned(0);
     }
@@ -74,6 +75,24 @@ public record Partitioning(
 
     public int bufferSizeOr(int defaultSize) {
         return bufferSize > 0 ? bufferSize : defaultSize;
+    }
+
+    public Partitioning shortTail(int shortTail) {
+        return new Partitioning(
+            partitionCount,
+            alignment,
+            shortTail,
+            bufferSize
+        );
+    }
+
+    public Partitioning bufferSize(int bufferSize) {
+        return new Partitioning(
+            partitionCount,
+            alignment,
+            shortTail,
+            bufferSize
+        );
     }
 
     private static List<Partition> checked(List<Partition> partitions) {

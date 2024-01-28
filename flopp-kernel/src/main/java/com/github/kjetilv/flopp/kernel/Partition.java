@@ -25,8 +25,8 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return Integer.compare(partitionNo, o.partitionNo);
     }
 
-    public Partition at(long offset, int count) {
-        return new Partition(partitionNo, partitionCount, offset, count);
+    public Partition at(long offset, long count) {
+        return new Partition(partitionNo, partitionCount, offset, count, 1);
     }
 
     public boolean first() {
@@ -35,6 +35,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
 
     public boolean hasData() {
         return count > 0;
+    }
+
+    public boolean isLongAligned() {
+        return alignment == 8 && isAligned();
     }
 
     public boolean isAligned() {

@@ -43,7 +43,7 @@ public final class CalculateAverage_kjetilvec {
         try (
             PartitionedPath partitionedPath = PartitionedPaths.create(
                 path,
-                Shape.of(path).longestLine(64, true),
+                Shape.of(path).longestLine(64),
                 Partitioning.longAligned(),
                 new ForkJoinPool(Runtime.getRuntime().availableProcessors())
             )
