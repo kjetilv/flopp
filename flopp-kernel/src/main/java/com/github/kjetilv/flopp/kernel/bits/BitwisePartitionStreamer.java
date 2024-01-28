@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 

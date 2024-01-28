@@ -90,7 +90,9 @@ final class BitwisePartitionSpliterator2 extends Spliterators.AbstractSpliterato
     }
 
     private void processTail(Consumer<LineSegment> action, long limit) {
-        long tail = partition.last() ? partition.count() % partition.alignment() : 0L;
+        long tail = partition.last()
+            ? partition.count() % partition.alignment()
+            : 0L;
         long lastLongOffset = limit - tail - alignment;
         while (offset < limit) {
             while (mask == 0 && offset < lastLongOffset) {
