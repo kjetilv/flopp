@@ -1,9 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionProcessor;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
-import com.github.kjetilv.flopp.kernel.bits.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
 import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
 import org.junit.jupiter.api.*;
@@ -18,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +83,7 @@ public class BitwiseSizeTest {
     @Disabled
     @Test
     void realStuff(TestInfo testInfo) {
-        logTime(200, () -> doRealStuff(testInfo, null, OP, 64 * 1024));
+        logTime(200, () -> doRealStuff(testInfo, null, OP));
     }
 
     @Test
@@ -95,7 +93,7 @@ public class BitwiseSizeTest {
 
     @Test
     void realStuffOnce(TestInfo testInfo) {
-        logTime(1, () -> doRealStuff(testInfo, null, OP, 16384));
+        logTime(1, () -> doRealStuff(testInfo, null, OP));
     }
 
     @Disabled
@@ -151,28 +149,28 @@ public class BitwiseSizeTest {
         readerExec = null;
     }
 
-    private Duration doRealStuff(TestInfo testInfo, String qual, Function<LineSegment, String> fun, int bufferSize) {
+    private Duration doRealStuff(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.longAligned(partitions);
-        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
+            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         }
         return log(testInfo, start);
     }
 
-    private Duration doRealStuffQr(TestInfo testInfo, String qual, Function<String, String> processor, int bufferSize) {
+    private Duration doRealStuffQr(TestInfo testInfo, String qual, Function<LineSegment, String> processor, int bufferSize) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
         try (
-            PartitionedProcessor<String> partitioned =
-                PartitionedPaths.processor(path, shape, partitioning, tmp, readerExec)
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment> partitioned = bitwisePartitioned.processor(tmp)
         ) {
-            partitioned.process(processor);
+            partitioned.process(processor, readerExec);
         }
         return log(testInfo, start);
     }
@@ -181,9 +179,9 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
         Partitioning partitioning = new Partitioning(partitions, 8192);
-        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
+            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         } catch (Exception e) {
@@ -200,9 +198,10 @@ public class BitwiseSizeTest {
             .longAligned(partitions)
             .shortTail(shape.longestLine())
             .bufferSize(8192);
-        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+
         try (
-            BitwisePartitionProcessor processor = bitwisePartitioned.processor(tmp)
+            Partitioned<Path> partitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment> processor = partitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         }

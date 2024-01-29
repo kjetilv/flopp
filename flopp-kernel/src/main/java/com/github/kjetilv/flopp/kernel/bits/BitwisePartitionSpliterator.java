@@ -1,200 +1,191 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Mediator;
 import com.github.kjetilv.flopp.kernel.Partition;
 
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-@SuppressWarnings("preview")
-public class BitwisePartitionSpliterator
-    extends Spliterators.AbstractSpliterator<LineSegment> {
+public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
-    private final long partitionLimit;
-
-    private final MutableLine ml = new MutableLine();
-
-    private final boolean firstPartition;
-
-    private final boolean lastPartition;
-
-    private final int trail;
-
-    private final long lastLimit;
-
-    /**
-     * Current byte.
-     */
-    private long current;
-
-    /**
-     * How much of {@link #partitionLimit} is processed
-     */
-    private long byteOffset;
-
-    /**
-     * Position of byte starting current line
-     */
-    private long previousLineStartByte;
+    private final MemorySegmentSource memorySegmentSource;
 
     private final Mediator<LineSegment> mediator;
 
+    private final int alignment;
+
+    private final MutableLine line;
+
+    private long currentLong;
+
+    private int currentLongOffset;
+
+    private long longAlignedOffset;
+
+    private long offset;
+
+    private long lineStart;
+
+    private long mask;
+
     public BitwisePartitionSpliterator(
         Partition partition,
-        MemorySegment memorySegment,
+        MemorySegmentSource memorySegmentSource,
         Mediator<LineSegment> mediator
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
-
-        if (!(partition.last() || partition.isAligned())) {
-            throw new IllegalArgumentException(
-                STR."Not a valid partition, should be aligned @\{BYTES_IN_LONG}: \{partition}"
-            );
-        }
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.ml.memorySegment = memorySegment.asReadOnly();
+        this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
         this.mediator = mediator;
+        this.alignment = this.partition.alignment();
 
-        this.trail = Math.toIntExact(this.partition.count() % partition.alignment());
-        this.partitionLimit = this.partition.count() - this.trail;
-        this.lastLimit = partitionLimit + trail;
-
-        this.firstPartition = this.partition.first();
-        this.lastPartition = this.partition.last();
+        this.line = new MutableLine();
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            return process(mediate(action));
+            line.memorySegment = memorySegmentSource.open(partition);
+            if (!partition.first()) {
+                skipToStart();
+            }
+            long limit = partition.count();
+            Consumer<LineSegment> consumer = mediate(action);
+            if (!partition.last()) {
+                processAligned(consumer, limit);
+            } else {
+                processTail(consumer, limit);
+            }
+            return false;
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to process", e);
+            throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[offset:\{byteOffset} in \{partition}]";
+        return STR."\{getClass().getSimpleName()}[offset:\{offset} \{partition}]";
     }
 
     @SuppressWarnings("unchecked")
     private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
-        if (mediator == null) {
-            return (Consumer<LineSegment>) action;
-        }
-        return (Consumer<LineSegment>) mediator.apply(action);
+        return (Consumer<LineSegment>) (
+            mediator == null
+                ? action
+                : mediator.apply(action)
+        );
     }
 
-    @SuppressWarnings({"StatementWithEmptyBody", "SameReturnValue"})
-    private boolean process(Consumer<LineSegment> action) {
-        current = next();
-        if (!firstPartition) {
-            jumpToLine();
-        }
-        if (lastPartition) {
-            for (long i = 0; i < partitionLimit / BYTES_IN_LONG && !cycleDone(action); i++) ;
-            if (processedToEnd(action)) {
-                return false;
+    private void processAligned(Consumer<LineSegment> action, long limit) {
+        while (offset <= limit) {
+            while (mask == 0) {
+                loadLong();
             }
-            while (true) {
-                if (cycleDone(action)) {
-                    return false;
-                }
-            }
-        }
-        while (true) {
-            if (cycleDone(action)) {
-                return false;
-            }
+            drainTo(action);
         }
     }
 
-    private boolean cycleDone(Consumer<LineSegment> action) {
-        if (ln()) {
+    private void processTail(Consumer<LineSegment> action, long limit) {
+        long tail = partition.last()
+            ? partition.count() % partition.alignment()
+            : 0L;
+        long lastLongOffset = limit - tail - alignment;
+        while (offset < limit) {
+            while (mask == 0 && offset < lastLongOffset) {
+                loadLong();
+            }
+            if (mask == 0 && tail > 0) {
+                loadTail(tail);
+            }
+            drainTo(action);
+        }
+    }
+
+    private void drainTo(Consumer<LineSegment> action) {
+        while (mask != 0) {
+            progressMask();
             shipLine(action);
-            if (byteOffset >= partitionLimit) {
-                return true;
-            }
+            clear();
         }
-        byteOffset++;
-        advanceCurrent();
-        return false;
     }
 
-    private boolean processedToEnd(Consumer<LineSegment> action) {
-        while (true) {
-            if (ln()) {
-                shipLine(action);
-                if (byteOffset == lastLimit) {
-                    return true;
-                }
-            }
-            byteOffset++;
-            if (tailRemains()) {
-                return false;
-            }
-            advanceCurrent();
-        }
+    private void skipToStart() {
+        do {
+            loadLong();
+        } while (mask == 0);
+        progressMask();
+        clear();
+        lineStart = offset;
     }
 
     private void shipLine(Consumer<LineSegment> action) {
-        long length = byteOffset - previousLineStartByte;
-        ml.offset = previousLineStartByte;
-        ml.length = length;
-        action.accept(ml);
-        previousLineStartByte += length + 1;
+        long shift = offset - lineStart;
+
+        line.offset = lineStart;
+        line.length = shift - 1;
+        action.accept(line);
+
+        lineStart += shift;
     }
 
-    private void jumpToLine() {
-        while (true) {
-            byteOffset++;
-            if (ln()) {
-                advanceCurrent();
-                previousLineStartByte = byteOffset;
-                return;
-            }
-            advanceCurrent();
+    private void progressMask() {
+        int leap = Long.numberOfTrailingZeros(mask) / BYTES_IN_LONG + 1;
+        offset += leap - currentLongOffset;
+        currentLongOffset = leap;
+    }
+
+    private void clear() {
+        mask &= CLEARED[currentLongOffset];
+    }
+
+    private void loadLong() {
+        set(line.memorySegment.get(ValueLayout.JAVA_LONG, longAlignedOffset));
+        longAlignedOffset += alignment;
+        mask();
+    }
+
+    private void loadTail(long tail) {
+        set(0L);
+        loadBytes(tail);
+        mask();
+    }
+
+    private void loadBytes(long count) {
+        for (long i = count - 1; i >= 0; i--) {
+            byte b = line.memorySegment.get(ValueLayout.JAVA_BYTE, offset + i);
+            currentLong = (currentLong << alignment) + b;
         }
     }
 
-    private boolean tailRemains() {
-        if (byteOffset == partitionLimit) {
-            current = 0L;
-            for (int i = trail - 1; i >= 0; i--) {
-                current = (current << 8) + ml.memorySegment().get(ValueLayout.JAVA_BYTE, byteOffset + i);
-            }
-            return true;
-        }
-        return false;
+    private void set(long l) {
+        currentLong = l;
+        currentLongOffset = 0;
+        offset = longAlignedOffset;
     }
 
-    private void advanceCurrent() {
-        if (byteOffset % 8 == 0) {
-            current = next();
-        } else {
-            current >>= 8;
-        }
+    private void mask() {
+        long masked = currentLong ^ 0x0A0A0A0A0A0A0A0AL;
+        long underflown = masked - 0x0101010101010101L;
+        long clearedHighBits = underflown & ~masked;
+        mask = clearedHighBits & 0x8080808080808080L;
     }
 
-    private long next() {
-        try {
-            return ml.memorySegment().get(ValueLayout.JAVA_LONG, byteOffset);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                STR."\{this} failed to advance from \{byteOffset} in \{ml.memorySegment()}",
-                e
-            );
-        }
-    }
+    private static final int BYTES_IN_LONG = 8;
 
-    private boolean ln() {
-        return (current & 0xFF) == '\n';
-    }
-
-    public static final long BYTES_IN_LONG = ValueLayout.JAVA_LONG.byteSize();
+    private static final long[] CLEARED = {
+        0xFFFFFFFFFFFFFFFFL,
+        0xFFFFFFFFFFFFFF00L,
+        0xFFFFFFFFFFFF0000L,
+        0xFFFFFFFFFF000000L,
+        0xFFFFFFFF00000000L,
+        0xFFFFFF0000000000L,
+        0xFFFF000000000000L,
+        0xFF00000000000000L,
+        0x0000000000000000L
+    };
 }

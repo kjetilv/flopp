@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.lc;
 
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamer;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreams;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -54,7 +54,7 @@ public final class Lccc {
     private static Count count(Path path) {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
-        BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape,
+        BitwisePartitionStreams streamers = new BitwisePartitionStreams(path, shape,
             partitioning.of(shape.size())
         );
         List<CompletableFuture<Long>> futures = streamers.streamers(EXECUTOR_SERVICE)
@@ -72,7 +72,7 @@ public final class Lccc {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
         try (
-            BitwisePartitionStreamers streamers = new BitwisePartitionStreamers(path, shape,
+            BitwisePartitionStreams streamers = new BitwisePartitionStreams(path, shape,
                 partitioning.of(shape.size())
             )
         ) {
@@ -84,7 +84,7 @@ public final class Lccc {
         return new Count(path, sum);
     }
 
-    private static long count(BitwisePartitionStreamer streamer) {
+    private static long count(PartitionedStreams.PartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
         streamer.lines()
             .forEach(lineSegment -> longAdder.increment());

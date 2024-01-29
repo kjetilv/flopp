@@ -9,7 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
 
-public class BitwisePartitioned {
+public class BitwisePartitioned implements Partitioned<Path> {
 
     private final Path path;
 
@@ -30,7 +30,33 @@ public class BitwisePartitioned {
         this.partitions = partitioning.of(shape.size());
     }
 
-    public <P> BitwisePartitionProcessor processor(Path target) {
+    @Override
+    public Path partitioned() {
+        return path;
+    }
+
+    @Override
+    public List<Partition> partitions() {
+        return partitions;
+    }
+
+    @Override
+    public PartitionedStreams streams() {
+        return new BitwisePartitionStreams(path, shape, partitions);
+    }
+
+    @Override
+    public PartitionedMapper mapper() {
+        return new BitwisePartitionedMapper(streams());
+    }
+
+    @Override
+    public PartitionedConsumer consumer() {
+        return new BitwisePartitionedConsumer(streams());
+    }
+
+    @Override
+    public PartitionedProcessor<LineSegment> processor(Path target) {
         return new BitwisePartitionProcessor(
             mapper(),
             partitions,
@@ -39,14 +65,6 @@ public class BitwisePartitioned {
             tempTargets(path),
             transfers(target)
         );
-    }
-
-    public BitwisePartitionedMapper mapper() {
-        return new BitwisePartitionedMapper(streamers());
-    }
-
-    public BitwisePartitionStreamers streamers() {
-        return new BitwisePartitionStreamers(path, shape, partitions);
     }
 
     private MemoryMappedByteArrayLinesWriter writer(Path target, Charset charset) {

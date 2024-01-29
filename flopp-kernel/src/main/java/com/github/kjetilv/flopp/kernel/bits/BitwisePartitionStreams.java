@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Shape;
 
-import java.io.Closeable;
 import java.lang.foreign.Arena;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
-public final class BitwisePartitionStreamers implements Closeable {
+public final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final Path path;
 
@@ -22,7 +22,7 @@ public final class BitwisePartitionStreamers implements Closeable {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    public BitwisePartitionStreamers(Path path, Shape shape, List<Partition> partitions) {
+    public BitwisePartitionStreams(Path path, Shape shape, List<Partition> partitions) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = Objects.requireNonNull(partitions, "partitions");
@@ -33,7 +33,7 @@ public final class BitwisePartitionStreamers implements Closeable {
         this.memorySegmentSource = new MemorySegmentSource(path, shape, Arena.ofAuto());
     }
 
-    public Stream<BitwisePartitionStreamer> streamers() {
+    public Stream<PartitionStreamer> streamers() {
         return partitions.stream().map(this::streamer);
     }
 

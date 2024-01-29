@@ -1,9 +1,4 @@
-package com.github.kjetilv.flopp.kernel.bits;
-
-import com.github.kjetilv.flopp.kernel.Mediator;
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionMediator;
-import com.github.kjetilv.flopp.kernel.Shape;
+package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.ValueLayout;
 

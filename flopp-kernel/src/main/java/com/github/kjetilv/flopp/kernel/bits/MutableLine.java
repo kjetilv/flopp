@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+
 import java.lang.foreign.MemorySegment;
 
 @SuppressWarnings("PackageVisibleField")

@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionResult;
+import com.github.kjetilv.flopp.kernel.*;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -10,25 +9,15 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class BitwisePartitionedMapper {
+public class BitwisePartitionedMapper implements PartitionedMapper {
 
-    private final BitwisePartitionStreamers streams;
+    private final PartitionedStreams streams;
 
-    BitwisePartitionedMapper(BitwisePartitionStreamers streams) {
+    BitwisePartitionedMapper(PartitionedStreams streams) {
         this.streams = Objects.requireNonNull(streams, "streams");
     }
 
-    public <T> Stream<PartitionResult<T>> map(
-        BiFunction<Partition, Stream<LineSegment>, T> processor
-    ) {
-        return streams.streamers()
-            .map(streamer ->
-                new PartitionResult<>(
-                    streamer.partition(),
-                    processor.apply(streamer.partition(), streamer.lines())
-                ));
-    }
-
+    @Override
     public <T> Stream<CompletableFuture<PartitionResult<T>>> map(
         BiFunction<Partition, Stream<LineSegment>, T> processor,
         ExecutorService executorService
@@ -42,7 +31,7 @@ public class BitwisePartitionedMapper {
 
     private static <T> Supplier<T> lines(
         BiFunction<Partition, Stream<LineSegment>, T> processor,
-        BitwisePartitionStreamer streamer
+        PartitionedStreams.PartitionStreamer streamer
     ) {
         return () -> processor.apply(streamer.partition(), streamer.lines());
     }

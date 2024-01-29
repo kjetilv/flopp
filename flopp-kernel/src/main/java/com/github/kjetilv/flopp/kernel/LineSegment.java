@@ -1,7 +1,4 @@
-package com.github.kjetilv.flopp.kernel.bits;
-
-import com.github.kjetilv.flopp.kernel.ImmutableLine;
-import com.github.kjetilv.flopp.kernel.ImmutableSliceLine;
+package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 

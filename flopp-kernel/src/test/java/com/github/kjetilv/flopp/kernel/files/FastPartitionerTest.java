@@ -1,8 +1,9 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreamers;
-import com.github.kjetilv.flopp.kernel.bits.LineSegments;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreams;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FastPartitionerTest {
 
     @TempDir
-    Path tmp;
+    private Path tmp;
 
     @Test
     void test(TestInfo testInfo) {
@@ -66,7 +66,6 @@ public class FastPartitionerTest {
     }
 
     private void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
-
         Method method = testInfo.getTestMethod().orElseThrow();
 
         Path file = FileBuilder.file(
@@ -77,21 +76,19 @@ public class FastPartitionerTest {
             new Shape.Decor(1, 1)
         );
 
-        Shape shape = Shape.size(Files.size(file)).header(1, 1);
+        Shape shape = Shape.size(Files.size(file)).header(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
-            PartitionedPath partitioned = new DefaultPartitionedPath(
+            Partitioned<Path> partitioned = new BitwisePartitioned(
                 file,
-                shape,
-                new Partitioning(partitionCount, 10),
-                new FileSources(file, shape, 1024),
-                Executors.newVirtualThreadPerTaskExecutor()
+                Partitioning.longAligned(partitionCount, 10),
+                shape
             );
             PartitionedStreams streams = partitioned.streams()
         ) {
             streams.streamers()
                 .forEach(streamer ->
-                    streamer.nLines()
+                    streamer.lines()
                         .forEach(_ ->
                             cont.increment()));
             assertThat(cont).hasValue(lineCount);
@@ -111,16 +108,14 @@ public class FastPartitionerTest {
 
         Shape shape = Shape.size(Files.size(file)).longestLine(32).header(1, 1);
         try (
-            Partitioned<Path> partitioned = new DefaultPartitioned<>(
+            Partitioned<Path> partitioned = new BitwisePartitioned(
                 file,
-                shape,
-                new Partitioning(partitionCount, 10),
-                new FileSources(file, shape, 1024),
-                Executors.newVirtualThreadPerTaskExecutor()
+                Partitioning.longAligned(partitionCount, 10),
+                shape
             )
         ) {
             LongAdder cont = new LongAdder();
-            partitioned.consumer().forEachNLine(
+            partitioned.consumer().forEachLine(
                     (_, entries) ->
                         entries.forEach(_ -> cont.increment())
                 )
@@ -152,11 +147,11 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.longAligned(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).header(1, 1);
         try (
-            BitwisePartitionStreamers bitwisePartitionStreamers =
-                new BitwisePartitionStreamers(file, shape, partitioning.of(shape.size()))
+            BitwisePartitionStreams bitwisePartitionStreams =
+                new BitwisePartitionStreams(file, shape, partitioning.of(shape.size()))
         ) {
             LongAdder cont = new LongAdder();
-            bitwisePartitionStreamers.streamers()
+            bitwisePartitionStreams.streamers()
                 .forEach(bitwisePartitionStreamer ->
                     bitwisePartitionStreamer.lines()
                         .forEach(l -> {

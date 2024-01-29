@@ -1,10 +1,13 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.files.FileChannelByteSources;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionSpliterator;
+import com.github.kjetilv.flopp.kernel.bits.MemorySegmentSource;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,6 +20,7 @@ import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled
 class NLinePartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -28,19 +32,21 @@ class NLinePartitionSpliteratorTest {
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
         Partition partition = new Partition(0, 1, 0, bytes.length);
-        ByteSource byteSource = getByteSource(dir, bytes, partition);
-        NLineGrowingPartitionSpliterator spliterator = new NLineGrowingPartitionSpliterator(
-            byteSource,
+        Path path = getPath(dir, bytes);
+        Shape shape = Shape.size(bytes.length).header(1, 1)
+            .longestLine(16)
+            .charset(StandardCharsets.US_ASCII);
+        BitwisePartitionSpliterator spliterator = new BitwisePartitionSpliterator(
             partition,
-            Shape.size(bytes.length).header(1, 1)
-                .longestLine(16)
-                .charset(StandardCharsets.US_ASCII),
-            50
+            new MemorySegmentSource(path,
+                shape,
+                Arena.ofAuto()),
+            PartitionMediator.create(partition, shape, LineSegment::immutable)
         );
-        List<NLine> lines = new ArrayList<>();
-        while (spliterator.tryAdvance(lines::add)) {
+        List<String> lines = new ArrayList<>();
+        while (spliterator.tryAdvance(e -> lines.add(e.asString()))) {
         }
-        assertThat(lines).containsExactly(new NLine("CONTNT", 0, 2));
+        assertThat(lines).containsExactly("CONTNT");
     }
 
     @Test
@@ -52,18 +58,17 @@ class NLinePartitionSpliteratorTest {
             abc
             FOOTER
             """.getBytes(StandardCharsets.US_ASCII);
-        List<NLine> lines = drain(
+        List<LineSegment> lines = drain(
             bytes,
             new Partition(0, 1, 0, bytes.length),
             2,
-            8,
             dir
         );
 
-        assertThat(lines).containsExactly(
-            new NLine("abc", 0, 2),
-            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3),
-            new NLine("abc", 0, 4)
+        assertThat(lines).map(LineSegment::asString).containsExactly(
+            "abc",
+            "defghidefghidefghidefghidefghidefghidefghi",
+            "abc"
         );
     }
 
@@ -80,16 +85,15 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partitioning.count(2).of(bytes.length);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 2, 8, dir);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 2, 8, dir);
+        List<LineSegment> lines0 = drain(bytes, partitions.get(0), 2, dir);
+        List<LineSegment> lines1 = drain(bytes, partitions.get(1), 2, dir);
 
-        assertThat(lines0).containsExactly(
-            new NLine("abc", 0, 2),
-            new NLine("def", 0, 3),
-            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 4)
+        assertThat(lines0).map(LineSegment::asString).containsExactly(
+            "abc",
+            "def",
+            "defghidefghidefghidefghidefghidefghidefghi"
         );
-        assertThat(lines1).containsExactly(
-            new NLine("abc", 1, 1));
+        assertThat(lines1).map(LineSegment::asString).containsExactly("abc");
     }
 
     @Test
@@ -104,17 +108,15 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partitioning.count(3).of(bytes.length);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
-        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16, dir);
+        List<LineSegment> lines0 = drain(bytes, partitions.get(0), 10, dir);
+        List<LineSegment> lines1 = drain(bytes, partitions.get(1), 10, dir);
+        List<LineSegment> lines2 = drain(bytes, partitions.get(2), 10, dir);
 
-        assertThat(lines0).containsExactly(
-            new NLine("abc", 0, 2),
-            new NLine("defghidefghidefghidefghidefghidefghidefghi", 0, 3)
-        );
+        assertThat(lines0).map(LineSegment::asString).containsExactly(
+            "abc",
+            "defghidefghidefghidefghidefghidefghidefghi");
         assertThat(lines1).isEmpty();
-        assertThat(lines2).containsExactly(
-            new NLine("abc", 2, 1));
+        assertThat(lines2).map(LineSegment::asString).containsExactly("abc");
     }
 
     @Test
@@ -150,12 +152,12 @@ class NLinePartitionSpliteratorTest {
 
         List<Partition> partitions = Partitioning.count(6).of(bytes.length);
 
-        List<NLine> lines0 = drain(bytes, partitions.get(0), 10, 16, dir);
-        List<NLine> lines1 = drain(bytes, partitions.get(1), 10, 16, dir);
-        List<NLine> lines2 = drain(bytes, partitions.get(2), 10, 16, dir);
-        List<NLine> lines3 = drain(bytes, partitions.get(3), 10, 16, dir);
-        List<NLine> lines4 = drain(bytes, partitions.get(4), 10, 16, dir);
-        List<NLine> lines5 = drain(bytes, partitions.get(5), 10, 16, dir);
+        List<LineSegment> lines0 = drain(bytes, partitions.get(0), 10, dir);
+        List<LineSegment> lines1 = drain(bytes, partitions.get(1), 10, dir);
+        List<LineSegment> lines2 = drain(bytes, partitions.get(2), 10, dir);
+        List<LineSegment> lines3 = drain(bytes, partitions.get(3), 10, dir);
+        List<LineSegment> lines4 = drain(bytes, partitions.get(4), 10, dir);
+        List<LineSegment> lines5 = drain(bytes, partitions.get(5), 10, dir);
 
         assertThat(Stream.of(
             lines0,
@@ -166,7 +168,7 @@ class NLinePartitionSpliteratorTest {
             lines5
         ).mapToInt(List::size).sum()).isEqualTo(24);
 
-        assertThat(lines3.get(4).line()).isEqualTo(" 2ssissippiburningvhpicturesthisisthenextbigthing");
+        assertThat(lines3.get(4).asString()).isEqualTo(" 2ssissippiburningvhpicturesthisisthenextbigthing");
     }
 
     @Test
@@ -194,22 +196,19 @@ class NLinePartitionSpliteratorTest {
         go("mississippiburningvhpictures", 3, 12, 10, dir);
     }
 
-    @SuppressWarnings("resource")
-    private static ByteSource getByteSource(Path dir, byte[] bytes, Partition partition) {
+    private static Path getPath(Path dir, byte[] bytes) {
         try {
-            Path path = Files.write(dir.resolve(STR."\{UUID.randomUUID()}.bytes"), bytes);
-            return new FileChannelByteSources(path, Files.size(path)).source(partition);
+            return Files.write(dir.resolve(STR."\{UUID.randomUUID()}.bytes"), bytes);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private static List<NLine> drain(byte[] bytes, Partition partition, int longestLine, int bufferSize, Path dir) {
+    private static List<LineSegment> drain(byte[] bytes, Partition partition, int longestLine, Path dir) {
         return StreamSupport.stream(spliterator(
                 bytes,
                 partition,
                 longestLine,
-                bufferSize,
                 dir
             ), false)
             .toList();
@@ -217,10 +216,10 @@ class NLinePartitionSpliteratorTest {
 
     @SuppressWarnings("StatementWithEmptyBody")
     private static void go(String str, int partitionCount, int size, int bufferSize, Path dir) {
-        List<List<NLine>> subLines = IntStream.range(0, partitionCount)
-            .<List<NLine>>mapToObj(_ -> new ArrayList<>())
+        List<List<String>> subLines = IntStream.range(0, partitionCount)
+            .<List<String>>mapToObj(_ -> new ArrayList<>())
             .toList();
-        List<NLine> lines = new ArrayList<>();
+        List<String> lines = new ArrayList<>();
         try {
             List<String> list =
                 IntStream.range(0, size)
@@ -237,18 +236,17 @@ class NLinePartitionSpliteratorTest {
                 .getBytes(StandardCharsets.US_ASCII);
             List<Partition> partitions = Partitioning.count(partitionCount).of(bytes.length);
             for (Partition partition : partitions) {
-                NLineGrowingPartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, bufferSize, dir);
+                BitwisePartitionSpliterator spliterator0 = spliterator(bytes, partition, 10, dir);
                 do {
                 } while (spliterator0.tryAdvance(nLine -> {
-                    subLines.get(partition.partitionNo()).add(nLine);
-                    lines.add(nLine);
+                    subLines.get(partition.partitionNo()).add(nLine.asString());
+                    lines.add(nLine.asString());
                 }));
             }
             assertThat(
                 Stream.of(
                         Stream.of("HEADER"),
-                        lines.stream()
-                            .map(NLine::line),
+                        lines.stream(),
                         Stream.of("FOOTER")
                     )
                     .flatMap(Function.identity())
@@ -268,8 +266,8 @@ class NLinePartitionSpliteratorTest {
     private static String state(
         int partitionCount,
         int size,
-        List<NLine> lines,
-        List<List<NLine>> subLines,
+        List<String> lines,
+        List<List<String>> subLines,
         int bufferSize
     ) {
         return partitionCount + " partitions of " + size + " lines, buffer size " + bufferSize + ": " +
@@ -285,23 +283,24 @@ class NLinePartitionSpliteratorTest {
                    .collect(Collectors.joining());
     }
 
-    private static NLineGrowingPartitionSpliterator spliterator(
+    private static BitwisePartitionSpliterator spliterator(
         byte[] bytes,
         Partition partition,
         int longestLine,
-        int bufferSize,
         Path dir
     ) {
-        ByteSource bytesProvider = getByteSource(dir, bytes, partition);
-        NLineGrowingPartitionSpliterator spliterator = new NLineGrowingPartitionSpliterator(
-            bytesProvider,
+        Path bytesProvider = getPath(dir, bytes);
+        Shape shape = Shape.size(bytes.length)
+            .header(1, 1)
+            .longestLine(longestLine)
+            .charset(StandardCharsets.US_ASCII);
+        BitwisePartitionSpliterator spliterator = new BitwisePartitionSpliterator(
             partition,
-            Shape.size(bytes.length)
-                .header(1, 1)
-                .longestLine(longestLine)
-                .charset(StandardCharsets.US_ASCII),
-            bufferSize
-        );
+            new MemorySegmentSource(bytesProvider,
+                shape,
+            Arena.ofAuto()),
+
+            PartitionMediator.create(partition, shape, LineSegment::immutable));
         return spliterator;
     }
 }

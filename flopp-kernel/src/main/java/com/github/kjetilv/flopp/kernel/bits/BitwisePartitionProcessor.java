@@ -13,9 +13,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class BitwisePartitionProcessor implements Closeable {
+public class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
 
-    private final BitwisePartitionedMapper bitwisePartitionedMapper;
+    private final PartitionedMapper partitionedMapper;
 
     private final LinesWriterFactory<Path> linesWriterFactory;
 
@@ -28,14 +28,14 @@ public class BitwisePartitionProcessor implements Closeable {
     private final Charset charset;
 
     public BitwisePartitionProcessor(
-        BitwisePartitionedMapper bitwisePartitionedMapper,
+        PartitionedMapper partitionedMapper,
         List<Partition> partitions,
         Charset charset,
         LinesWriterFactory<Path> linesWriterFactory,
         TempTargets<Path> tempTargets,
         Transfers<Path> transfers
     ) {
-        this.bitwisePartitionedMapper = Objects.requireNonNull(bitwisePartitionedMapper, "partitionedMapper");
+        this.partitionedMapper = Objects.requireNonNull(partitionedMapper, "partitionedMapper");
         this.linesWriterFactory = Objects.requireNonNull(linesWriterFactory, "linesWriterFactory");
         this.tempTargets = Objects.requireNonNull(tempTargets, "tempTargets");
         this.transfers = Objects.requireNonNull(transfers, "transfers");
@@ -43,6 +43,7 @@ public class BitwisePartitionProcessor implements Closeable {
         this.charset = charset;
     }
 
+    @Override
     public void process(Function<LineSegment, String> processor, ExecutorService executorService) {
         ResultCollector<Path> collector =
             new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
@@ -62,7 +63,7 @@ public class BitwisePartitionProcessor implements Closeable {
                     };
                 futures(
                     processing,
-                    bitwisePartitionedMapper,
+                    partitionedMapper,
                     executorService
                 ).forEach(collector::collect);
             },
@@ -88,7 +89,7 @@ public class BitwisePartitionProcessor implements Closeable {
 
     private static Stream<CompletableFuture<PartitionResult<Path>>> futures(
         BiFunction<Partition, Stream<LineSegment>, Path> processor,
-        BitwisePartitionedMapper mapper,
+        PartitionedMapper mapper,
         ExecutorService executorService
     ) {
         return mapper.map(processor, executorService);

@@ -45,9 +45,9 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.stats().longestLine() + 2
         );
-        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
         try (
-            BitwisePartitionStreamers streamers = bitwisePartitioned.streamers();
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             List<CompletableFuture<Map<String, Result>>> list = streamers.streamers()
