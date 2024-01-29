@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
-//        runSpull();
         runJava();
     }
 
@@ -46,7 +45,7 @@ public final class CalculateAverage_kjetilvlong {
             shape.stats().longestLine() + 2
         );
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             System.out.println(Duration.between(start, Instant.now()));
