@@ -21,16 +21,34 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     private final MutableLine line;
 
+    /**
+     * Currently loaded data: 8 bytes
+     */
     private long currentLong;
 
+    /**
+     * Current offset into {@link #currentLong}
+     */
     private int currentLongOffset;
 
+    /**
+     * Current offset into partition, aligned to long size (8 bytes)
+     */
     private long longAlignedOffset;
 
+    /**
+     * Current offset into partition
+     */
     private long offset;
 
+    /**
+     * Position of line in progress
+     */
     private long lineStart;
 
+    /**
+     * Mask of {@link #currentLong}
+     */
     private long mask;
 
     public BitwisePartitionSpliterator(
