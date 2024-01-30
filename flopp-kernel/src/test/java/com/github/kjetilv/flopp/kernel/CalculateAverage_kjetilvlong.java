@@ -34,7 +34,7 @@ public final class CalculateAverage_kjetilvlong {
         runJava();
     }
 
-    private static final String FILE = "./measurements_1_000_000.txt";
+    private static final String FILE = "./measurements.txt";
 
     private static void runJava() {
         Instant start = Instant.now();
