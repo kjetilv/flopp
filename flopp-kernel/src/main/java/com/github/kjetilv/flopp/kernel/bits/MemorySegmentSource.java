@@ -11,6 +11,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
@@ -22,11 +23,15 @@ public final class MemorySegmentSource implements Closeable {
 
     private final Shape shape;
 
-    private final Arena arena;
+    private final Supplier<Arena> arena;
 
     private final FileChannel channel;
 
     public MemorySegmentSource(Path path, Shape shape, Arena arena) {
+        this(path, shape, delayed(arena));
+    }
+
+    public MemorySegmentSource(Path path, Shape shape, Supplier<Arena> arena) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.arena = Objects.requireNonNull(arena, "arena");
@@ -39,7 +44,7 @@ public final class MemorySegmentSource implements Closeable {
         long offset = partition.offset();
         long length = length(partition);
         try {
-            return channel.map(READ_ONLY, offset, length, arena);
+            return channel.map(READ_ONLY, offset, length, arena.get());
         } catch (IOException e) {
             throw new IllegalStateException(STR."\{this} could not open [\{offset}-\{length}] for \{partition}", e);
         }
@@ -66,6 +71,11 @@ public final class MemorySegmentSource implements Closeable {
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} could not access file", e);
         }
+    }
+
+    private static Supplier<Arena> delayed(Arena arena) {
+        Objects.requireNonNull(arena, "arena");
+        return () -> arena;
     }
 
     private long length(Partition partition) {

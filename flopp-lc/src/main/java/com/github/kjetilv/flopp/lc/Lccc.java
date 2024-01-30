@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreams;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -11,8 +12,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 
@@ -35,9 +35,6 @@ public final class Lccc {
 
     }
 
-    public static final ExecutorService EXECUTOR_SERVICE =
-        new ForkJoinPool(Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64).partitionCount(true));
-
     @SuppressWarnings("unused")
     private static long count(Stream<Path> paths) {
         return paths.map(path -> {
@@ -54,12 +51,11 @@ public final class Lccc {
     private static Count count(Path path) {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
-        BitwisePartitionStreams streamers = new BitwisePartitionStreams(path, shape,
-            partitioning.of(shape.size())
-        );
-        List<CompletableFuture<Long>> futures = streamers.streamers(EXECUTOR_SERVICE)
-            .map(completableStreamer ->
-                completableStreamer.thenApply(Lccc::count))
+        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+        Stream<PartitionedStreams.PartitionStreamer> streamers = bitwisePartitioned.streams().streamers();
+        List<CompletableFuture<Long>> futures = streamers
+            .map(streamer ->
+                CompletableFuture.supplyAsync(() -> count(streamer), Executors.newVirtualThreadPerTaskExecutor()))
             .onClose(streamers::close)
             .toList();
         long sum = futures.stream().mapToLong(CompletableFuture::join).sum();
@@ -86,8 +82,7 @@ public final class Lccc {
 
     private static long count(PartitionedStreams.PartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
-        streamer.lines()
-            .forEach(lineSegment -> longAdder.increment());
+        streamer.lines().forEach(_ -> longAdder.increment());
         return longAdder.longValue();
     }
 
