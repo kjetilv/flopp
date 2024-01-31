@@ -17,6 +17,8 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.*;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
@@ -86,18 +87,13 @@ public final class CalculateAverage_kjetilvlong {
         try (lines) {
             Map<String, Result> m = new HashMap<>(1024, 1.0f);
             lines
-                .forEach(seg -> {
-                    long length = seg.length(); //segment.length();
-                    byte[] bytes = LineSegments.toBytes(seg);
-                    int splitIndex = -1;
-                    for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
-                        if (bytes[i] == ';') {
-                            splitIndex = i;
-                            break;
-                        }
-                    }
-                    int value = parseValue(Math.toIntExact(length), splitIndex, bytes);
-                    String key = new String(bytes, 0, splitIndex);
+                .forEach(ls -> {
+                    long offset = ls.offset();
+                    long length = ls.length(); //segment.length();
+                    MemorySegment memorySegment = ls.memorySegment();
+                    int splitIndex = semiIndex(ls, length);
+                    int value = parseValue(offset, Math.toIntExact(length), splitIndex, memorySegment);
+                    String key = ls.asString(splitIndex);
                     m.compute(key, (_, result) ->
                         result == null ? new Result(value) : result.collect(value));
                 });
@@ -105,12 +101,21 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static int parseValue(int length, int splitIndex, byte[] bytes) {
+    private static int semiIndex(LineSegment ls, long length) {
+        for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
+            if (ls.byteAt(i) == ';') {
+                return i;
+            }
+        }
+        throw new IllegalStateException(STR."No split in \{ls.asString()}");
+    }
+
+    private static int parseValue(long offset, int length, int splitIndex, MemorySegment memorySegment) {
         int value = 0;
         int boundary = splitIndex + 1;
         int pos = 1;
         for (int i = length - 1; i >= boundary; i--) {
-            byte b = bytes[i];
+            byte b = memorySegment.get(ValueLayout.JAVA_BYTE, offset + i);
             if (b == '.') {
                 continue;
             }
