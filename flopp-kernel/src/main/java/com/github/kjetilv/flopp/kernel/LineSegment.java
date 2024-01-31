@@ -1,10 +1,15 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SuppressWarnings("unused")
 public interface LineSegment {
+
+    static LineSegment of(MemorySegment memorySegment, long offset, long length) {
+        return new ImmutableLine(memorySegment, offset, length);
+    }
 
     MemorySegment memorySegment();
 
@@ -49,6 +54,6 @@ public interface LineSegment {
     }
 
     default byte byteAt(int i ) {
-        return memorySegment().get(ValueLayout.JAVA_BYTE, offset() + i);
+        return memorySegment().get(JAVA_BYTE, offset() + i);
     }
 }
