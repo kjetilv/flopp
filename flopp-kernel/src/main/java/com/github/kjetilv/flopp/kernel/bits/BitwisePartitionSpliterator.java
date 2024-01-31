@@ -112,7 +112,8 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             }
             while (mask != 0) { // feedLines unrolled
 //                { // progressMask unrolled
-                offset += Long.numberOfTrailingZeros(mask) / alignment;
+                int leap = Long.numberOfTrailingZeros(mask) / alignment;
+                offset = alignedOffset + leap;
 //                }
 //                { // feedLine runrolled
                 long shift = offset - lineStart;
@@ -178,7 +179,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     }
 
     private void progressMask() {
-        offset += Long.numberOfTrailingZeros(mask) / alignment;
+        offset = alignedOffset + Long.numberOfTrailingZeros(mask) / alignment;
     }
 
     private long loadBytes(long count) {
