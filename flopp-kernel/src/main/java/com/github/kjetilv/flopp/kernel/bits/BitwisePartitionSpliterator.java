@@ -118,8 +118,8 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
                 long shift = offset - lineStart;
 
                 line.offset = lineStart;
-                line.length = shift - 1;
-                lineStart += shift;
+                line.length = shift;
+                lineStart += shift + 1;
 
                 action.accept(line);
 //                }
@@ -160,7 +160,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
         line.offset = lineStart;
         line.length = shift;
-        lineStart += shift;
+        lineStart += shift + 1;
 
         action.accept(line);
     }
