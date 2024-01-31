@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
 
-import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;

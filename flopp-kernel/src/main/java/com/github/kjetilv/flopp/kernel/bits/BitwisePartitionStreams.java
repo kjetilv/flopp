@@ -30,7 +30,7 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
             throw new IllegalArgumentException("No partitions receveid");
         }
 
-        this.memorySegmentSource = new MemorySegmentSource(path, shape, Arena::ofConfined);
+        this.memorySegmentSource = new MemorySegmentSource(path, shape, Arena::ofAuto);
     }
 
     public Stream<PartitionStreamer> streamers() {

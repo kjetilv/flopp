@@ -20,6 +20,16 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         this.alignment = Non.negativeOrZero(alignment, "alignment");
     }
 
+    public long length(Shape shape) {
+        if (shape.limitsLineLength()) {
+            return Math.min(
+                shape.size() - offset,
+                bufferedTo(shape.stats().longestLine() + 1)
+            );
+        }
+        throw new IllegalStateException(STR."Shape does not specify max line length: \{shape}");
+    }
+
     @Override
     public int compareTo(Partition o) {
         return Integer.compare(partitionNo, o.partitionNo);

@@ -42,12 +42,16 @@ public final class MemorySegmentSource implements Closeable {
 
     public MemorySegment open(Partition partition) {
         long offset = partition.offset();
-        long length = length(partition);
+        long length = partition.length(shape);
         try {
             return channel.map(READ_ONLY, offset, length, arena.get());
         } catch (IOException e) {
             throw new IllegalStateException(STR."\{this} could not open [\{offset}-\{length}] for \{partition}", e);
         }
+    }
+
+    public MemorySegmentHandler handlerFor(Partition partition) {
+        return new MemorySegmentHandler(partition, shape, channel, arena.get());
     }
 
     @Override
@@ -56,7 +60,7 @@ public final class MemorySegmentSource implements Closeable {
             channel.close();
             randomAccessFile.close();
         } catch (Exception e) {
-            throw new IllegalStateException(this + " failed to close", e);
+            throw new IllegalStateException(STR."\{this} failed to close", e);
         }
     }
 
@@ -77,13 +81,4 @@ public final class MemorySegmentSource implements Closeable {
         Objects.requireNonNull(arena, "arena");
         return () -> arena;
     }
-
-    private long length(Partition partition) {
-        if (shape.limitsLineLength()) {
-            return Math.min(
-                shape.size() - partition.offset(),
-                partition.bufferedTo(shape.stats().longestLine() + 1)
-            );
-        }
-        throw new IllegalStateException(STR."Shape does not specify max line length: \{shape}");
-    }}
+}

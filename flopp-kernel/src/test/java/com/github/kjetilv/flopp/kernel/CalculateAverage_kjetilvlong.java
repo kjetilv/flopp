@@ -39,11 +39,11 @@ public final class CalculateAverage_kjetilvlong {
     private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
-        Shape shape = Shape.of(path).longestLine(64);
+        Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.longAligned(
             Runtime.getRuntime().availableProcessors(),
             shape.stats().longestLine() + 2
-        );
+        ).scaled(2);
         try (
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
