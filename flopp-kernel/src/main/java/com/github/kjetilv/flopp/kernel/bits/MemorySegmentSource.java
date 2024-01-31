@@ -41,17 +41,23 @@ public final class MemorySegmentSource implements Closeable {
     }
 
     public MemorySegment open(Partition partition) {
-        long offset = partition.offset();
-        long length = partition.length(shape);
         try {
-            return channel.map(READ_ONLY, offset, length, arena.get());
+            return channel.map(
+                READ_ONLY,
+                partition.offset(),
+                partition.length(shape),
+                arena.get()
+            );
         } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} could not open [\{offset}-\{length}] for \{partition}", e);
+            throw new IllegalStateException(
+                STR."\{this} could not open [\{partition.offset()}-\{partition.length(shape)}] for \{partition}",
+                e
+            );
         }
     }
 
     public MemorySegmentHandler handlerFor(Partition partition) {
-        return new MemorySegmentHandler(partition, shape, channel, arena.get());
+        return new MemorySegmentHandler(partition, shape, () -> open(partition));
     }
 
     @Override

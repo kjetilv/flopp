@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
 public final class CalculateAverage_kjetilvlong {
@@ -42,7 +43,7 @@ public final class CalculateAverage_kjetilvlong {
         Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.longAligned(
             Runtime.getRuntime().availableProcessors(),
-            shape.stats().longestLine() + 2
+            shape.stats().longestLine()
         ).scaled(2);
         try (
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
@@ -53,7 +54,7 @@ public final class CalculateAverage_kjetilvlong {
                 .map(streamer ->
                     CompletableFuture.supplyAsync(
                         streamer::lines,
-                        Executors.newVirtualThreadPerTaskExecutor()
+                        new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2)
                     ))
                 .map(future ->
                     future.thenApply(
