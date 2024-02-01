@@ -41,7 +41,8 @@ class NLinePartitionSpliteratorTest {
             new MemorySegmentSource(path,
                 shape,
                 Arena.ofAuto()),
-            PartitionMediator.create(partition, shape, LineSegment::immutable)
+            PartitionMediator.create(partition, shape, LineSegment::immutable),
+            null
         );
         List<String> lines = new ArrayList<>();
         while (spliterator.tryAdvance(e -> lines.add(e.asString()))) {
@@ -300,7 +301,8 @@ class NLinePartitionSpliteratorTest {
                 shape,
             Arena.ofAuto()),
 
-            PartitionMediator.create(partition, shape, LineSegment::immutable));
+            PartitionMediator.create(partition, shape, LineSegment::immutable),
+            null);
         return spliterator;
     }
 }

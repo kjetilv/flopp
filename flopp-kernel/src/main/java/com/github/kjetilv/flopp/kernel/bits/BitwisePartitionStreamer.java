@@ -8,33 +8,33 @@ import java.util.stream.StreamSupport;
 
 public final class BitwisePartitionStreamer implements PartitionedStreams.PartitionStreamer {
 
-    private final Shape shape;
-
-    private final MemorySegmentSource memorySegmentSource;
-
     private final Partition partition;
 
-    public BitwisePartitionStreamer(Partition partition, Shape shape, MemorySegmentSource memorySegmentSource) {
+    private final BitwisePartitionSpliterator spliterator;
+
+    public BitwisePartitionStreamer(
+        Partition partition,
+        Shape shape,
+        MemorySegmentSource memorySegmentSource,
+        BitwisePartitionStreamer next
+    ) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.shape = Objects.requireNonNull(shape, "shape");
-        this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
+        this.spliterator = new BitwisePartitionSpliterator(
+            partition,
+            memorySegmentSource,
+            LineSegments.mediator(partition, shape),
+            next == null ? null : next.spliterator
+        );
+    }
+
+    @Override
+    public Stream<LineSegment> lines() {
+        return StreamSupport.stream(spliterator, false);
     }
 
     @Override
     public Partition partition() {
         return partition;
-    }
-
-    @Override
-    public Stream<LineSegment> lines() {
-        return StreamSupport.stream(
-            new BitwisePartitionSpliterator(
-                partition,
-                memorySegmentSource,
-                LineSegments.mediator(partition, shape)
-            ),
-            false
-        );
     }
 
     @Override

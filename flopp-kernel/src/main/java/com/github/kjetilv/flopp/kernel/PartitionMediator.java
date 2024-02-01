@@ -11,23 +11,21 @@ public final class PartitionMediator<T> implements Mediator<T> {
     public static <T> Mediator<T> create(
         Partition partition,
         Shape shape,
-        Function<T, T> copy
+        Function<T, T> copier
     ) {
-        if (shape != null) {
-            boolean overhead = shape.hasOverhead();
-            if (overhead) {
-                boolean first = partition.first();
-                boolean last = partition.last();
-                if (first && last) {
-                    return new PartitionMediator<>(shape.header(), shape.footer(), copy);
-                }
-                if (first) {
-                    return new PartitionMediator<>(shape.header(), 0, null);
-                }
-                if (last && shape.footer() > 0) {
-                    return new PartitionMediator<>(0, shape.footer(), copy);
-                }
-            }
+        if (shape == null || !shape.hasOverhead()) {
+            return null;
+        }
+        boolean first = partition.first();
+        boolean last = partition.last();
+        if (first && last) {
+            return new PartitionMediator<>(shape.header(), shape.footer(), copier);
+        }
+        if (first) {
+            return new PartitionMediator<>(shape.header(), 0, null);
+        }
+        if (last && shape.footer() > 0) {
+            return new PartitionMediator<>(0, shape.footer(), copier);
         }
         return null;
     }

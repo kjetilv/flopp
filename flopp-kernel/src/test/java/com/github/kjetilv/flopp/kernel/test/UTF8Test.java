@@ -17,16 +17,20 @@ public class UTF8Test {
     @Test
     void test() {
         Path path = path("measurements-complex-utf8.txt");
-        PartitionedStreams streams = new BitwisePartitioned(
-            path,
-            Partitioning.longAligned(3, 512),
-            Shape.of(path).longestLine(512)
-        ).streams();
-        StringBuilder sb = new StringBuilder();
-        try {
-            extract(streams, sb);
-        } catch (Exception e) {
-            e.printStackTrace();
+        StringBuilder sb;
+        try (
+            PartitionedStreams streams = new BitwisePartitioned(
+                path,
+                Partitioning.longAligned(3, 512),
+                Shape.of(path).longestLine(512)
+            ).streams()
+        ) {
+            sb = new StringBuilder();
+            try {
+                extract(streams, sb);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         assertThat(path).content()
@@ -36,16 +40,20 @@ public class UTF8Test {
     @Test
     void test2() {
         Path path = path("a.txt");
-        PartitionedStreams streams = new BitwisePartitioned(
-            path,
-            Partitioning.longAligned(3, 40),
-            Shape.of(path).longestLine(40)
-        ).streams();
-        StringBuilder sb = new StringBuilder();
-        try {
-            extract(streams, sb);
-        } catch (Exception e) {
-            e.printStackTrace();
+        StringBuilder sb;
+        try (
+            PartitionedStreams streams = new BitwisePartitioned(
+                path,
+                Partitioning.longAligned(3, 40),
+                Shape.of(path).longestLine(40)
+            ).streams()
+        ) {
+            sb = new StringBuilder();
+            try {
+                extract(streams, sb);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         assertThat(path).content()

@@ -1,15 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 
 import java.lang.foreign.Arena;
 import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 public final class BitwisePartitionStreams implements PartitionedStreams {
@@ -29,19 +26,12 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         if (this.partitions.isEmpty()) {
             throw new IllegalArgumentException("No partitions receveid");
         }
-
         this.memorySegmentSource = new MemorySegmentSource(path, shape, Arena::ofAuto);
     }
 
-    public Stream<PartitionStreamer> streamers() {
-        return partitions.stream().map(this::streamer);
-    }
-
-    public Stream<CompletableFuture<BitwisePartitionStreamer>> streamers(ExecutorService executor) {
-        Objects.requireNonNull(executor, "executor");
-        return partitions.stream()
-            .map(partition ->
-                CompletableFuture.supplyAsync(() -> streamer(partition), executor));
+    @Override
+    public Stream<? extends PartitionStreamer> streamers() {
+        return streamers(new LinkedList<>(partitions)).stream();
     }
 
     @Override
@@ -58,7 +48,24 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/ partitions:\{partitions.size()}]";
     }
 
-    private BitwisePartitionStreamer streamer(Partition partition) {
-        return new BitwisePartitionStreamer(partition, shape, memorySegmentSource);
+    private LinkedList<BitwisePartitionStreamer> streamers(
+        LinkedList<Partition> partitionsTail
+    ) {
+        if (partitionsTail.isEmpty()) {
+            return new LinkedList<>();
+        }
+        Partition head = partitionsTail.removeFirst();
+        LinkedList<BitwisePartitionStreamer> streamersTail = streamers(partitionsTail);
+        BitwisePartitionStreamer nextStreamer = streamersTail.isEmpty()
+            ? null
+            : streamersTail.getFirst();
+        BitwisePartitionStreamer streamer = new BitwisePartitionStreamer(
+            head,
+            shape,
+            memorySegmentSource,
+            nextStreamer
+        );
+        streamersTail.addFirst(streamer);
+        return streamersTail;
     }
 }

@@ -5,19 +5,15 @@ import java.util.stream.Stream;
 
 public interface PartitionedStreams extends Closeable {
 
-    Stream<PartitionStreamer> streamers();
+    Stream<? extends PartitionStreamer> streamers();
 
     @Override
     default void close() {
     }
 
-    interface PartitionStreamer extends Closeable {
+    interface PartitionStreamer {
 
         Stream<LineSegment> lines();
-
-        @Override
-        default void close() {
-        }
 
         Partition partition();
     }

@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.lang.foreign.ValueLayout;
+
 public record Partition(int partitionNo, int partitionCount, long offset, long count, int alignment)
     implements Comparable<Partition> {
 
@@ -48,7 +50,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
     }
 
     public boolean isLongAligned() {
-        return alignment == 8 && isAligned();
+        return alignment == ValueLayout.JAVA_LONG.byteAlignment() && isAligned();
     }
 
     public boolean isAligned() {
@@ -61,11 +63,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
 
     @Override
     public String toString() {
-        String pos = first() ? "<"
-            : last() ? ">"
-                : "";
+        String pos1 = first() ? "<" : "";
+        String pos2 = last() ? ">" : "";
         String frac = first() || last() ? "" : STR."/\{partitionCount}";
-        return STR."\{getClass().getSimpleName()}[\{pos}\{partitionNo + 1}\{frac}@\{offset}+\{count}]";
+        return STR."\{getClass().getSimpleName()}[\{pos1}\{partitionNo + 1}\{frac}\{pos2}@\{offset}+\{count}]";
     }
 
     public long bufferedTo(int size) {
