@@ -29,7 +29,7 @@ public class IndexingLineCounter implements LineCounter {
         try (InputStream inputStream = bytes(path)) {
             return lineCount(inputStream);
         } catch (Exception e) {
-            throw new IllegalStateException("Could not count lines: " + path, e);
+            throw new IllegalStateException(STR."Could not count lines: \{path}", e);
         }
     }
 
@@ -39,14 +39,21 @@ public class IndexingLineCounter implements LineCounter {
             try (InputStream inputStream = bytes(path)) {
                 return lines(inputStream);
             } catch (Exception e) {
-                throw new IllegalStateException("Could not count lines: " + path, e);
+                throw new IllegalStateException(STR."Could not count lines: \{path}", e);
             }
         }
-        throw new IllegalStateException("Empty file: " + path);
+        throw new IllegalStateException(STR."Empty file: \{path}");
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{
+            getClass().getSimpleName()
+            }[\{shape} / \{partitioning}]";
     }
 
     private ByteIndexEstimator lines(InputStream is) {
-        byte[] buffer = new byte[partitioning.bufferSize()];
+        byte[] buffer = new byte[BUFFER_SIZE];
         ByteIndexEstimator estimator = new ByteIndexEstimator(shape, partitioning, scanResolution);
         long offset = 0;
         while (true) {
@@ -54,7 +61,7 @@ public class IndexingLineCounter implements LineCounter {
             try {
                 b = is.read(buffer);
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to read from " + is, e);
+                throw new IllegalStateException(STR."Failed to read from \{is}", e);
             }
             if (b < 0) {
                 return estimator;
@@ -68,15 +75,28 @@ public class IndexingLineCounter implements LineCounter {
         }
     }
 
-    private long lineCount(InputStream is) {
-        byte[] buffer = new byte[partitioning.bufferSize()];
+    public static final int BUFFER_SIZE = 8192;
+
+    private static InputStream bytes(Path path) {
+        try {
+            return new BufferedInputStream(
+                Files.newInputStream(path, StandardOpenOption.READ),
+                BUFFER_SIZE
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."Failed to read: \{path}", e);
+        }
+    }
+
+    private static long lineCount(InputStream is) {
+        byte[] buffer = new byte[BUFFER_SIZE];
         long c = 0;
         while (true) {
             int b;
             try {
                 b = is.read(buffer);
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to read from " + is, e);
+                throw new IllegalStateException(STR."Failed to read from \{is}", e);
             }
             if (b < 0) {
                 return c;
@@ -87,21 +107,5 @@ public class IndexingLineCounter implements LineCounter {
                 }
             }
         }
-    }
-
-    private InputStream bytes(Path path) {
-        try {
-            return new BufferedInputStream(
-                Files.newInputStream(path, StandardOpenOption.READ),
-                partitioning.bufferSize()
-            );
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to read: " + path, e);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + shape + " / " + partitioning + "]";
     }
 }

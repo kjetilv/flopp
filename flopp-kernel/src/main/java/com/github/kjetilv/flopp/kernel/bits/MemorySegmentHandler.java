@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
@@ -27,7 +28,7 @@ public final class MemorySegmentHandler {
         this.memorySegmentSupplier =
             Objects.requireNonNull(memorySegmentSupplier, "memorySegmentSupplier");
         long length = partition.length(shape);
-        tail = Math.toIntExact(length % partition.alignment());
+        tail = Math.toIntExact(length % Partitioning.ALIGNMENT);
         tailPos = length - tail;
     }
 

@@ -13,19 +13,12 @@ public class BitwisePartitioned implements Partitioned<Path> {
 
     private final Path path;
 
-    private final Partitioning partitioning;
-
     private final Shape shape;
 
     private final List<Partition> partitions;
 
-    public BitwisePartitioned(
-        Path path,
-        Partitioning partitioning,
-        Shape shape
-    ) {
+    public BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
         this.path = path;
-        this.partitioning = partitioning;
         this.shape = shape;
         this.partitions = partitioning.of(shape.size());
     }
@@ -61,14 +54,16 @@ public class BitwisePartitioned implements Partitioned<Path> {
             mapper(),
             partitions,
             shape.charset(),
-            this::writer,
+            BitwisePartitioned::writer,
             tempTargets(path),
             transfers(target)
         );
     }
 
-    private MemoryMappedByteArrayLinesWriter writer(Path target, Charset charset) {
-        return new MemoryMappedByteArrayLinesWriter(target, partitioning.bufferSize(), charset);
+    private static final int BUFFER_SIZE = 8192;
+
+    private static MemoryMappedByteArrayLinesWriter writer(Path target, Charset charset) {
+        return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
     }
 
     private static Transfers<Path> transfers(Path target) {

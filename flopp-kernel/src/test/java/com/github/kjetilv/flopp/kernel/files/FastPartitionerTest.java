@@ -76,12 +76,12 @@ public class FastPartitionerTest {
             new Shape.Decor(1, 1)
         );
 
-        Shape shape = Shape.size(Files.size(file)).header(1, 1).longestLine(128);
+        Shape shape = Shape.size(Files.size(file)).headerFooter(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
             Partitioned<Path> partitioned = new BitwisePartitioned(
                 file,
-                Partitioning.longAligned(partitionCount, 10),
+                Partitioning.create(partitionCount, 10),
                 shape
             );
             PartitionedStreams streams = partitioned.streams()
@@ -106,11 +106,11 @@ public class FastPartitionerTest {
             new Shape.Decor(1, 1)
         );
 
-        Shape shape = Shape.size(Files.size(file)).longestLine(32).header(1, 1);
+        Shape shape = Shape.size(Files.size(file)).longestLine(32).headerFooter(1, 1);
         try (
             Partitioned<Path> partitioned = new BitwisePartitioned(
                 file,
-                Partitioning.longAligned(partitionCount, 10),
+                Partitioning.create(partitionCount, 10),
                 shape
             )
         ) {
@@ -144,8 +144,8 @@ public class FastPartitionerTest {
             throw new RuntimeException(e);
         }
 
-        Partitioning partitioning = Partitioning.longAligned(partitionCount, longestLine);
-        Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).header(1, 1);
+        Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
+        Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).headerFooter(1, 1);
         try (
             BitwisePartitionStreams bitwisePartitionStreams =
                 new BitwisePartitionStreams(file, shape, partitioning.of(shape.size()))

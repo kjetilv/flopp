@@ -31,7 +31,7 @@ public class BitwisePartitionedMapper implements PartitionedMapper {
 
     private static <T> Supplier<T> lines(
         BiFunction<Partition, Stream<LineSegment>, T> processor,
-        PartitionedStreams.PartitionStreamer streamer
+        PartitionStreamer streamer
     ) {
         return () -> processor.apply(streamer.partition(), streamer.lines());
     }

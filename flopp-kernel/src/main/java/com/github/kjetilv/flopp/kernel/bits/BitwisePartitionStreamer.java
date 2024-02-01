@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class BitwisePartitionStreamer implements PartitionedStreams.PartitionStreamer {
+public final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
 

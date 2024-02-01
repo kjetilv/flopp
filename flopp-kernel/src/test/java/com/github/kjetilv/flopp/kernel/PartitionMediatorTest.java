@@ -13,7 +13,7 @@ class PartitionMediatorTest {
     @Test
     void oneByOne() {
         Mediator<Integer> mediator =
-            PartitionMediator.create(new Partition(0, 1, 0, 100), Shape.size(100).header(1, 2), null);
+            PartitionMediator.create(new Partition(0, 1, 0, 100), Shape.size(100).headerFooter(1, 2), null);
         List<Integer> foos = new ArrayList<>();
         Consumer<Integer> consumer = (Consumer<Integer>) mediator.apply(foos::add);
         consumer.accept(1);

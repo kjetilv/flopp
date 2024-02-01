@@ -55,7 +55,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
         this.partition = Objects.requireNonNull(partition, "partition");
         this.mediator = mediator;
-        this.next = partition.last() ? null : Objects.requireNonNull(next, "next");
+        this.next = next;
 
         this.line.memorySegment = memorySegment = memorySegmentSource.open(partition);
     }
@@ -66,12 +66,11 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             if (!partition.first()) {
                 skipToStart();
             }
-            long limit = partition.count();
             Consumer<LineSegment> consumer = mediate(action);
             if (!partition.last()) {
-                processAligned(consumer, limit);
+                processAligned(consumer);
             } else {
-                processTail(consumer, limit);
+                processTail(consumer);
             }
             return false;
         } catch (Exception e) {
@@ -82,6 +81,24 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     @Override
     public String toString() {
         return STR."\{getClass().getSimpleName()}[offset:\{offset} \{partition}]";
+    }
+
+    private Stream<MemorySegment> head() {
+        long headOffset = 0;
+        long headMask = 0L;
+        long limit = partition.count();
+        do {
+            long l = memorySegment.get(JAVA_LONG, headOffset);
+            headMask = mask(l);
+            if (headMask != 0) {
+                long leap = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+                return Stream.of(memorySegment.asSlice(0, headOffset + leap));
+            } else {
+                headOffset += ALIGNMENT;
+            }
+        } while (headOffset < limit);
+        Stream<MemorySegment> all = Stream.of(memorySegment);
+        return next == null ? all : Stream.concat(all, next.head());
     }
 
     @SuppressWarnings("unchecked")
@@ -102,7 +119,8 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         lineStart = offset;
     }
 
-    private void processAligned(Consumer<LineSegment> action, long limit) {
+    private void processAligned(Consumer<LineSegment> action) {
+        long limit = partition.count();
         while (offset <= limit) {
             while (mask == 0) {
 //                { // loadLong unrolled
@@ -133,10 +151,9 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         }
     }
 
-    private void processTail(Consumer<LineSegment> action, long limit) {
-        long tail = partition.last()
-            ? partition.count() % partition.alignment()
-            : 0L;
+    private void processTail(Consumer<LineSegment> action) {
+        long limit = partition.count();
+        long tail = partition.count() % ALIGNMENT;
         long lastLoadableOffset = limit - tail - ALIGNMENT;
         while (offset < limit) {
             while (mask == 0 && offset < lastLoadableOffset) {

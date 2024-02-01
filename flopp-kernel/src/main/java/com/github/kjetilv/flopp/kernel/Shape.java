@@ -8,10 +8,10 @@ import java.util.Objects;
 import java.util.function.LongSupplier;
 
 @SuppressWarnings("unused")
-public record Shape(long size, Charset charset, Decor decor, Stats stats) {
+public record Shape(long size, Charset charset, Decor decor, long longestLine) {
 
     public static Shape decor(int header, int footer) {
-        return new Shape(-1, null, new Decor(header, footer), null);
+        return new Shape(-1, null, new Decor(header, footer), 0);
     }
 
     public static Shape size(long size) {
@@ -30,34 +30,34 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public Shape(long size) {
-        this(size, null, null, null);
+        this(size, null, null, 0);
     }
 
-    public Shape(long size, Charset charset, Decor decor, Stats stats) {
+    public Shape(long size, Charset charset, Decor decor, long longestLine) {
         this.size = Math.max(-1, size);
         this.charset = charset == null ? StandardCharsets.UTF_8 : charset;
         this.decor = decor == null ? new Decor() : decor;
-        this.stats = stats;
+        this.longestLine = longestLine;
     }
 
     public Shape(long size, Charset charset) {
-        this(size, charset, null, null);
+        this(size, charset, null, 0);
     }
 
     public Shape(long size, Decor decor) {
-        this(size, null, decor, null);
+        this(size, null, decor, 0);
     }
 
     public Shape(long size, Charset charset, Decor decor) {
-        this(size, charset, decor, null);
+        this(size, charset, decor, 0);
     }
 
-    public Shape header(int header, int footer) {
-        return new Shape(size, charset, new Decor(header, footer), stats);
+    public Shape headerFooter(int header, int footer) {
+        return new Shape(size, charset, new Decor(header, footer), longestLine);
     }
 
     public Shape header(int header) {
-        return new Shape(size, charset, new Decor(header), stats);
+        return new Shape(size, charset, new Decor(header), longestLine);
     }
 
     public Shape utf8() {
@@ -65,7 +65,7 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
     }
 
     public Shape charset(Charset charset) {
-        return new Shape(size, Objects.requireNonNull(charset, "charset"), decor, stats);
+        return new Shape(size, Objects.requireNonNull(charset, "charset"), decor, longestLine);
     }
 
     public Shape iso8859_1() {
@@ -74,7 +74,7 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
 
     public Shape sized(LongSupplier sizeSupplier) {
         return this.size < 0
-            ? new Shape(sizeSupplier.getAsLong(), charset(), decor(), stats())
+            ? new Shape(sizeSupplier.getAsLong(), charset(), decor(), longestLine)
             : this;
     }
 
@@ -86,23 +86,12 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
         return decor().footer();
     }
 
-    public boolean hasStats() {
-        return stats != null;
-    }
-
     public boolean limitsLineLength() {
-        return stats != null && stats.limitsLineLength();
-    }
-
-    public int longestLine() {
-        if (stats == null ) {
-            throw new IllegalStateException(STR."No stats defined in \{this}");
-        }
-        return stats.longestLine();
+        return longestLine > 0;
     }
 
     public Shape longestLine(int longestLine) {
-        return new Shape(size, charset, decor, new Stats(longestLine));
+        return new Shape(size, charset, decor, longestLine);
     }
 
     public boolean hasOverhead() {
@@ -126,19 +115,6 @@ public record Shape(long size, Charset charset, Decor decor, Stats stats) {
 
         public int size() {
             return header + footer;
-        }
-    }
-
-    public record Stats(
-        int longestLine
-    ) {
-
-        public Stats {
-            Non.negative(longestLine, "longestLine");
-        }
-
-        public boolean limitsLineLength() {
-            return longestLine > 0;
         }
     }
 }

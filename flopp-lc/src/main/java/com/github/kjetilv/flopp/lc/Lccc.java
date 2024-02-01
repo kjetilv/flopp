@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.lc;
 
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreams;
@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
@@ -53,10 +52,10 @@ public final class Lccc {
         Shape shape = Shape.of(path).longestLine(100);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = Partitioning
-            .longAligned(cpus, 128)
+            .create(cpus, 128)
             .scaled(2);
         BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
-        Stream<PartitionedStreams.PartitionStreamer> streamers = bitwisePartitioned.streams().streamers();
+        Stream<? extends PartitionStreamer> streamers = bitwisePartitioned.streams().streamers();
         List<CompletableFuture<Long>> futures = streamers
             .map(streamer ->
                 CompletableFuture.supplyAsync(() -> count(streamer),
@@ -72,7 +71,7 @@ public final class Lccc {
     private static Count countSync(Path path) {
         List<Long> futures;
         Shape shape = Shape.of(path).longestLine(100);
-        Partitioning partitioning = Partitioning.longAligned(Runtime.getRuntime().availableProcessors(), 64);
+        Partitioning partitioning = Partitioning.create(Runtime.getRuntime().availableProcessors(), 64);
         try (
             BitwisePartitionStreams streamers = new BitwisePartitionStreams(path, shape,
                 partitioning.of(shape.size())
@@ -86,9 +85,9 @@ public final class Lccc {
         return new Count(path, sum);
     }
 
-    private static long count(PartitionedStreams.PartitionStreamer streamer) {
+    private static long count(PartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
-        streamer.lines().forEach(_ -> longAdder.increment());
+        streamer.lines().forEach(__ -> longAdder.increment());
         return longAdder.longValue();
     }
 

@@ -80,12 +80,9 @@ final class ByteIndexEstimator implements LineCounter.Lines {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() +
-               "[@" + index + ":" +
-               " factor=" + factor +
-               " linesCount=" + linesCount +
-               " longestLine=" + longestLine +
-               "]";
+        return STR."\{
+            getClass().getSimpleName()
+            }[@\{index}: factor=\{factor} linesCount=\{linesCount} longestLine=\{longestLine}]";
     }
 
     void lineAt(long bytePosition) {
@@ -115,7 +112,7 @@ final class ByteIndexEstimator implements LineCounter.Lines {
     }
 
     private LineOffset[] offsets(Partitioning partitioning) {
-        long[] idealPositions = idealPositions(partitioning.partitionCount());
+        long[] idealPositions = idealPositions(partitioning.count());
         long[] approximateIndices = findApproximate(idealPositions);
         int header = shape.header();
         LineOffset[] offsets = new LineOffset[approximateIndices.length];

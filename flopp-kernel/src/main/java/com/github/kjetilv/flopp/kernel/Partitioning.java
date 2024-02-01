@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,121 +7,52 @@ import java.util.List;
 import static java.lang.Integer.MAX_VALUE;
 
 @SuppressWarnings("unused")
-public record Partitioning(
-    int partitionCount,
-    int alignment,
-    long shortTail,
-    int bufferSize
-) {
+public record Partitioning(int count, long tail) {
 
-    public static Partitioning longAligned() {
-        return longAligned(0);
+    public static Partitioning create() {
+        return create(0);
     }
 
-    public static Partitioning longAligned(int partitionCount) {
-        return longAligned(partitionCount, 0);
+    public static Partitioning create(int partitionCount) {
+        return create(partitionCount, 0);
     }
 
-    public static Partitioning longAligned(int partitionCount, long shortTail) {
+    public static Partitioning create(int partitionCount, long tail) {
         return new Partitioning(
             Non.negative(partitionCount, "partitionCount") > 0
                 ? partitionCount
                 : cpus(),
-            LONG_ALIGNMENT,
-            Non.negative(shortTail, "shortTail"),
-            DEFAULT_BUFFER
+            Non.negative(tail, "tailSize")
         );
     }
 
-    public static Partitioning count(int partitionCount) {
-        return new Partitioning(partitionCount, DEFAULT_BUFFER);
-    }
-
-    public static Partitioning defaults() {
-        return defaults(DEFAULT_BUFFER);
-    }
-
-    public static Partitioning defaults(int bufferSize) {
-        return new Partitioning(cpus(), 1, 0, bufferSize);
-    }
-
-    public Partitioning(int partitionCount, int bufferSize) {
-        this(partitionCount, 1, 0, bufferSize);
-    }
-
     public Partitioning {
-        Non.negativeOrZero(partitionCount, "partitionCount");
-        Non.negativeOrZero(alignment, "alignment");
-        Non.negativeOrZero(bufferSize, "bufferSize");
+        Non.negativeOrZero(count, "partitionCount");
     }
 
     public Partitioning scaled(int scale) {
         return new Partitioning(
-            partitionCount * scale,
-            alignment,
-            shortTail,
-            bufferSize
+            count * scale,
+            tail
         );
     }
 
-    public int partitionCount(boolean tailed) {
-        return partitionCount + (tailed && shortTail > 0 ? 1 : 0);
+    public Partitioning tail(long tail) {
+        return new Partitioning(count, tail);
     }
 
     public List<Partition> of(long total) {
         return checked(partitions(total));
     }
 
-    public int bufferSizeOr(int defaultSize) {
-        return bufferSize > 0 ? bufferSize : defaultSize;
-    }
-
-    public Partitioning shortTail(int shortTail) {
-        return new Partitioning(
-            partitionCount,
-            alignment,
-            shortTail,
-            bufferSize
-        );
-    }
-
-    public Partitioning bufferSize(int bufferSize) {
-        return new Partitioning(
-            partitionCount,
-            alignment,
-            shortTail,
-            bufferSize
-        );
-    }
-
-    private static List<Partition> checked(List<Partition> partitions) {
-        if (!partitions.getFirst().first()) {
-            throw new IllegalStateException(STR."First not first: \{partitions}");
-        }
-        if (!partitions.getLast().last()) {
-            throw new IllegalStateException(STR."First not first: \{partitions}");
-        }
-        partitions.stream().skip(1).forEach(partition -> {
-            if (partition.first()) {
-                throw new IllegalStateException(partition + " is first");
-            }
-        });
-        partitions.stream().limit(partitions.size() - 1).forEach(partition -> {
-            if (partition.last()) {
-                throw new IllegalStateException(partition + " is last");
-            }
-        });
-        return partitions;
-    }
-
     private List<Partition> partitions(long total) {
         Non.negativeOrZero(total, "total");
-        if (partitionCount > total) {
+        if (count > total) {
             throw new IllegalStateException(
-                STR."Too many partitions for \{total}: \{partitionCount} partitions"
+                STR."Too many partitions for \{total}: \{count} partitions"
             );
         }
-        if (total > partitionCount) {
+        if (total > count) {
             long[] sizes = partitionSizes(total);
             return partitions(sizes);
         }
@@ -130,20 +60,19 @@ public record Partitioning(
     }
 
     private long[] partitionSizes(long total) {
-        if (alignment > 1 && total / partitionCount < alignment * 2L) {
+        int alignment = 8;
+        if (total / count < alignment * 2L) {
             throw new IllegalArgumentException(
-                STR."Too many partitions for \{total} bytes with alignment \{alignment}: \{partitionCount}");
+                STR."Too many partitions for \{total} bytes with alignment \{alignment}: \{count}");
         }
-        if (alignment > 1 && shortTail > 0) {
-            return alignedSizesWithShortTail(total);
+        if (tail > 0) {
+            return alignedSizesWithTail(total);
         }
-        if (alignment > 1) {
-            return alignedSizes(total);
-        }
-        return defaultDistributed(total);
+        return alignedSizes(total);
     }
 
     private long[] alignedSizes(long total) {
+        int alignment = 8;
         long overshoot = total % alignment;
         long alignedSlices = total / alignment;
         long[] sizes = defaultDistributedAlignmentScaled(alignedSlices);
@@ -153,16 +82,16 @@ public record Partitioning(
         return sizes;
     }
 
-    private long[] alignedSizesWithShortTail(long total) {
-        long overshoot = total % alignment;
-        long alignedSlices = total / alignment;
-        if (overshoot == 0 && shortTail == 0) {
+    private long[] alignedSizesWithTail(long total) {
+        long overshoot = total % ALIGNMENT;
+        long alignedSlices = total / ALIGNMENT;
+        if (overshoot == 0 && tail == 0) {
             return defaultDistributedAlignmentScaled(alignedSlices);
         }
-        long headTotal = total - shortTail;
-        long alignedHeadSlices = headTotal / alignment;
-        long headOvershoot = headTotal % alignment;
-        long overshootTail = shortTail + headOvershoot;
+        long headTotal = total - tail;
+        long alignedHeadSlices = headTotal / ALIGNMENT;
+        long headOvershoot = headTotal % ALIGNMENT;
+        long overshootTail = tail + headOvershoot;
         long[] headSizes = defaultDistributedAlignmentScaled(alignedHeadSlices);
         long[] sizes = new long[headSizes.length + 1];
         System.arraycopy(headSizes, 0, sizes, 0, headSizes.length);
@@ -173,15 +102,15 @@ public record Partitioning(
     private long[] defaultDistributedAlignmentScaled(long alignedSlices) {
         long[] sizes = defaultDistributed(alignedSlices);
         for (int i = 0; i < sizes.length; i++) {
-            sizes[i] *= alignment;
+            sizes[i] *= ALIGNMENT;
         }
         return sizes;
     }
 
     private long[] defaultDistributed(long total) {
-        long remainders = intSized(total % partitionCount);
-        long baseCount = intSized(total / partitionCount);
-        long[] sizes = new long[Math.toIntExact(partitionCount)];
+        long remainders = intSized(total % count);
+        long baseCount = intSized(total / count);
+        long[] sizes = new long[Math.toIntExact(count)];
         Arrays.fill(sizes, baseCount);
         for (int i = 0; i < remainders; i++) {
             sizes[i] += 1;
@@ -189,25 +118,47 @@ public record Partitioning(
         return sizes;
     }
 
-    private List<Partition> partitions(long[] sizes) {
+    public static final int ALIGNMENT = 8;
+
+    private static final int DEFAULT_BUFFER = 16 * 1024;
+
+    private static List<Partition> checked(List<Partition> partitions) {
+        if (!partitions.getFirst().first()) {
+            throw new IllegalStateException(STR."First not first: \{partitions}");
+        }
+        if (!partitions.getLast().last()) {
+            throw new IllegalStateException(STR."First not first: \{partitions}");
+        }
+        partitions.stream().skip(1)
+            .forEach(partition -> {
+                if (partition.first()) {
+                    throw new IllegalStateException(STR."\{partition} is first");
+                }
+            });
+        partitions.stream().limit(partitions.size() - 1)
+            .forEach(partition -> {
+                if (partition.last()) {
+                    throw new IllegalStateException(STR."\{partition} is last");
+                }
+            });
+        return partitions;
+    }
+
+    private static List<Partition> partitions(long[] sizes) {
         long offset = 0;
         List<Partition> partitions = new ArrayList<>(sizes.length);
         for (int i = 0; i < sizes.length; i++) {
             partitions.add(
-                new Partition(i, sizes.length, offset, sizes[i], alignment)
+                new Partition(i, sizes.length, offset, sizes[i])
             );
             offset += sizes[i];
         }
         return partitions;
     }
 
-    private List<Partition> singlePartition(long total) {
-        return List.of(new Partition(0, 1, 0, total, alignment));
+    private static List<Partition> singlePartition(long total) {
+        return List.of(new Partition(0, 1, 0, total));
     }
-
-    private static final int DEFAULT_BUFFER = 16 * 1024;
-
-    private static final int LONG_ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
 
     private static int cpus() {
         return Runtime.getRuntime().availableProcessors();

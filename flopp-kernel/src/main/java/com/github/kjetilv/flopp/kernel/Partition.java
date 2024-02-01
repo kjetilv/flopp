@@ -1,15 +1,11 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.lang.foreign.ValueLayout;
+import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 
-public record Partition(int partitionNo, int partitionCount, long offset, long count, int alignment)
+public record Partition(int partitionNo, int partitionCount, long offset, long count)
     implements Comparable<Partition> {
 
     public Partition(int partitionNo, int partitionCount, long offset, long count) {
-        this(partitionNo, partitionCount, offset, count, 1);
-    }
-
-    public Partition(int partitionNo, int partitionCount, long offset, long count, int alignment) {
         this.partitionNo = Non.negative(partitionNo, "partitionNo");
         this.partitionCount = Non.negativeOrZero(partitionCount, "partitionCount");
         this.offset = Non.negative(offset, "offset");
@@ -19,14 +15,13 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
                 STR."partitionNo >= partitionCount: \{partitionNo} >= \{partitionCount}"
             );
         }
-        this.alignment = Non.negativeOrZero(alignment, "alignment");
     }
 
     public long length(Shape shape) {
         if (shape.limitsLineLength()) {
             return Math.min(
                 shape.size() - offset,
-                bufferedTo(shape.stats().longestLine() + 1)
+                bufferedTo(shape.longestLine() + 1)
             );
         }
         throw new IllegalStateException(STR."Shape does not specify max line length: \{shape}");
@@ -38,7 +33,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
     }
 
     public Partition at(long offset, long count) {
-        return new Partition(partitionNo, partitionCount, offset, count, 1);
+        return new Partition(partitionNo, partitionCount, offset, count);
     }
 
     public boolean first() {
@@ -47,14 +42,6 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
 
     public boolean hasData() {
         return count > 0;
-    }
-
-    public boolean isLongAligned() {
-        return alignment == ValueLayout.JAVA_LONG.byteAlignment() && isAligned();
-    }
-
-    public boolean isAligned() {
-        return !last() && count % alignment == 0;
     }
 
     public boolean last() {
@@ -69,11 +56,11 @@ public record Partition(int partitionNo, int partitionCount, long offset, long c
         return STR."\{getClass().getSimpleName()}[\{pos1}\{partitionNo + 1}\{frac}\{pos2}@\{offset}+\{count}]";
     }
 
-    public long bufferedTo(int size) {
+    public long bufferedTo(long size) {
         long simpleBuffer = count + size;
-        if (alignment == 1 || simpleBuffer % alignment == 0) {
+        if (simpleBuffer % ALIGNMENT == 0) {
             return simpleBuffer;
         }
-        return (simpleBuffer / alignment + 1) * alignment;
+        return (simpleBuffer / ALIGNMENT + 1) * ALIGNMENT;
     }
 }

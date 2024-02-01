@@ -21,7 +21,7 @@ public class UTF8Test {
         try (
             PartitionedStreams streams = new BitwisePartitioned(
                 path,
-                Partitioning.longAligned(3, 512),
+                Partitioning.create(3, 512),
                 Shape.of(path).longestLine(512)
             ).streams()
         ) {
@@ -44,7 +44,7 @@ public class UTF8Test {
         try (
             PartitionedStreams streams = new BitwisePartitioned(
                 path,
-                Partitioning.longAligned(3, 40),
+                Partitioning.create(3, 40),
                 Shape.of(path).longestLine(40)
             ).streams()
         ) {

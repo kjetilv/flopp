@@ -10,12 +10,12 @@ class ByteIndexEstimatorTest {
 
     @Test
     void test() {
-        int partitionCount = 3;
+        int partitionCount = 2;
 
         int lineLength = 10;
         int lineBytes = lineLength + 1;
 
-        int lineCount = 20;
+        int lineCount = 40;
         int size = lineBytes * lineCount;
         int res = 10;
 
@@ -30,7 +30,7 @@ class ByteIndexEstimatorTest {
         List<PartitionBytes> partitionBytes = tracker.bytesPartitions();
         partitionBytes.forEach(System.out::println);
 
-        Partitioning.count(partitioning.partitionCount()).of(lineCount)
+        Partitioning.create(partitioning.count()).of(lineCount)
             .forEach(System.out::println);
     }
 }

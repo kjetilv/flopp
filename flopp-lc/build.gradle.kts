@@ -10,7 +10,7 @@ plugins {
 dependencies {
     implementation(project(":flopp-kernel"))
 
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.12")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.assertj:assertj-core:3.24.2")

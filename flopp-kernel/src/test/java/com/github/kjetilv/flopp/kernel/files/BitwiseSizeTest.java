@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
 import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
 import org.junit.jupiter.api.*;
@@ -132,7 +131,7 @@ public class BitwiseSizeTest {
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
-        shape = Shape.size(Files.size(path)).header(header, footer).longestLine(256);
+        shape = Shape.size(Files.size(path)).headerFooter(header, footer).longestLine(256);
         partitions = Runtime.getRuntime().availableProcessors();
     }
 
@@ -152,7 +151,7 @@ public class BitwiseSizeTest {
     private Duration doRealStuff(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        Partitioning partitioning = Partitioning.longAligned(partitions);
+        Partitioning partitioning = Partitioning.create(partitions);
         try (
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
@@ -162,7 +161,12 @@ public class BitwiseSizeTest {
         return log(testInfo, start);
     }
 
-    private Duration doRealStuffQr(TestInfo testInfo, String qual, Function<LineSegment, String> processor, int bufferSize) {
+    private Duration doRealStuffQr(
+        TestInfo testInfo,
+        String qual,
+        Function<LineSegment, String> processor,
+        int bufferSize
+    ) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
@@ -194,11 +198,7 @@ public class BitwiseSizeTest {
         Path verified = straightUp(testInfo, OPS, "verified");
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
-        Partitioning partitioning = Partitioning
-            .longAligned(partitions)
-            .shortTail(shape.longestLine())
-            .bufferSize(8192);
-
+        Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
         try (
             Partitioned<Path> partitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = partitioned.processor(tmp)
@@ -297,7 +297,7 @@ public class BitwiseSizeTest {
             try {
                 time = doer.get();
             } catch (Throwable e) {
-                throw new IllegalStateException("Failed on run #" + (i + 1) + "/" + times, e);
+                throw new IllegalStateException(STR."Failed on run #\{i + 1}/\{times}", e);
             }
             if (times < 5 || i > 2) {
                 duration = duration.plus(time);

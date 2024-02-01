@@ -28,7 +28,7 @@ class BitwisePartitionedConsumer implements PartitionedConsumer {
 
     private static Void getAccept(
         BiConsumer<Partition, Stream<LineSegment>> consumer,
-        PartitionedStreams.PartitionStreamer partitionStreamer
+        PartitionStreamer partitionStreamer
     ) {
         consumer.accept(
             partitionStreamer.partition(),

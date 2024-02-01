@@ -116,7 +116,7 @@ class PartitionedTest {
                 FOOTER2
                 """.split("\n"))
         );
-        Shape shape = Shape.size(Files.size(pathWithHeaders)).header(3, 2);
+        Shape shape = Shape.size(Files.size(pathWithHeaders)).headerFooter(3, 2);
 
         List<String> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();

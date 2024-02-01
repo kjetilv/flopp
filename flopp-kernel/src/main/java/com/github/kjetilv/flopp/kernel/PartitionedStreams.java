@@ -10,11 +10,4 @@ public interface PartitionedStreams extends Closeable {
     @Override
     default void close() {
     }
-
-    interface PartitionStreamer {
-
-        Stream<LineSegment> lines();
-
-        Partition partition();
-    }
 }

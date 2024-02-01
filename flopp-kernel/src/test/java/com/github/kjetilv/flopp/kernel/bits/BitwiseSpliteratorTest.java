@@ -48,7 +48,7 @@ public class BitwiseSpliteratorTest {
         );
 
         Shape shape = Shape.of(file).longestLine(10);
-        Partitioning partitioning = Partitioning.longAligned(3, 8);
+        Partitioning partitioning = Partitioning.create(3, 8);
 
         System.out.println(new String(Files.readAllBytes(file)));
 
