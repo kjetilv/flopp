@@ -25,7 +25,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     private final MutableLine line = new MutableLine();
 
-    private final MemorySegment memorySegment;
+    private final MemorySegment segment;
 
     private final long limit;
 
@@ -48,16 +48,16 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     public BitwisePartitionSpliterator(
         Partition partition,
-        MemorySegment memorySegment,
+        MemorySegment segment,
         Mediator<LineSegment> mediator,
         BitwisePartitionSpliterator next
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.line.memorySegment = this.memorySegment = memorySegment;
+        this.line.memorySegment = this.segment = segment;
 
         this.limit = this.partition.length();
-        this.physicalLimit = this.memorySegment.byteSize();
+        this.physicalLimit = this.segment.byteSize();
         this.mediator = mediator;
         this.next = next;
     }
@@ -89,7 +89,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     }
 
     private BitwisePartitionSpliterator duplicate() {
-        return new BitwisePartitionSpliterator(partition, memorySegment, mediator, next);
+        return new BitwisePartitionSpliterator(partition, segment, mediator, next);
     }
 
     private long findFirstLine() {
@@ -157,17 +157,16 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     }
 
     private LineSegment collectedLastLine() {
-        BitwisePartitionSpliterator next = this.next.duplicate();
-        long nextOffset = next.findFirstLine();
+        long nextOffset = next.duplicate().findFirstLine();
         if (nextOffset < next.limit) {
-            return combineSingle(next.memorySegment, nextOffset - 1);
+            return merge(next.segment, nextOffset - 1);
         }
-        if (this.next.partition.last()) {
+        if (next.partition.last()) {
             throw new IllegalStateException("Unterminated line");
         }
-        List<BitwisePartitionSpliterator> pile = new ArrayList<>();
-        long lastPreamble = pileUp(pile);
-        return combinePileup(pile, lastPreamble);
+        List<BitwisePartitionSpliterator> spliterators = new ArrayList<>();
+        long lastLimit = collectAndFindLimit(spliterators);
+        return combineMultiple(spliterators, lastLimit);
     }
 
     @SuppressWarnings("unchecked")
@@ -189,15 +188,15 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         lineStart += length + 1;
     }
 
-    private LineSegment combineSingle(MemorySegment next, long preamble) {
+    private LineSegment merge(MemorySegment next, long preamble) {
         long trail = limit - lineStart;
         MemorySegment segment = MemorySegment.ofArray(new byte[Math.toIntExact(trail + preamble)]);
-        MemorySegment.copy(memorySegment, lineStart, segment, 0, trail);
+        MemorySegment.copy(this.segment, lineStart, segment, 0, trail);
         MemorySegment.copy(next, 0, segment, trail, preamble);
         return new ImmutableLine(segment);
     }
 
-    private long pileUp(List<BitwisePartitionSpliterator> pile) {
+    private long collectAndFindLimit(List<BitwisePartitionSpliterator> pile) {
         BitwisePartitionSpliterator spliterator = next;
         pile.add(spliterator);
         while (true) {
@@ -208,7 +207,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             pile.add(spliterator);
             long lo = 0L;
             while (lo < spliterator.physicalLimit) {
-                long prebyte = bytesAt(spliterator.memorySegment, lo);
+                long prebyte = bytesAt(spliterator.segment, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + leap(premask);
@@ -218,7 +217,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         }
     }
 
-    private LineSegment combinePileup(List<BitwisePartitionSpliterator> pile, long lastPreamble) {
+    private LineSegment combineMultiple(List<BitwisePartitionSpliterator> pile, long lastPreamble) {
         long trail = limit - lineStart;
         int mediaries = pile.size() - 1;
         long mediarySize = pile.stream()
@@ -227,16 +226,16 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             .sum();
         MemorySegment segment =
             MemorySegment.ofArray(new byte[Math.toIntExact(trail + mediarySize + lastPreamble)]);
-        MemorySegment.copy(memorySegment, lineStart, segment, 0, trail);
+        MemorySegment.copy(this.segment, lineStart, segment, 0, trail);
         long sizeSoFar = trail;
         for (int i = 0; i < mediaries; i++) {
             BitwisePartitionSpliterator spliterator = pile.get(i);
-            MemorySegment.copy(spliterator.memorySegment, 0, segment, sizeSoFar, spliterator.limit);
+            MemorySegment.copy(spliterator.segment, 0, segment, sizeSoFar, spliterator.limit);
             sizeSoFar += spliterator.limit;
         }
         BitwisePartitionSpliterator lastPartition = pile.getLast();
         MemorySegment.copy(
-            lastPartition.memorySegment,
+            lastPartition.segment,
             0,
             segment,
             sizeSoFar,
@@ -249,18 +248,14 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
     }
 
-    private long bytesAt(long index) {
-        return bytesAt(memorySegment, index);
-    }
-
     private long loadBytes() {
-        return bytesAt(alignedOffset);
+        return bytesAt(segment, alignedOffset);
     }
 
     private long loadBytes(long count) {
         long l = 0;
         for (long i = count - 1; i >= 0; i--) {
-            byte b = memorySegment.get(ValueLayout.JAVA_BYTE, alignedOffset + i);
+            byte b = byteAt(segment, alignedOffset + i);
             l = (l << ALIGNMENT) + b;
         }
         return l;
@@ -279,6 +274,10 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         0xFF00000000000000L,
         0x0000000000000000L
     };
+
+    private static byte byteAt(MemorySegment segment, long offset) {
+        return segment.get(ValueLayout.JAVA_BYTE, offset);
+    }
 
     private static long bytesAt(MemorySegment segement, long index) {
         return segement.get(JAVA_LONG, index);
