@@ -18,19 +18,19 @@ class PartitionsTest {
     @Test
     public void testShortTailAligned() {
         List<Partition> partitions = Partitioning.create(3, 80).of(1996);
-        assertSizes(partitions, 640L, 640L, 632L, 84L);
+        assertSizes(partitions, 632L, 640L, 640L, 84L);
     }
 
     @Test
     public void test692() {
         List<Partition> partitions = Partitioning.create(6).of(104);
-        assertSizes(partitions, 24L, 16L, 16L, 16L, 16L, 16L);
+        assertSizes(partitions, 16L, 16L, 16L, 16L, 16L, 24L);
     }
 
     @Test
     public void testLongAligned() {
         List<Partition> partitions = Partitioning.create(3).of(65);
-        assertSizes(partitions, 24L, 24L, 17L);
+        assertSizes(partitions, 16L, 24L, 25L);
     }
 
     @Test

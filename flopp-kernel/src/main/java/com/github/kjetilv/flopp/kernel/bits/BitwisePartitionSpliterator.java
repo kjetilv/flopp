@@ -138,11 +138,12 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     private void processTail(Consumer<LineSegment> action) {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
-        while (foundTailLine(lastOffset)) {
-            do {
+        while (alignedOffset < lastOffset) {
+            mask = mask(loadBytes());
+            while (mask != 0) {
                 shipLine(action);
                 clearMask(lineStart);
-            } while (mask != 0);
+            }
             alignedOffset += ALIGNMENT;
         }
         if (tail > 0) {
@@ -176,17 +177,6 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
                 ? action
                 : mediator.apply(action)
         );
-    }
-
-    private boolean foundTailLine(long lastOffset) {
-        while (alignedOffset < lastOffset) {
-            mask = mask(loadBytes());
-            if (mask != 0) {
-                return true;
-            }
-            alignedOffset += ALIGNMENT;
-        }
-        return false;
     }
 
     private void shipLine(Consumer<? super LineSegment> action) {
