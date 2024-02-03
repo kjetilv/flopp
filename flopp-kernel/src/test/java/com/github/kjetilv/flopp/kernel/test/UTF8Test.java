@@ -23,17 +23,19 @@ public class UTF8Test {
         StringBuilder sb;
         Partitioning partitioning = Partitioning.create(6, 20);
         try (
-            PartitionedStreams streams = new BitwisePartitioned(
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
                 path,
                 partitioning,
                 Shape.of(path).longestLine(20)
-            ).streams()
+            );
+            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
                 extract(streams, sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + Files.lines(path).collect(Collectors.joining("\n")));
+                System.out.println("\n\n###\n\n" + Files.lines(path)
+                    .collect(Collectors.joining("\n")));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -43,6 +45,31 @@ public class UTF8Test {
         assertThat(path).content()
             .isEqualTo(sb.toString());
     }
+
+    @Test
+    void testXyz2() throws IOException, InterruptedException {
+        Path path = path("whoopsei.txt");
+        StringBuilder sb;
+        try (
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path);
+            PartitionedStreams streams = bitwisePartitioned.streams()
+        ) {
+            sb = new StringBuilder();
+            try {
+                extract(streams, sb);
+            } catch (Exception e) {
+                System.out.println("\n\n###\n\n" + Files.lines(path)
+                    .collect(Collectors.joining("\n")));
+                Thread.sleep(100);
+                System.err.println();
+                e.printStackTrace(System.err);
+            }
+        }
+
+        assertThat(path).content()
+            .isEqualTo(sb.toString());
+    }
+
     @Test
     void test() throws IOException, InterruptedException {
         Path path = path("measurements-complex-utf8.txt");
@@ -58,7 +85,8 @@ public class UTF8Test {
             try {
                 extract(streams, sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + Files.lines(path).collect(Collectors.joining("\n")));
+                System.out.println("\n\n###\n\n" + Files.lines(path)
+                    .collect(Collectors.joining("\n")));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);

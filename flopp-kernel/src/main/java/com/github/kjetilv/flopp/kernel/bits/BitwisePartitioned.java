@@ -8,6 +8,7 @@ import com.github.kjetilv.flopp.kernel.files.MemoryMappedByteArrayLinesWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 
 public class BitwisePartitioned implements Partitioned<Path> {
 
@@ -17,10 +18,15 @@ public class BitwisePartitioned implements Partitioned<Path> {
 
     private final List<Partition> partitions;
 
+    public BitwisePartitioned(Path path) {
+        this(path, null, null);
+    }
+
     public BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
-        this.path = path;
-        this.shape = shape;
-        this.partitions = partitioning.of(shape.size());
+        this.path = Objects.requireNonNull(path, "path");
+        this.shape = shape == null ? Shape.of(path) : shape;
+        this.partitions = (partitioning == null ? Partitioning.create() : partitioning)
+            .of(this.shape.size());
     }
 
     @Override
