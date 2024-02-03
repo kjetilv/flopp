@@ -26,7 +26,11 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         if (this.partitions.isEmpty()) {
             throw new IllegalArgumentException("No partitions receveid");
         }
-        this.memorySegmentSource = new MemorySegmentSource(path, shape, Arena::ofAuto);
+        this.memorySegmentSource = new MemorySegmentSource(
+            this.path,
+            this.shape,
+            Arena::ofAuto
+        );
     }
 
     @Override

@@ -44,7 +44,7 @@ class PartitionsTest {
         for (int i = 0; i < partitions.size(); i++) {
             assertEquals(
                 expectedSizes[i],
-                partitions.get(i).count(),
+                partitions.get(i).length(),
                 STR."Partition had wrong size #\{i}: \{partitions.get(i)}"
             );
         }

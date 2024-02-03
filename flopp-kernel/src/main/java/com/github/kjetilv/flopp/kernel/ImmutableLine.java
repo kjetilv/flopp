@@ -2,11 +2,19 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 
-record ImmutableLine(
+public record ImmutableLine(
     MemorySegment memorySegment,
     long offset,
     long length
 ) implements LineSegment {
+
+    public ImmutableLine(MemorySegment memorySegment) {
+        this(memorySegment, memorySegment.byteSize());
+    }
+
+    public ImmutableLine(MemorySegment memorySegment, long length) {
+        this(memorySegment, 0, length);
+    }
 
     @Override
     public String toString() {

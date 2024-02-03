@@ -37,9 +37,9 @@ final class FileChannelTransfer implements Transfer {
                 totalTransferred += receivingChannel.transferFrom(
                     donorChannel,
                     partition.offset(),
-                    partition.count()
+                    partition.length()
                 );
-            } while (totalTransferred < partition.count());
+            } while (totalTransferred < partition.length());
         } catch (Exception e) {
             throw new IllegalStateException(STR."Failed to write \{source}", e);
         }

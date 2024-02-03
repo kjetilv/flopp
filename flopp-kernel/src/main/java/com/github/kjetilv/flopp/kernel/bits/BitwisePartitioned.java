@@ -34,8 +34,15 @@ public class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedStreams streams() {
-        return new BitwisePartitionStreams(path, shape, partitions);
+    public PartitionedProcessor<LineSegment> processor(Path target) {
+        return new BitwisePartitionProcessor(
+            mapper(),
+            partitions,
+            shape.charset(),
+            BitwisePartitioned::writer,
+            tempTargets(path),
+            transfers(target)
+        );
     }
 
     @Override
@@ -49,15 +56,8 @@ public class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedProcessor<LineSegment> processor(Path target) {
-        return new BitwisePartitionProcessor(
-            mapper(),
-            partitions,
-            shape.charset(),
-            BitwisePartitioned::writer,
-            tempTargets(path),
-            transfers(target)
-        );
+    public PartitionedStreams streams() {
+        return new BitwisePartitionStreams(path, shape, partitions);
     }
 
     private static final int BUFFER_SIZE = 8192;

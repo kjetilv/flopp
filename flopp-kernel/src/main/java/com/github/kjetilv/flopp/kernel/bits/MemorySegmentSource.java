@@ -27,10 +27,6 @@ public final class MemorySegmentSource implements Closeable {
 
     private final FileChannel channel;
 
-    public MemorySegmentSource(Path path, Shape shape, Arena arena) {
-        this(path, shape, delayed(arena));
-    }
-
     public MemorySegmentSource(Path path, Shape shape, Supplier<Arena> arena) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
@@ -49,15 +45,8 @@ public final class MemorySegmentSource implements Closeable {
                 arena.get()
             );
         } catch (IOException e) {
-            throw new IllegalStateException(
-                STR."\{this} could not open [\{partition.offset()}-\{partition.length(shape)}] for \{partition}",
-                e
-            );
+            throw new IllegalStateException(STR."\{this} could not open [\{partition}", e);
         }
-    }
-
-    public MemorySegmentHandler handlerFor(Partition partition) {
-        return new MemorySegmentHandler(partition, shape, () -> open(partition));
     }
 
     @Override
@@ -81,10 +70,5 @@ public final class MemorySegmentSource implements Closeable {
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} could not access file", e);
         }
-    }
-
-    private static Supplier<Arena> delayed(Arena arena) {
-        Objects.requireNonNull(arena, "arena");
-        return () -> arena;
     }
 }

@@ -127,7 +127,7 @@ public class BitwiseSizeTest {
             .map(Class::getSimpleName).orElseThrow();
         String methodName = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
-        String pathBase = className + "-" + methodName;
+        String pathBase = STR."\{className}-\{methodName}";
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
