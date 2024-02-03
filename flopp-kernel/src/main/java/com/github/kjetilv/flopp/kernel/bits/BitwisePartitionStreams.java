@@ -1,13 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
+import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.Arena;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 public final class BitwisePartitionStreams implements PartitionedStreams {
 
@@ -34,8 +36,8 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
     }
 
     @Override
-    public Stream<? extends PartitionStreamer> streamers() {
-        return streamers(new LinkedList<>(partitions)).stream();
+    public List<? extends PartitionStreamer> streamersList() {
+        return streamers(new LinkedList<>(partitions));
     }
 
     @Override

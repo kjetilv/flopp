@@ -55,17 +55,11 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.line.memorySegment = this.memorySegment = memorySegment;
-        ;
 
         this.limit = this.partition.length();
         this.physicalLimit = this.memorySegment.byteSize();
         this.mediator = mediator;
         this.next = next;
-
-    }
-
-    public BitwisePartitionSpliterator duplicate() {
-        return new BitwisePartitionSpliterator(partition, memorySegment, mediator, next);
     }
 
     @Override
@@ -94,6 +88,10 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return STR."\{getClass().getSimpleName()}[@\{alignedOffset}/l:\{lineStart} \{partition}]";
     }
 
+    private BitwisePartitionSpliterator duplicate() {
+        return new BitwisePartitionSpliterator(partition, memorySegment, mediator, next);
+    }
+
     private long findFirstLine() {
         do {
             mask = mask(loadBytes());
@@ -112,17 +110,17 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     private void processAligned(Consumer<LineSegment> action) {
         if (mask != 0) {
-            do {
+            while (mask != 0) {
                 shipLine(action);
-                clearMask();
-            } while (mask != 0);
+                clearMask(lineStart);
+            }
             alignedOffset += ALIGNMENT;
         }
         while (alignedOffset < limit) {
             mask = mask(loadBytes());
             while (mask != 0) {
                 shipLine(action);
-                clearMask();
+                clearMask(lineStart);
             }
             alignedOffset += ALIGNMENT;
         }
@@ -137,8 +135,24 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         action.accept(collectedLastLine());
     }
 
-    private void clearMask() {
-        clearMask(lineStart);
+    private void processTail(Consumer<LineSegment> action) {
+        long tail = limit % ALIGNMENT;
+        long lastOffset = limit - tail;
+        while (foundTailLine(lastOffset)) {
+            do {
+                shipLine(action);
+                clearMask(lineStart);
+            } while (mask != 0);
+            alignedOffset += ALIGNMENT;
+        }
+        if (tail > 0) {
+            long l = loadBytes(tail);
+            mask = mask(l);
+            while (mask != 0) {
+                shipLine(action);
+                clearMask(lineStart);
+            }
+        }
     }
 
     private LineSegment collectedLastLine() {
@@ -155,37 +169,6 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return combinePileup(pile, lastPreamble);
     }
 
-    private void processTail(Consumer<LineSegment> action) {
-        long tail = limit % ALIGNMENT;
-        long lastOffset = limit - tail;
-        while (foundTailLine(lastOffset)) {
-            do {
-                shipLine(action);
-                clearMask();
-            } while (mask != 0);
-            alignedOffset += ALIGNMENT;
-        }
-        if (tail > 0) {
-            long l = loadBytes(tail);
-            mask = mask(l);
-            while (mask != 0) {
-                shipLine(action);
-                clearMask();
-            }
-        }
-    }
-
-    private long findTailLine() {
-        do {
-            mask = mask(loadBytes());
-            if (mask != 0) {
-                return alignedOffset + leap(mask) + 1;
-            }
-            alignedOffset += ALIGNMENT;
-        } while (alignedOffset < physicalLimit);
-        return physicalLimit;
-    }
-
     @SuppressWarnings("unchecked")
     private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
         return (Consumer<LineSegment>) (
@@ -193,23 +176,6 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
                 ? action
                 : mediator.apply(action)
         );
-    }
-
-    private boolean foundNextLine() {
-        if (lineStart >= limit) {
-            return false;
-        }
-        do {
-            long bytes = loadBytes();
-            mask = mask(bytes);
-            if (mask != 0) {
-                // Ln found
-                return true;
-            }
-            // No ln in sight
-            alignedOffset += ALIGNMENT;
-        }  while (alignedOffset < physicalLimit);
-        return false;
     }
 
     private boolean foundTailLine(long lastOffset) {
