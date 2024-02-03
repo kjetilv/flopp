@@ -60,10 +60,9 @@ public record Partitioning(int count, long tail) {
     }
 
     private long[] partitionSizes(long total) {
-        int alignment = 8;
-        if (total / count < alignment * 2L) {
+        if (total / count < Partitioning.ALIGNMENT * 2L) {
             throw new IllegalArgumentException(
-                STR."Too many partitions for \{total} bytes with alignment \{alignment}: \{count}");
+                STR."Too many partitions for \{total} bytes with alignment \{Partitioning.ALIGNMENT}: \{count}");
         }
         if (tail > 0) {
             return alignedSizesWithTail(total);
@@ -71,49 +70,41 @@ public record Partitioning(int count, long tail) {
         return alignedSizes(total);
     }
 
-    private long[] alignedSizes(long total) {
-        int alignment = 8;
-        long overshoot = total % alignment;
-        long alignedSlices = total / alignment;
-        long[] sizes = defaultDistributedAlignmentScaled(alignedSlices);
-        if (overshoot != 0) {
-            sizes[sizes.length - 1] += overshoot;
-        }
-        return sizes;
-    }
-
     private long[] alignedSizesWithTail(long total) {
         long overshoot = total % ALIGNMENT;
         long alignedSlices = total / ALIGNMENT;
-        if (overshoot == 0 && tail == 0) {
-            return defaultDistributedAlignmentScaled(alignedSlices);
-        }
         long headTotal = total - tail;
         long alignedHeadSlices = headTotal / ALIGNMENT;
         long headOvershoot = headTotal % ALIGNMENT;
         long overshootTail = tail + headOvershoot;
-        long[] headSizes = defaultDistributedAlignmentScaled(alignedHeadSlices);
+        long[] headSizes = sizeDistribution(alignedHeadSlices);
         long[] sizes = new long[headSizes.length + 1];
         System.arraycopy(headSizes, 0, sizes, 0, headSizes.length);
         sizes[sizes.length - 1] = overshootTail;
         return sizes;
     }
 
-    private long[] defaultDistributedAlignmentScaled(long alignedSlices) {
-        long[] sizes = defaultDistributed(alignedSlices);
-        for (int i = 0; i < sizes.length; i++) {
-            sizes[i] *= ALIGNMENT;
+    private long[] alignedSizes(long total) {
+        long overshoot = total % ALIGNMENT;
+        long alignedSlices = total / ALIGNMENT;
+        long[] sizes = sizeDistribution(alignedSlices);
+        if (overshoot != 0) {
+            sizes[sizes.length - 1] += overshoot;
         }
         return sizes;
     }
 
-    private long[] defaultDistributed(long total) {
-        long remainders = intSized(total % count);
-        long baseCount = intSized(total / count);
-        long[] sizes = new long[Math.toIntExact(count)];
+    private long[] sizeDistribution(long alignedSlices) {
+        long remainders = intSized(alignedSlices % count);
+        long baseCount = intSized(alignedSlices / count);
+        int sizeCount = Math.toIntExact(count);
+        long[] sizes = new long[sizeCount];
         Arrays.fill(sizes, baseCount);
         for (int i = 0; i < remainders; i++) {
-            sizes[i] += 1;
+            sizes[sizeCount - 1 - i] += 1;
+        }
+        for (int i = 0; i < sizeCount; i++) {
+            sizes[i] *= ALIGNMENT;
         }
         return sizes;
     }

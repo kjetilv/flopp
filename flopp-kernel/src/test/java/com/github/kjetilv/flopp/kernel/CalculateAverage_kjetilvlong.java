@@ -21,20 +21,15 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
-        runJava();
-    }
-
-    private static final String FILE = "./measurements.txt";
-
-    private static void runJava() {
         Instant start = Instant.now();
         Path path = Path.of(FILE);
         Shape shape = Shape.of(path).longestLine(128);
@@ -43,9 +38,8 @@ public final class CalculateAverage_kjetilvlong {
             shape.longestLine()
         ).scaled(2);
         int chunks = partitioning.of(shape.size()).size();
-        AtomicInteger integer = new AtomicInteger();
         try (
-            ExecutorService executor = new ForkJoinPool(chunks);
+            ExecutorService executor = new ForkJoinPool(chunks * 2);
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
@@ -54,9 +48,10 @@ public final class CalculateAverage_kjetilvlong {
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
                 .stream()
                 .map(streamer ->
-                    CompletableFuture.supplyAsync(
-                            streamer::lines, executor)
-                        .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
+                    CompletableFuture.supplyAsync(streamer::lines, executor).thenApplyAsync(
+                        CalculateAverage_kjetilvlong::toMap,
+                        executor
+                    ))
                 .toList();
             System.out.println(Duration.between(start, Instant.now()));
 
@@ -70,6 +65,8 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
         }
     }
+
+    private static final String FILE = "./measurements.txt";
 
     private static Set<String> keySet(List<Map<String, Result>> maps) {
         return maps.stream()

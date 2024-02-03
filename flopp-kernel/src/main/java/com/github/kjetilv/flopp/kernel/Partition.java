@@ -39,10 +39,6 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         return partitionNo == 0;
     }
 
-    public boolean hasData() {
-        return length > 0;
-    }
-
     public boolean last() {
         return partitionNo == partitionCount - 1;
     }
