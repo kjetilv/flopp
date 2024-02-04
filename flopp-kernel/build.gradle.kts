@@ -24,7 +24,6 @@ java {
 tasks {
     withType<JavaCompile> {
         options.compilerArgs.add("--enable-preview")
-        options.compilerArgs.add("--add-modules=jdk.incubator.vector")
     }
     withType<Test>() {
         jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")

@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.LongSupplier;
 
 public final class BitwisePartitionStreams implements PartitionedStreams {
 
@@ -28,16 +29,18 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         if (this.partitions.isEmpty()) {
             throw new IllegalArgumentException("No partitions receveid");
         }
-        this.memorySegmentSource = new MemorySegmentSource(
-            this.path,
-            this.shape,
-            Arena::ofAuto
-        );
+        this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape, Arena::ofAuto);
     }
 
     @Override
     public List<? extends PartitionStreamer> streamersList() {
         return streamers(new LinkedList<>(partitions));
+    }
+
+    @Override
+    public List<LongSupplier> lineCountersList() {
+        LinkedList<BitwiseCounter> counters = counters(new LinkedList<>(partitions));
+        return counters.stream().map(counter -> (LongSupplier) counter::count).toList();
     }
 
     @Override
@@ -73,5 +76,25 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         );
         streamersTail.addFirst(streamer);
         return streamersTail;
+    }
+
+    private LinkedList<BitwiseCounter> counters(
+        LinkedList<Partition> partitionsTail
+    ) {
+        if (partitionsTail.isEmpty()) {
+            return new LinkedList<>();
+        }
+        Partition head = partitionsTail.removeFirst();
+        LinkedList<BitwiseCounter> countersTails = counters(partitionsTail);
+        BitwiseCounter nextStreamer = countersTails.isEmpty()
+            ? null
+            : countersTails.getFirst();
+        BitwiseCounter streamer = new BitwiseCounter(
+            head,
+            memorySegmentSource,
+            nextStreamer
+        );
+        countersTails.addFirst(streamer);
+        return countersTails;
     }
 }

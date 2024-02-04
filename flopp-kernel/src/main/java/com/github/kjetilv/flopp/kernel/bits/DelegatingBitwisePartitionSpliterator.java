@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.ImmutableLine;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partition;
 
@@ -37,7 +36,7 @@ public final class DelegatingBitwisePartitionSpliterator extends Spliterators.Ab
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            delegate(mediated(lineForwarder(action))).run();
+            handler(mediated(lineForwarder(action))).run();
             return false;
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
@@ -53,13 +52,8 @@ public final class DelegatingBitwisePartitionSpliterator extends Spliterators.Ab
         return actionMediator == null ? forwarder : actionMediator.apply(forwarder);
     }
 
-    private BitwisePartitionHandler delegate(BitwisePartitionHandler.Action action) {
-        return new BitwisePartitionHandler(
-            partition,
-            segment,
-            action,
-            next == null ? null : next.delegate(action)
-        );
+    private BitwisePartitionHandler handler(BitwisePartitionHandler.Action action) {
+        return new BitwisePartitionHandler(partition, segment, action, next == null ? null : next.handler(action));
     }
 
     private BitwisePartitionHandler.Action lineForwarder(Consumer<? super LineSegment> action) {

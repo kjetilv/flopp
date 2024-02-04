@@ -49,6 +49,7 @@ object Native {
         $nativeImage -cp $fromJarFile $mainClass
          --verbose 
          --no-fallback
+         --enable-preview
          --gc=$gc
          -H:Optimize=3
          -H:+ReportExceptionStackTraces

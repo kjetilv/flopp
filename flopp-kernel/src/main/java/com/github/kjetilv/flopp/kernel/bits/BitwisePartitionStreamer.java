@@ -26,12 +26,12 @@ public final class BitwisePartitionStreamer implements PartitionStreamer {
 //            LineSegments.mediator(partition, shape),
 //            next == null ? null : next.spliterator
 //        );
-    new DelegatingBitwisePartitionSpliterator(
-            partition,
-            memorySegmentSource.open(partition),
-            LineSegments.actionMediator(partition, shape),
-            next == null ? null : next.spliterator
-        );
+            new DelegatingBitwisePartitionSpliterator(
+                partition,
+                memorySegmentSource.open(partition),
+                LineSegments.actionMediator(partition, shape),
+                next == null ? null : next.spliterator
+            );
     }
 
     @Override

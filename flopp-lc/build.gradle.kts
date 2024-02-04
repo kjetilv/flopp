@@ -26,6 +26,19 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+tasks {
+    withType<JavaCompile> {
+        options.compilerArgs.add("--enable-preview")
+    }
+    withType<Test>() {
+        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+        useJUnitPlatform()
+    }
+    withType<JavaExec>() {
+        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
@@ -43,7 +56,7 @@ tasks.register<Task>("native-image")
                 ).map(
                     Path::toString
                 ),
-                "com.github.kjetilv.flopp.lc.Lc",
+                "com.github.kjetilv.flopp.lc.Lcc",
                 "lc",
                 javaToolchains
             )
