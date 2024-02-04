@@ -11,15 +11,14 @@ public interface PartitionedStreams extends Closeable {
         return streamersList().stream();
     }
 
-    List<? extends PartitionStreamer> streamersList();
-
     default Stream<LongSupplier> lineCounters() {
         return lineCountersList().stream();
     }
 
+    List<? extends PartitionStreamer> streamersList();
+
     List<LongSupplier> lineCountersList();
 
     @Override
-    default void close() {
-    }
+    void close();
 }

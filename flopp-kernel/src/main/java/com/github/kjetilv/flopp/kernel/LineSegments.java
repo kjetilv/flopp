@@ -8,12 +8,12 @@ import java.lang.foreign.ValueLayout;
 
 public final class LineSegments {
 
-    public static Mediator<LineSegment> mediator(Partition partition, Shape shape) {
-        return PartitionMediator.create(partition, shape, LineSegment::immutable);
-    }
-
     public static ActionMediator actionMediator(Partition partition, Shape shape) {
         return PartitionActionMediator.create(partition, shape);
+    }
+
+    public static Mediator<LineSegment> mediator(Partition partition, Shape shape) {
+        return PartitionMediator.create(partition, shape, LineSegment::immutable);
     }
 
     public static String toString(LineSegment line) {

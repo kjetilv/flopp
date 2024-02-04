@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.LongSupplier;
 
 public final class BitwisePartitionStreams implements PartitionedStreams {
@@ -34,13 +35,21 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
 
     @Override
     public List<? extends PartitionStreamer> streamersList() {
-        return streamers(new LinkedList<>(partitions));
+        return BitwisePartitionStreams.<BitwisePartitionStreamer>buildUp(
+            new LinkedList<>(partitions),
+            (partition, streamer) ->
+                new BitwisePartitionStreamer(partition, shape, memorySegmentSource, streamer)
+        );
     }
 
     @Override
     public List<LongSupplier> lineCountersList() {
-        LinkedList<BitwiseCounter> counters = counters(new LinkedList<>(partitions));
-        return counters.stream().map(counter -> (LongSupplier) counter::count).toList();
+        return BitwisePartitionStreams.<BitwiseCounter>buildUp(
+                new LinkedList<>(partitions), (partition, bitwiseCounter) ->
+                    new BitwiseCounter(partition, memorySegmentSource, bitwiseCounter))
+            .stream()
+            .map(BitwisePartitionStreams::counter)
+            .toList();
     }
 
     @Override
@@ -57,44 +66,21 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
         return STR."\{getClass().getSimpleName()}[\{path}/\{shape}/ partitions:\{partitions.size()}]";
     }
 
-    private LinkedList<BitwisePartitionStreamer> streamers(
-        LinkedList<Partition> partitionsTail
-    ) {
-        if (partitionsTail.isEmpty()) {
-            return new LinkedList<>();
-        }
-        Partition head = partitionsTail.removeFirst();
-        LinkedList<BitwisePartitionStreamer> streamersTail = streamers(partitionsTail);
-        BitwisePartitionStreamer nextStreamer = streamersTail.isEmpty()
-            ? null
-            : streamersTail.getFirst();
-        BitwisePartitionStreamer streamer = new BitwisePartitionStreamer(
-            head,
-            shape,
-            memorySegmentSource,
-            nextStreamer
-        );
-        streamersTail.addFirst(streamer);
-        return streamersTail;
+    private static LongSupplier counter(BitwiseCounter counter) {
+        return (LongSupplier) counter::count;
     }
 
-    private LinkedList<BitwiseCounter> counters(
-        LinkedList<Partition> partitionsTail
+    private static <T> LinkedList<T> buildUp(
+        LinkedList<Partition> partitionsTail,
+        BiFunction<Partition, T, T> function
     ) {
         if (partitionsTail.isEmpty()) {
             return new LinkedList<>();
         }
         Partition head = partitionsTail.removeFirst();
-        LinkedList<BitwiseCounter> countersTails = counters(partitionsTail);
-        BitwiseCounter nextStreamer = countersTails.isEmpty()
-            ? null
-            : countersTails.getFirst();
-        BitwiseCounter streamer = new BitwiseCounter(
-            head,
-            memorySegmentSource,
-            nextStreamer
-        );
-        countersTails.addFirst(streamer);
-        return countersTails;
+        LinkedList<T> ts = buildUp(partitionsTail, function);
+        T nextStreamer = ts.isEmpty() ? null : ts.getFirst();
+        ts.addFirst(function.apply(head, nextStreamer));
+        return ts;
     }
 }

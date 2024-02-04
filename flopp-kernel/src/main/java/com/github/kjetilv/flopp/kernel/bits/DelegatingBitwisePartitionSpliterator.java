@@ -8,7 +8,8 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-public final class DelegatingBitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
+public final class DelegatingBitwisePartitionSpliterator
+    extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
