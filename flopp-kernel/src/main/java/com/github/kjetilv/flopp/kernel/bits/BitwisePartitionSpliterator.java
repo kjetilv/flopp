@@ -65,13 +65,14 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
+            Consumer<LineSegment> consumer = mediate(action);
             if (!partition.first()) {
                 lineStart = findFirstLine();
                 if (lineStart == limit) {
                     return false;
                 }
+                processInitial(consumer);
             }
-            Consumer<LineSegment> consumer = mediate(action);
             if (partition.last()) {
                 processTail(consumer);
             } else {
@@ -108,47 +109,27 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return limit;
     }
 
-    private void processAligned(Consumer<LineSegment> action) {
+    private void processInitial(Consumer<LineSegment> action) {
         if (mask != 0) {
             while (mask != 0) {
                 shipLine(action);
             }
             alignedOffset += ALIGNMENT;
         }
-        while (alignedOffset < limit) {
-            mask = mask(loadLong());
-            while (mask != 0) {
-                shipLine(action);
-            }
-            alignedOffset += ALIGNMENT;
+    }
+
+    private void processAligned(Consumer<LineSegment> action) {
+        processMain(action, limit);
+        if (processedOverflow(action)) {
+            return;
         }
-        while (alignedOffset < physicalLimit) {
-            mask = mask(loadLong());
-            if (mask != 0) {
-                shipLine(action);
-                return;
-            }
-            alignedOffset += ALIGNMENT;
-        }
-        action.accept(collectedLastLine());
+        action.accept(stolenWork());
     }
 
     private void processTail(Consumer<LineSegment> action) {
-        if (mask != 0) {
-            while (mask != 0) {
-                shipLine(action);
-            }
-            alignedOffset += ALIGNMENT;
-        }
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
-        while (alignedOffset < lastOffset) {
-            mask = mask(loadLong());
-            while (mask != 0) {
-                shipLine(action);
-            }
-            alignedOffset += ALIGNMENT;
-        }
+        processMain(action, lastOffset);
         if (tail > 0) {
             mask = mask(loadTail(tail));
             if (mask != 0) {
@@ -161,22 +142,26 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         }
     }
 
-    private LineSegment collectedLastLine() {
-        long nextOffset = next.duplicate().findFirstLine();
-        if (nextOffset < next.limit) {
-            return merge(next.segment, nextOffset - 1);
+    private void processMain(Consumer<LineSegment> action, long lastOffset) {
+        while (alignedOffset < lastOffset) {
+            mask = mask(loadLong());
+            while (mask != 0) {
+                shipLine(action);
+            }
+            alignedOffset += ALIGNMENT;
         }
-        if (next.partition.last()) {
-            return merge(next.segment, nextOffset);
-        }
-        List<BitwisePartitionSpliterator> collector = new ArrayList<>();
-        long lastLimit = collectAndFindLimit(collector);
-        return combineMultiple(collector, lastLimit);
     }
 
-    @SuppressWarnings("unchecked")
-    private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
-        return (Consumer<LineSegment>) (mediator == null ? action : mediator.apply(action));
+    private boolean processedOverflow(Consumer<LineSegment> action) {
+        while (alignedOffset < physicalLimit) {
+            mask = mask(loadLong());
+            if (mask != 0) {
+                shipLine(action);
+                return true;
+            }
+            alignedOffset += ALIGNMENT;
+        }
+        return false;
     }
 
     private void shipLine(Consumer<LineSegment> action) {
@@ -192,7 +177,42 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         action.accept(line);
     }
 
-    private LineSegment merge(MemorySegment next, long preamble) {
+    private long loadLong() {
+        return bytesAt(segment, alignedOffset);
+    }
+
+    private long loadTail(long count) {
+        long l = 0;
+        for (long i = count - 1; i >= 0; i--) {
+            byte b = byteAt(segment, alignedOffset + i);
+            l = (l << ALIGNMENT) + b;
+        }
+        return l;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
+        return (Consumer<LineSegment>) (mediator == null ? action : mediator.apply(action));
+    }
+
+    private LineSegment stolenWork() {
+        long nextOffset = next.duplicate().findFirstLine();
+        if (nextOffset < next.limit) {
+            return mergeWithNext(next.segment, nextOffset - 1);
+        }
+        if (next.partition.last()) {
+            return mergeWithNext(next.segment, nextOffset);
+        }
+        return mergeWithMultiple();
+    }
+
+    private LineSegment mergeWithMultiple() {
+        List<BitwisePartitionSpliterator> collector = new ArrayList<>();
+        long lastLimit = collectAndFindLimit(collector);
+        return combineMultiple(collector, lastLimit);
+    }
+
+    private LineSegment mergeWithNext(MemorySegment next, long preamble) {
         long trail = limit - lineStart;
         MemorySegment segment = MemorySegment.ofArray(new byte[Math.toIntExact(trail + preamble)]);
         MemorySegment.copy(this.segment, lineStart, segment, 0, trail);
@@ -242,19 +262,6 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         }
         MemorySegment.copy(collector.getLast().segment, 0, segment, accumulatedSize, lastPreamble);
         return new ImmutableLine(segment);
-    }
-
-    private long loadLong() {
-        return bytesAt(segment, alignedOffset);
-    }
-
-    private long loadTail(long count) {
-        long l = 0;
-        for (long i = count - 1; i >= 0; i--) {
-            byte b = byteAt(segment, alignedOffset + i);
-            l = (l << ALIGNMENT) + b;
-        }
-        return l;
     }
 
     public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
