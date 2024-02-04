@@ -63,12 +63,12 @@ public final class BitwisePartitionHandler
                 if (lineStart == limit) {
                     return;
                 }
-                processInitial();
+                processHead();
             }
             if (partition.last()) {
                 processTail();
             } else {
-                processAligned();
+                processBody();
             }
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
@@ -100,7 +100,7 @@ public final class BitwisePartitionHandler
         return limit;
     }
 
-    private void processInitial() {
+    private void processHead() {
         if (mask != 0) {
             while (mask != 0) {
                 shipNextLine();
@@ -109,7 +109,7 @@ public final class BitwisePartitionHandler
         }
     }
 
-    private void processAligned() {
+    private void processBody() {
         processMain(limit);
         if (processedOverflow()) {
             return;
