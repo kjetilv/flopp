@@ -1,16 +1,12 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler;
-import com.github.kjetilv.flopp.kernel.bits.PartitionActionMediator;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 public final class LineSegments {
-
-    public static BitwisePartitionHandler.Mediator actionMediator(Partition partition, Shape shape) {
-        return PartitionActionMediator.create(partition, shape);
-    }
 
     public static String toString(LineSegment line) {
         return toString(line, Math.toIntExact(line.length()));
@@ -24,8 +20,12 @@ public final class LineSegments {
         return new String(bytes);
     }
 
-    public static byte[] toBytes(LineSegment line) {
+    static byte[] toBytes(LineSegment line) {
         return slice(line).toArray(ValueLayout.JAVA_BYTE);
+    }
+
+    static BitwisePartitionHandler.Mediator actionMediator(Partition partition, Shape shape) {
+        return PartitionActionMediator.create(partition, shape);
     }
 
     private LineSegments() {

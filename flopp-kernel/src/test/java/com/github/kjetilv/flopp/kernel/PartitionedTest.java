@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
@@ -17,12 +17,12 @@ public record ImmutableLine(
     }
 
     @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
+    public LineSegment immutable() {
+        return this;
     }
 
     @Override
-    public LineSegment immutable() {
-        return this;
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
     }
 }

@@ -42,7 +42,7 @@ public record Partitioning(int count, long tail) {
     }
 
     public List<Partition> of(long total) {
-        return checked(partitions(total));
+        return partitions(total);
     }
 
     private List<Partition> partitions(long total) {
@@ -109,31 +109,7 @@ public record Partitioning(int count, long tail) {
         return sizes;
     }
 
-    public static final int ALIGNMENT = 8;
-
-    private static final int DEFAULT_BUFFER = 16 * 1024;
-
-    private static List<Partition> checked(List<Partition> partitions) {
-        if (!partitions.getFirst().first()) {
-            throw new IllegalStateException(STR."First not first: \{partitions}");
-        }
-        if (!partitions.getLast().last()) {
-            throw new IllegalStateException(STR."First not first: \{partitions}");
-        }
-        partitions.stream().skip(1)
-            .forEach(partition -> {
-                if (partition.first()) {
-                    throw new IllegalStateException(STR."\{partition} is first");
-                }
-            });
-        partitions.stream().limit(partitions.size() - 1)
-            .forEach(partition -> {
-                if (partition.last()) {
-                    throw new IllegalStateException(STR."\{partition} is last");
-                }
-            });
-        return partitions;
-    }
+    public static final long ALIGNMENT = 0x08L;
 
     private static List<Partition> partitions(long[] sizes) {
         long offset = 0;

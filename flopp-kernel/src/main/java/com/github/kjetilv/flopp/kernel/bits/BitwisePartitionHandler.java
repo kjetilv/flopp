@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public final class BitwisePartitionHandler
+final class BitwisePartitionHandler
     implements Runnable {
 
     private final Partition partition;
@@ -41,7 +41,7 @@ public final class BitwisePartitionHandler
      */
     private long lineStart;
 
-    public BitwisePartitionHandler(
+    BitwisePartitionHandler(
         Partition partition,
         MemorySegment segment,
         Action action,
@@ -101,12 +101,13 @@ public final class BitwisePartitionHandler
     }
 
     private void processHead() {
-        if (mask != 0) {
-            while (mask != 0) {
-                shipNextLine();
-            }
-            alignedOffset += ALIGNMENT;
+        if (mask == 0) {
+            return;
         }
+        while (mask != 0) {
+            shipNextLine();
+        }
+        alignedOffset += ALIGNMENT;
     }
 
     private void processBody() {
@@ -128,7 +129,7 @@ public final class BitwisePartitionHandler
                     shipNextLine();
                 }
             } else {
-                ship(physicalLimit - lineStart);
+                action.line(segment, lineStart, physicalLimit - lineStart);
             }
         }
     }
@@ -137,7 +138,10 @@ public final class BitwisePartitionHandler
         while (alignedOffset < lastOffset) {
             mask = mask(loadLong());
             while (mask != 0) {
-                shipNextLine();
+                long lineBreakOffset = alignedOffset + offsetIn(mask);
+                action.line(segment, lineStart, lineBreakOffset - lineStart);
+                lineStart = lineBreakOffset + 1;
+                mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
             }
             alignedOffset += ALIGNMENT;
         }
@@ -157,13 +161,9 @@ public final class BitwisePartitionHandler
 
     private void shipNextLine() {
         long lineBreakOffset = alignedOffset + offsetIn(mask);
-        ship(lineBreakOffset - lineStart);
+        action.line(segment, lineStart, lineBreakOffset - lineStart);
         lineStart = lineBreakOffset + 1;
         mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
-    }
-
-    private void ship(long length) {
-        action.line(segment, lineStart, length);
     }
 
     private long loadLong() {
@@ -259,7 +259,7 @@ public final class BitwisePartitionHandler
         action.line(buffer, 0, length);
     }
 
-    public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
+    private static final long ALIGNMENT = 0x08L;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFFFFL,

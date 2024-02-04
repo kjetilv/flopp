@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-public final class MemorySegmentSource implements Closeable {
+final class MemorySegmentSource implements Closeable {
 
     private final Path path;
 
@@ -27,7 +27,7 @@ public final class MemorySegmentSource implements Closeable {
 
     private final FileChannel channel;
 
-    public MemorySegmentSource(Path path, Shape shape, Supplier<Arena> arena) {
+    MemorySegmentSource(Path path, Shape shape, Supplier<Arena> arena) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.arena = Objects.requireNonNull(arena, "arena");

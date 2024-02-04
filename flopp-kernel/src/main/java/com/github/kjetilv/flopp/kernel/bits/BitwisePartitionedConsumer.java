@@ -30,10 +30,7 @@ class BitwisePartitionedConsumer implements PartitionedConsumer {
         BiConsumer<Partition, Stream<LineSegment>> consumer,
         PartitionStreamer partitionStreamer
     ) {
-        consumer.accept(
-            partitionStreamer.partition(),
-            partitionStreamer.lines()
-        );
+        consumer.accept(partitionStreamer.partition(), partitionStreamer.lines());
         return null;
     }
 }

@@ -1,9 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionStreams;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
-import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -147,8 +146,8 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).headerFooter(1, 1);
         try (
-            BitwisePartitionStreams bitwisePartitionStreams =
-                new BitwisePartitionStreams(file, shape, partitioning.of(shape.size()))
+            BitwisePartitioned partitioned = new BitwisePartitioned(file, partitioning, shape);
+            PartitionedStreams bitwisePartitionStreams = partitioned.streams()
         ) {
             LongAdder cont = new LongAdder();
             bitwisePartitionStreams.streamers()

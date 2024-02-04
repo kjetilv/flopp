@@ -12,7 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
+final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
 
     private final PartitionedMapper partitionedMapper;
 
@@ -26,7 +26,7 @@ public class BitwisePartitionProcessor implements PartitionedProcessor<LineSegme
 
     private final Charset charset;
 
-    public BitwisePartitionProcessor(
+     BitwisePartitionProcessor(
         PartitionedMapper partitionedMapper,
         List<Partition> partitions,
         Charset charset,

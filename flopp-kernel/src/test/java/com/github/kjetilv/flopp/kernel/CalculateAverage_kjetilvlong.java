@@ -16,6 +16,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.nio.file.Path;
 import java.time.Duration;

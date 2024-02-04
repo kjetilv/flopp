@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
@@ -53,7 +53,7 @@ public interface LineSegment {
         return LineSegments.toString(this, length);
     }
 
-    default byte byteAt(int i ) {
+    default byte byteAt(int i) {
         return memorySegment().get(JAVA_BYTE, offset() + i);
     }
 }

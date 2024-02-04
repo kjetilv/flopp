@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.LongSupplier;
 
-public final class BitwisePartitionStreams implements PartitionedStreams {
+final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final Path path;
 
@@ -23,7 +23,7 @@ public final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    public BitwisePartitionStreams(Path path, Shape shape, List<Partition> partitions) {
+    BitwisePartitionStreams(Path path, Shape shape, List<Partition> partitions) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = Objects.requireNonNull(partitions, "partitions");

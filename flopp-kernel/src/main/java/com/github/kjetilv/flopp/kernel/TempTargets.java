@@ -9,6 +9,5 @@ public interface TempTargets<T> extends Closeable {
 
     @Override
     default void close() {
-
     }
 }

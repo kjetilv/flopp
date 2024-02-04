@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
@@ -14,6 +14,11 @@ record ImmutableSliceLine(
 
     @Override
     public LineSegment immutableSlice() {
+        return this;
+    }
+
+    @Override
+    public LineSegment immutable() {
         return this;
     }
 

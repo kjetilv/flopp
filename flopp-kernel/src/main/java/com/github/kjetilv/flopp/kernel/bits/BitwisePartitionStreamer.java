@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class BitwisePartitionStreamer implements PartitionStreamer {
+final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
 
     private final BitwisePartitionSpliterator spliterator;
 
-    public BitwisePartitionStreamer(
+    BitwisePartitionStreamer(
         Partition partition,
         Shape shape,
         MemorySegmentSource memorySegmentSource,

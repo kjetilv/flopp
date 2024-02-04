@@ -8,9 +8,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-public final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
+final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
 
-    public static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
+     static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
         if (shape == null || !shape.hasOverhead()) {
             return null;
         }
@@ -37,7 +37,6 @@ public final class PartitionActionMediator implements BitwisePartitionHandler.Me
         this.footer = footer;
     }
 
-
     @Override
     public BitwisePartitionHandler.Action apply(BitwisePartitionHandler.Action action) {
         Objects.requireNonNull(action, "action");
@@ -51,7 +50,11 @@ public final class PartitionActionMediator implements BitwisePartitionHandler.Me
     }
 
     private void cycle(
-        MemorySegment memorySegment, long offset, long length, Deque<Runnable> deq, BitwisePartitionHandler.Action delegate
+        MemorySegment memorySegment,
+        long offset,
+        long length,
+        Deque<Runnable> deq,
+        BitwisePartitionHandler.Action delegate
     ) {
         if (deq.size() == footer) {
             Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();

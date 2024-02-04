@@ -9,7 +9,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class BitwisePartitionedMapper implements PartitionedMapper {
+class BitwisePartitionedMapper implements PartitionedMapper {
 
     private final PartitionedStreams streams;
 

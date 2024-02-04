@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.lc;
 
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
@@ -52,11 +54,17 @@ public final class Lcc {
             .create(cpus, 128)
             .scaled(2);
 
-        try (BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape)) {
-            List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.streams().lineCounters().map(counter ->
-                CompletableFuture.supplyAsync(
-                    counter::getAsLong,
-                    new ForkJoinPool(cpus * 2))).toList();
+        try (
+            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            PartitionedStreams streams = bitwisePartitioned.streams();
+        ) {
+            List<CompletableFuture<Long>> longSuppliers = streams.lineCounters()
+                .map(counter ->
+                    CompletableFuture.supplyAsync(
+                        counter::getAsLong,
+                        new ForkJoinPool(cpus * 2)
+                    ))
+                .toList();
             long count = longSuppliers.stream().mapToLong(CompletableFuture::join).sum();
             return new Count(path, count);
         }
