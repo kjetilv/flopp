@@ -94,10 +94,10 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     private long findFirstLine() {
         do {
-            mask = mask(loadBytes());
+            mask = mask(loadLong());
             if (mask != 0) {
-                long start = alignedOffset + leap(mask) + 1;
-                clearMask(start);
+                long start = alignedOffset + offsetIn(mask) + 1;
+                mask &= CLEARED[Math.toIntExact(start - alignedOffset)];
                 if (mask == 0) {
                     alignedOffset += ALIGNMENT;
                 }
@@ -112,20 +112,18 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         if (mask != 0) {
             while (mask != 0) {
                 shipLine(action);
-                clearMask(lineStart);
             }
             alignedOffset += ALIGNMENT;
         }
         while (alignedOffset < limit) {
-            mask = mask(loadBytes());
+            mask = mask(loadLong());
             while (mask != 0) {
                 shipLine(action);
-                clearMask(lineStart);
             }
             alignedOffset += ALIGNMENT;
         }
         while (alignedOffset < physicalLimit) {
-            mask = mask(loadBytes());
+            mask = mask(loadLong());
             if (mask != 0) {
                 shipLine(action);
                 return;
@@ -139,30 +137,26 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         if (mask != 0) {
             while (mask != 0) {
                 shipLine(action);
-                clearMask(lineStart);
             }
             alignedOffset += ALIGNMENT;
         }
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (alignedOffset < lastOffset) {
-            mask = mask(loadBytes());
+            mask = mask(loadLong());
             while (mask != 0) {
                 shipLine(action);
-                clearMask(lineStart);
             }
             alignedOffset += ALIGNMENT;
         }
         if (tail > 0) {
-            long l = loadBytes(tail);
-            mask = mask(l);
+            mask = mask(loadTail(tail));
             if (mask != 0) {
                 while (mask != 0) {
                     shipLine(action);
-                    clearMask(lineStart);
                 }
             } else {
-                shipTail(action);
+                ship(action, physicalLimit - lineStart);
             }
         }
     }
@@ -175,9 +169,9 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         if (next.partition.last()) {
             return merge(next.segment, nextOffset);
         }
-        List<BitwisePartitionSpliterator> spliterators = new ArrayList<>();
-        long lastLimit = collectAndFindLimit(spliterators);
-        return combineMultiple(spliterators, lastLimit);
+        List<BitwisePartitionSpliterator> collector = new ArrayList<>();
+        long lastLimit = collectAndFindLimit(collector);
+        return combineMultiple(collector, lastLimit);
     }
 
     @SuppressWarnings("unchecked")
@@ -185,19 +179,16 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return (Consumer<LineSegment>) (mediator == null ? action : mediator.apply(action));
     }
 
-    private void shipLine(Consumer<? super LineSegment> action) {
-        long leap = leap(mask);
-        long offset = alignedOffset + leap;
-        long length = offset - lineStart;
-        line.offset = lineStart;
-        line.length = length;
-        action.accept(line);
-        lineStart += length + 1;
+    private void shipLine(Consumer<LineSegment> action) {
+        long lineBreakOffset = alignedOffset + offsetIn(mask);
+        ship(action, lineBreakOffset - lineStart);
+        lineStart = lineBreakOffset + 1;
+        mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
     }
 
-    private void shipTail(Consumer<LineSegment> action) {
+    private void ship(Consumer<LineSegment> action, long length) {
         line.offset = lineStart;
-        line.length = physicalLimit - lineStart;
+        line.length = length;
         action.accept(line);
     }
 
@@ -209,64 +200,55 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return new ImmutableLine(segment);
     }
 
-    private long collectAndFindLimit(List<BitwisePartitionSpliterator> pile) {
+    private long collectAndFindLimit(List<BitwisePartitionSpliterator> collector) {
         BitwisePartitionSpliterator spliterator = next;
-        pile.add(spliterator);
+        collector.add(spliterator);
         while (true) {
             BitwisePartitionSpliterator nextSpliterator = spliterator.next;
             if (nextSpliterator == null) {
                 return spliterator.limit;
             }
             spliterator = nextSpliterator;
-            pile.add(spliterator);
+            collector.add(spliterator);
             long lo = 0L;
             while (lo < spliterator.physicalLimit) {
                 long prebyte = bytesAt(spliterator.segment, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
-                    return lo + leap(premask);
+                    return lo + offsetIn(premask);
                 }
                 lo += ALIGNMENT;
             }
         }
     }
 
-    private LineSegment combineMultiple(List<BitwisePartitionSpliterator> pile, long lastPreamble) {
+    private LineSegment combineMultiple(
+        List<BitwisePartitionSpliterator> collector,
+        long lastPreamble
+    ) {
         long trail = limit - lineStart;
-        int mediaries = pile.size() - 1;
-        long mediarySize = pile.stream()
+        int mediaries = collector.size() - 1;
+        long mediarySize = collector.stream()
             .limit(mediaries)
             .mapToLong(spliterator -> spliterator.limit)
             .sum();
-        MemorySegment segment =
-            MemorySegment.ofArray(new byte[Math.toIntExact(trail + mediarySize + lastPreamble)]);
+        MemorySegment segment = MemorySegment.ofArray(new byte[Math.toIntExact(trail + mediarySize + lastPreamble)]);
         MemorySegment.copy(this.segment, lineStart, segment, 0, trail);
-        long sizeSoFar = trail;
+        long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
-            BitwisePartitionSpliterator spliterator = pile.get(i);
-            MemorySegment.copy(spliterator.segment, 0, segment, sizeSoFar, spliterator.limit);
-            sizeSoFar += spliterator.limit;
+            BitwisePartitionSpliterator step = collector.get(i);
+            MemorySegment.copy(step.segment, 0, segment, accumulatedSize, step.limit);
+            accumulatedSize += step.limit;
         }
-        BitwisePartitionSpliterator lastPartition = pile.getLast();
-        MemorySegment.copy(
-            lastPartition.segment,
-            0,
-            segment,
-            sizeSoFar,
-            lastPreamble
-        );
+        MemorySegment.copy(collector.getLast().segment, 0, segment, accumulatedSize, lastPreamble);
         return new ImmutableLine(segment);
     }
 
-    private void clearMask(long lineStart) {
-        mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
-    }
-
-    private long loadBytes() {
+    private long loadLong() {
         return bytesAt(segment, alignedOffset);
     }
 
-    private long loadBytes(long count) {
+    private long loadTail(long count) {
         long l = 0;
         for (long i = count - 1; i >= 0; i--) {
             byte b = byteAt(segment, alignedOffset + i);
@@ -304,7 +286,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return clearedHighBits & 0x8080808080808080L;
     }
 
-    private static long leap(long mask) {
+    private static long offsetIn(long mask) {
         return Long.numberOfTrailingZeros(mask) / ALIGNMENT;
     }
 }
