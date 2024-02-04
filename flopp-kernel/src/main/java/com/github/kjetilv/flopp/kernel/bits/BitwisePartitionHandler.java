@@ -7,6 +7,7 @@ import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -291,8 +292,13 @@ public final class BitwisePartitionHandler
         return Long.numberOfTrailingZeros(mask) / ALIGNMENT;
     }
 
+    @FunctionalInterface
     public interface Action {
 
         void line(MemorySegment segment, long offset, long length);
+    }
+
+    @FunctionalInterface
+    public interface Mediator extends Function<Action, Action> {
     }
 }

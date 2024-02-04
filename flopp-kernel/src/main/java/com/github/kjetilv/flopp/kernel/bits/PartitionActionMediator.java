@@ -8,9 +8,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-public final class PartitionActionMediator implements ActionMediator {
+public final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
 
-    public static ActionMediator create(Partition partition, Shape shape) {
+    public static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
         if (shape == null || !shape.hasOverhead()) {
             return null;
         }

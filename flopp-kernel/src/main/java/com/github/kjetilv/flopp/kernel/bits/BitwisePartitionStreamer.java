@@ -10,7 +10,7 @@ public final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
 
-    private final DelegatingBitwisePartitionSpliterator spliterator;
+    private final BitwisePartitionSpliterator spliterator;
 
     public BitwisePartitionStreamer(
         Partition partition,
@@ -19,19 +19,12 @@ public final class BitwisePartitionStreamer implements PartitionStreamer {
         BitwisePartitionStreamer next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.spliterator =
-//            new BitwisePartitionSpliterator(
-//            partition,
-//            memorySegmentSource.open(partition),
-//            LineSegments.mediator(partition, shape),
-//            next == null ? null : next.spliterator
-//        );
-            new DelegatingBitwisePartitionSpliterator(
-                partition,
-                memorySegmentSource.open(partition),
-                LineSegments.actionMediator(partition, shape),
-                next == null ? null : next.spliterator
-            );
+        this.spliterator = new BitwisePartitionSpliterator(
+            partition,
+            memorySegmentSource.open(partition),
+            LineSegments.actionMediator(partition, shape),
+            next == null ? null : next.spliterator
+        );
     }
 
     @Override
