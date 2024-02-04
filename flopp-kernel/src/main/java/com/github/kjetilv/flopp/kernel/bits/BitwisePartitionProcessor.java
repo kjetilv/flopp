@@ -26,7 +26,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
 
     private final Charset charset;
 
-     BitwisePartitionProcessor(
+    BitwisePartitionProcessor(
         PartitionedMapper partitionedMapper,
         List<Partition> partitions,
         Charset charset,
@@ -47,8 +47,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
         ResultCollector<Path> collector =
             new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
-            () ->
-            {
+            () -> {
                 BiFunction<Partition, Stream<LineSegment>, Path> processing =
                     (partition, lines) -> {
                         Path tempTaget = tempTargets.temp(partition);
