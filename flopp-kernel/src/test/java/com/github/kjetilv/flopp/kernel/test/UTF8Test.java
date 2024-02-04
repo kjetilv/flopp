@@ -32,6 +32,11 @@ public class UTF8Test {
     }
 
     @Test
+    void nonTerminatedXyz7parts() throws IOException {
+        assertNonTerminated("whoopsei.txt", 7);
+    }
+
+    @Test
     void testXyz() throws IOException, InterruptedException {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
@@ -174,11 +179,15 @@ public class UTF8Test {
             streams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
-                        .forEach(line ->
-                            sb.append(line.asString()).append("\n")
+                        .forEach(line -> {
+                            String string = line.asString();
+                            System.out.println(string);
+                            sb.append(string).append("\n");
+                            }
                         ));
         }
         assertThat(tmp).content()
+            .describedAs(STR."Failed with \{partitionCount} partitions: \{partitions}")
             .isEqualTo(sb.toString().trim());
     }
 
