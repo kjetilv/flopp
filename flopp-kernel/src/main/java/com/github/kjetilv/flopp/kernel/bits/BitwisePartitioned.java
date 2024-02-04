@@ -22,6 +22,10 @@ public class BitwisePartitioned implements Partitioned<Path> {
         this(path, null, null);
     }
 
+    public BitwisePartitioned(Path path, Partitioning partitioning) {
+        this(path, partitioning, null);
+    }
+
     public BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;

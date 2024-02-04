@@ -136,6 +136,13 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     }
 
     private void processTail(Consumer<LineSegment> action) {
+        if (mask != 0) {
+            while (mask != 0) {
+                shipLine(action);
+                clearMask(lineStart);
+            }
+            alignedOffset += ALIGNMENT;
+        }
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (alignedOffset < lastOffset) {
@@ -149,9 +156,13 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         if (tail > 0) {
             long l = loadBytes(tail);
             mask = mask(l);
-            while (mask != 0) {
-                shipLine(action);
-                clearMask(lineStart);
+            if (mask != 0) {
+                while (mask != 0) {
+                    shipLine(action);
+                    clearMask(lineStart);
+                }
+            } else {
+                shipTail(action);
             }
         }
     }
@@ -162,7 +173,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             return merge(next.segment, nextOffset - 1);
         }
         if (next.partition.last()) {
-            throw new IllegalStateException("Unterminated line");
+            return merge(next.segment, nextOffset);
         }
         List<BitwisePartitionSpliterator> spliterators = new ArrayList<>();
         long lastLimit = collectAndFindLimit(spliterators);
@@ -171,11 +182,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
 
     @SuppressWarnings("unchecked")
     private Consumer<LineSegment> mediate(Consumer<? super LineSegment> action) {
-        return (Consumer<LineSegment>) (
-            mediator == null
-                ? action
-                : mediator.apply(action)
-        );
+        return (Consumer<LineSegment>) (mediator == null ? action : mediator.apply(action));
     }
 
     private void shipLine(Consumer<? super LineSegment> action) {
@@ -186,6 +193,12 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         line.length = length;
         action.accept(line);
         lineStart += length + 1;
+    }
+
+    private void shipTail(Consumer<LineSegment> action) {
+        line.offset = lineStart;
+        line.length = physicalLimit - lineStart;
+        action.accept(line);
     }
 
     private LineSegment merge(MemorySegment next, long preamble) {
@@ -200,10 +213,11 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         BitwisePartitionSpliterator spliterator = next;
         pile.add(spliterator);
         while (true) {
-            spliterator = spliterator.next;
-            if (spliterator == null) {
-                throw new IllegalStateException("Unterminated line");
+            BitwisePartitionSpliterator nextSpliterator = spliterator.next;
+            if (nextSpliterator == null) {
+                return spliterator.limit;
             }
+            spliterator = nextSpliterator;
             pile.add(spliterator);
             long lo = 0L;
             while (lo < spliterator.physicalLimit) {

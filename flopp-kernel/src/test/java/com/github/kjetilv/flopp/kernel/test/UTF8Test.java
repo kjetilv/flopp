@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel.test;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
 import org.junit.jupiter.api.Test;
 
@@ -11,11 +8,28 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UTF8Test {
+
+    @Test
+    void nonTerminated() throws IOException {
+        assertNonTerminated("dotted.txt", 2);
+        assertNonTerminated("dotted.txt", 3);
+    }
+
+    @Test
+    void nonTerminatedXyz2() throws IOException {
+        for (int i = 3; i < 8; i++) {
+            assertNonTerminated("whoopsei.txt", i);
+        }
+    }
 
     @Test
     void testXyz() throws IOException, InterruptedException {
@@ -34,8 +48,7 @@ public class UTF8Test {
             try {
                 extract(streams, sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + Files.lines(path)
-                    .collect(Collectors.joining("\n")));
+                System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -58,8 +71,7 @@ public class UTF8Test {
             try {
                 extract(streams, sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + Files.lines(path)
-                    .collect(Collectors.joining("\n")));
+                System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -85,8 +97,7 @@ public class UTF8Test {
             try {
                 extract(streams, sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + Files.lines(path)
-                    .collect(Collectors.joining("\n")));
+                System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -102,11 +113,12 @@ public class UTF8Test {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            PartitionedStreams streams = new BitwisePartitioned(
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
                 path,
                 Partitioning.create(4, 20),
                 Shape.of(path).longestLine(512)
-            ).streams()
+            );
+            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
@@ -123,11 +135,12 @@ public class UTF8Test {
         Path path = path("a.txt");
         StringBuilder sb;
         try (
-            PartitionedStreams streams = new BitwisePartitioned(
+            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
                 path,
                 Partitioning.create(3, 40),
                 Shape.of(path).longestLine(40)
-            ).streams()
+            );
+            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
@@ -141,9 +154,46 @@ public class UTF8Test {
             .isEqualTo(sb.toString());
     }
 
+    private static void assertNonTerminated(String file, int partitionCount) throws IOException {
+        Path path = path(file);
+        Path tmp = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
+        String trimmedContent;
+        try (
+            Stream<String> lines = Files.lines(path)
+        ) {
+            trimmedContent = lines.collect(Collectors.joining("\n"));
+            Files.write(tmp, trimmedContent.trim().getBytes());
+        }
+        StringBuilder sb = new StringBuilder();
+        Partitioning partitioning = Partitioning.create(partitionCount);
+        List<Partition> partitions = partitioning.of(Shape.of(tmp).size());
+        try (
+            BitwisePartitioned partitioned = new BitwisePartitioned(tmp, partitioning)
+        ) {
+            PartitionedStreams streams = partitioned.streams();
+            streams.streamers()
+                .forEach(partitionStreamer ->
+                    partitionStreamer.lines()
+                        .forEach(line ->
+                            sb.append(line.asString()).append("\n")
+                        ));
+        }
+        assertThat(tmp).content()
+            .isEqualTo(sb.toString().trim());
+    }
+
+    private static String linesOf(Path path) {
+        try (Stream<String> lines = Files.lines(path)) {
+            return lines.collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @SuppressWarnings("DataFlowIssue")
     private static Path path(String name) {
         URL resource = Thread.currentThread().getContextClassLoader().getResource(name);
-        Path path = Path.of(resource.getFile());
+        Path path = Path.of(Objects.requireNonNull(resource.getFile(), "resource.getFile()"));
         return path;
     }
 
