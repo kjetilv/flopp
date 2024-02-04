@@ -112,7 +112,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
     private void processInitial(Consumer<LineSegment> action) {
         if (mask != 0) {
             while (mask != 0) {
-                shipLine(action);
+                shipNextLine(action);
             }
             alignedOffset += ALIGNMENT;
         }
@@ -134,7 +134,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
             mask = mask(loadTail(tail));
             if (mask != 0) {
                 while (mask != 0) {
-                    shipLine(action);
+                    shipNextLine(action);
                 }
             } else {
                 ship(action, physicalLimit - lineStart);
@@ -146,7 +146,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         while (alignedOffset < lastOffset) {
             mask = mask(loadLong());
             while (mask != 0) {
-                shipLine(action);
+                shipNextLine(action);
             }
             alignedOffset += ALIGNMENT;
         }
@@ -156,7 +156,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         while (alignedOffset < physicalLimit) {
             mask = mask(loadLong());
             if (mask != 0) {
-                shipLine(action);
+                shipNextLine(action);
                 return true;
             }
             alignedOffset += ALIGNMENT;
@@ -164,7 +164,7 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return false;
     }
 
-    private void shipLine(Consumer<LineSegment> action) {
+    private void shipNextLine(Consumer<LineSegment> action) {
         long lineBreakOffset = alignedOffset + offsetIn(mask);
         ship(action, lineBreakOffset - lineStart);
         lineStart = lineBreakOffset + 1;
@@ -206,18 +206,18 @@ public final class BitwisePartitionSpliterator extends Spliterators.AbstractSpli
         return mergeWithMultiple();
     }
 
-    private LineSegment mergeWithMultiple() {
-        List<BitwisePartitionSpliterator> collector = new ArrayList<>();
-        long lastLimit = collectAndFindLimit(collector);
-        return combineMultiple(collector, lastLimit);
-    }
-
     private LineSegment mergeWithNext(MemorySegment next, long preamble) {
         long trail = limit - lineStart;
         MemorySegment segment = MemorySegment.ofArray(new byte[Math.toIntExact(trail + preamble)]);
         MemorySegment.copy(this.segment, lineStart, segment, 0, trail);
         MemorySegment.copy(next, 0, segment, trail, preamble);
         return new ImmutableLine(segment);
+    }
+
+    private LineSegment mergeWithMultiple() {
+        List<BitwisePartitionSpliterator> collector = new ArrayList<>();
+        long lastLimit = collectAndFindLimit(collector);
+        return combineMultiple(collector, lastLimit);
     }
 
     private long collectAndFindLimit(List<BitwisePartitionSpliterator> collector) {
