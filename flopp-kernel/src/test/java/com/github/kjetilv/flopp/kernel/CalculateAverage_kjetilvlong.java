@@ -22,17 +22,20 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class CalculateAverage_kjetilvlong {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+        for (String arg : args) {
+            go1(Path.of(arg));
+        }
+    }
+
+    private static void go1(Path path) {
         Instant start = Instant.now();
-        Path path = Path.of(FILE);
         Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
@@ -40,7 +43,11 @@ public final class CalculateAverage_kjetilvlong {
         ).scaled(2);
         int chunks = partitioning.of(shape.size()).size();
         try (
-            ExecutorService executor = new ForkJoinPool(chunks);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                1, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(chunks));
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
@@ -66,8 +73,6 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
         }
     }
-
-    private static final String FILE = "./measurements.txt";
 
     private static Set<String> keySet(List<Map<String, Result>> maps) {
         return maps.stream()

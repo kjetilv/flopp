@@ -130,7 +130,7 @@ final class BitwisePartitionHandler
                     shipNextLine();
                 }
             } else {
-                action.line(segment, lineStart, physicalLimit - lineStart);
+                action.line(segment, lineStart, physicalLimit);
             }
         }
     }
@@ -139,10 +139,7 @@ final class BitwisePartitionHandler
         while (alignedOffset < lastOffset) {
             mask = mask(loadLong());
             while (mask != 0) {
-                long lineBreakOffset = alignedOffset + offsetIn(mask);
-                action.line(segment, lineStart, lineBreakOffset - lineStart);
-                lineStart = lineBreakOffset + 1;
-                mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
+                shipNextLine();
             }
             alignedOffset += ALIGNMENT;
         }
@@ -161,10 +158,11 @@ final class BitwisePartitionHandler
     }
 
     private void shipNextLine() {
-        long lineBreakOffset = alignedOffset + offsetIn(mask);
-        action.line(segment, lineStart, lineBreakOffset - lineStart);
+        int offsetInMask = offsetIn(mask);
+        long lineBreakOffset = alignedOffset + offsetInMask;
+        action.line(segment, lineStart, lineBreakOffset);
         lineStart = lineBreakOffset + 1;
-        mask &= CLEARED[Math.toIntExact(lineStart - alignedOffset)];
+        mask &= CLEARED[offsetInMask + 1];
     }
 
     private long loadLong() {
@@ -239,7 +237,7 @@ final class BitwisePartitionHandler
         action.line(buffer, 0, length);
     }
 
-    private static final long ALIGNMENT = 0x08L;
+    private static final int ALIGNMENT = 0x08;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFFFFL,
@@ -268,7 +266,7 @@ final class BitwisePartitionHandler
         return clearedHighBits & 0x8080808080808080L;
     }
 
-    private static long offsetIn(long mask) {
+    private static int offsetIn(long mask) {
         return Long.numberOfTrailingZeros(mask) / ALIGNMENT;
     }
 
@@ -300,7 +298,7 @@ final class BitwisePartitionHandler
     @FunctionalInterface
     public interface Action {
 
-        void line(MemorySegment segment, long offset, long length);
+        void line(MemorySegment segment, long startIndex, long endIndex);
     }
 
     @FunctionalInterface

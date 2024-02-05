@@ -43,7 +43,7 @@ final class BitwiseCounter {
         private long lc = 0;
 
         @Override
-        public void line(MemorySegment memorySegment, long offset, long count) {
+        public void line(MemorySegment memorySegment, long startIndex, long count) {
             lc++;
         }
     }

@@ -51,15 +51,15 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
 
     private void cycle(
         MemorySegment memorySegment,
-        long offset,
-        long length,
+        long startIndex,
+        long endIndex,
         Deque<Runnable> deq,
         BitwisePartitionHandler.Action delegate
     ) {
         if (deq.size() == footer) {
             Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
         }
-        deq.offerFirst(() -> delegate.line(memorySegment, offset, length));
+        deq.offerFirst(() -> delegate.line(memorySegment, startIndex, endIndex));
     }
 
     @SuppressWarnings("DuplicatedCode")
@@ -74,9 +74,9 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         }
 
         @Override
-        public void line(MemorySegment segment, long offset, long length) {
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
             if (headersLeft == 0) {
-                delegate.line(segment, offset, length);
+                delegate.line(segment, startIndex, endIndex);
             } else {
                 headersLeft--;
             }
@@ -103,9 +103,9 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         }
 
         @Override
-        public void line(MemorySegment segment, long offset, long length) {
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
             if (headersLeft == 0) {
-                cycle(segment, offset, length, deque, delegate);
+                cycle(segment, startIndex, endIndex, deque, delegate);
             } else {
                 headersLeft--;
             }
@@ -132,8 +132,8 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         }
 
         @Override
-        public void line(MemorySegment segment, long offset, long length) {
-            cycle(segment, offset, length, deque, delegate);
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
+            cycle(segment, startIndex, endIndex, deque, delegate);
         }
 
         @Override
