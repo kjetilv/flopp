@@ -62,7 +62,7 @@ public class BitwiseSpliteratorTest {
             streamers.streamers().forEach(streamer -> {
                 streamer.lines().forEach(line -> {
                     byte[] utf8String = line.memorySegment()
-                        .asSlice(line.offset(), line.length())
+                        .asSlice(line.startIndex(), line.length())
                         .toArray(ValueLayout.JAVA_BYTE);
                     String x = "## " + new String(utf8String).replace("\n", "^\n");
                     System.out.println(x);

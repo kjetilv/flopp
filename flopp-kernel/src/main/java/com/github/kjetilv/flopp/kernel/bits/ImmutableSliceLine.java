@@ -2,19 +2,17 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
-record ImmutableSliceLine(
-    MemorySegment memorySegment,
-    long length
-) implements LineSegment {
+record ImmutableSliceLine(MemorySegment memorySegment, long length)
+    implements LineSegment {
 
     @Override
-    public long offset() {
+    public long startIndex() {
         return 0;
     }
 
     @Override
-    public LineSegment immutableSlice() {
-        return this;
+    public long endIndex() {
+        return length;
     }
 
     @Override
@@ -23,7 +21,12 @@ record ImmutableSliceLine(
     }
 
     @Override
+    public LineSegment immutableSlice() {
+        return this;
+    }
+
+    @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{offset()}+\{length()}]";
+        return STR."\{getClass().getSimpleName()}[\{startIndex()}-\{endIndex()}]";
     }
 }

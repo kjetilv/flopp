@@ -83,11 +83,11 @@ final class BitwisePartitionSpliterator
 
         private final Consumer<? super LineSegment> action;
 
-        private MemorySegment segment;
+        private MemorySegment memorySegment;
 
-        private long offset;
+        private long startIndex;
 
-        private long length;
+        private long endIndex;
 
         private MutationForwarder(Consumer<? super LineSegment> action) {
             this.action = Objects.requireNonNull(action, "action");
@@ -95,30 +95,30 @@ final class BitwisePartitionSpliterator
 
         @Override
         public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
-            offset = startIndex;
-            length = endIndex - startIndex;
-            segment = memorySegment;
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
+            this.memorySegment = memorySegment;
             action.accept(this);
         }
 
         @Override
         public MemorySegment memorySegment() {
-            return segment;
+            return memorySegment;
         }
 
         @Override
-        public long offset() {
-            return offset;
+        public long startIndex() {
+            return startIndex;
         }
 
         @Override
-        public long length() {
-            return length;
+        public long endIndex() {
+            return endIndex;
         }
 
         @Override
         public String toString() {
-            return LineSegment.toString(segment, offset, length);
+            return LineSegment.toString(memorySegment, startIndex, endIndex);
         }
     }
 }

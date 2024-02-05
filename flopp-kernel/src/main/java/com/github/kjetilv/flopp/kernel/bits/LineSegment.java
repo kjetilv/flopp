@@ -8,28 +8,25 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public interface LineSegment {
 
     static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
-        return new ImmutableLine(memorySegment, startIndex, endIndex - startIndex);
+        return new ImmutableLine(memorySegment, startIndex, endIndex);
     }
 
-    static LineSegment of(MemorySegment memorySegment, long offset, long length) {
-        return new ImmutableLine(memorySegment, offset, length);
+    static LineSegment of(MemorySegment memorySegment, long start, long end) {
+        return new ImmutableLine(memorySegment, start, end);
     }
 
-    static String toString(MemorySegment segment, long offset, long length) {
-        return of(segment, offset, length).asString();
+    static String toString(MemorySegment segment, long start, long end) {
+        return of(segment, start, end).asString();
     }
 
     MemorySegment memorySegment();
 
-    long offset();
+    long startIndex();
 
-    long length();
+    long endIndex();
 
-    default LineSegment validate() {
-        if (length() < 0) {
-            throw new IllegalStateException(STR."\{this} has negative length");
-        }
-        return this;
+    default long length() {
+        return endIndex() - startIndex();
     }
 
     default String tooString() {
@@ -41,15 +38,15 @@ public interface LineSegment {
     }
 
     default LineSegment immutable() {
-        return new ImmutableLine(memorySegment(), offset(), length());
+        return new ImmutableLine(memorySegment(), startIndex(), endIndex());
     }
 
     default LineSegment immutableSlice() {
-        return immutableSLice(length());
+        return immutableSLice(endIndex());
     }
 
     default LineSegment immutableSLice(long length) {
-        MemorySegment slice = memorySegment().asSlice(offset(), length);
+        MemorySegment slice = memorySegment().asSlice(startIndex(), length);
         return new ImmutableSliceLine(slice, length);
     }
 
@@ -62,6 +59,6 @@ public interface LineSegment {
     }
 
     default byte byteAt(int i) {
-        return memorySegment().get(JAVA_BYTE, offset() + i);
+        return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
 }

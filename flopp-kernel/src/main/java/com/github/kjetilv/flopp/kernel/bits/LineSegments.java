@@ -32,7 +32,6 @@ public final class LineSegments {
     }
 
     private static MemorySegment slice(LineSegment line) {
-        return line.memorySegment()
-            .asSlice(line.offset(), line.length());
+        return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
     }
 }
