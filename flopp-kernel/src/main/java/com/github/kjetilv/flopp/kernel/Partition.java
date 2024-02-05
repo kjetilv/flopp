@@ -58,4 +58,8 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         }
         return (simpleBuffer / ALIGNMENT + 1) * ALIGNMENT;
     }
+
+    public boolean single() {
+        return partitionCount == 1;
+    }
 }
