@@ -18,6 +18,8 @@ final class BitwisePartitionSpliterator
 
     private final BitwisePartitionSpliterator next;
 
+    private final boolean copying;
+
     private final MemorySegment segment;
 
     BitwisePartitionSpliterator(
@@ -26,20 +28,29 @@ final class BitwisePartitionSpliterator
         Mediator mediator,
         BitwisePartitionSpliterator next
     ) {
+        this(partition, segment, mediator, next, false);
+    }
+
+    BitwisePartitionSpliterator(
+        Partition partition,
+        MemorySegment segment,
+        Mediator mediator,
+        BitwisePartitionSpliterator next,
+        boolean copying
+    ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = segment;
         this.mediator = mediator;
         this.next = next;
+        this.copying = copying;
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            Action forwarder = new Forwarder(action);
-            Action mediated = mediator == null
-                ? forwarder
-                : mediator.apply(forwarder);
+            Action forwarder = copying ? new CopyingForwarder(action) : new MutationForwarder(action);
+            Action mediated = mediator == null ? forwarder : mediator.apply(forwarder);
             handler(mediated).run();
             return false;
         } catch (Exception e) {
@@ -63,7 +74,21 @@ final class BitwisePartitionSpliterator
         );
     }
 
-    private static final class Forwarder implements Action, LineSegment {
+    private static final class CopyingForwarder implements Action {
+
+        private final Consumer<? super LineSegment> action;
+
+        private CopyingForwarder(Consumer<? super LineSegment> action) {
+            this.action = action;
+        }
+
+        @Override
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
+            action.accept(LineSegment.ofRange(segment,  startIndex,endIndex));
+        }
+    }
+
+    private static final class MutationForwarder implements Action, LineSegment {
 
         private final Consumer<? super LineSegment> action;
 
@@ -73,7 +98,7 @@ final class BitwisePartitionSpliterator
 
         private long length;
 
-        private Forwarder(Consumer<? super LineSegment> action) {
+        private MutationForwarder(Consumer<? super LineSegment> action) {
             this.action = Objects.requireNonNull(action, "action");
         }
 
@@ -102,7 +127,7 @@ final class BitwisePartitionSpliterator
 
         @Override
         public String toString() {
-            return new ImmutableLine(segment, offset, length).asString();
+            return LineSegment.toString(segment, offset, length);
         }
     }
 }

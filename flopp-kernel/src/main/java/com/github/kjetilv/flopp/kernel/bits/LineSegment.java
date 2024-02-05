@@ -7,8 +7,16 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @SuppressWarnings("unused")
 public interface LineSegment {
 
+    static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
+        return new ImmutableLine(memorySegment, startIndex, endIndex - startIndex);
+    }
+
     static LineSegment of(MemorySegment memorySegment, long offset, long length) {
         return new ImmutableLine(memorySegment, offset, length);
+    }
+
+    static String toString(MemorySegment segment, long offset, long length) {
+        return of(segment, offset, length).asString();
     }
 
     MemorySegment memorySegment();

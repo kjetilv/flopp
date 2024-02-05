@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -16,14 +18,16 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         Partition partition,
         Shape shape,
         MemorySegmentSource memorySegmentSource,
-        BitwisePartitionStreamer next
+        BitwisePartitionStreamer next,
+        boolean copying
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.spliterator = new BitwisePartitionSpliterator(
             partition,
             memorySegmentSource.open(partition),
             LineSegments.actionMediator(partition, shape),
-            next == null ? null : next.spliterator
+            next == null ? null : next.spliterator,
+            copying
         );
     }
 

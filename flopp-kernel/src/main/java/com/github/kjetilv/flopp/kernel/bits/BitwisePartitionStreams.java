@@ -34,11 +34,11 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     }
 
     @Override
-    public List<? extends PartitionStreamer> streamersList() {
+    public List<? extends PartitionStreamer> streamersList(boolean copying) {
         return BitwisePartitionStreams.<BitwisePartitionStreamer>buildUp(
             new LinkedList<>(partitions),
             (partition, streamer) ->
-                new BitwisePartitionStreamer(partition, shape, memorySegmentSource, streamer)
+                new BitwisePartitionStreamer(partition, shape, memorySegmentSource, streamer, copying)
         );
     }
 

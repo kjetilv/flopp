@@ -31,20 +31,16 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
     private final int footer;
 
     private PartitionActionMediator(int header, int footer) {
-        this.header = header;
-        this.footer = footer;
+        this.header = Non.negative(header, "header");
+        this.footer = Non.negative(footer, "footer");
     }
 
     @Override
     public BitwisePartitionHandler.Action apply(BitwisePartitionHandler.Action action) {
         Objects.requireNonNull(action, "action");
-        if (header > 0 && footer > 0) {
-            return new HeaderAndFooter(action, header, footer);
-        }
-        if (header > 0) {
-            return new HeaderOnly(action, header);
-        }
-        return new FooterOnly(action, footer);
+        return header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
+            : header > 0 ? new HeaderOnly(action, header)
+                : new FooterOnly(action, footer);
     }
 
     private static void cycle(
@@ -63,11 +59,11 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
 
     private static final class HeaderOnly implements BitwisePartitionHandler.Action {
 
-        private int headersLeft;
-
         private final BitwisePartitionHandler.Action delegate;
 
         private final int header;
+
+        private int headersLeft;
 
         private HeaderOnly(BitwisePartitionHandler.Action delegate, int header) {
             this.delegate = Objects.requireNonNull(delegate, "action");
@@ -129,9 +125,9 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
 
         private final BitwisePartitionHandler.Action delegate;
 
-        private final int footer;
-
         private final Deque<Runnable> deque;
+
+        private final int footer;
 
         private FooterOnly(BitwisePartitionHandler.Action delegate, int footer) {
             this.delegate = Objects.requireNonNull(delegate, "action");

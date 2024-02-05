@@ -8,14 +8,22 @@ import java.util.stream.Stream;
 public interface PartitionedStreams extends Closeable {
 
     default Stream<? extends PartitionStreamer> streamers() {
-        return streamersList().stream();
+        return streamers(false);
+    }
+
+    default Stream<? extends PartitionStreamer> streamers(boolean copying) {
+        return streamersList(copying).stream();
     }
 
     default Stream<LongSupplier> lineCounters() {
         return lineCountersList().stream();
     }
 
-    List<? extends PartitionStreamer> streamersList();
+    default List<? extends PartitionStreamer> streamersList() {
+        return streamersList(false);
+    }
+
+    List<? extends PartitionStreamer> streamersList(boolean copying);
 
     List<LongSupplier> lineCountersList();
 
