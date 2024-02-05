@@ -15,7 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
 import java.nio.file.Path;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public final class CalculateAverage_kjetilvlong {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         for (String arg : args) {
             go1(Path.of(arg));
         }
@@ -47,8 +47,9 @@ public final class CalculateAverage_kjetilvlong {
                 chunks,
                 chunks,
                 1, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(chunks));
-            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+                new LinkedBlockingQueue<>(chunks)
+            );
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             System.out.println(Duration.between(start, Instant.now()));
@@ -110,7 +111,7 @@ public final class CalculateAverage_kjetilvlong {
     ) {
         TreeMap<String, Result> treeMap = new TreeMap<>(maps.getFirst());
         maps.stream().skip(1)
-            .forEach(map -> {
+            .forEach(map ->
                 keys.forEach(key -> {
                     Result base = treeMap.get(key);
                     Result addendum = map.get(key);
@@ -120,8 +121,7 @@ public final class CalculateAverage_kjetilvlong {
                         Result merged = base.merge(addendum);
                         treeMap.put(key, merged);
                     }
-                });
-            });
+                }));
         return treeMap;
     }
 

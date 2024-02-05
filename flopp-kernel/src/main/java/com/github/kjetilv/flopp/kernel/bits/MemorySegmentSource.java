@@ -11,7 +11,6 @@ import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
@@ -23,27 +22,20 @@ final class MemorySegmentSource implements Closeable {
 
     private final Shape shape;
 
-    private final Supplier<Arena> arena;
+    private final Arena arena = Arena.ofAuto();
 
     private final FileChannel channel;
 
-    MemorySegmentSource(Path path, Shape shape, Supplier<Arena> arena) {
+    MemorySegmentSource(Path path, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
-        this.arena = Objects.requireNonNull(arena, "arena");
-
         this.randomAccessFile = openRandomAccess(path);
         this.channel = randomAccessFile.getChannel();
     }
 
     public MemorySegment open(Partition partition) {
         try {
-            return channel.map(
-                READ_ONLY,
-                partition.offset(),
-                partition.length(shape),
-                arena.get()
-            );
+            return channel.map(READ_ONLY, partition.offset(), partition.length(shape), arena);
         } catch (IOException e) {
             throw new IllegalStateException(STR."\{this} could not open [\{partition}", e);
         }

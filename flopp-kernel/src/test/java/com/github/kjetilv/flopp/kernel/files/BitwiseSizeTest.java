@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
 import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
@@ -154,7 +154,7 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions);
         try (
-            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
@@ -172,7 +172,7 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> partitioned = bitwisePartitioned.processor(tmp)
         ) {
             partitioned.process(processor, readerExec);
@@ -185,7 +185,7 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Partitioning partitioning = new Partitioning(partitions, 8192);
         try (
-            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
@@ -201,7 +201,7 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
         try (
-            Partitioned<Path> partitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> partitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = partitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);

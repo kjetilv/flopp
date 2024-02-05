@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class PartitionedTest {
         int partitionCount = Runtime.getRuntime()
             .availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
-        Partitioned<Path> pf1 = new BitwisePartitioned(pathWithHeaders, partitioning, shape);
+        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.lines()
@@ -62,7 +62,7 @@ class PartitionedTest {
         pf1.close();
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = new BitwisePartitioned(pathWithHeaders, partitioning, shape);
+        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
@@ -124,7 +124,7 @@ class PartitionedTest {
         Partitioning partitioning = new Partitioning(partitionCount, 16);
 
         ExecutorService executorService = Executors.newFixedThreadPool(10);
-        Partitioned<Path> pf1 = new BitwisePartitioned(pathWithHeaders, partitioning, shape);
+        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.lines()
@@ -133,7 +133,7 @@ class PartitionedTest {
         pf1.close();
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = new BitwisePartitioned(pathWithHeaders, partitioning, shape);
+        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
 
         List<String> asyncLines = new ArrayList<>();
 
@@ -177,7 +177,7 @@ class PartitionedTest {
         ExecutorService executorService = Executors.newFixedThreadPool(10);
         int partitionCount = Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
-        Partitioned<Path> pf1 = new BitwisePartitioned(pathWithHeaders,  partitioning, shape);
+        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders,  partitioning, shape);
         pf1.streams().streamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.lines()
@@ -187,7 +187,7 @@ class PartitionedTest {
         pf1.close();
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = new BitwisePartitioned(pathWithHeaders, partitioning, shape);
+        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
 
         List<String> asyncLines = new ArrayList<>();
 

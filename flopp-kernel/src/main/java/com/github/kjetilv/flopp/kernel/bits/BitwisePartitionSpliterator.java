@@ -26,15 +26,6 @@ final class BitwisePartitionSpliterator
         Partition partition,
         MemorySegment segment,
         Mediator mediator,
-        BitwisePartitionSpliterator next
-    ) {
-        this(partition, segment, mediator, next, false);
-    }
-
-    BitwisePartitionSpliterator(
-        Partition partition,
-        MemorySegment segment,
-        Mediator mediator,
         BitwisePartitionSpliterator next,
         boolean copying
     ) {

@@ -4,7 +4,7 @@ import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -55,8 +55,8 @@ public final class Lcc {
             .scaled(2);
 
         try (
-            Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
-            PartitionedStreams streams = bitwisePartitioned.streams();
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             List<CompletableFuture<Long>> longSuppliers = streams.lineCounters()
                 .map(counter ->

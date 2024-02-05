@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.test;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import org.junit.jupiter.api.Test;
 
@@ -38,12 +38,12 @@ public class UTF8Test {
     }
 
     @Test
-    void testXyz() throws IOException, InterruptedException {
+    void testXyz() throws InterruptedException {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
         Partitioning partitioning = Partitioning.create(6, 20);
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 partitioning,
                 Shape.of(path).longestLine(20)
@@ -66,11 +66,11 @@ public class UTF8Test {
     }
 
     @Test
-    void testXyz2() throws IOException, InterruptedException {
+    void testXyz2() throws InterruptedException {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path);
             PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
@@ -89,15 +89,16 @@ public class UTF8Test {
     }
 
     @Test
-    void test() throws IOException, InterruptedException {
+    void test() throws InterruptedException {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            PartitionedStreams streams = new BitwisePartitioned(
+            Partitioned<Path> partititioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(3, 112),
                 Shape.of(path).longestLine(110)
-            ).streams()
+            );
+            PartitionedStreams streams = partititioned.streams()
         ) {
             sb = new StringBuilder();
             try {
@@ -119,7 +120,7 @@ public class UTF8Test {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(4, 20),
                 Shape.of(path).longestLine(512)
@@ -141,7 +142,7 @@ public class UTF8Test {
         Path path = path("a.txt");
         StringBuilder sb;
         try (
-            BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(3, 40),
                 Shape.of(path).longestLine(40)
@@ -174,7 +175,7 @@ public class UTF8Test {
         Partitioning partitioning = Partitioning.create(partitionCount);
         List<Partition> partitions = partitioning.of(Shape.of(tmp).size());
         try (
-            BitwisePartitioned partitioned = new BitwisePartitioned(tmp, partitioning)
+            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
         ) {
             PartitionedStreams streams = partitioned.streams();
             streams.streamers()

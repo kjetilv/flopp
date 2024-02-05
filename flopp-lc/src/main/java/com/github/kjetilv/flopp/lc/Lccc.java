@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.lc;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -51,7 +51,7 @@ public final class Lccc {
         Partitioning partitioning = Partitioning
             .create(cpus, 128)
             .scaled(2);
-        BitwisePartitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+        Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
         Stream<? extends PartitionStreamer> streamers = bitwisePartitioned.streams().streamers();
         List<CompletableFuture<Long>> futures = streamers
             .map(streamer ->
@@ -71,7 +71,7 @@ public final class Lccc {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.create(Runtime.getRuntime().availableProcessors(), 64);
         try (
-            Partitioned bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             futures = streamers.streamers()
@@ -85,7 +85,7 @@ public final class Lccc {
     private static long count(PartitionStreamer streamer) {
         LongAdder longAdder = new LongAdder();
         streamer.lines()
-            .forEach(__ -> longAdder.increment());
+            .forEach(_ -> longAdder.increment());
         return longAdder.longValue();
     }
 

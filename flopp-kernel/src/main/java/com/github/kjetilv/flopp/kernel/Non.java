@@ -1,7 +1,16 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.util.Collection;
+
 @SuppressWarnings("unused")
 public final class Non {
+
+    public static <T, C extends Collection<T>> C empty(C cs, String contents) {
+        if (cs == null || cs.isEmpty()) {
+            throw new IllegalArgumentException(STR."Empty collection: \{contents}");
+        }
+        return cs;
+    }
 
     private Non() {
     }

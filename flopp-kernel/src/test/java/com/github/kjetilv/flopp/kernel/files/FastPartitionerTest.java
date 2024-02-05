@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -78,7 +78,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file)).headerFooter(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
-            Partitioned<Path> partitioned = new BitwisePartitioned(
+            Partitioned<Path> partitioned = Bitwise.partititioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -107,7 +107,7 @@ public class FastPartitionerTest {
 
         Shape shape = Shape.size(Files.size(file)).longestLine(32).headerFooter(1, 1);
         try (
-            Partitioned<Path> partitioned = new BitwisePartitioned(
+            Partitioned<Path> partitioned = Bitwise.partititioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -146,7 +146,7 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).headerFooter(1, 1);
         try (
-            BitwisePartitioned partitioned = new BitwisePartitioned(file, partitioning, shape);
+            Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape);
             PartitionedStreams bitwisePartitionStreams = partitioned.streams()
         ) {
             LongAdder cont = new LongAdder();

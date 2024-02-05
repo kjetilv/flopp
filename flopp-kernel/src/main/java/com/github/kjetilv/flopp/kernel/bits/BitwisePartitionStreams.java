@@ -1,11 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 
-import java.lang.foreign.Arena;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,11 +22,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     BitwisePartitionStreams(Path path, Shape shape, List<Partition> partitions) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
-        this.partitions = Objects.requireNonNull(partitions, "partitions");
-        if (this.partitions.isEmpty()) {
-            throw new IllegalArgumentException("No partitions receveid");
-        }
-        this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape, Arena::ofAuto);
+        this.partitions =
+            Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
+
+        this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape);
     }
 
     @Override
@@ -45,8 +40,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public List<LongSupplier> lineCountersList() {
         return BitwisePartitionStreams.<BitwiseCounter>buildUp(
-                new LinkedList<>(partitions), (partition, bitwiseCounter) ->
-                    new BitwiseCounter(partition, memorySegmentSource, bitwiseCounter))
+                new LinkedList<>(partitions),
+                (partition, counter) ->
+                    new BitwiseCounter(partition, memorySegmentSource, counter)
+            )
             .stream()
             .map(BitwisePartitionStreams::counter)
             .toList();
@@ -67,7 +64,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     }
 
     private static LongSupplier counter(BitwiseCounter counter) {
-        return (LongSupplier) counter::count;
+        return counter::count;
     }
 
     private static <T> LinkedList<T> buildUp(
@@ -79,8 +76,8 @@ final class BitwisePartitionStreams implements PartitionedStreams {
         }
         Partition head = partitionsTail.removeFirst();
         LinkedList<T> ts = buildUp(partitionsTail, function);
-        T nextStreamer = ts.isEmpty() ? null : ts.getFirst();
-        ts.addFirst(function.apply(head, nextStreamer));
+        T nextT = ts.isEmpty() ? null : ts.getFirst();
+        ts.addFirst(function.apply(head, nextT));
         return ts;
     }
 }
