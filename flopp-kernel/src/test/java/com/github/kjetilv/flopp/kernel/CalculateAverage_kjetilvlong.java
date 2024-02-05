@@ -40,7 +40,7 @@ public final class CalculateAverage_kjetilvlong {
         ).scaled(2);
         int chunks = partitioning.of(shape.size()).size();
         try (
-            ExecutorService executor = new ForkJoinPool(chunks * 2);
+            ExecutorService executor = new ForkJoinPool(chunks);
             Partitioned<Path> bitwisePartitioned = new BitwisePartitioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {

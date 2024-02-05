@@ -38,7 +38,9 @@ final class BitwisePartitionSpliterator
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            handler(mediated(lineForwarder(action))).run();
+            Action forwarder = lineForwarder(action);
+            Action mediated = mediated(forwarder);
+            handler(mediated).run();
             return false;
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
@@ -55,7 +57,14 @@ final class BitwisePartitionSpliterator
     }
 
     private BitwisePartitionHandler handler(Action action) {
-        return new BitwisePartitionHandler(partition, segment, action, next == null ? null : next.handler(action));
+        return new BitwisePartitionHandler(
+            partition,
+            segment,
+            action,
+            next == null
+                ? null
+                : () -> next.handler(action)
+        );
     }
 
     private Action lineForwarder(Consumer<? super LineSegment> action) {

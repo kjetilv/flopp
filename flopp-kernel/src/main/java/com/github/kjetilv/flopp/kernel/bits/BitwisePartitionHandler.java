@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -16,7 +17,7 @@ final class BitwisePartitionHandler
 
     private final Partition partition;
 
-    private final BitwisePartitionHandler next;
+    private final Supplier<BitwisePartitionHandler> next;
 
     private final MemorySegment segment;
 
@@ -45,7 +46,7 @@ final class BitwisePartitionHandler
         Partition partition,
         MemorySegment segment,
         Action action,
-        BitwisePartitionHandler next
+        Supplier<BitwisePartitionHandler> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = Objects.requireNonNull(segment, "segment");
@@ -180,13 +181,14 @@ final class BitwisePartitionHandler
     }
 
     private void stealWork() {
+        BitwisePartitionHandler next = this.next.get();
         long nextOffset = next.duplicate().findFirstLine();
         if (nextOffset < next.limit) {
             mergeWithNext(next, nextOffset - 1);
         } else if (next.partition.last()) {
             mergeWithNext(next, nextOffset);
         } else {
-            mergeWithMultiple();
+            mergeWithMultiple(next);
         }
     }
 
@@ -199,32 +201,10 @@ final class BitwisePartitionHandler
         action.line(buffer, 0, length);
     }
 
-    private void mergeWithMultiple() {
+    private void mergeWithMultiple(BitwisePartitionHandler next) {
         List<BitwisePartitionHandler> collector = new ArrayList<>();
-        long lastLimit = collectAndFindLimit(collector);
+        long lastLimit = collectAndFindLimit(next, collector);
         combineMultiple(collector, lastLimit);
-    }
-
-    private long collectAndFindLimit(List<BitwisePartitionHandler> collector) {
-        BitwisePartitionHandler next = this.next;
-        collector.add(next);
-        while (true) {
-            BitwisePartitionHandler nextNext = next.next;
-            if (nextNext == null) {
-                return next.limit;
-            }
-            next = nextNext;
-            collector.add(next);
-            long lo = 0L;
-            while (lo < next.physicalLimit) {
-                long prebyte = bytesAt(next.segment, lo);
-                long premask = mask(prebyte);
-                if (premask != 0) {
-                    return lo + offsetIn(premask);
-                }
-                lo += ALIGNMENT;
-            }
-        }
     }
 
     private void combineMultiple(List<BitwisePartitionHandler> collector, long lastLineOffset) {
@@ -290,6 +270,31 @@ final class BitwisePartitionHandler
 
     private static long offsetIn(long mask) {
         return Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+    }
+
+    private static long collectAndFindLimit(
+        BitwisePartitionHandler resolvedNext,
+        List<BitwisePartitionHandler> collector
+    ) {
+        BitwisePartitionHandler next = resolvedNext;
+        collector.add(next);
+        while (true) {
+            BitwisePartitionHandler nextNext = next.next.get();
+            if (nextNext == null) {
+                return next.limit;
+            }
+            next = nextNext;
+            collector.add(next);
+            long lo = 0L;
+            while (lo < next.physicalLimit) {
+                long prebyte = bytesAt(next.segment, lo);
+                long premask = mask(prebyte);
+                if (premask != 0) {
+                    return lo + offsetIn(premask);
+                }
+                lo += ALIGNMENT;
+            }
+        }
     }
 
     @FunctionalInterface

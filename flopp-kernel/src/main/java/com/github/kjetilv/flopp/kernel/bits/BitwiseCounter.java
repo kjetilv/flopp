@@ -35,7 +35,7 @@ final class BitwiseCounter {
     }
 
     private BitwisePartitionHandler handler(BitwisePartitionHandler.Action action) {
-        return new BitwisePartitionHandler(partition, segment, action, next == null ? null : next.handler(action));
+        return new BitwisePartitionHandler(partition, segment, action, next == null ? null : () -> next.handler(action));
     }
 
     private static final class Counter implements BitwisePartitionHandler.Action {

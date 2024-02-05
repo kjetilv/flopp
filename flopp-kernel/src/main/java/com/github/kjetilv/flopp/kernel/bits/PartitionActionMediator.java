@@ -10,7 +10,7 @@ import java.util.Objects;
 
 final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
 
-     static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
+    static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
         if (shape == null || !shape.hasOverhead()) {
             return null;
         }
