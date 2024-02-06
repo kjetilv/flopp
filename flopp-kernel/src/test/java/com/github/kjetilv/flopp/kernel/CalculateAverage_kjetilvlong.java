@@ -62,8 +62,6 @@ public final class CalculateAverage_kjetilvlong {
                         executor
                     ))
                 .toList();
-            System.out.println(Duration.between(start, Instant.now()));
-
             List<Map<String, Result>> maps = list.stream()
                 .map(CompletableFuture::join)
                 .toList();

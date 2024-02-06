@@ -30,9 +30,9 @@ public record Partitioning(int count, long tail) {
         Non.negativeOrZero(count, "partitionCount");
     }
 
-    public Partitioning scaled(int scale) {
+    public Partitioning scaled(double scale) {
         return new Partitioning(
-            count * scale,
+            Math.toIntExact(Math.round(count * scale)),
             tail
         );
     }

@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
 
+import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
@@ -55,6 +56,9 @@ final class BitwisePartitionHandler
 
         this.limit = this.partition.length();
         this.physicalLimit = this.segment.byteSize();
+        if (limit > physicalLimit) {
+            throw new IllegalStateException(STR."\{this} got bad segment \{segment}");
+        }
     }
 
     public void run() {
@@ -71,6 +75,7 @@ final class BitwisePartitionHandler
             } else {
                 processBody();
             }
+            action.close();
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
@@ -78,7 +83,7 @@ final class BitwisePartitionHandler
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[@\{alignedOffset}/l:\{lineStart} \{partition}]";
+        return STR."\{getClass().getSimpleName()}[@\{alignedOffset}/l:\{lineStart} in \{partition}]";
     }
 
     private BitwisePartitionHandler duplicate() {
@@ -296,9 +301,13 @@ final class BitwisePartitionHandler
     }
 
     @FunctionalInterface
-    public interface Action {
+    public interface Action extends Closeable {
 
         void line(MemorySegment segment, long startIndex, long endIndex);
+
+        @Override
+        default void close() {
+        }
     }
 
     @FunctionalInterface

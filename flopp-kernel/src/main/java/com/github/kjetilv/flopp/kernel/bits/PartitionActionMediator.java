@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
@@ -57,6 +58,21 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         deq.offerFirst(() -> delegate.line(memorySegment, startIndex, endIndex));
     }
 
+    private static void verifyHeader(int headersLeft, int header) {
+        if (headersLeft > 0) {
+            throw new IllegalStateException(
+                STR."First partition not big enough to hold header (\{header}).  Lower partition count");
+        }
+    }
+
+    private static void verifyFooter(Deque<Runnable> deq, int footer) {
+        if (deq.size() < footer) {
+            throw new IllegalStateException(
+                STR."Last partition not big enough to hold footer (\{footer}. Increase tail size of \{Partitioning.class.getSimpleName()}"
+            );
+        }
+    }
+
     private static final class HeaderOnly implements BitwisePartitionHandler.Action {
 
         private final BitwisePartitionHandler.Action delegate;
@@ -78,6 +94,12 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
             } else {
                 headersLeft--;
             }
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+            verifyHeader(headersLeft, header);
         }
 
         @Override
@@ -116,6 +138,13 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         }
 
         @Override
+        public void close() {
+            delegate.close();
+            verifyHeader(headersLeft, header);
+            verifyFooter(deque, footer);
+        }
+
+        @Override
         public String toString() {
             return STR."\{getClass().getSimpleName()}[\{STR."\{headersLeft}/\{header}" + STR." q:\{deque.size()}"}]";
         }
@@ -138,6 +167,12 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
         @Override
         public void line(MemorySegment segment, long startIndex, long endIndex) {
             cycle(segment, startIndex, endIndex, deque, delegate, footer);
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+            verifyFooter(deque, footer);
         }
 
         @Override

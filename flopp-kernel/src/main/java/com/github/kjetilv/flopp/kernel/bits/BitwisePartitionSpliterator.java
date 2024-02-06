@@ -102,6 +102,13 @@ final class BitwisePartitionSpliterator
         }
 
         @Override
+        public void close() {
+            this.startIndex = 0;
+            this.endIndex = 0;
+            this.memorySegment = null;
+        }
+
+        @Override
         public MemorySegment memorySegment() {
             return memorySegment;
         }
