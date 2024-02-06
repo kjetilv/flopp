@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
-public class BitwisePartitioned implements Partitioned<Path> {
+final class BitwisePartitioned implements Partitioned<Path> {
 
     private final Path path;
 
@@ -18,15 +18,7 @@ public class BitwisePartitioned implements Partitioned<Path> {
 
     private final List<Partition> partitions;
 
-    public BitwisePartitioned(Path path) {
-        this(path, null, null);
-    }
-
-    public BitwisePartitioned(Path path, Partitioning partitioning) {
-        this(path, partitioning, null);
-    }
-
-    public BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
+    BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
         this.partitions = (partitioning == null ? Partitioning.create() : partitioning)
@@ -44,15 +36,8 @@ public class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedProcessor<LineSegment> processor(Path target) {
-        return new BitwisePartitionProcessor(
-            mapper(),
-            partitions,
-            shape.charset(),
-            BitwisePartitioned::writer,
-            tempTargets(path),
-            transfers(target)
-        );
+    public PartitionedStreams streams() {
+        return new BitwisePartitionStreams(path, shape, partitions);
     }
 
     @Override
@@ -66,8 +51,15 @@ public class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedStreams streams() {
-        return new BitwisePartitionStreams(path, shape, partitions);
+    public PartitionedProcessor<LineSegment> processor(Path target) {
+        return new BitwisePartitionProcessor(
+            mapper(),
+            partitions,
+            shape.charset(),
+            BitwisePartitioned::writer,
+            tempTargets(path),
+            transfers(target)
+        );
     }
 
     private static final int BUFFER_SIZE = 8192;

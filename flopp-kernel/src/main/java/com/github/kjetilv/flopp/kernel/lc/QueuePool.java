@@ -8,7 +8,7 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class QueuePool<T> implements Pool<T> {
+public final class QueuePool<T> implements Pool<T> {
 
     private final Queue<T> queue;
 

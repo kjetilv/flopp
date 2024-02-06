@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
-class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
+final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
     implements Consumer<CompletableFuture<PartitionResult<T>>> {
 
     private final int resultsCount;

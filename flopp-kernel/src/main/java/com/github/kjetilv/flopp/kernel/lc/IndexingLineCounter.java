@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
-public class IndexingLineCounter implements LineCounter {
+public final class IndexingLineCounter implements LineCounter {
 
     private final Partitioning partitioning;
 

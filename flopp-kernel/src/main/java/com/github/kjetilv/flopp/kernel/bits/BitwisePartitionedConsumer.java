@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
-class BitwisePartitionedConsumer implements PartitionedConsumer {
+final class BitwisePartitionedConsumer implements PartitionedConsumer {
 
     private final PartitionedStreams streams;
 

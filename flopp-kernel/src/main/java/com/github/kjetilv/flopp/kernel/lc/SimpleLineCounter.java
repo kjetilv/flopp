@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-public class SimpleLineCounter implements LineCounter {
+public final class SimpleLineCounter implements LineCounter {
 
     @Override
     public long count(Path path) {
