@@ -263,10 +263,6 @@ final class BitwisePartitionHandler
         0x0000000000000000L
     };
 
-    private static State cleanState() {
-        return new State();
-    }
-
     private static byte byteAt(MemorySegment segment, long offset) {
         return segment.get(ValueLayout.JAVA_BYTE, offset);
     }

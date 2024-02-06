@@ -75,7 +75,7 @@ final class BitwisePartitionSpliterator
 
         @Override
         public void line(MemorySegment segment, long startIndex, long endIndex) {
-            action.accept(LineSegment.ofRange(segment,  startIndex,endIndex));
+            action.accept(LineSegment.ofRange(segment, startIndex, endIndex));
         }
     }
 
