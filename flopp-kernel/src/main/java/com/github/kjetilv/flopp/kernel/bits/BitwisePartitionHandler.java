@@ -62,7 +62,7 @@ final class BitwisePartitionHandler
     }
 
     public void run() {
-        try {
+        try (action) {
             if (!partition.first()) {
                 lineStart = findFirstLine();
                 if (lineStart == limit) {
@@ -75,7 +75,6 @@ final class BitwisePartitionHandler
             } else {
                 processBody();
             }
-            action.close();
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
