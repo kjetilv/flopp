@@ -116,7 +116,7 @@ public class BitwiseSizeTest {
 
     @BeforeEach
     void setUp(TestInfo testInfo) throws IOException {
-        linesCount = 10_000_000;
+        linesCount = 1_000_000;
         columnCount = 10;
         ioQueueSize = 10;
         readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);

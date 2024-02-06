@@ -31,7 +31,6 @@ public final class CalculateAverage_kjetilvlong {
     public static void main(String[] args) {
         for (String arg : args) {
             go1(Path.of(arg));
-            go1(Path.of(arg));
         }
     }
 
@@ -47,25 +46,19 @@ public final class CalculateAverage_kjetilvlong {
             ExecutorService executor = new ThreadPoolExecutor(
                 chunks,
                 chunks,
-                1, TimeUnit.SECONDS,
+                0, TimeUnit.NANOSECONDS,
                 new LinkedBlockingQueue<>(chunks)
             );
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            List<? extends PartitionStreamer> partitionStreamers = streamers.streamersList();
+            List<? extends PartitionStreamer> partitionStreamers = streamers.streamersList(true);
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
                 .stream()
-                .map(streamer -> {
-                    return CompletableFuture.supplyAsync(() -> {
-                        System.out.println(STR."Streamer: \{streamer} \{Thread.currentThread()}");
-                        return streamer.lines();
-                    }, executor).thenApplyAsync(
-                        lines -> toMap(streamer, lines),
-                        executor
-                    );
-                })
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(streamer::lines)
+                        .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
                 .toList();
             List<Map<String, Result>> maps = list.stream()
                 .map(CompletableFuture::join)
@@ -84,7 +77,7 @@ public final class CalculateAverage_kjetilvlong {
             .collect(Collectors.toSet());
     }
 
-    private static Map<String, Result> toMap(PartitionStreamer streamer, Stream<LineSegment> lines) {
+    private static Map<String, Result> toMap(Stream<LineSegment> lines) {
         try (lines) {
             Map<String, Result> m = new HashMap<>(1024, 1.0f);
             lines.forEach(ls -> {
@@ -104,7 +97,6 @@ public final class CalculateAverage_kjetilvlong {
                             : existing.collect(value)
                 );
             });
-            System.out.println(STR."\{streamer}: \{m.size()} \{System.currentTimeMillis() % 1_000}");
             return m;
         }
     }

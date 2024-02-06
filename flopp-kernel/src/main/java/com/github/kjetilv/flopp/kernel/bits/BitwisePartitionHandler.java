@@ -74,26 +74,25 @@ final class BitwisePartitionHandler
         }
         InitState init = initialize();
         if (init == null) {
-            return null;
+            return null; // No newlines in this partition
         }
         State state = init.state();
         long mask = init.mask();
-        if (mask == 0) {
-            return state;
+        if (mask != 0) {
+            do { // Newlines found in current mask
+                mask = shipNextLine(state, mask);
+            } while (mask != 0);
+            advance(state);
         }
-        do {
-            mask = shipNextLine(state, mask);
-        } while (mask != 0);
-        state.offset += ALIGNMENT;
         return state;
     }
 
     private void processBody(State state) {
         processMain(state, limit);
         if (processedOverflow(state)) {
-            return;
+            return; // We found the line in the overflow section
         }
-        stealWork(state);
+        transcend(state, this.next.get()); // We need to query the next partition
     }
 
     private InitState initialize() {
@@ -103,15 +102,15 @@ final class BitwisePartitionHandler
             if (mask != 0) {
                 long start = state.offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
                 mask &= CLEARED[Math.toIntExact(start - state.offset)];
-                if (mask == 0) {
-                    state.offset += ALIGNMENT;
+                if (mask == 0) { // We cleared the current mask
+                    advance(state);
                 }
-                state.lineStart = start;
-                return new InitState(state, mask);
+                mark(state, start); // Mark position of new line
+                return new InitState(state, mask); // Return start state
             }
-            state.offset += ALIGNMENT;
+            advance(state);
         }
-        return null;
+        return null; // No newline found in the whole partition
     }
 
     private void processTail(State state) {
@@ -129,7 +128,7 @@ final class BitwisePartitionHandler
             while (mask != 0) {
                 mask = shipNextLine(state, mask);
             }
-            state.offset += ALIGNMENT;
+            advance(state);
         }
     }
 
@@ -137,7 +136,7 @@ final class BitwisePartitionHandler
         while (state.offset < physicalLimit) {
             long mask = mask(loadLong(state));
             if (mask == 0) {
-                state.offset += ALIGNMENT;
+                advance(state);
             } else {
                 shipNextLine(state, mask);
                 return true;
@@ -148,12 +147,15 @@ final class BitwisePartitionHandler
 
     private void processTail(State state, long tail) {
         long mask = mask(loadTail(state, tail));
-        if (mask == 0) {
+        if (mask == 0) { // Tail did not end in newline, send what we got
             action.line(segment, state.lineStart, physicalLimit);
         } else {
-            do {
+            do { // Newlines spotted, ship lines
                 mask = shipNextLine(state, mask);
             } while (mask != 0);
+            if (state.lineStart < physicalLimit) { // Tail did not end in newline, send what we got
+                action.line(segment, state.lineStart, physicalLimit);
+            }
         }
     }
 
@@ -173,7 +175,7 @@ final class BitwisePartitionHandler
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
         long lineBreakOffset = state.offset + offsetInMask;
         action.line(segment, state.lineStart, lineBreakOffset);
-        state.lineStart = lineBreakOffset + 1;
+        mark(state, lineBreakOffset + 1);
         return mask & CLEARED[offsetInMask + 1];
     }
 
@@ -190,14 +192,13 @@ final class BitwisePartitionHandler
         return l;
     }
 
-    private void stealWork(State state) {
-        BitwisePartitionHandler next = this.next.get();
+    private void transcend(State state, BitwisePartitionHandler next) {
         long nextOffset = next.findFirstLine();
-        if (nextOffset < next.limit) {
+        if (nextOffset < next.limit) { // Next partition contains the next newline
             mergeWithNext(state, next, nextOffset - 1);
-        } else if (next.partition.last()) {
+        } else if (next.partition.last()) { // Next partition is the last one and it's missing a newline at the end
             mergeWithNext(state, next, nextOffset);
-        } else {
+        } else { // Next line is in a later partition!
             mergeWithMultiple(state, next);
         }
     }
@@ -263,6 +264,14 @@ final class BitwisePartitionHandler
         0x0000000000000000L
     };
 
+    private static void advance(State state) {
+        state.offset += ALIGNMENT;
+    }
+
+    private static void mark(State state, long pos) {
+        state.lineStart = pos;
+    }
+
     private static byte byteAt(MemorySegment segment, long offset) {
         return segment.get(ValueLayout.JAVA_BYTE, offset);
     }
@@ -314,7 +323,7 @@ final class BitwisePartitionHandler
 
         @Override
         public String toString() {
-            return STR."\{getClass().getSimpleName()}[" + lineStart + "/" + offset + "]";
+            return STR."\{getClass().getSimpleName()}[l:\{lineStart}/o:\{offset}]";
         }
     }
 
