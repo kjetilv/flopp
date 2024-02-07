@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
 
-import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ final class BitwisePartitionHandler
 
     private final MemorySegment segment;
 
-    private final Action action;
+    private final BitwisePartitioned.Action action;
 
     private final long limit;
 
@@ -31,7 +30,7 @@ final class BitwisePartitionHandler
     BitwisePartitionHandler(
         Partition partition,
         MemorySegment segment,
-        Action action,
+        BitwisePartitioned.Action action,
         Supplier<BitwisePartitionHandler> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
@@ -100,7 +99,7 @@ final class BitwisePartitionHandler
         while (state.offset < limit) {
             long mask = mask(loadLong(state));
             if (mask != 0) {
-                long start = state.offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+                long start = state.offset + Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT + 1;
                 mask &= CLEARED[Math.toIntExact(start - state.offset)];
                 if (mask == 0) { // We cleared the current mask
                     advance(state);
@@ -114,7 +113,7 @@ final class BitwisePartitionHandler
     }
 
     private void processTail(State state) {
-        long tail = limit % ALIGNMENT;
+        long tail = limit % Bits.ALIGNMENT;
         long lastOffset = limit - tail;
         processMain(state, lastOffset);
         if (tail > 0) {
@@ -164,15 +163,15 @@ final class BitwisePartitionHandler
         while (offset < limit) {
             long mask = mask(bytesAt(segment, offset));
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+                return offset + Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT + 1;
             }
-            offset += ALIGNMENT;
+            offset += Bits.ALIGNMENT;
         }
         return limit;
     }
 
     private long shipNextLine(State state, long mask) {
-        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+        int offsetInMask = Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT;
         long lineBreakOffset = state.offset + offsetInMask;
         action.line(segment, state.lineStart, lineBreakOffset);
         mark(state, lineBreakOffset + 1);
@@ -187,7 +186,7 @@ final class BitwisePartitionHandler
         long l = 0;
         for (long i = count - 1; i >= 0; i--) {
             byte b = byteAt(segment, state.offset + i);
-            l = (l << ALIGNMENT) + b;
+            l = (l << Bits.ALIGNMENT) + b;
         }
         return l;
     }
@@ -250,8 +249,6 @@ final class BitwisePartitionHandler
         action.line(buffer, 0, length);
     }
 
-    private static final int ALIGNMENT = 0x08;
-
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFFFFL,
         0xFFFFFFFFFFFFFF00L,
@@ -265,7 +262,7 @@ final class BitwisePartitionHandler
     };
 
     private static void advance(State state) {
-        state.offset += ALIGNMENT;
+        state.offset += Bits.ALIGNMENT;
     }
 
     private static void mark(State state, long pos) {
@@ -305,9 +302,9 @@ final class BitwisePartitionHandler
                 long prebyte = bytesAt(next.segment, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
-                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
+                    return lo + Long.numberOfTrailingZeros(premask) / Bits.ALIGNMENT;
                 }
-                lo += ALIGNMENT;
+                lo += Bits.ALIGNMENT;
             }
         }
     }
@@ -328,16 +325,6 @@ final class BitwisePartitionHandler
     }
 
     @FunctionalInterface
-    public interface Action extends Closeable {
-
-        void line(MemorySegment segment, long startIndex, long endIndex);
-
-        @Override
-        default void close() {
-        }
-    }
-
-    @FunctionalInterface
-    public interface Mediator extends Function<Action, Action> {
+    public interface Mediator extends Function<BitwisePartitioned.Action, BitwisePartitioned.Action> {
     }
 }

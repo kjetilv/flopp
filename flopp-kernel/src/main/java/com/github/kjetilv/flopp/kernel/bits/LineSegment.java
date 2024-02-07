@@ -1,8 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.*;
 
 @SuppressWarnings("unused")
 public interface LineSegment {
@@ -15,8 +16,16 @@ public interface LineSegment {
         return new ImmutableLine(memorySegment, start, end);
     }
 
+    static LineSegment of(MemorySegment memorySegment) {
+        return new ImmutableSliceLine(memorySegment);
+    }
+
     static String toString(MemorySegment segment, long start, long end) {
         return of(segment, start, end).asString();
+    }
+
+    static LineSegment of(String string) {
+        return of(MemorySegment.ofArray(string.getBytes(StandardCharsets.UTF_8)));
     }
 
     MemorySegment memorySegment();
@@ -58,7 +67,15 @@ public interface LineSegment {
         return LineSegments.toString(this, length);
     }
 
-    default byte byteAt(int i) {
+    default long longAt(int longOffset) {
+        return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex() + longOffset);
+    }
+
+    default byte byteAt(long i) {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
+    }
+
+    default long index(long pos) {
+        return startIndex() + pos;
     }
 }

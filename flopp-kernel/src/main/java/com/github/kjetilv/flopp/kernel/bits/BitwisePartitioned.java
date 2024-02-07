@@ -5,6 +5,8 @@ import com.github.kjetilv.flopp.kernel.files.FileChannelTransfers;
 import com.github.kjetilv.flopp.kernel.files.FileTempTargets;
 import com.github.kjetilv.flopp.kernel.files.MemoryMappedByteArrayLinesWriter;
 
+import java.io.Closeable;
+import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
@@ -74,5 +76,15 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private static TempTargets<Path> tempTargets(Path source) {
         return new FileTempTargets(source);
+    }
+
+    @FunctionalInterface
+    public interface Action extends Closeable {
+
+        void line(MemorySegment segment, long startIndex, long endIndex);
+
+        @Override
+        default void close() {
+        }
     }
 }

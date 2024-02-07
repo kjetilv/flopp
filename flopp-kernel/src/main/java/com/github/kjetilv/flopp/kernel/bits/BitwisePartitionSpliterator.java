@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.Action;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.Mediator;
 
 import java.lang.foreign.MemorySegment;
@@ -121,6 +121,16 @@ final class BitwisePartitionSpliterator
         @Override
         public long endIndex() {
             return endIndex;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj == this || obj instanceof LineSegment lineSegment && lineSegment.asString().equals(asString());
+        }
+
+        @Override
+        public int hashCode() {
+            return asString().hashCode();
         }
 
         @Override

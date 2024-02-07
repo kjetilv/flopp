@@ -34,13 +34,13 @@ final class BitwiseCounter {
         return STR."\{getClass().getSimpleName()}[@\{partition}]";
     }
 
-    private BitwisePartitionHandler handler(BitwisePartitionHandler.Action action) {
+    private BitwisePartitionHandler handler(BitwisePartitioned.Action action) {
         return new BitwisePartitionHandler(partition, segment, action, next == null ? null : () -> next.handler(action));
     }
 
-    private static final class Counter implements BitwisePartitionHandler.Action {
+    private static final class Counter implements BitwisePartitioned.Action {
 
-        private long lc = 0;
+        private long lc;
 
         @Override
         public void line(MemorySegment memorySegment, long startIndex, long count) {
