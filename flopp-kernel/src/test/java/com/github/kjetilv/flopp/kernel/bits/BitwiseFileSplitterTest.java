@@ -13,11 +13,11 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Disabled
 class BitwiseFileSplitterTest {
@@ -26,11 +26,19 @@ class BitwiseFileSplitterTest {
     void simple() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        try (Stream<String> lines = Files.lines(PATH)) {
-            lines.skip(1)
-                .forEach(line -> {
-                    String[] split = line.split(",");
-                    airlines.add(split[1]);
+        try (Stream<Path> list = Files.list(PATH)) {
+            list.filter(file -> file.getFileName().toString().endsWith(".csv"))
+                .parallel()
+                .forEach(file -> {
+                    try (Stream<String> lines = Files.lines(file)) {
+                        lines.skip(1)
+                            .forEach(line -> {
+                                String[] split = line.split(",");
+                                airlines.add(split[1]);
+                            });
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 });
         }
         System.out.println(airlines.size());
@@ -93,7 +101,6 @@ class BitwiseFileSplitterTest {
     void fasterStillParallel() {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        Path path = PATH;
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
             (segment, startIndex, endIndex) -> {
@@ -102,20 +109,22 @@ class BitwiseFileSplitterTest {
             new int[] {1}
         );
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2));
-            ForkJoinPool executor = new ForkJoinPool(partititioned.partitions().size());
+            Stream<Path> list = Files.list(PATH);
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
-            partititioned.streams().streamers()
-                .map(partitionStreamer -> {
-                    return CompletableFuture.runAsync(
-                        () ->
-                            partitionStreamer.lines()
-                                .forEach(splitter),
-                        executor
-                    );
-                })
+            list.filter(file -> file.getFileName().toString().endsWith(".csv"))
+                .flatMap(file ->
+                    Bitwise.partititioned(file, Shape.of(file).header(2)).streams().streamers()
+                        .map(partitionStreamer -> CompletableFuture.runAsync(
+                            () ->
+                                partitionStreamer.lines()
+                                    .forEach(splitter),
+                            executor
+                        )))
                 .toList()
                 .forEach(CompletableFuture::join);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         System.out.println(airlines.size());
         System.out.println(airlines.stream().limit(10)
@@ -124,7 +133,5 @@ class BitwiseFileSplitterTest {
         System.out.println(time);
     }
 
-    public static final Path PATH =
-        Path.of("/Users/kjetilvalstadsve/Downloads/kaggle-flights/Combined_Flights_2021.csv");
-
+    public static final Path PATH = Path.of(System.getProperty("csv.dir"));
 }
