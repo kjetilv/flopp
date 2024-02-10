@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Shape;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -14,6 +13,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,79 +24,99 @@ class BitwiseLineSplitterTest {
 
     @Test
     void splitLine() {
-        List<LineSegment> splits = new ArrayList<>();
+        List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ';',
-            (segment, startIndex, endIndex) ->
-                splits.add(LineSegment.of(segment, startIndex, endIndex).immutable())
+            adder(splits)
         );
         splitter.accept(LineSegment.of("foo123;bar;234;abcdef;3456"));
         assertThat(splits).containsExactly(
-            LineSegment.of("foo123"),
-            LineSegment.of("bar"),
-            LineSegment.of("234"),
-            LineSegment.of("abcdef"),
-            LineSegment.of("3456")
+            "foo123",
+            "bar",
+            "234",
+            "abcdef",
+            "3456"
         );
     }
 
-    @Disabled
     @Test
     void quoted() {
         List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ';',
             '\'',
-            (segment, startIndex, endIndex) ->
-                splits.add(LineSegment.of(segment, startIndex, endIndex).immutable().asString())
+            '\\',
+            adder(splits)
         );
-        splitter.accept(LineSegment.of("'foo 123';bar;234;'ab, cd, ef';'it is 3456';;',';"));
+        splitter.accept(LineSegment.of(
+            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
         assertThat(splits).containsExactly(
-            "foo 123",
-            "bar",
-            "234",
-            "ab, cd, ef",
-            "it is 3456",
-            "",
-            ",",
-            ""
+            "'foo 1'", "bar", "234", "'ab; cd;ef'", "'it is \\'aight'", "", "234", "','", "'\\;'");
+    }
+
+    @Test
+    void quotedLimited() {
+        List<String> splits = new ArrayList<>();
+        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
+            ';',
+            '\'',
+            '\\',
+            adder(splits),
+            3
         );
+        splitter.accept(LineSegment.of(
+            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
+        assertThat(splits).containsExactly(
+            "'foo 1'", "bar", "234");
+    }
+
+    @Test
+    void quotedPicky() {
+        List<String> splits = new ArrayList<>();
+        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
+            ';',
+            '\'',
+            '\\',
+            adder(splits),
+            new int[] {3, 4, 7}
+        );
+        splitter.accept(LineSegment.of(
+            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
+        assertThat(splits).containsExactly(
+            "'ab; cd;ef'", "'it is \\'aight'", "','");
     }
 
     @Test
     void splitLinePicky() {
-        List<LineSegment> splits = new ArrayList<>();
+        List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ';',
             (segment, startIndex, endIndex) ->
-                splits.add(LineSegment.of(segment, startIndex, endIndex).immutable()),
-            1, 3, 4
+                splits.add(LineSegment.of(segment, startIndex, endIndex).immutable().asString()),
+            new int[] {1, 3, 4}
         );
         splitter.accept(LineSegment.of("foo123;bar;234;abcdef;3456"));
         assertThat(splits).containsExactly(
-            LineSegment.of("bar"),
-            LineSegment.of("abcdef"),
-            LineSegment.of("3456")
+            "bar",
+            "abcdef",
+            "3456"
         );
     }
 
     @Test
     void simple() throws IOException {
         Instant now = Instant.now();
-        Set<String> manu = new HashSet<>();
+        Set<String> airlines = new HashSet<>();
         try (Stream<String> lines = Files.lines(PATH)) {
-            lines
-                .skip(2)
-                .limit(5_000_000)
-                .forEach(line ->
-                {
+            lines.skip(1)
+                .forEach(line -> {
                     String[] split = line.split(",");
-                    if (split.length > 2 && !split[2].isBlank()) {
-                        manu.add(split[2]);
-                    }
+                    airlines.add(split[1]);
                 });
         }
-        System.out.println(manu.size());
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
         Duration time = Duration.between(now, Instant.now());
         System.out.println(time);
     }
@@ -102,25 +124,23 @@ class BitwiseLineSplitterTest {
     @Test
     void faster() throws IOException {
         Instant now = Instant.now();
-        Set<String> manu = new HashSet<>();
+        Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
             (segment, startIndex, endIndex) -> {
-                String lineSegment = LineSegment.of(segment, startIndex, endIndex).asString();
-                if (!lineSegment.isBlank()) {
-                    manu.add(lineSegment);
-                }
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
             },
-            2
+            new int[] {1}
         );
 
-        Path path = PATH;
-        try (Stream<String> lines = Files.lines(path)) {
-            lines.skip(2).limit(5_000_000)
+        try (Stream<String> lines = Files.lines(PATH)) {
+            lines.skip(1)
                 .map(LineSegment::of)
                 .forEach(splitter);
         }
-        System.out.println(manu.size());
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
         Duration time = Duration.between(now, Instant.now());
         System.out.println(time);
     }
@@ -128,17 +148,14 @@ class BitwiseLineSplitterTest {
     @Test
     void fasterStill() {
         Instant now = Instant.now();
-        Set<String> manu = new HashSet<>();
+        Set<String> airlines = new HashSet<>();
         Path path = PATH;
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
             (segment, startIndex, endIndex) -> {
-                String lineSegment = LineSegment.of(segment, startIndex, endIndex).asString();
-                if (!lineSegment.isBlank()) {
-                    manu.add(lineSegment);
-                }
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
             },
-            2
+            new int[] {1}
         );
         try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))) {
             partititioned.streams().streamers()
@@ -146,11 +163,56 @@ class BitwiseLineSplitterTest {
                     streamer.lines()
                         .forEach(splitter));
         }
-        System.out.println(manu.size());
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
+        Duration time = Duration.between(now, Instant.now());
+        System.out.println(time);
+    }
+
+    @Test
+    void fasterStillParallel() {
+        Instant now = Instant.now();
+        Set<String> airlines = new HashSet<>();
+        Path path = PATH;
+        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
+            ',',
+            (segment, startIndex, endIndex) -> {
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
+            },
+            new int[] {1}
+        );
+        try (
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2));
+            ForkJoinPool executor = new ForkJoinPool(partititioned.partitions().size());
+        ) {
+            partititioned.streams().streamers()
+                .map(partitionStreamer -> {
+                    return CompletableFuture.runAsync(
+                        () ->
+                            partitionStreamer.lines()
+                                .forEach(splitter),
+                        executor
+                    );
+                })
+                .toList()
+                .forEach(CompletableFuture::join);
+        }
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
         Duration time = Duration.between(now, Instant.now());
         System.out.println(time);
     }
 
     public static final Path PATH =
-        Path.of("/Users/kjetilvalstadsve/Downloads/kaggle-opensky/aircraftDatabase.csv");
+        Path.of("/Users/kjetilvalstadsve/Downloads/kaggle-flights/Combined_Flights_2021.csv");
+
+    private static BitwisePartitioned.Action adder(List<String> splits) {
+        return (segment, startIndex, endIndex) -> {
+            String string = LineSegment.of(segment, startIndex, endIndex).immutable().asString();
+            System.out.println(string);
+            splits.add(string);
+        };
+    }
 }

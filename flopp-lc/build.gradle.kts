@@ -31,11 +31,11 @@ tasks {
         options.compilerArgs.add("--enable-preview")
     }
     withType<Test>() {
-        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+        jvmArgs("--enable-preview")
         useJUnitPlatform()
     }
     withType<JavaExec>() {
-        jvmArgs("--enable-preview", "--add-modules=jdk.incubator.vector")
+        jvmArgs("--enable-preview")
     }
 }
 
