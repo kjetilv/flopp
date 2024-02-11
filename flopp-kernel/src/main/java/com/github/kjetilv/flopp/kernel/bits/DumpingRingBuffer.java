@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import java.io.Closeable;
 import java.util.Objects;

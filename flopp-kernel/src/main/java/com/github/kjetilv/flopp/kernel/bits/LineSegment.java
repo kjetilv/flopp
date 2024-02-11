@@ -38,10 +38,6 @@ public interface LineSegment {
         return endIndex() - startIndex();
     }
 
-    default String tooString() {
-        return LineSegments.toString(this);
-    }
-
     default byte[] byteArray() {
         return LineSegments.toBytes(this);
     }

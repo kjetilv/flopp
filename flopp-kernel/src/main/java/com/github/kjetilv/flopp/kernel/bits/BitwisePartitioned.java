@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.files.FileChannelTransfers;
-import com.github.kjetilv.flopp.kernel.files.FileTempTargets;
-import com.github.kjetilv.flopp.kernel.files.MemoryMappedByteArrayLinesWriter;
 
 import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
@@ -25,8 +22,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
-        this.partitions = (partitioning == null ? Partitioning.create() : partitioning)
-            .of(this.shape.size());
+        this.partitions = partitioning(partitioning, this.shape).of(this.shape.size());
         this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape);
     }
 
@@ -77,6 +73,19 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     private static final int BUFFER_SIZE = 8192;
+
+    private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
+        return withTail(
+            partitioning == null ? Partitioning.create() : partitioning,
+            shape
+        );
+    }
+
+    private static Partitioning withTail(Partitioning partitioning, Shape shape) {
+        return partitioning.tail() == 0 && shape.limitsLineLength()
+            ? partitioning.tail(shape.longestLine())
+            : partitioning;
+    }
 
     private static MemoryMappedByteArrayLinesWriter writer(Path target, Charset charset) {
         return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);

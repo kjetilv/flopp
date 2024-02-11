@@ -1,8 +1,6 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.bits.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;

@@ -11,10 +11,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,7 +28,7 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         try (Stream<Path> list = Files.list(PATH)) {
-            list.filter(file -> file.getFileName().toString().endsWith(".csv"))
+            list.filter(endsWith(".csv"))
                 .parallel()
                 .forEach(file -> {
                     try (Stream<String> lines = Files.lines(file)) {
@@ -104,26 +106,31 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
-            (segment, startIndex, endIndex) -> {
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
-            },
+            (segment, startIndex, endIndex) ->
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
             new int[] {1}
         );
         try (
             Stream<Path> list = Files.list(PATH);
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
-            list.filter(file -> file.getFileName().toString().endsWith(".csv"))
-                .flatMap(file ->
-                    Bitwise.partititioned(file, Shape.of(file).header(2)).streams().streamers()
-                        .map(partitionStreamer -> CompletableFuture.runAsync(
-                            () ->
-                                partitionStreamer.lines()
-                                    .forEach(splitter),
-                            executor
-                        )))
-                .toList()
-                .forEach(CompletableFuture::join);
+            List<Partitioned<Path>> partitioneds =
+                list.filter(endsWith(".csv"))
+                    .map(BitwiseFileSplitterTest::partitioned)
+                    .toList();
+            List<CompletableFuture<Void>> futures = partitioneds.stream()
+                .flatMap(partititioned ->
+                    partititioned.streams().streamers()
+                        .map(partitionStreamer ->
+                            CompletableFuture.runAsync(
+                                () ->
+                                    partitionStreamer.lines()
+                                        .forEach(splitter),
+                                executor
+                            )))
+                .toList();
+            futures.forEach(CompletableFuture::join);
+            partitioneds.forEach(Partitioned::close);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -134,5 +141,17 @@ class BitwiseFileSplitterTest {
         System.out.println(time);
     }
 
+    private static Partitioned<Path> partitioned(Path file) {
+        return Bitwise.partititioned(
+            file,
+            Shape.of(file).longestLine(1024).header(2)
+        );
+    }
+
     public static final Path PATH = Path.of(System.getProperty("csv.dir"));
+
+    private static Predicate<Path> endsWith(String suffix) {
+        return file ->
+            file.getFileName().toString().endsWith(suffix);
+    }
 }

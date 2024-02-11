@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.TempTargets;
@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class FileTempTargets implements TempTargets<Path> {
+class FileTempTargets implements TempTargets<Path> {
 
     private final Path tempDirectory;
 
@@ -17,11 +17,15 @@ public class FileTempTargets implements TempTargets<Path> {
 
     private final String suffix;
 
-    public FileTempTargets(Path source) {
+    FileTempTargets(Path source) {
         this.sourceName = source.getFileName().toString();
         this.suffixIndex = sourceName.lastIndexOf('.');
         this.suffix = suffixIndex < 0 ? "" : sourceName.substring(suffixIndex + 1);
-        this.tempDirectory = temp(source);
+        try {
+            this.tempDirectory = Files.createTempDirectory(STR."workdir-\{source.getFileName()}-tmp");
+        } catch (IOException e) {
+            throw new IllegalStateException(STR."\{this}: Failed to create temp dir", e);
+        }
     }
 
     @Override
@@ -37,15 +41,6 @@ public class FileTempTargets implements TempTargets<Path> {
             Files.deleteIfExists(tempDirectory);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to close", e);
-        }
-    }
-
-    private Path temp(Path source) {
-        try {
-            String dir = STR."workdir-\{source.getFileName()}-tmp";
-            return Files.createTempDirectory(dir);
-        } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this}: Failed to create temp dir", e);
         }
     }
 

@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Transfer;
@@ -9,7 +9,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
-public final class FileChannelTransfers implements Transfers<Path> {
+final class FileChannelTransfers implements Transfers<Path> {
 
     private final Path target;
 
@@ -17,7 +17,7 @@ public final class FileChannelTransfers implements Transfers<Path> {
 
     private final FileChannel receivingChannel;
 
-    public FileChannelTransfers(Path target) {
+    FileChannelTransfers(Path target) {
         this.target = Objects.requireNonNull(target, "path");
         this.randomAccessFile = randomAccess(this.target);
         this.receivingChannel = this.randomAccessFile.getChannel();
@@ -26,11 +26,6 @@ public final class FileChannelTransfers implements Transfers<Path> {
     @Override
     public Transfer transfer(Partition partition, Path source) {
         return new FileChannelTransfer(receivingChannel, partition, source);
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{target}]";
     }
 
     @Override
@@ -44,6 +39,11 @@ public final class FileChannelTransfers implements Transfers<Path> {
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed to close \{receivingChannel}/\{randomAccessFile}", e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{target}]";
     }
 
     private static RandomAccessFile randomAccess(Path file) {

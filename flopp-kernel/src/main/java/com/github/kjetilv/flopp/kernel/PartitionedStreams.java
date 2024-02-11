@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
+@SuppressWarnings("unused")
 public interface PartitionedStreams {
 
     default Stream<? extends PartitionStreamer> streamers() {

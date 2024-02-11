@@ -26,6 +26,10 @@ public record Partitioning(int count, long tail) {
         );
     }
 
+    public static Partitioning tail(int tail) {
+        return create(0, tail);
+    }
+
     public Partitioning {
         Non.negativeOrZero(count, "partitionCount");
     }

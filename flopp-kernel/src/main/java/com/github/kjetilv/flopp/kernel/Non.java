@@ -19,40 +19,40 @@ public final class Non {
         if (pos(i)) {
             return i;
         }
-        throw new IllegalStateException("Expected non-zero " + name + ": " + i);
+        throw new IllegalStateException(STR."Expected non-zero \{name}: \{i}");
     }
 
     public static short negativeOrZero(short i, String name) {
         if (pos(i)) {
             return i;
         }
-        throw new IllegalStateException("Expected non-zero " + name + ": " + i);
+        throw new IllegalStateException(STR."Expected non-zero \{name}: \{i}");
     }
 
     public static long negativeOrZero(long l, String name) {
         if (pos(l)) {
             return l;
         }
-        throw new IllegalStateException("Expected non-zero " + name + ": " + l);
+        throw new IllegalStateException(STR."Expected non-zero \{name}: \{l}");
     }
 
     public static int negative(int i, String name) {
         if (neg(i)) {
-            throw new IllegalStateException("Expected non-negative " + name + ": " + i);
+            throw new IllegalStateException(STR."Expected non-negative \{name}: \{i}");
         }
         return i;
     }
 
     public static short negative(short i, String name) {
         if (neg(i)) {
-            throw new IllegalStateException("Expected non-negative " + name + ": " + i);
+            throw new IllegalStateException(STR."Expected non-negative \{name}: \{i}");
         }
         return i;
     }
 
     public static long negative(long l, String name) {
         if (neg(l)) {
-            throw new IllegalStateException("Expected non-negative " + name + ": " + l);
+            throw new IllegalStateException(STR."Expected non-negative \{name}: \{l}");
         }
         return l;
     }

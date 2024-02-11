@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LinesWriter;
 
@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
-@SuppressWarnings("unused")
 public class MemoryMappedByteArrayLinesWriter implements LinesWriter {
 
     private final RandomAccessFile randomAccessFile;
@@ -47,10 +46,7 @@ public class MemoryMappedByteArrayLinesWriter implements LinesWriter {
         try {
             randomAccessFile.close();
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to close " + randomAccessFile, e);
+            throw new IllegalStateException(STR."Failed to close \{randomAccessFile}", e);
         }
     }
-
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-
 }
