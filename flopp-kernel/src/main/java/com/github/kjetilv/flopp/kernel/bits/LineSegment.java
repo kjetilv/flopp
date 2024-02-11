@@ -8,24 +8,24 @@ import static java.lang.foreign.ValueLayout.*;
 @SuppressWarnings("unused")
 public interface LineSegment {
 
-    static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
-        return new ImmutableLine(memorySegment, startIndex, endIndex);
+    static LineSegment of(MemorySegment memorySegment) {
+        return new ImmutableSliceLine(memorySegment);
+    }
+
+    static LineSegment of(String string) {
+        return of(MemorySegment.ofArray(string.getBytes(StandardCharsets.UTF_8)));
     }
 
     static LineSegment of(MemorySegment memorySegment, long start, long end) {
         return new ImmutableLine(memorySegment, start, end);
     }
 
-    static LineSegment of(MemorySegment memorySegment) {
-        return new ImmutableSliceLine(memorySegment);
+    static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
+        return new ImmutableLine(memorySegment, startIndex, endIndex);
     }
 
     static String toString(MemorySegment segment, long start, long end) {
         return of(segment, start, end).asString();
-    }
-
-    static LineSegment of(String string) {
-        return of(MemorySegment.ofArray(string.getBytes(StandardCharsets.UTF_8)));
     }
 
     MemorySegment memorySegment();

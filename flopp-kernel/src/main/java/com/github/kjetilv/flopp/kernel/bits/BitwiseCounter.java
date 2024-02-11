@@ -4,18 +4,23 @@ import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import java.util.function.Function;
 
 final class BitwiseCounter {
 
     private final Partition partition;
 
-    private final MemorySegment segment;
+    private final Function<Partition, MemorySegment> memorySegmentSource;
 
     private final BitwiseCounter next;
 
-    BitwiseCounter(Partition partition, MemorySegmentSource memorySegmentSource, BitwiseCounter next) {
+    BitwiseCounter(
+        Partition partition,
+        Function<Partition, MemorySegment> memorySegmentSource,
+        BitwiseCounter next
+    ) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.segment = memorySegmentSource.open(partition);
+        this.memorySegmentSource = memorySegmentSource;
         this.next = next;
     }
 
@@ -35,7 +40,12 @@ final class BitwiseCounter {
     }
 
     private BitwisePartitionHandler handler(BitwisePartitioned.Action action) {
-        return new BitwisePartitionHandler(partition, segment, action, next == null ? null : () -> next.handler(action));
+        return new BitwisePartitionHandler(
+            partition,
+            memorySegmentSource.apply(partition),
+            action,
+            next == null ? null : () -> next.handler(action)
+        );
     }
 
     private static final class Counter implements BitwisePartitioned.Action {

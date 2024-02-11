@@ -11,10 +11,11 @@ import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-final class MemorySegmentSource implements Closeable {
+final class MemorySegmentSource implements Function<Partition, MemorySegment>, Closeable {
 
     private final Path path;
 
@@ -33,7 +34,8 @@ final class MemorySegmentSource implements Closeable {
         this.channel = randomAccessFile.getChannel();
     }
 
-    public MemorySegment open(Partition partition) {
+    @Override
+    public MemorySegment apply(Partition partition) {
         try {
             return channel.map(READ_ONLY, partition.offset(), partition.length(shape), arena);
         } catch (IOException e) {
