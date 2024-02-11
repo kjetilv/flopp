@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.lc;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
@@ -56,9 +55,9 @@ public final class Lcc {
 
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
-            List<CompletableFuture<Long>> longSuppliers = streams.lineCounters()
+            List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.streams()
+                .lineCounters()
                 .map(counter ->
                     CompletableFuture.supplyAsync(
                         counter::getAsLong,

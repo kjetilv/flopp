@@ -43,17 +43,17 @@ public final class CalculateAverage_kjetilvlong {
         ).scaled(2);
         int chunks = partitioning.of(shape.size()).size();
         try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
                 chunks,
                 chunks,
                 0, TimeUnit.NANOSECONDS,
                 new LinkedBlockingQueue<>(chunks)
             );
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            List<? extends PartitionStreamer> partitionStreamers = streamers.streamersList(true);
+            List<? extends PartitionStreamer> partitionStreamers =
+                bitwisePartitioned.streams().streamersList(true);
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
                 .stream()
                 .map(streamer ->

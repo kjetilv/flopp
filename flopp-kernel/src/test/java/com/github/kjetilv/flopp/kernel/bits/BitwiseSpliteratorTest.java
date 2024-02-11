@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Test;
@@ -54,12 +53,10 @@ public class BitwiseSpliteratorTest {
 
         System.out.println(new String(Files.readAllBytes(file)));
 
-
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(file, partitioning, shape);
-            PartitionedStreams streamers = bitwisePartitioned.streams()
         ) {
-            streamers.streamers().forEach(streamer -> {
+            bitwisePartitioned.streams().streamers().forEach(streamer -> {
                 streamer.lines().forEach(line -> {
                     byte[] utf8String = line.memorySegment()
                         .asSlice(line.startIndex(), line.length())

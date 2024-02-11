@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.lc;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;
@@ -71,10 +74,9 @@ public final class Lccc {
         Shape shape = Shape.of(path).longestLine(100);
         Partitioning partitioning = Partitioning.create(Runtime.getRuntime().availableProcessors(), 64);
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedStreams streamers = bitwisePartitioned.streams()
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
         ) {
-            futures = streamers.streamers()
+            futures = partititioned.streams().streamers()
                 .map(Lccc::count)
                 .toList();
         }

@@ -24,8 +24,7 @@ public interface Partitioned<P> extends Closeable {
     PartitionedProcessor<LineSegment> processor(Path target);
 
     @Override
-    default void close() {
-    }
+    void close();
 
     private static <T> List<T> awaitCompleted(Stream<CompletableFuture<T>> futures) {
         return futures

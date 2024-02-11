@@ -83,9 +83,8 @@ public class FastPartitionerTest {
                 Partitioning.create(partitionCount, 10),
                 shape
             );
-            PartitionedStreams streams = partitioned.streams()
         ) {
-            streams.streamers()
+            partitioned.streams().streamers()
                 .forEach(streamer ->
                     streamer.lines()
                         .forEach(_ ->
@@ -106,22 +105,19 @@ public class FastPartitionerTest {
         );
 
         Shape shape = Shape.size(Files.size(file)).longestLine(32).headerFooter(1, 1);
-        try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(
-                file,
-                Partitioning.create(partitionCount, 10),
-                shape
+        Partitioned<Path> partitioned = Bitwise.partititioned(
+            file,
+            Partitioning.create(partitionCount, 10),
+            shape
+        );
+        LongAdder cont = new LongAdder();
+        partitioned.consumer().forEachLine(
+                (_, entries) ->
+                    entries.forEach(_ -> cont.increment())
             )
-        ) {
-            LongAdder cont = new LongAdder();
-            partitioned.consumer().forEachLine(
-                    (_, entries) ->
-                        entries.forEach(_ -> cont.increment())
-                )
-                .toList()
-                .forEach(CompletableFuture::join);
-            assertThat(cont).hasValue(lineCount);
-        }
+            .toList()
+            .forEach(CompletableFuture::join);
+        assertThat(cont).hasValue(lineCount);
     }
 
     private void run3(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
@@ -146,11 +142,10 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).headerFooter(1, 1);
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape);
-            PartitionedStreams bitwisePartitionStreams = partitioned.streams()
+            Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {
             LongAdder cont = new LongAdder();
-            bitwisePartitionStreams.streamers()
+            partitioned.streams().streamers()
                 .forEach(bitwisePartitionStreamer ->
                     bitwisePartitionStreamer.lines()
                         .forEach(l -> {

@@ -19,13 +19,16 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    BitwisePartitionStreams(Path path, Shape shape, List<Partition> partitions) {
+    BitwisePartitionStreams(
+        Path path,
+        Shape shape,
+        List<Partition> partitions,
+        MemorySegmentSource memorySegmentSource
+    ) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
-        this.partitions =
-            Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
-
-        this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape);
+        this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
+        this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
     }
 
     @Override
@@ -47,15 +50,6 @@ final class BitwisePartitionStreams implements PartitionedStreams {
             .stream()
             .map(BitwisePartitionStreams::counter)
             .toList();
-    }
-
-    @Override
-    public void close() {
-        try {
-            memorySegmentSource.close();
-        } catch (Exception e) {
-            throw new RuntimeException(STR."\{this} could not close", e);
-        }
     }
 
     @Override

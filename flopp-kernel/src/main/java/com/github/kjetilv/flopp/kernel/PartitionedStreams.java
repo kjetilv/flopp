@@ -1,11 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.io.Closeable;
 import java.util.List;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
-public interface PartitionedStreams extends Closeable {
+public interface PartitionedStreams {
 
     default Stream<? extends PartitionStreamer> streamers() {
         return streamers(false);
@@ -26,7 +25,4 @@ public interface PartitionedStreams extends Closeable {
     List<? extends PartitionStreamer> streamersList(boolean copying);
 
     List<LongSupplier> lineCountersList();
-
-    @Override
-    void close();
 }

@@ -48,11 +48,10 @@ public class UTF8Test {
                 partitioning,
                 Shape.of(path).longestLine(20)
             );
-            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
-                extract(streams, sb);
+                extract(bitwisePartitioned.streams(), sb);
             } catch (Exception e) {
                 System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -70,12 +69,11 @@ public class UTF8Test {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path);
-            PartitionedStreams streams = bitwisePartitioned.streams()
+            Partitioned<Path> partitioned = Bitwise.partititioned(path);
         ) {
             sb = new StringBuilder();
             try {
-                extract(streams, sb);
+                extract(partitioned.streams(), sb);
             } catch (Exception e) {
                 System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -97,12 +95,11 @@ public class UTF8Test {
                 path,
                 Partitioning.create(3, 112),
                 Shape.of(path).longestLine(110)
-            );
-            PartitionedStreams streams = partititioned.streams()
+            )
         ) {
             sb = new StringBuilder();
             try {
-                extract(streams, sb);
+                extract(partititioned.streams(), sb);
             } catch (Exception e) {
                 System.out.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -125,11 +122,10 @@ public class UTF8Test {
                 Partitioning.create(4, 20),
                 Shape.of(path).longestLine(512)
             );
-            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
-                extract(streams, sb);
+                extract(bitwisePartitioned.streams(), sb);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -147,11 +143,10 @@ public class UTF8Test {
                 Partitioning.create(3, 40),
                 Shape.of(path).longestLine(40)
             );
-            PartitionedStreams streams = bitwisePartitioned.streams()
         ) {
             sb = new StringBuilder();
             try {
-                extract(streams, sb);
+                extract(bitwisePartitioned.streams(), sb);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -175,16 +170,15 @@ public class UTF8Test {
         Partitioning partitioning = Partitioning.create(partitionCount);
         List<Partition> partitions = partitioning.of(Shape.of(tmp).size());
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
+            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning);
         ) {
-            PartitionedStreams streams = partitioned.streams();
-            streams.streamers()
+            partitioned.streams().streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .forEach(line -> {
-                            String string = line.asString();
-                            System.out.println(string);
-                            sb.append(string).append("\n");
+                                String string = line.asString();
+                                System.out.println(string);
+                                sb.append(string).append("\n");
                             }
                         ));
         }

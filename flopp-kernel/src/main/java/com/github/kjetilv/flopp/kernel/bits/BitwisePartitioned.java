@@ -20,11 +20,14 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private final List<Partition> partitions;
 
+    private final MemorySegmentSource memorySegmentSource;
+
     BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
         this.partitions = (partitioning == null ? Partitioning.create() : partitioning)
             .of(this.shape.size());
+        this.memorySegmentSource = new MemorySegmentSource(this.path, this.shape);
     }
 
     @Override
@@ -39,7 +42,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     @Override
     public PartitionedStreams streams() {
-        return new BitwisePartitionStreams(path, shape, partitions);
+        return new BitwisePartitionStreams(path, shape, partitions, memorySegmentSource);
     }
 
     @Override
@@ -62,6 +65,15 @@ final class BitwisePartitioned implements Partitioned<Path> {
             tempTargets(path),
             transfers(target)
         );
+    }
+
+    @Override
+    public void close() {
+        try {
+            memorySegmentSource.close();
+        } catch (Exception e) {
+            throw new RuntimeException(STR."\{this} could not close", e);
+        }
     }
 
     private static final int BUFFER_SIZE = 8192;

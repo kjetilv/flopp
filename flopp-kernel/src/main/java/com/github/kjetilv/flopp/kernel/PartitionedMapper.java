@@ -2,19 +2,15 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 
-import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
-public interface PartitionedMapper extends Closeable {
+public interface PartitionedMapper {
 
     <T> Stream<CompletableFuture<PartitionResult<T>>> map(
         BiFunction<Partition, Stream<LineSegment>, T> processor, ExecutorService executorService
     );
-    @Override
-    default void close() {
-    }
 }

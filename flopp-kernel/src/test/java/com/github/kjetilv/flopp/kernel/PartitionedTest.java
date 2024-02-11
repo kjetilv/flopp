@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Disabled
 class PartitionedTest {
 
-
     @Test
     void testWithHeader() throws IOException {
         Path pathWithHeaders = Files.createTempFile(UUID.randomUUID().toString(), ".test");
@@ -53,41 +52,35 @@ class PartitionedTest {
         int partitionCount = Runtime.getRuntime()
             .availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
-        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-        pf1.streams().streamers()
-            .forEach(partitionStreamer ->
-                partitionStreamer.lines()
-                    .map(LineSegment::asString)
-                    .forEach(syncLines::add));
-        pf1.close();
+        try (
+            Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
+        ) {
+            pf1.streams().streamers()
+                .forEach(partitionStreamer ->
+                    partitionStreamer.lines()
+                        .map(LineSegment::asString)
+                        .forEach(syncLines::add));
+        }
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
 
         List<String> asyncLines = new ArrayList<>();
 
-        pf2.streams().streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
-            .map(future ->
-                future.thenAccept(partitionedLineStream ->
-                    partitionedLineStream.map(LineSegment::asString).forEach(asyncLines::add)))
-            .forEach(CompletableFuture::join);
-        pf2.close();
+        try (
+            Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
+            ExecutorService executorService = Executors.newFixedThreadPool(10)
+        ) {
+            PartitionedStreams streams = pf2.streams();
+            streams.streamers()
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(streamer::lines, executorService))
+                .map(future ->
+                    future.thenAccept(partitionedLineStream ->
+                        partitionedLineStream.map(LineSegment::asString)
+                            .forEach(asyncLines::add)))
+                .forEach(CompletableFuture::join);
+        }
         assertContents(asyncLines);
-    }
-
-    private static void assertContents(List<String> lines) {
-        String collect = lines.stream()
-            .map(Object::toString)
-            .collect(Collectors.joining("\n"));
-        assertEquals(14, lines.size(),
-            collect
-        );
-        assertEquals("1a", lines.getFirst(), collect);
-        assertEquals("11", lines.get(13), collect);
     }
 
     @Test
@@ -123,28 +116,31 @@ class PartitionedTest {
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-        pf1.streams().streamers()
-            .forEach(partitionStreamer ->
-                partitionStreamer.lines()
-                    .map(LineSegment::asString)
-                    .forEach(syncLines::add));
-        pf1.close();
+        try (
+            Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
+        ) {
+            pf1.streams().streamers()
+                .forEach(partitionStreamer ->
+                    partitionStreamer.lines()
+                        .map(LineSegment::asString)
+                        .forEach(syncLines::add));
+        }
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-
         List<String> asyncLines = new ArrayList<>();
-
-        pf2.streams().streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
-            .map(future ->
-                future.thenAccept(partitionedLineStream ->
-                    partitionedLineStream.map(LineSegment::asString).forEach(asyncLines::add)))
-            .forEach(CompletableFuture::join);
-        pf2.close();
+        try (
+            Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
+            ExecutorService executorService = Executors.newFixedThreadPool(10)
+        ) {
+            pf2.streams().streamers()
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(streamer::lines, executorService))
+                .map(future ->
+                    future.thenAccept(partitionedLineStream ->
+                        partitionedLineStream.map(LineSegment::asString)
+                            .forEach(asyncLines::add)))
+                .forEach(CompletableFuture::join);
+        }
         assertContents(asyncLines);
     }
 
@@ -174,31 +170,45 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
         int partitionCount = Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = new Partitioning(partitionCount, 16);
-        Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders,  partitioning, shape);
-        pf1.streams().streamers()
-            .forEach(partitionStreamer ->
-                partitionStreamer.lines()
-                    .map(LineSegment::asString)
-                    .forEach(syncLines::add)
-            );
-        pf1.close();
+        try (
+            Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
+        ) {
+            pf1.streams().streamers()
+                .forEach(partitionStreamer ->
+                    partitionStreamer.lines()
+                        .map(LineSegment::asString)
+                        .forEach(syncLines::add)
+                );
+        }
         assertContents(syncLines);
 
-        Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-
         List<String> asyncLines = new ArrayList<>();
-
-        pf2.streams().streamers()
-            .map(streamer ->
-                CompletableFuture.supplyAsync(streamer::lines, executorService))
-            .map(future ->
-                future.thenAccept(partitionedLineStream ->
-                    partitionedLineStream.map(LineSegment::asString).forEach(asyncLines::add)))
-            .forEach(CompletableFuture::join);
-        pf2.close();
+        try (
+            Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
+            ExecutorService executorService = Executors.newFixedThreadPool(10);
+        ) {
+            pf2.streams().streamers()
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(streamer::lines, executorService))
+                .map(future ->
+                    future.thenAccept(partitionedLineStream ->
+                        partitionedLineStream.map(LineSegment::asString)
+                            .forEach(asyncLines::add)))
+                .forEach(CompletableFuture::join);
+        }
         assertContents(asyncLines);
+    }
+
+    private static void assertContents(List<String> lines) {
+        String collect = lines.stream()
+            .map(Object::toString)
+            .collect(Collectors.joining("\n"));
+        assertEquals(14, lines.size(),
+            collect
+        );
+        assertEquals("1a", lines.getFirst(), collect);
+        assertEquals("11", lines.get(13), collect);
     }
 }

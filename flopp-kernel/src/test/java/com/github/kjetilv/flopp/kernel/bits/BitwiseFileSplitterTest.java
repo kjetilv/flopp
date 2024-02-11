@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -84,7 +83,9 @@ class BitwiseFileSplitterTest {
             },
             new int[] {1}
         );
-        try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))) {
+        try (
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2));
+        ) {
             partititioned.streams().streamers()
                 .forEach(streamer ->
                     streamer.lines()
