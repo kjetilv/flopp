@@ -80,30 +80,17 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         action.lineDone(segment.lineNo());
     }
 
-    public boolean tokenAndDone(Token token, int pos) {
-        switch (token) {
-            case QUO -> {
-                if (escaping) {
-                    escaping = false;
-                } else {
-                    quoting = !quoting;
-                }
-            }
-            case ESC -> escaping = true;
-            case SEP -> {
-                if (!quoting) {
-                    if (escaping) {
-                        escaping = false;
-                    } else {
-                        boolean done = columnAndDone(pos);
-                        lastSep = pos + 1;
-                        return done;
-                    }
-                }
-            }
-            case _I_ -> throw new IllegalStateException(STR."Should not get \{Token._I_} at \{pos}");
-        }
+    public boolean esc(int pos) {
+        escaping = true;
         return false;
+    }
+
+    public void quo(int pos) {
+        if (escaping) {
+            escaping = false;
+        } else {
+            quoting = !quoting;
+        }
     }
 
     public void close() {
@@ -125,6 +112,19 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return columnNo;
     }
 
+    private boolean sep(int pos) {
+        if (!quoting) {
+            if (escaping) {
+                escaping = false;
+            } else {
+                boolean done = columnAndDone(pos);
+                lastSep = pos + 1;
+                return done;
+            }
+        }
+        return false;
+    }
+
     private boolean eventsDone() {
         if (done) {
             return true;
@@ -142,23 +142,19 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         while (true) {
             switch (min(nextSep, nextQuo, nextEsc)) {
                 case SEP -> {
-                    if (tokenAndDone(Token.SEP, offset + nextSep)) {
+                    if (sep(offset + nextSep)) {
                         return done = true;
                     }
                     seps &= CLEARED[nextSep];
                     nextSep = distance(seps);
                 }
                 case QUO -> {
-                    if (tokenAndDone(Token.QUO, offset + nextQuo)) {
-                        return done = true;
-                    }
+                    quo(offset + nextQuo);
                     quos &= CLEARED[nextQuo];
                     nextQuo = distance(quos);
                 }
                 case ESC -> {
-                    if (tokenAndDone(Token.ESC, offset + nextEsc)) {
-                        return done = true;
-                    }
+                    escaping = true;
                     escs &= CLEARED[nextEsc];
                     nextEsc = distance(escs);
                 }
