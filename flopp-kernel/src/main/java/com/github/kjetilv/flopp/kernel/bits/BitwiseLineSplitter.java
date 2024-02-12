@@ -85,11 +85,11 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
         private final LineSegment lineSegment;
 
-        private final long sepMaks;
+        private final long sepMask;
 
         private final long quoMask;
 
-        private final long escMasp;
+        private final long escMask;
 
         private final int lastOffset;
 
@@ -103,14 +103,14 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
         private ReadState(
             LineSegment lineSegment,
-            long sepMaks,
+            long sepMask,
             long quoMask,
-            long escMasp
+            long escMask
         ) {
             this.lineSegment = lineSegment;
-            this.sepMaks = sepMaks;
+            this.sepMask = sepMask;
             this.quoMask = quoMask;
-            this.escMasp = escMasp;
+            this.escMask = escMask;
 
             this.length = Math.toIntExact(lineSegment.length());
             this.tail = length % ALIGNMENT;
@@ -124,9 +124,9 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
             }
             long bytes = loadLong();
 
-            long seps = mask(bytes, sepMaks);
+            long seps = mask(bytes, sepMask);
             long quos = mask(bytes, quoMask);
-            long escs = mask(bytes, escMasp);
+            long escs = mask(bytes, escMask);
 
             int nextSep = distance(seps);
             int nextQuo = distance(quos);
