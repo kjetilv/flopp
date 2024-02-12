@@ -108,15 +108,6 @@ class BitwiseFileSplitterTest {
     void fasterStillParallel() {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ',',
-            BitwiseLineSplitter.DEFAULT_QUOTE,
-            BitwiseLineSplitter.DEFAULT_ESC,
-            (_, segment, startIndex, endIndex) ->
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
-            0,
-            new int[] {1}
-        );
         try (
             Stream<Path> list = Files.list(PATH);
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
@@ -132,7 +123,15 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(splitter),
+                                        .forEach(new BitwiseLineSplitter(
+                                            ',',
+                                            BitwiseLineSplitter.DEFAULT_QUOTE,
+                                            BitwiseLineSplitter.DEFAULT_ESC,
+                                            (_, segment, startIndex, endIndex) ->
+                                                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
+                                            0,
+                                            new int[] {1}
+                                        )),
                                 executor
                             )))
                 .toList();

@@ -104,7 +104,8 @@ final class BitwisePartitionHandler
                 if (mask == 0) { // We cleared the current mask
                     advance(state);
                 }
-                mark(state, start); // Mark position of new line
+                // Mark position of new line
+                state.lineStart = start;
                 return new InitState(state, mask); // Return start state
             }
             advance(state);
@@ -174,7 +175,7 @@ final class BitwisePartitionHandler
         int offsetInMask = Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT;
         long lineBreakOffset = state.offset + offsetInMask;
         action.line(segment, state.lineStart, lineBreakOffset);
-        mark(state, lineBreakOffset + 1);
+        state.lineStart = lineBreakOffset + 1;
         return mask & CLEARED[offsetInMask + 1];
     }
 
@@ -263,10 +264,6 @@ final class BitwisePartitionHandler
 
     private static void advance(State state) {
         state.offset += Bits.ALIGNMENT;
-    }
-
-    private static void mark(State state, long pos) {
-        state.lineStart = pos;
     }
 
     private static byte byteAt(MemorySegment segment, long offset) {
