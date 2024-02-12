@@ -3,11 +3,11 @@ package com.github.kjetilv.flopp.kernel.bits;
 import java.lang.foreign.MemorySegment;
 
 @SuppressWarnings("unused")
-record ImmutableSliceLine(MemorySegment memorySegment, long length)
+record ImmutableSliceLine(long lineNo, MemorySegment memorySegment, long length)
     implements LineSegment {
 
     ImmutableSliceLine(MemorySegment memorySegment) {
-        this(memorySegment, memorySegment.byteSize());
+        this(1, memorySegment, memorySegment.byteSize());
     }
 
     @Override

@@ -1,11 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
 public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
-    private final BitwisePartitioned.Action action;
+    private final Action action;
 
     private final long splitMask;
 
@@ -17,121 +18,11 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
     private final int endColumn;
 
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        BitwisePartitioned.Action action
-    ) {
-        this(
-            splitCharacter,
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            action,
-            0,
-            null
-        );
-    }
-
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        BitwisePartitioned.Action action,
-        int endColumn
-    ) {
-        this(
-            splitCharacter,
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            action,
-            endColumn,
-            null
-        );
-    }
-
-    public BitwiseLineSplitter(
+    BitwiseLineSplitter(
         char splitCharacter,
         char quoteChar,
         char escapeChar,
-        BitwisePartitioned.Action action
-    ) {
-        this(
-            splitCharacter,
-            quoteChar,
-            escapeChar,
-            action,
-            0,
-            null
-        );
-    }
-
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        char quoteChar,
-        char escapeChar,
-        BitwisePartitioned.Action action,
-        int[] indexes
-    ) {
-        this(
-            splitCharacter,
-            quoteChar,
-            escapeChar,
-            action,
-            0,
-            indexes
-        );
-    }
-
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        char quoteChar,
-        char escapeChar,
-        BitwisePartitioned.Action action,
-        int endColumn
-    ) {
-        this(
-            splitCharacter,
-            quoteChar,
-            escapeChar,
-            action,
-            endColumn,
-            null
-        );
-    }
-
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        BitwisePartitioned.Action action,
-        int[] indexes
-    ) {
-        this(
-            splitCharacter,
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            action,
-            0,
-            indexes
-        );
-    }
-
-    public BitwiseLineSplitter(
-        char splitCharacter,
-        char quoteChar,
-        BitwisePartitioned.Action action,
-        int[] indexes
-    ) {
-        this(
-            splitCharacter,
-            quoteChar,
-            DEFAULT_ESC,
-            action,
-            0,
-            indexes
-        );
-    }
-
-    private BitwiseLineSplitter(
-        char splitCharacter,
-        char quoteChar,
-        char escapeChar,
-        BitwisePartitioned.Action action,
+        Action action,
         int endColumn,
         int[] indexes
     ) {
@@ -154,8 +45,10 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
             escapeMask
         );
         ParseEvents events = new ParseEvents(
-            (start, end) ->
-                action.line(
+            segment,
+            (origin, start, end) ->
+                action.cell(
+                    origin,
                     segment.memorySegment(),
                     segment.startIndex() + start,
                     segment.startIndex() + end
@@ -169,6 +62,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
         if (!readState.done) {
             events.close();
         }
+        action.lineDone(segment.lineNo());
     }
 
     public static final char DEFAULT_QUOTE = '"';
@@ -297,17 +191,17 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
         };
 
         private static Token min(int sep, int quo, int esc) {
-            int min = Math.min(Math.min(sep, quo), esc);
-            if (min == ALIGNMENT) {
-                return Token._I_;
+            int min = Math.min(sep, Math.min(quo, esc));
+            if (min < ALIGNMENT) {
+                if (min == sep) {
+                    return Token.SEP;
+                }
+                if (min == quo) {
+                    return Token.QUO;
+                }
+                return Token.ESC;
             }
-            if (min == sep) {
-                return Token.SEP;
-            }
-            if (min == quo) {
-                return Token.QUO;
-            }
-            return Token.ESC;
+            return Token._I_;
         }
 
         private static long mask(long bytes, long mask) {
@@ -330,6 +224,8 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
         private int lastSplit;
 
+        private final LineSegment lineSegment;
+
         private final Line line;
 
         private final int[] indexes;
@@ -345,11 +241,13 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
         private final boolean emitAll;
 
         private ParseEvents(
+            LineSegment lineSegment,
             Line line,
             int[] indexes,
             int endColumn,
             int length
         ) {
+            this.lineSegment = lineSegment;
             this.line = line;
             this.indexes = indexes;
             this.length = length;
@@ -373,7 +271,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
                         if (escaping) {
                             escaping = false;
                         } else {
-                            boolean done = lineAndDone(pos);
+                            boolean done = columnAndDone(pos);
                             lastSplit = pos + 1;
                             return done;
                         }
@@ -386,37 +284,60 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment> {
 
         @Override
         public void close() {
-            lineAndDone(length);
+            columnAndDone(length);
         }
 
-        private boolean lineAndDone(int pos) {
+        private boolean columnAndDone(int pos) {
             if (emitAll) {
-                ship(pos);
+                ship(columnCount, pos);
                 return false;
             }
             if (endColumn > 0) {
                 if (columnCount < endColumn) {
-                    ship(pos);
+                    ship(columnCount, pos);
                 }
                 columnCount++;
                 return columnCount == endColumn;
             }
             if (indexes[indexedColumnCount] == columnCount) {
-                ship(pos);
+                ship(columnCount, pos);
                 indexedColumnCount++;
             }
             columnCount++;
             return indexedColumnCount == indexes.length;
         }
 
-        private void ship(int pos) {
-            line.line(lastSplit, pos);
+        private void ship(int column, int pos) {
+            line.column(
+                new ImmutableOrigin(
+                    1,
+                    lineSegment.lineNo(),
+                    column
+                ),
+                lastSplit,
+                pos
+            );
         }
+    }
+
+    public interface Action {
+
+        void cell(Origin origin, MemorySegment segment, long startIndex, long endIndex);
+
+        default void lineDone(long line) {
+        }
+
+        ;
+
+        default void fileDone(long file) {
+        }
+
+        ;
     }
 
     private interface Line {
 
-        void line(int start, int end);
+        void column(Origin origin, int start, int end);
     }
 
     private interface Events {

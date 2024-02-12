@@ -17,16 +17,18 @@ public interface LineSegment {
     }
 
     static LineSegment of(MemorySegment memorySegment, long start, long end) {
-        return new ImmutableLine(memorySegment, start, end);
+        return new ImmutableLine(1, memorySegment, start, end);
     }
 
     static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
-        return new ImmutableLine(memorySegment, startIndex, endIndex);
+        return new ImmutableLine(1, memorySegment, startIndex, endIndex);
     }
 
     static String toString(MemorySegment segment, long start, long end) {
         return of(segment, start, end).asString();
     }
+
+    long lineNo();
 
     MemorySegment memorySegment();
 
@@ -43,7 +45,7 @@ public interface LineSegment {
     }
 
     default LineSegment immutable() {
-        return new ImmutableLine(memorySegment(), startIndex(), endIndex());
+        return new ImmutableLine(lineNo(), memorySegment(), startIndex(), endIndex());
     }
 
     default LineSegment immutableSlice() {
@@ -52,7 +54,7 @@ public interface LineSegment {
 
     default LineSegment immutableSLice(long length) {
         MemorySegment slice = memorySegment().asSlice(startIndex(), length);
-        return new ImmutableSliceLine(slice, length);
+        return new ImmutableSliceLine(lineNo(),slice, length);
     }
 
     default String asString() {

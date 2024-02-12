@@ -55,9 +55,11 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
-            (segment, startIndex, endIndex) -> {
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
-            },
+            BitwiseLineSplitter.DEFAULT_QUOTE,
+            BitwiseLineSplitter.DEFAULT_ESC,
+            (_, segment, startIndex, endIndex) ->
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
+            0,
             new int[] {1}
         );
 
@@ -80,13 +82,15 @@ class BitwiseFileSplitterTest {
         Path path = PATH;
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
-            (segment, startIndex, endIndex) -> {
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString());
-            },
+            BitwiseLineSplitter.DEFAULT_QUOTE,
+            BitwiseLineSplitter.DEFAULT_ESC,
+            (_, segment, startIndex, endIndex) ->
+                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
+            0,
             new int[] {1}
         );
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2));
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))
         ) {
             partititioned.streams().streamers()
                 .forEach(streamer ->
@@ -106,8 +110,11 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             ',',
-            (segment, startIndex, endIndex) ->
+            BitwiseLineSplitter.DEFAULT_QUOTE,
+            BitwiseLineSplitter.DEFAULT_ESC,
+            (_, segment, startIndex, endIndex) ->
                 airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
+            0,
             new int[] {1}
         );
         try (
@@ -141,6 +148,8 @@ class BitwiseFileSplitterTest {
         System.out.println(time);
     }
 
+    public static final Path PATH = Path.of(System.getProperty("csv.dir"));
+
     private static Partitioned<Path> partitioned(Path file) {
         return Bitwise.partititioned(
             file,
@@ -148,8 +157,7 @@ class BitwiseFileSplitterTest {
         );
     }
 
-    public static final Path PATH = Path.of(System.getProperty("csv.dir"));
-
+    @SuppressWarnings("SameParameterValue")
     private static Predicate<Path> endsWith(String suffix) {
         return file ->
             file.getFileName().toString().endsWith(suffix);
