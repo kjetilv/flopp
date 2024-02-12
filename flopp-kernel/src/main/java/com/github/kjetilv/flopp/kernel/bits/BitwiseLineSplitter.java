@@ -85,14 +85,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return false;
     }
 
-    public void quo(int pos) {
-        if (escaping) {
-            escaping = false;
-        } else {
-            quoting = !quoting;
-        }
-    }
-
     public void close() {
         columnAndDone(length);
     }
@@ -140,32 +132,32 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         int nextEsc = distance(escs);
 
         while (true) {
-            switch (min(nextSep, nextQuo, nextEsc)) {
-                case SEP -> {
-                    if (sep(offset + nextSep)) {
-                        return done = true;
-                    }
-                    seps &= CLEARED[nextSep];
-                    nextSep = distance(seps);
+            int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
+            if (min == ALIGNMENT) {
+                offset += ALIGNMENT;
+                done = offset >= length;
+                if (done) {
+                    close();
                 }
-                case QUO -> {
-                    quo(offset + nextQuo);
-                    quos &= CLEARED[nextQuo];
-                    nextQuo = distance(quos);
+                return done;
+            } else if (min == nextSep) {
+                if (sep(offset + nextSep)) {
+                    return done = true;
                 }
-                case ESC -> {
-                    escaping = true;
-                    escs &= CLEARED[nextEsc];
-                    nextEsc = distance(escs);
+                seps &= CLEARED[nextSep];
+                nextSep = distance(seps);
+            } else if (min == nextQuo) {
+                if (escaping) {
+                    escaping = false;
+                } else {
+                    quoting = !quoting;
                 }
-                case _I_ -> {
-                    offset += ALIGNMENT;
-                    done = offset >= length;
-                    if (done) {
-                        close();
-                    }
-                    return done;
-                }
+                quos &= CLEARED[nextQuo];
+                nextQuo = distance(quos);
+            } else {
+                escaping = true;
+                escs &= CLEARED[nextEsc];
+                nextEsc = distance(escs);
             }
         }
     }
@@ -240,20 +232,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return mask;
     }
 
-    private static Token min(int sep, int quo, int esc) {
-        int min = Math.min(sep, Math.min(quo, esc));
-        if (min < ALIGNMENT) {
-            if (min == sep) {
-                return Token.SEP;
-            }
-            if (min == quo) {
-                return Token.QUO;
-            }
-            return Token.ESC;
-        }
-        return Token._I_;
-    }
-
     private static long mask(long bytes, long mask) {
         long masked = bytes ^ mask;
         long underflown = masked - 0x0101010101010101L;
@@ -274,16 +252,5 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
         default void fileDone(long file) {
         }
-    }
-
-    public enum Token {
-
-        SEP,
-
-        QUO,
-
-        ESC,
-
-        _I_
     }
 }
