@@ -30,6 +30,10 @@ public record Partitioning(int count, long tail) {
         return create(0, tail);
     }
 
+    public static Partitioning single() {
+        return create(1);
+    }
+
     public Partitioning {
         Non.negativeOrZero(count, "partitionCount");
     }

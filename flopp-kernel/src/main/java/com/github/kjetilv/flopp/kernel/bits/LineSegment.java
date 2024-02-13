@@ -69,12 +69,22 @@ public interface LineSegment {
         return Math.toIntExact(ALIGNMENT - startIndex() % ALIGNMENT);
     }
 
-    default long alignedLongAt(int longOffset) {
+    default long longAt(int longOffset) {
         return longAt(longOffset, JAVA_LONG);
     }
 
-    default long longAt(int longOffset) {
+    default long unalignedLongAt(int longOffset) {
         return longAt(longOffset, JAVA_LONG_UNALIGNED);
+    }
+
+    private long longAt(int longOffset, OfLong javaLong) {
+        try {
+            return memorySegment().get(javaLong, startIndex() + longOffset);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                STR."Alignment for \{longOffset}: \{(memorySegment().address() + longOffset) % ALIGNMENT}",
+                e);
+        }
     }
 
     default byte byteAt(long i) {
@@ -92,13 +102,4 @@ public interface LineSegment {
 
     long ALIGNMENT = JAVA_LONG.byteAlignment();
 
-    private long longAt(int longOffset, OfLong valueLayout) {
-        try {
-            return memorySegment().get(valueLayout, startIndex() + longOffset);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                STR."Alignment for \{longOffset}: \{(memorySegment().address() + longOffset) % ALIGNMENT}",
-                e);
-        }
-    }
 }

@@ -2,9 +2,11 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 public interface Origin {
 
-    int file();
+    long ln();
 
-    long line();
+    int col();
 
-    int column();
+    default Origin immutable() {
+        return new ImmutableOrigin(ln(), col());
+    }
 }

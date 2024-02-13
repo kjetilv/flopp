@@ -45,8 +45,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private int columnNo;
 
-    private boolean done;
-
     BitwiseLineSplitter(
         char splitCharacter,
         char quoteChar,
@@ -66,20 +64,27 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         this.emitAll = this.endColumn <= 0 && this.indexes.length == 0;
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public void accept(LineSegment segment) {
-        this.segment = segment;
-        long align = segment.memorySegment().address() % ValueLayout.JAVA_LONG.byteAlignment();
-        this.length = Math.toIntExact(segment.length());
-        this.tail = length % ALIGNMENT;
-        this.lastOffset = length - tail;
-        while (!eventsDone()) {
-        }
-        if (!done) {
+        try {
+            this.segment = segment;
+            long align = segment.memorySegment().address() % ValueLayout.JAVA_LONG.byteAlignment();
+            this.length = Math.toIntExact(segment.length());
+            this.tail = length % ALIGNMENT;
+            this.lastOffset = length - tail;
+
+            long bytes = loadLong();
+            while (!eventsDone(bytes)) {
+                bytes = loadLong();
+            }
             close();
+            action.lineDone(segment.lineNo());
+        } finally {
+            this.offset = 0;
+            this.lastSep = 0;
+            this.columnCount = 0;
+            this.indexedColumnCount = 0;
         }
-        action.lineDone(segment.lineNo());
     }
 
     public boolean esc(int pos) {
@@ -88,30 +93,26 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
     }
 
     public void close() {
+        if (endColumn > 0 && columnCount == endColumn) {
+            return;
+        }
+        if (indexes.length > 0 && indexes.length == indexedColumnCount) {
+            return;
+        }
         columnAndDone(length);
     }
 
     @Override
-    public int file() {
-        return 1;
-    }
-
-    @Override
-    public long line() {
+    public long ln() {
         return lineNo;
     }
 
     @Override
-    public int column() {
+    public int col() {
         return columnNo;
     }
 
-    private boolean eventsDone() {
-        if (done) {
-            return true;
-        }
-        long bytes = loadLong();
-
+    private boolean eventsDone(long bytes) {
         long seps = mask(bytes, sepMask);
         long quos = mask(bytes, quoMask);
         long escs = mask(bytes, escMask);
@@ -124,17 +125,13 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
             int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
             if (min == ALIGNMENT) {
                 offset += ALIGNMENT;
-                done = offset >= length;
-                if (done) {
-                    close();
-                }
-                return done;
+                return offset >= length;
             } else if (min == nextSep) {
                 if (!quoting) {
                     if (escaping) {
                         escaping = false;
                     } else {
-                        done = columnAndDone(offset + nextSep);
+                        boolean done = columnAndDone(offset + nextSep);
                         lastSep = offset + nextSep + 1;
                         if (done) {
                             return true;
@@ -161,7 +158,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private long loadLong() {
         if (offset < lastOffset) {
-            return segment.longAt(offset);
+            return segment.unalignedLongAt(offset);
         }
         return segment.bytesAt(offset, tail);
     }
@@ -240,9 +237,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         void cell(Origin origin, MemorySegment segment, long startIndex, long endIndex);
 
         default void lineDone(long line) {
-        }
-
-        default void fileDone(long file) {
         }
     }
 }
