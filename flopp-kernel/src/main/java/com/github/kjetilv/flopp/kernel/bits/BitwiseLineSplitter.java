@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
@@ -69,6 +70,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
     @Override
     public void accept(LineSegment segment) {
         this.segment = segment;
+        long align = segment.memorySegment().address() % ValueLayout.JAVA_LONG.byteAlignment();
         this.length = Math.toIntExact(segment.length());
         this.tail = length % ALIGNMENT;
         this.lastOffset = length - tail;
@@ -104,19 +106,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return columnNo;
     }
 
-    private boolean sep(int pos) {
-        if (!quoting) {
-            if (escaping) {
-                escaping = false;
-            } else {
-                boolean done = columnAndDone(pos);
-                lastSep = pos + 1;
-                return done;
-            }
-        }
-        return false;
-    }
-
     private boolean eventsDone() {
         if (done) {
             return true;
@@ -141,8 +130,16 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
                 }
                 return done;
             } else if (min == nextSep) {
-                if (sep(offset + nextSep)) {
-                    return done = true;
+                if (!quoting) {
+                    if (escaping) {
+                        escaping = false;
+                    } else {
+                        done = columnAndDone(offset + nextSep);
+                        lastSep = offset + nextSep + 1;
+                        if (done) {
+                            return true;
+                        }
+                    }
                 }
                 seps &= CLEARED[nextSep];
                 nextSep = distance(seps);
@@ -166,12 +163,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         if (offset < lastOffset) {
             return segment.longAt(offset);
         }
-        long l = 0;
-        for (int i = tail - 1; i >= 0; i--) {
-            byte b = segment.byteAt(offset + i);
-            l = (l << Bits.ALIGNMENT) + b;
-        }
-        return l;
+        return segment.bytesAt(offset, tail);
     }
 
     private boolean columnAndDone(int pos) {

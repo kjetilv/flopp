@@ -162,7 +162,7 @@ final class BitwisePartitionHandler
     private long findFirstLine() {
         long offset = 0L;
         while (offset < limit) {
-            long mask = mask(bytesAt(segment, offset));
+            long mask = mask(segment.get(JAVA_LONG, offset));
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT + 1;
             }
@@ -180,16 +180,11 @@ final class BitwisePartitionHandler
     }
 
     private long loadLong(State state) {
-        return bytesAt(segment, state.offset);
+        return segment.get(JAVA_LONG, state.offset);
     }
 
     private long loadTail(State state, long count) {
-        long l = 0;
-        for (long i = count - 1; i >= 0; i--) {
-            byte b = byteAt(segment, state.offset + i);
-            l = (l << Bits.ALIGNMENT) + b;
-        }
-        return l;
+        return LineSegments.bytesAt(segment, state.offset, Math.toIntExact(count));
     }
 
     private void transcend(State state, BitwisePartitionHandler next) {
@@ -270,10 +265,6 @@ final class BitwisePartitionHandler
         return segment.get(ValueLayout.JAVA_BYTE, offset);
     }
 
-    private static long bytesAt(MemorySegment segement, long index) {
-        return segement.get(JAVA_LONG, index);
-    }
-
     private static long mask(long bytes) {
         long masked = bytes ^ 0x0A0A0A0A0A0A0A0AL;
         long underflown = masked - 0x0101010101010101L;
@@ -296,7 +287,7 @@ final class BitwisePartitionHandler
             collector.add(next);
             long lo = 0L;
             while (lo < next.physicalLimit) {
-                long prebyte = bytesAt(next.segment, lo);
+                long prebyte = next.segment.get(JAVA_LONG, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / Bits.ALIGNMENT;

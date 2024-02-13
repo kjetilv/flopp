@@ -65,15 +65,40 @@ public interface LineSegment {
         return LineSegments.toString(this, length);
     }
 
+    default int misalignedStart() {
+        return Math.toIntExact(ALIGNMENT - startIndex() % ALIGNMENT);
+    }
+
+    default long alignedLongAt(int longOffset) {
+        return longAt(longOffset, JAVA_LONG);
+    }
+
     default long longAt(int longOffset) {
-        return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex() + longOffset);
+        return longAt(longOffset, JAVA_LONG_UNALIGNED);
     }
 
     default byte byteAt(long i) {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
 
-    default long index(long pos) {
-        return startIndex() + pos;
+    default long bytesAt(long offset, int count) {
+        return LineSegments.bytesAt(memorySegment(), index(offset), count);
+
+    }
+
+    default long index(long offset) {
+        return startIndex() + offset;
+    }
+
+    long ALIGNMENT = JAVA_LONG.byteAlignment();
+
+    private long longAt(int longOffset, OfLong valueLayout) {
+        try {
+            return memorySegment().get(valueLayout, startIndex() + longOffset);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                STR."Alignment for \{longOffset}: \{(memorySegment().address() + longOffset) % ALIGNMENT}",
+                e);
+        }
     }
 }

@@ -6,6 +6,8 @@ import com.github.kjetilv.flopp.kernel.Shape;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+
 public final class LineSegments {
 
     public static String toString(LineSegment line) {
@@ -33,5 +35,14 @@ public final class LineSegments {
 
     private static MemorySegment slice(LineSegment line) {
         return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
+    }
+
+    static long bytesAt(MemorySegment memorySegment, long offset, int count) {
+        long l = 0;
+        for (int i = count - 1; i >= 0; i--) {
+            byte b = memorySegment.get(JAVA_BYTE, offset + i);
+            l = (l << Bits.ALIGNMENT) + b;
+        }
+        return l;
     }
 }
