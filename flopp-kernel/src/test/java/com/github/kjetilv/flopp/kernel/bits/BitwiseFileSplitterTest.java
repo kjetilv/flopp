@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -127,7 +128,7 @@ class BitwiseFileSplitterTest {
                                             ',',
                                             BitwiseLineSplitter.DEFAULT_QUOTE,
                                             BitwiseLineSplitter.DEFAULT_ESC,
-                                            (_, segment, startIndex, endIndex) ->
+                                            (origin, segment, startIndex, endIndex) ->
                                                 airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
                                             0,
                                             new int[] {1}
@@ -152,6 +153,7 @@ class BitwiseFileSplitterTest {
     private static Partitioned<Path> partitioned(Path file) {
         return Bitwise.partititioned(
             file,
+            Partitioning.create().scaled(2),
             Shape.of(file).longestLine(1024).header(2)
         );
     }

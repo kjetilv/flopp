@@ -15,17 +15,23 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private final long escMask;
 
-    private final int[] indexes;
+    private final int[] pickCols;
 
-    private final int endColumn;
+    private final int endCol;
 
     private final boolean emitAll;
 
     private LineSegment segment;
 
+    private final boolean limitedColumns;
+
+    private final boolean pickingColumns;
+
+    private final int pickedColumnCount;
+
     private int length;
 
-    private int lastSep;
+    private int previousSep;
 
     private int lastOffset;
 
@@ -37,38 +43,31 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private boolean escaping;
 
-    private int columnCount;
+    private int columnNo;
 
-    private int indexedColumnCount;
+    private int pickedColumnNo;
 
     private long lineNo;
 
-    private int columnNo;
-
-    BitwiseLineSplitter(
-        char splitCharacter,
-        char quoteChar,
-        char escapeChar,
-        Action action,
-        int endColumn,
-        int[] indexes
-    ) {
+    BitwiseLineSplitter(char sepChar, char quoChar, char escChar, Action action, int endCol, int[] pickCols) {
         this.action = action;
 
-        this.sepMask = createMask(splitCharacter);
-        this.quoMask = createMask(quoteChar);
-        this.escMask = createMask(escapeChar);
-        this.indexes = indexes == null ? NO_INDICES : indexes;
-        this.endColumn = endColumn;
+        this.sepMask = createMask(sepChar);
+        this.quoMask = createMask(quoChar);
+        this.escMask = createMask(escChar);
+        this.pickCols = pickCols == null ? NO_INDICES : pickCols;
+        this.endCol = Math.max(0, endCol);
 
-        this.emitAll = this.endColumn <= 0 && this.indexes.length == 0;
+        this.pickedColumnCount = this.pickCols.length;
+        this.pickingColumns = this.pickCols.length > 0;
+        this.limitedColumns = this.endCol > 0;
+        this.emitAll = !(limitedColumns || pickingColumns);
     }
 
     @Override
     public void accept(LineSegment segment) {
         try {
             this.segment = segment;
-            long align = segment.memorySegment().address() % ValueLayout.JAVA_LONG.byteAlignment();
             this.length = Math.toIntExact(segment.length());
             this.tail = length % ALIGNMENT;
             this.lastOffset = length - tail;
@@ -81,9 +80,9 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
             action.lineDone(segment.lineNo());
         } finally {
             this.offset = 0;
-            this.lastSep = 0;
-            this.columnCount = 0;
-            this.indexedColumnCount = 0;
+            this.previousSep = 0;
+            this.columnNo = 0;
+            this.pickedColumnNo = 0;
         }
     }
 
@@ -93,13 +92,12 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
     }
 
     public void close() {
-        if (endColumn > 0 && columnCount == endColumn) {
-            return;
+        if (emitAll || !(
+            limitedColumns && columnNo == endCol ||
+            pickingColumns && pickedColumnCount == pickedColumnNo)
+        ) {
+            columnAndDone(previousSep, length);
         }
-        if (indexes.length > 0 && indexes.length == indexedColumnCount) {
-            return;
-        }
-        columnAndDone(length);
     }
 
     @Override
@@ -126,13 +124,14 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
             if (min == ALIGNMENT) {
                 offset += ALIGNMENT;
                 return offset >= length;
-            } else if (min == nextSep) {
+            }
+            if (min == nextSep) {
                 if (!quoting) {
                     if (escaping) {
                         escaping = false;
                     } else {
-                        boolean done = columnAndDone(offset + nextSep);
-                        lastSep = offset + nextSep + 1;
+                        boolean done = columnAndDone(previousSep, offset + nextSep);
+                        previousSep = offset + nextSep + 1;
                         if (done) {
                             return true;
                         }
@@ -163,33 +162,32 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return segment.bytesAt(offset, tail);
     }
 
-    private boolean columnAndDone(int pos) {
+    private boolean columnAndDone(int prev, int next) {
         if (emitAll) {
-            ship(columnCount, pos);
+            ship(columnNo, next, prev);
             return false;
         }
-        if (endColumn > 0) {
-            if (columnCount < endColumn) {
-                ship(columnCount, pos);
+        if (endCol > 0) {
+            if (columnNo < endCol) {
+                ship(columnNo, next, prev);
             }
-            columnCount++;
-            return columnCount == endColumn;
+            columnNo++;
+            return columnNo == endCol;
         }
-        if (indexes[indexedColumnCount] == columnCount) {
-            ship(columnCount, pos);
-            indexedColumnCount++;
+        if (pickCols[pickedColumnNo] == columnNo) {
+            ship(columnNo, next, prev);
+            pickedColumnNo++;
         }
-        columnCount++;
-        return indexedColumnCount == indexes.length;
+        columnNo++;
+        return pickedColumnNo == pickCols.length;
     }
 
-    private void ship(int column, int pos) {
+    private void ship(int column, int pos, int previous) {
         this.lineNo = segment.lineNo();
-        this.columnNo = column;
         action.cell(
             this,
             segment.memorySegment(),
-            segment.startIndex() + lastSep,
+            segment.startIndex() + previous,
             segment.startIndex() + pos
         );
     }
