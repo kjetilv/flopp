@@ -29,7 +29,8 @@ class BitwiseLineSplitterTest {
             0,
             null
         );
-        splitter.accept(LineSegment.of("foo123;bar;234;abcdef;3456"));
+        LineSegment lineSegment = LineSegment.of("foo123;bar;234;abcdef;3456");
+        splitter.accept(lineSegment);
         assertThat(splits).containsExactly(
             "foo123",
             "bar",
@@ -180,8 +181,11 @@ class BitwiseLineSplitterTest {
         Path path = Files.write(
             Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
             List.of(
-                "foo123;bar;234;abcdef;3456",
-                "bar234;foo;456;dfgfgh;1234"
+                """
+                    def123;cba;234;abcdef;3456
+                    abc234;foo;456;dfgfgh;1234
+                    """
+                    .split("\n")
             )
         );
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
@@ -203,8 +207,8 @@ class BitwiseLineSplitterTest {
         }
         assertThat(splits).containsAll(
             Stream.of(
-                    "foo123;bar;234;abcdef;3456".split(";"),
-                    "bar234;foo;456;dfgfgh;1234".split(";")
+                    "def123;cba;234;abcdef;3456".split(";"),
+                    "abc234;foo;456;dfgfgh;1234".split(";")
                 )
                 .flatMap(Arrays::stream)
                 .toList()

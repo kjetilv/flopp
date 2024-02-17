@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -9,7 +10,16 @@ import static java.lang.foreign.ValueLayout.*;
 public interface LineSegment {
 
     static LineSegment of(String string) {
-        return of(MemorySegment.ofArray(string.getBytes(StandardCharsets.UTF_8)));
+        return of(string.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static LineSegment of(byte[] bytes) {
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
+        byteBuffer.put(bytes);
+        byteBuffer.flip();
+        MemorySegment memorySegment = MemorySegment.ofBuffer(byteBuffer);
+        LineSegment lineSegment = of(memorySegment);
+        return lineSegment;
     }
 
     static LineSegment of(MemorySegment memorySegment) {
@@ -26,6 +36,24 @@ public interface LineSegment {
 
     static String toString(MemorySegment segment, long start, long end) {
         return of(segment, start, end).asString();
+    }
+
+    static LineSegment of(long l) {
+        return of(l, Math.toIntExact(ALIGNMENT));
+    }
+
+    static LineSegment of(long l, int len) {
+        byte[] bytes = {
+            (byte) (l & 0xFF),
+            (byte) (l >> 8L & 0xFF),
+            (byte) (l >> 16L & 0xFF),
+            (byte) (l >> 24L & 0xFF),
+            (byte) (l >> 32L & 0xFF),
+            (byte) (l >> 40L & 0xFF),
+            (byte) (l >> 48L & 0xFF),
+            (byte) (l >> 56L & 0xFF)
+        };
+        return of(new String(bytes, 0, len));
     }
 
     long lineNo();
@@ -65,7 +93,7 @@ public interface LineSegment {
         return LineSegments.toString(this, length);
     }
 
-    default long unalignedLongAt(int longOffset) {
+    default long unalignedLongAt(long longOffset) {
         return longAt(longOffset, JAVA_LONG_UNALIGNED);
     }
 
@@ -74,7 +102,12 @@ public interface LineSegment {
     }
 
     default boolean isAlignedAtStart() {
-        return startIndex() / ALIGNMENT == 0;
+        return startIndex() % ALIGNMENT == 0;
+    }
+
+    default boolean isEndSafe() {
+        long endIndex = endIndex();
+        return endIndex % ALIGNMENT == 0 || memorySegment().byteSize() - endIndex > ALIGNMENT;
     }
 
     default long longStart() {
@@ -86,7 +119,7 @@ public interface LineSegment {
     default long longEnd() {
         long endIndex = endIndex();
         long tailEnd = endIndex % ALIGNMENT;
-        return endIndex + ALIGNMENT - tailEnd;
+        return endIndex - tailEnd;
     }
 
     default long getHeadLong() {
@@ -96,7 +129,8 @@ public interface LineSegment {
     }
 
     default long longNo(int longNo) {
-        return memorySegment().get(JAVA_LONG, longNo * 8L);
+        long offset = longStart() + longNo * 8L;
+        return memorySegment().get(JAVA_LONG, offset);
     }
 
     default long getTailLong() {
@@ -109,12 +143,18 @@ public interface LineSegment {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
 
-    default long bytesAt(long offset, int count) {
+    default long bytesAt(long offset, long count) {
         return LineSegments.bytesAt(memorySegment(), index(offset), count);
     }
 
     default long index(long offset) {
         return startIndex() + offset;
+    }
+
+    default long getTail() {
+        long endIndex = endIndex();
+        long tail = endIndex % ALIGNMENT;
+        return LineSegments.bytesAt(memorySegment(), longEnd(), tail);
     }
 
     private long longAt(long longOffset, OfLong javaLong) {
@@ -138,6 +178,17 @@ public interface LineSegment {
         0x00000000FFFFFFFFL,
         0x000000FFFFFFFFFFL,
         0x0000FFFFFFFFFFFFL,
-        0x00FFFFFFFFFFFFFFL
+        0x00FFFFFFFFFFFFFFL,
+    };
+
+    long[] CLEAR_HEAD_REVERSE = {
+        0xFFFFFFFFFFFFFFFFL,
+        0x00FFFFFFFFFFFFFFL,
+        0x0000FFFFFFFFFFFFL,
+        0x000000FFFFFFFFFFL,
+        0x00000000FFFFFFFFL,
+        0x0000000000FFFFFFL,
+        0x000000000000FFFFL,
+        0x00000000000000FFL,
     };
 }

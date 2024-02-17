@@ -37,9 +37,9 @@ public final class LineSegments {
         return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
     }
 
-    static long bytesAt(MemorySegment memorySegment, long offset, int count) {
+    static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         long l = 0;
-        for (int i = count - 1; i >= 0; i--) {
+        for (long i = count - 1; i >= 0; i--) {
             byte b = memorySegment.get(JAVA_BYTE, offset + i);
             l = (l << Bits.ALIGNMENT) + b;
         }
