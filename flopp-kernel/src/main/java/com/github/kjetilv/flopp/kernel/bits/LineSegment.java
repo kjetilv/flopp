@@ -4,6 +4,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.*;
 
 @SuppressWarnings("unused")
@@ -136,7 +137,7 @@ public interface LineSegment {
     default long getTailLong() {
         long tail = endIndex() % ALIGNMENT;
         long l = memorySegment().get(JAVA_LONG, longEnd() - ALIGNMENT);
-        return l & CLEAR_HEAD[Math.toIntExact(tail)];
+        return l & LineSegments.CLEAR_HEAD[Math.toIntExact(tail)];
     }
 
     default byte byteAt(long i) {
@@ -167,28 +168,4 @@ public interface LineSegment {
             );
         }
     }
-
-    long ALIGNMENT = JAVA_LONG.byteAlignment();
-
-    long[] CLEAR_HEAD = {
-        0x0000000000000000L,
-        0x00000000000000FFL,
-        0x000000000000FFFFL,
-        0x0000000000FFFFFFL,
-        0x00000000FFFFFFFFL,
-        0x000000FFFFFFFFFFL,
-        0x0000FFFFFFFFFFFFL,
-        0x00FFFFFFFFFFFFFFL,
-    };
-
-    long[] CLEAR_HEAD_REVERSE = {
-        0xFFFFFFFFFFFFFFFFL,
-        0x00FFFFFFFFFFFFFFL,
-        0x0000FFFFFFFFFFFFL,
-        0x000000FFFFFFFFFFL,
-        0x00000000FFFFFFFFL,
-        0x0000000000FFFFFFL,
-        0x000000000000FFFFL,
-        0x00000000000000FFL,
-    };
 }

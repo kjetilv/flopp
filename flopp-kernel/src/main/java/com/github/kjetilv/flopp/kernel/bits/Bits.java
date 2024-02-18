@@ -6,5 +6,7 @@ final class Bits {
 
     }
 
-    static final int ALIGNMENT = 0x08;
+    static final int ALIGNMENT_INT = 0x08;
+
+    static final long ALIGNMENT = ALIGNMENT_INT;
 }

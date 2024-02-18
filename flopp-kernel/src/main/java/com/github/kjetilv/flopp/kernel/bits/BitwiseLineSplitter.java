@@ -3,6 +3,9 @@ package com.github.kjetilv.flopp.kernel.bits;
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
+
 public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin {
 
     private final Action action;
@@ -206,8 +209,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     public static final int[] NO_INDICES = new int[0];
 
-    private static final int ALIGNMENT = 0x08;
-
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
         0xFFFFFFFFFFFF0000L,
@@ -235,7 +236,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
     }
 
     private static int distance(long bytes) {
-        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT;
+        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT_INT;
     }
 
     public interface Action {

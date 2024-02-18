@@ -30,13 +30,6 @@ public final class LineSegments {
         return PartitionActionMediator.create(partition, shape);
     }
 
-    private LineSegments() {
-    }
-
-    private static MemorySegment slice(LineSegment line) {
-        return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
-    }
-
     static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         long l = 0;
         for (long i = count - 1; i >= 0; i--) {
@@ -44,5 +37,23 @@ public final class LineSegments {
             l = (l << Bits.ALIGNMENT) + b;
         }
         return l;
+    }
+
+    private LineSegments() {
+    }
+
+    static final long[] CLEAR_HEAD = {
+        0x0000000000000000L,
+        0x00000000000000FFL,
+        0x000000000000FFFFL,
+        0x0000000000FFFFFFL,
+        0x00000000FFFFFFFFL,
+        0x000000FFFFFFFFFFL,
+        0x0000FFFFFFFFFFFFL,
+        0x00FFFFFFFFFFFFFFL,
+    };
+
+    private static MemorySegment slice(LineSegment line) {
+        return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
     }
 }

@@ -3,13 +3,14 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionHandler
@@ -99,7 +100,7 @@ final class BitwisePartitionHandler
         while (state.offset < limit) {
             long mask = mask(loadLong(state));
             if (mask != 0) {
-                long start = state.offset + Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT + 1;
+                long start = state.offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
                 mask &= CLEARED[Math.toIntExact(start - state.offset)];
                 if (mask == 0) { // We cleared the current mask
                     advance(state);
@@ -114,7 +115,7 @@ final class BitwisePartitionHandler
     }
 
     private void processTail(State state) {
-        long tail = limit % Bits.ALIGNMENT;
+        long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         processMain(state, lastOffset);
         if (tail > 0) {
@@ -164,15 +165,15 @@ final class BitwisePartitionHandler
         while (offset < limit) {
             long mask = mask(segment.get(JAVA_LONG, offset));
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT + 1;
+                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
             }
-            offset += Bits.ALIGNMENT;
+            offset += ALIGNMENT;
         }
         return limit;
     }
 
     private long shipNextLine(State state, long mask) {
-        int offsetInMask = Long.numberOfTrailingZeros(mask) / Bits.ALIGNMENT;
+        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
         long lineBreakOffset = state.offset + offsetInMask;
         action.line(segment, state.lineStart, lineBreakOffset);
         state.lineStart = lineBreakOffset + 1;
@@ -258,11 +259,7 @@ final class BitwisePartitionHandler
     };
 
     private static void advance(State state) {
-        state.offset += Bits.ALIGNMENT;
-    }
-
-    private static byte byteAt(MemorySegment segment, long offset) {
-        return segment.get(ValueLayout.JAVA_BYTE, offset);
+        state.offset += ALIGNMENT;
     }
 
     private static long mask(long bytes) {
@@ -290,9 +287,9 @@ final class BitwisePartitionHandler
                 long prebyte = next.segment.get(JAVA_LONG, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
-                    return lo + Long.numberOfTrailingZeros(premask) / Bits.ALIGNMENT;
+                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
                 }
-                lo += Bits.ALIGNMENT;
+                lo += ALIGNMENT;
             }
         }
     }

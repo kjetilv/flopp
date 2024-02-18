@@ -42,8 +42,8 @@ class LineSegmentTest {
             LineSegment lineSegment = LineSegment.of(memorySegment, 13, 49);
 
             assertThat(lineSegment.longStart()).isEqualTo(8);
-            assertThat(lineSegment.longEnd()).isEqualTo(56);
-            assertThat(lineSegment.longCount()).isEqualTo(6);
+            assertThat(lineSegment.longEnd()).isEqualTo(48);
+            assertThat(lineSegment.longCount()).isEqualTo(5);
 
             long firstAsBytes = lineSegment.bytesAt(0, 3);
 
@@ -61,7 +61,7 @@ class LineSegmentTest {
                 System.out.println(toString(l, 8));
             }
 
-            long last = lineSegment.getTailLong();
+            long last = lineSegment.getTail();
             String lastString = toString(last, 1);
             String wantedLastString = line.substring(48, 49);
             assertThat(lastString).isEqualTo(wantedLastString);
