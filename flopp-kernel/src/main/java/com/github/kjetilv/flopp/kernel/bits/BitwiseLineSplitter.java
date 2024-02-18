@@ -1,14 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 
-public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin {
+public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
-    private final Action action;
+    private final Lines lines;
 
     private final long sepMask;
 
@@ -16,23 +17,15 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private final long escMask;
 
-    private final int[] pickCols;
+    private final long[] start;
 
-    private final int endCol;
-
-    private final boolean emitAll;
+    private final long[] end;
 
     private LineSegment segment;
 
-    private final boolean limitedColumns;
-
-    private final boolean pickingColumns;
-
-    private final int pickedColumnCount;
-
-    private long length;
-
     private long currentStart;
+
+    private long startOffset;
 
     private long offset;
 
@@ -42,87 +35,86 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private int columnNo;
 
-    private int pickedColumnNo;
+    BitwiseLineSplitter(LineSplit lineSplit, Lines lines) {
+        Objects.requireNonNull(lineSplit, "lineSplit");
 
-    private long lineNo;
+        this.lines = Objects.requireNonNull(lines, "lines");
 
-    BitwiseLineSplitter(char sepChar, char quoChar, char escChar, Action action, int endCol, int[] pickCols) {
-        this.action = action;
+        this.sepMask = createMask(lineSplit.separator());
+        this.quoMask = createMask(lineSplit.quote());
+        this.escMask = createMask(lineSplit.escape());
 
-        this.sepMask = createMask(sepChar);
-        this.quoMask = createMask(quoChar);
-        this.escMask = createMask(escChar);
-        this.pickCols = pickCols == null ? NO_INDICES : pickCols;
-        this.endCol = Math.max(0, endCol);
+        this.start = new long[lineSplit.columnCount()];
+        this.end = new long[lineSplit.columnCount()];
+    }
 
-        this.pickedColumnCount = this.pickCols.length;
-        this.pickingColumns = this.pickCols.length > 0;
-        this.limitedColumns = this.endCol > 0;
-        this.emitAll = !(limitedColumns || pickingColumns);
+    @Override
+    public MemorySegment memorySegment() {
+        return segment.memorySegment();
+    }
+
+    @Override
+    public int columns() {
+        return columnNo;
+    }
+
+    @Override
+    public long[] start() {
+        return start;
+    }
+
+    @Override
+    public long[] end() {
+        return end;
     }
 
     @Override
     public void accept(LineSegment segment) {
         try {
             this.segment = segment;
-            this.length = segment.length();
-            this.lineNo = segment.lineNo();
+            long length = segment.length();
+
+            startOffset = segment.startIndex();
+
+            if (length < ALIGNMENT) {
+                findSeps(segment.getTail());
+                addSep(currentStart, length);
+                return;
+            }
 
             long longCount = segment.longCount();
-            if (segment.isAlignedAtStart() && segment.isEndSafe()) {
-                for (int i = 0; i < longCount; i++) {
-                    if (eventsDone(segment.longNo(i))) {
-                        break;
-                    }
-                }
-                close();
-            } else {
-                offset = segment.longStart() - segment.startIndex();
-                long bytes = segment.getHeadLong();
-                for (int i = 1; i < longCount; i++) {
-                    if (eventsDone(bytes)) {
-                        break;
-                    }
-                    bytes = segment.longNo(i);
-                }
-                if (!eventsDone(bytes)) {
-                    if (segment.isEndSafe()) {
-                        eventsDone(segment.getTailLong());
-                    } else {
-                        eventsDone(segment.getTail());
-                    }
-                }
-                close();
+            long headLong = resolveHeadLong(segment);
+            findSeps(headLong);
+
+            for (int i = 1; i < longCount; i++) {
+                findSeps(segment.getLong(i));
             }
-            action.lineDone(segment.lineNo());
+
+            if (segment.isAlignedAtEnd()) {
+                addSep(currentStart, length);
+                return;
+            }
+
+            findSeps(segment.getTail());
+            addSep(currentStart, length);
         } finally {
+            lines.line(this);
+
             this.offset = 0;
             this.currentStart = 0;
             this.columnNo = 0;
-            this.pickedColumnNo = 0;
         }
     }
 
-    public void close() {
-        if (emitAll || !(
-            limitedColumns && columnNo == endCol ||
-            pickingColumns && pickedColumnCount == pickedColumnNo)
-        ) {
-            columnAndDone(currentStart, length);
+    private long resolveHeadLong(LineSegment segment) {
+        if (segment.isAlignedAtStart()) {
+            return segment.getLong(0);
         }
+        offset = -segment.headStart();
+        return segment.getHeadLong();
     }
 
-    @Override
-    public long ln() {
-        return lineNo;
-    }
-
-    @Override
-    public int col() {
-        return columnNo;
-    }
-
-    private boolean eventsDone(long bytes) {
+    private void findSeps(long bytes) {
         long seps = mask(bytes, sepMask);
         long quos = mask(bytes, quoMask);
         long escs = mask(bytes, escMask);
@@ -135,18 +127,15 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
             int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
             if (min == ALIGNMENT) {
                 offset += ALIGNMENT;
-                return offset >= length;
+                return;
             }
             if (min == nextSep) {
                 if (!quoting) {
                     if (escaping) {
                         escaping = false;
                     } else {
-                        boolean done = columnAndDone(currentStart, offset + nextSep);
+                        addSep(currentStart, offset + nextSep);
                         currentStart = offset + nextSep + 1;
-                        if (done) {
-                            return true;
-                        }
                     }
                 }
                 seps &= CLEARED[nextSep];
@@ -159,7 +148,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
                 }
                 quos &= CLEARED[nextQuo];
                 nextQuo = distance(quos);
-            } else {
+            } else if (min == nextEsc) {
                 escaping = true;
                 escs &= CLEARED[nextEsc];
                 nextEsc = distance(escs);
@@ -167,41 +156,11 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         }
     }
 
-    private boolean columnAndDone(long prev, long next) {
-        if (emitAll) {
-            ship(columnNo, next, prev);
-            return false;
-        }
-        if (endCol > 0) {
-            if (columnNo < endCol) {
-                ship(columnNo, next, prev);
-            }
-            columnNo++;
-            return columnNo == endCol;
-        }
-        if (pickCols[pickedColumnNo] == columnNo) {
-            ship(columnNo, next, prev);
-            pickedColumnNo++;
-        }
+    private void addSep(long start, long end) {
+        this.start[columnNo] = startOffset + start;
+        this.end[columnNo] = startOffset + end;
         columnNo++;
-        return pickedColumnNo == pickCols.length;
     }
-
-    private void ship(int column, long pos, long previous) {
-        this.columnNo = column;
-        action.cell(
-            this,
-            segment.memorySegment(),
-            segment.startIndex() + previous,
-            segment.startIndex() + pos
-        );
-    }
-
-    public static final char DEFAULT_QUOTE = '"';
-
-    public static final char DEFAULT_ESC = '\\';
-
-    public static final int[] NO_INDICES = new int[0];
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -233,11 +192,8 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         return Long.numberOfTrailingZeros(bytes) / ALIGNMENT_INT;
     }
 
-    public interface Action {
+    public interface Lines {
 
-        void cell(Origin origin, MemorySegment segment, long startIndex, long endIndex);
-
-        default void lineDone(long line) {
-        }
+        void line(Line line);
     }
 }

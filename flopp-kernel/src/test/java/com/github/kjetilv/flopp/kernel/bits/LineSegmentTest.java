@@ -57,7 +57,7 @@ class LineSegmentTest {
             assertThat(toString(first, 3)).isEqualTo(wantedSubstring);
 
             for (int i = 0; i < lineSegment.longCount(); i++) {
-                long l = lineSegment.longNo(i);
+                long l = lineSegment.getLong(i);
                 System.out.println(toString(l, 8));
             }
 

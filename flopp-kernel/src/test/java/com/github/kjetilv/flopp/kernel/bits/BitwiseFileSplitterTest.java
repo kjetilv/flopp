@@ -55,13 +55,9 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ',',
-            BitwiseLineSplitter.DEFAULT_QUOTE,
-            BitwiseLineSplitter.DEFAULT_ESC,
-            (_, segment, startIndex, endIndex) ->
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
-            0,
-            new int[] {1}
+            new LineSplit(),
+            line ->
+                airlines.add(line.column(1))
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
@@ -85,13 +81,9 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ',',
-            BitwiseLineSplitter.DEFAULT_QUOTE,
-            BitwiseLineSplitter.DEFAULT_ESC,
-            (_, segment, startIndex, endIndex) ->
-                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
-            0,
-            new int[] {1}
+            new LineSplit(),
+            line ->
+                airlines.add(line.column(1))
         );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))
@@ -128,13 +120,9 @@ class BitwiseFileSplitterTest {
                                 () ->
                                     partitionStreamer.lines()
                                         .forEach(new BitwiseLineSplitter(
-                                            ',',
-                                            BitwiseLineSplitter.DEFAULT_QUOTE,
-                                            BitwiseLineSplitter.DEFAULT_ESC,
-                                            (origin, segment, startIndex, endIndex) ->
-                                                airlines.add(LineSegment.of(segment, startIndex, endIndex).asString()),
-                                            0,
-                                            new int[] {1}
+                                            new LineSplit(),
+                                            line ->
+                                                airlines.add(line.column(1))
                                         )),
                                 executor
                             )))

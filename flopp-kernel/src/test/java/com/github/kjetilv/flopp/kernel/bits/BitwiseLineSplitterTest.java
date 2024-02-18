@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static com.github.kjetilv.flopp.kernel.bits.BitwiseLineSplitter.*;
+import static com.github.kjetilv.flopp.kernel.bits.BitwiseLineSplitter.Lines;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BitwiseLineSplitterTest {
@@ -22,12 +22,8 @@ class BitwiseLineSplitterTest {
     void splitLine() {
         List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            adder(splits),
-            0,
-            null
+            new LineSplit(';'),
+            adder(splits)
         );
         LineSegment lineSegment = LineSegment.of("foo123;bar;234;abcdef;3456");
         splitter.accept(lineSegment);
@@ -44,12 +40,8 @@ class BitwiseLineSplitterTest {
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            adder(splits),
-            0,
-            null
+            new LineSplit(';'),
+            adder(splits)
         );
         splitter.accept(LineSegment.of("foo123;bar;234;abcdef;3456"));
         assertThat(splits).containsExactly(
@@ -71,108 +63,85 @@ class BitwiseLineSplitterTest {
     }
 
     @Test
-    void quoted() {
-        List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            '\'',
-            '\\',
-            adder(splits),
-            0,
-            null
+    void shortString() {
+        assertSplit(
+            "foo;bar;zot",
+            "foo",
+            "bar",
+            "zot"
         );
-        splitter.accept(LineSegment.of(
-            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
-        assertThat(splits).containsExactly(
-            "'foo 1'", "bar", "234", "'ab; cd;ef'", "'it is \\'aight'", "", "234", "','", "'\\;'");
     }
 
     @Test
-    void quotedLimited() {
-        List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            '\'',
-            '\\',
-            adder(splits),
-            3,
-            null
+    void shorterString() {
+        assertSplit(
+            "foo;bar",
+            "foo",
+            "bar"
         );
-        splitter.accept(LineSegment.of(
-            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
-        assertThat(splits).containsExactly(
-            "'foo 1'", "bar", "234");
+    }
+
+    @Test
+    void shorterString8() {
+        assertSplit(
+            "fooz;bar",
+            "fooz",
+            "bar"
+        );
+    }
+
+    @Test
+    void veryShorterString() {
+        assertSplit(
+            "a;b;c",
+            "a",
+            "b",
+            "c"
+        );
+    }
+
+    @Test
+    void quoted() {
+        assertSplit(
+            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'",
+            "'foo 1'",
+            "bar",
+            "234",
+            "'ab; cd;ef'",
+            "'it is \\'aight'",
+            "",
+            "234",
+            "','",
+            "'\\;'"
+        );
     }
 
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            '\'',
-            '\\',
-            adder(splits),
-            100,
-            null
+            new LineSplit(';', '\''),
+            adder(splits)
         );
         splitter.accept(LineSegment.of(
             "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
         assertThat(splits).containsExactly(
             "'foo 1'", "bar", "234", "'ab; cd;ef'", "'it is \\'aight'", "", "234", "','", "'\\;'");
-    }
-
-    @Test
-    void quotedPicky() {
-        List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            '\'',
-            '\\',
-            adder(splits),
-            0,
-            new int[] {3, 4, 7}
-        );
-        splitter.accept(LineSegment.of(
-            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
-        assertThat(splits).containsExactly(
-            "'ab; cd;ef'", "'it is \\'aight'", "','");
     }
 
     @Test
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
+        String input = "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'";
+        String[] expected = {"'foo 1'", "bar", "234", "'ab; cd;ef'", "'it is \\'aight'", "", "234", "','", "'\\;'"};
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            '\'',
-            '\\',
-            adder(splits),
-            0,
-            new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+            new LineSplit(';', '\''),
+            adder(splits)
         );
         splitter.accept(LineSegment.of(
-            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'"));
+            input));
         assertThat(splits).containsExactly(
-            "'foo 1'", "bar", "234", "'ab; cd;ef'", "'it is \\'aight'", "", "234", "','", "'\\;'");
-    }
-
-    @Test
-    void splitLinePicky() {
-        List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            (_, segment, startIndex, endIndex) ->
-                splits.add(LineSegment.of(segment, startIndex, endIndex).immutable().asString()),
-            0,
-            new int[] {1, 3, 4}
-        );
-        splitter.accept(LineSegment.of("foo123;bar;234;abcdef;3456"));
-        assertThat(splits).containsExactly(
-            "bar",
-            "abcdef",
-            "3456"
-        );
+            expected);
     }
 
     @Test
@@ -189,15 +158,10 @@ class BitwiseLineSplitterTest {
             )
         );
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            ';',
-            DEFAULT_QUOTE,
-            DEFAULT_ESC,
-            (origin, segment, startIndex, endIndex) ->
-                splits.add(
-                    LineSegment.ofRange(segment, startIndex, endIndex).asString()
-                ),
-            0,
-            null
+            new LineSplit(';'),
+            line ->
+                line.columnStream()
+                    .forEach(splits::add)
         );
         try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Partitioning.single())) {
             partititioned.streams().streamers()
@@ -215,8 +179,18 @@ class BitwiseLineSplitterTest {
         );
     }
 
-    private static Action adder(List<String> splits) {
-        return (_, segment, startIndex, endIndex) ->
-            splits.add(LineSegment.of(segment, startIndex, endIndex).immutable().asString());
+    private static void assertSplit(String input, String... expected) {
+        List<String> splits = new ArrayList<>();
+        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
+            new LineSplit(';', '\''),
+            adder(splits));
+        splitter.accept(LineSegment.of(input));
+        assertThat(splits).containsExactly(expected);
+    }
+
+    private static Lines adder(List<String> splits) {
+        return line ->
+            line.columnStream()
+                .forEach(splits::add);
     }
 }
