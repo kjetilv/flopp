@@ -100,6 +100,14 @@ class BitwiseLineSplitterTest {
     }
 
     @Test
+    void trickyString1() {
+        assertSplit(
+            "'c';'';",
+            "'c'", "''", ""
+        );
+    }
+
+    @Test
     void quoted() {
         assertSplit(
             "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'",
@@ -145,17 +153,44 @@ class BitwiseLineSplitterTest {
 
     @Test
     void splitFile() throws IOException {
-        List<String> splits = new ArrayList<>();
-        String contents = """
+        assertFileContents("""
             def123;cba;234;abcdef;3456
             abc234;foo;456;dfgfgh;1234
             foo;bar;zot
             foo;bar
             
-            
+                        
             zot;
             moreStuff;1;2;3;4;5;6
-            """;
+            """);
+    }
+
+    @Test
+    void trickyFile() throws IOException {
+        assertFileContents("""
+            '';
+            'f;o;o';bar;zot
+            123123123;234234234;345345345
+            '1;2';3
+            ;
+            """,
+            "''",
+            "",
+            "'f;o;o'",
+            "bar",
+            "zot",
+            "123123123",
+            "234234234",
+            "345345345",
+            "'1;2'",
+            "3",
+            "",
+            ""
+            );
+    }
+
+    private static void assertFileContents(String contents, String... lines) throws IOException {
+        List<String> splits = new ArrayList<>();
         Path path = Files.write(
             Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
             List.of(
@@ -177,10 +212,17 @@ class BitwiseLineSplitterTest {
                         streamer.lines()
                             .forEach(splitter));
             }
-            assertThat(splits).containsAll(
-                lines(contents.split("\n")));
+            if (lines.length > 0) {
+                assertThat(splits).containsExactly(lines);
+            } else {
+                assertThat(splits).containsExactly(contents.split("\n"));
+            }
         } catch (Exception e) {
-            throw new IllegalStateException("Failed with list:\n  " + String.join("\n  ", splits), e);
+            throw new IllegalStateException(
+                STR."""
+                   Failed with list:
+                     \{String.join("\n  ", splits)}
+                   """, e);
         }
     }
 
