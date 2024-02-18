@@ -64,10 +64,13 @@ class BitwiseFileSplitterTest {
             new int[] {1}
         );
 
-        try (Stream<String> lines = Files.lines(PATH)) {
-            lines.skip(1)
-                .map(LineSegment::of)
-                .forEach(splitter);
+        try (Stream<Path> list = Files.list(PATH)) {
+            Path path = list.findFirst().orElseThrow();
+            try (Stream<String> lines = Files.lines(path)) {
+                lines.skip(1)
+                    .map(LineSegment::of)
+                    .forEach(splitter);
+            }
         }
         System.out.println(airlines.size());
         System.out.println(airlines.stream().limit(10)

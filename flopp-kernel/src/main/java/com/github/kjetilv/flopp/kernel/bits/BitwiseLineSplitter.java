@@ -34,10 +34,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
 
     private long currentStart;
 
-    private long lastOffset;
-
-    private long tail;
-
     private long offset;
 
     private boolean quoting;
@@ -70,8 +66,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Origin 
         try {
             this.segment = segment;
             this.length = segment.length();
-            this.tail = length % ALIGNMENT;
-            this.lastOffset = length - tail;
             this.lineNo = segment.lineNo();
 
             long longCount = segment.longCount();
