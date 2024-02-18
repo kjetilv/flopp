@@ -94,7 +94,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
                 return;
             }
 
-            findSeps(segment.getTail());
+            findSeps(segment.tail());
             addSep(currentStart, length);
         } finally {
             lines.line(this);
@@ -111,7 +111,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
             return segment.getLong(0);
         }
         offset = -headStart;
-        return segment.getHeadLong(headStart);
+        return segment.head(headStart);
     }
 
     private void findSeps(long bytes) {

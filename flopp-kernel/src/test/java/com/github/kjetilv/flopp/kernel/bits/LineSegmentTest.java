@@ -51,7 +51,7 @@ class LineSegmentTest {
             String wantedSubstring = line.substring(13, 16);
             assertThat(bytedSubstring).isEqualTo(wantedSubstring);
 
-            long first = lineSegment.getHeadLong();
+            long first = lineSegment.head();
             assertThat(first).isEqualTo(firstAsBytes);
 
             assertThat(toString(first, 3)).isEqualTo(wantedSubstring);
@@ -61,7 +61,7 @@ class LineSegmentTest {
                 System.out.println(toString(l, 8));
             }
 
-            long last = lineSegment.getTail();
+            long last = lineSegment.tail();
             String lastString = toString(last, 1);
             String wantedLastString = line.substring(48, 49);
             assertThat(lastString).isEqualTo(wantedLastString);

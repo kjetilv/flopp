@@ -7,14 +7,13 @@ import java.nio.charset.StandardCharsets;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.*;
 
-@SuppressWarnings("unused")
 public interface LineSegment {
 
     static LineSegment of(String string) {
         return of(string.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static LineSegment of(byte[] bytes) {
+    static LineSegment of(byte[] bytes) {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
@@ -69,14 +68,12 @@ public interface LineSegment {
         return endIndex() - startIndex();
     }
 
-    default byte[] byteArray() {
-        return LineSegments.toBytes(this);
-    }
-
+    @SuppressWarnings("unused")
     default LineSegment immutable() {
         return new ImmutableLine(lineNo(), memorySegment(), startIndex(), endIndex());
     }
 
+    @SuppressWarnings("unused")
     default LineSegment immutableSlice() {
         return immutableSLice(endIndex());
     }
@@ -94,10 +91,6 @@ public interface LineSegment {
         return LineSegments.toString(this, length);
     }
 
-    default long unalignedLongAt(long longOffset) {
-        return longAt(longOffset, JAVA_LONG_UNALIGNED);
-    }
-
     default long longCount() {
         return (longEnd() - longStart()) / ALIGNMENT;
     }
@@ -108,10 +101,6 @@ public interface LineSegment {
 
     default boolean isAlignedAtEnd() {
         return endIndex() % ALIGNMENT == 0;
-    }
-
-    default boolean isEndSafe() {
-        return isAlignedAtEnd() || memorySegment().byteSize() - endIndex() > ALIGNMENT;
     }
 
     default long longStart() {
@@ -126,11 +115,11 @@ public interface LineSegment {
         return endIndex - tailEnd;
     }
 
-    default long getHeadLong() {
-        return getHeadLong(startIndex() % ALIGNMENT);
+    default long head() {
+        return head(startIndex() % ALIGNMENT);
     }
 
-    default long getHeadLong(long head) {
+    default long head(long head) {
         long l = memorySegment().get(JAVA_LONG, longStart());
         return l >> head * ALIGNMENT;
     }
@@ -139,13 +128,7 @@ public interface LineSegment {
         return memorySegment().get(JAVA_LONG, longStart() + longNo * 8L);
     }
 
-    default long getTailLong() {
-        long tail = endIndex() % ALIGNMENT;
-        long l = memorySegment().get(JAVA_LONG, longEnd() - ALIGNMENT);
-        return l & LineSegments.CLEAR_HEAD[Math.toIntExact(tail)];
-    }
-
-    default long getTail() {
+    default long tail() {
         long endIndex = endIndex();
         long tail = endIndex % ALIGNMENT;
         return LineSegments.bytesAt(memorySegment(), longEnd(), tail);
@@ -163,14 +146,4 @@ public interface LineSegment {
         return startIndex() + offset;
     }
 
-    private long longAt(long longOffset, OfLong javaLong) {
-        try {
-            return memorySegment().get(javaLong, startIndex() + longOffset);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                STR."Alignment for \{longOffset}: \{(memorySegment().address() + longOffset) % ALIGNMENT}",
-                e
-            );
-        }
-    }
 }
