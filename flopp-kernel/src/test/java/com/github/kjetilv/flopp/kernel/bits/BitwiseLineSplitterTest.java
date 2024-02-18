@@ -153,27 +153,56 @@ class BitwiseLineSplitterTest {
 
     @Test
     void splitFile() throws IOException {
-        assertFileContents("""
-            def123;cba;234;abcdef;3456
-            abc234;foo;456;dfgfgh;1234
-            foo;bar;zot
-            foo;bar
-            
-                        
-            zot;
-            moreStuff;1;2;3;4;5;6
-            """);
+        assertFileContents(
+            """
+                def123;cba;234;abcdef;3456
+                abc234;foo;456;dfgfgh;1234
+                foo;bar;zot
+                foo;bar
+                            
+                            
+                zot;
+                moreStuff;1;2;3;4;5;6
+                """,
+            "def123",
+            "cba",
+            "234",
+            "abcdef",
+            "3456",
+            "abc234",
+            "foo",
+            "456",
+            "dfgfgh",
+            "1234",
+            "foo",
+            "bar",
+            "zot",
+            "foo",
+            "bar",
+            "",
+            "",
+            "zot",
+            "",
+            "moreStuff",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+        );
     }
 
     @Test
     void trickyFile() throws IOException {
-        assertFileContents("""
-            '';
-            'f;o;o';bar;zot
-            123123123;234234234;345345345
-            '1;2';3
-            ;
-            """,
+        assertFileContents(
+            """
+                '';
+                'f;o;o';bar;zot
+                123123123;234234234;345345345
+                '1;2';3
+                ;
+                """,
             "''",
             "",
             "'f;o;o'",
@@ -186,7 +215,7 @@ class BitwiseLineSplitterTest {
             "3",
             "",
             ""
-            );
+        );
     }
 
     private static void assertFileContents(String contents, String... lines) throws IOException {
@@ -215,7 +244,9 @@ class BitwiseLineSplitterTest {
             if (lines.length > 0) {
                 assertThat(splits).containsExactly(lines);
             } else {
-                assertThat(splits).containsExactly(contents.split("\n"));
+                assertThat(splits).containsExactlyElementsOf(
+                    Arrays.stream(contents.split("\n")).flatMap(s -> Arrays.stream(s.split(";")))
+                        .toList());
             }
         } catch (Exception e) {
             throw new IllegalStateException(
