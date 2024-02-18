@@ -102,10 +102,6 @@ public interface LineSegment {
         return (longEnd() - longStart()) / ALIGNMENT;
     }
 
-    default boolean isAlignedAtStart() {
-        return headStart() == 0;
-    }
-
     default long headStart() {
         return startIndex() % ALIGNMENT;
     }
@@ -131,14 +127,16 @@ public interface LineSegment {
     }
 
     default long getHeadLong() {
+        return getHeadLong(startIndex() % ALIGNMENT);
+    }
+
+    default long getHeadLong(long head) {
         long l = memorySegment().get(JAVA_LONG, longStart());
-        long head = startIndex() % ALIGNMENT;
         return l >> head * ALIGNMENT;
     }
 
     default long getLong(int longNo) {
-        long offset = longStart() + longNo * 8L;
-        return memorySegment().get(JAVA_LONG, offset);
+        return memorySegment().get(JAVA_LONG, longStart() + longNo * 8L);
     }
 
     default long getTailLong() {

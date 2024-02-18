@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static com.github.kjetilv.flopp.kernel.bits.BitwiseLineSplitter.Lines;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -147,13 +146,18 @@ class BitwiseLineSplitterTest {
     @Test
     void splitFile() throws IOException {
         List<String> splits = new ArrayList<>();
+        String contents = """
+            def123;cba;234;abcdef;3456
+            abc234;foo;456;dfgfgh;1234
+            foo;bar;zot
+            foo;bar
+            zot;
+            moreStuff;1;2;3;4;5;6
+            """;
         Path path = Files.write(
             Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
             List.of(
-                """
-                    def123;cba;234;abcdef;3456
-                    abc234;foo;456;dfgfgh;1234
-                    """
+                contents
                     .split("\n")
             )
         );
@@ -163,27 +167,34 @@ class BitwiseLineSplitterTest {
                 line.columnStream()
                     .forEach(splits::add)
         );
-        try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Partitioning.single())) {
-            partititioned.streams().streamers()
-                .forEach(streamer ->
-                    streamer.lines()
-                        .forEach(splitter));
+
+        try {
+            try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Partitioning.single())) {
+                partititioned.streams().streamers()
+                    .forEach(streamer ->
+                        streamer.lines()
+                            .forEach(splitter));
+            }
+            assertThat(splits).containsAll(
+                lines(contents.split("\n")));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed with list:\n  " + String.join("\n  ", splits), e);
         }
-        assertThat(splits).containsAll(
-            Stream.of(
-                    "def123;cba;234;abcdef;3456".split(";"),
-                    "abc234;foo;456;dfgfgh;1234".split(";")
-                )
-                .flatMap(Arrays::stream)
-                .toList()
-        );
+    }
+
+    private static List<String> lines(String... lines) {
+        return Arrays.stream(lines)
+            .map(line -> line.split(";"))
+            .flatMap(Arrays::stream)
+            .toList();
     }
 
     private static void assertSplit(String input, String... expected) {
         List<String> splits = new ArrayList<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             new LineSplit(';', '\''),
-            adder(splits));
+            adder(splits)
+        );
         splitter.accept(LineSegment.of(input));
         assertThat(splits).containsExactly(expected);
     }

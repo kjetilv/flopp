@@ -70,14 +70,13 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     @Override
     public void accept(LineSegment segment) {
+        this.segment = segment;
+        long length = segment.length();
+
+        startOffset = segment.startIndex();
         try {
-            this.segment = segment;
-            long length = segment.length();
-
-            startOffset = segment.startIndex();
-
             if (length < ALIGNMENT) {
-                findSeps(segment.getTail());
+                findSeps(segment.bytesAt(0, length));
                 addSep(currentStart, length);
                 return;
             }
@@ -107,11 +106,12 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
     }
 
     private long resolveHeadLong(LineSegment segment) {
-        if (segment.isAlignedAtStart()) {
+        long headStart = segment.headStart();
+        if (headStart == 0) {
             return segment.getLong(0);
         }
-        offset = -segment.headStart();
-        return segment.getHeadLong();
+        offset = -headStart;
+        return segment.getHeadLong(headStart);
     }
 
     private void findSeps(long bytes) {
@@ -148,7 +148,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
                 }
                 quos &= CLEARED[nextQuo];
                 nextQuo = distance(quos);
-            } else if (min == nextEsc) {
+            } else {
                 escaping = true;
                 escs &= CLEARED[nextEsc];
                 nextEsc = distance(escs);
