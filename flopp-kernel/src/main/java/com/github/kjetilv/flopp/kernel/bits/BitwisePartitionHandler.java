@@ -12,10 +12,10 @@ import java.util.function.Supplier;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 import static java.lang.foreign.MemorySegment.copy;
+import static java.lang.foreign.MemorySegment.ofArray;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-final class BitwisePartitionHandler
-    implements Runnable {
+final class BitwisePartitionHandler implements Runnable {
 
     private final Partition partition;
 
@@ -74,11 +74,11 @@ final class BitwisePartitionHandler
         if (partition.first()) {
             return true;
         }
-        InitState init = initialize();
+        Long init = initialize();
         if (init == null) {
             return false; // No newlines in this partition
         }
-        long mask = init.mask();
+        long mask = init;
         if (mask != 0) {
             do { // Newlines found in current mask
                 mask = shipNextLine(mask);
@@ -96,7 +96,7 @@ final class BitwisePartitionHandler
         transcend(this.next.get()); // We need to query the next partition
     }
 
-    private InitState initialize() {
+    private Long initialize() {
         while (offset < limit) {
             long mask = mask(loadLong());
             if (mask != 0) {
@@ -107,7 +107,7 @@ final class BitwisePartitionHandler
                 }
                 // Mark position of new line
                 lineStart = start;
-                return new InitState(mask); // Return start state
+                return mask; // Return start state
             }
             offset += ALIGNMENT;
         }
@@ -202,7 +202,7 @@ final class BitwisePartitionHandler
     private void mergeWithNext(BitwisePartitionHandler next, long preamble) {
         long trail = limit - lineStart;
         int length = Math.toIntExact(trail + preamble);
-        MemorySegment buffer = MemorySegment.ofArray(new byte[length]);
+        MemorySegment buffer = ofArray(new byte[length]);
         copy(this.segment, lineStart, buffer, 0, trail);
         copy(next.segment, 0, buffer, trail, preamble);
         action.line(buffer, 0, length);
@@ -222,7 +222,7 @@ final class BitwisePartitionHandler
             .mapToLong(spliterator -> spliterator.limit)
             .sum();
         int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
-        MemorySegment buffer = MemorySegment.ofArray(new byte[length]);
+        MemorySegment buffer = ofArray(new byte[length]);
         copy(segment, lineStart, buffer, 0, trail);
         long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
@@ -288,9 +288,6 @@ final class BitwisePartitionHandler
                 lo += ALIGNMENT;
             }
         }
-    }
-
-    private record InitState(long mask) {
     }
 
     @FunctionalInterface
