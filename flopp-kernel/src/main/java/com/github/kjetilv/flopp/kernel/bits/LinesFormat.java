@@ -2,44 +2,48 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Non;
 
-public record LineSplit(
+public record LinesFormat(
     char separator,
     char quote,
     char escape,
     int columnCount
 ) {
 
-    public LineSplit {
+    public LinesFormat {
         Non.negativeOrZero(columnCount, "column count");
     }
 
-    public LineSplit() {
+    public LinesFormat() {
         this(DEFAULT_SEPARATOR);
     }
 
-    public LineSplit(char separator) {
+    public LinesFormat(char separator) {
         this(separator, DEFAULT_COLUMN_COUNT);
     }
 
-    public LineSplit(int columnCount) {
+    public LinesFormat(int columnCount) {
         this(DEFAULT_SEPARATOR, columnCount);
     }
 
-    public LineSplit(char separator, int columnCount) {
+    public LinesFormat(char separator, int columnCount) {
         this(separator, DEFAULT_QUOTE, DEFAULT_ESC, columnCount);
     }
 
-    public LineSplit(char separator, char quote) {
-        this(separator, quote, DEFAULT_ESC, DEFAULT_COLUMN_COUNT);
+    public LinesFormat(char separator, char quote) {
+        this(separator, quote, DEFAULT_ESC);
     }
 
-    public LineSplit columns(int columnCount) {
-        return new LineSplit(separator, quote, escape, columnCount);
+    public LinesFormat(char separator, char quote, char escape) {
+        this(separator, quote, escape, DEFAULT_COLUMN_COUNT);
+    }
+
+    public LinesFormat columns(int columnCount) {
+        return new LinesFormat(separator, quote, escape, columnCount);
     }
 
     public static final char DEFAULT_SEPARATOR = ',';
 
-    public static final char DEFAULT_QUOTE = '\'';
+    public static final char DEFAULT_QUOTE = '"';
 
     public static final char DEFAULT_ESC = '\\';
 

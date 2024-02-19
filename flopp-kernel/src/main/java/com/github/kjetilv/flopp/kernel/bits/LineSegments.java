@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -20,10 +19,6 @@ public final class LineSegments {
             bytes[i] = line.byteAt(i);
         }
         return new String(bytes);
-    }
-
-    static byte[] toBytes(LineSegment line) {
-        return slice(line).toArray(ValueLayout.JAVA_BYTE);
     }
 
     static BitwisePartitionHandler.Mediator actionMediator(Partition partition, Shape shape) {
@@ -42,18 +37,4 @@ public final class LineSegments {
     private LineSegments() {
     }
 
-    static final long[] CLEAR_HEAD = {
-        0x0000000000000000L,
-        0x00000000000000FFL,
-        0x000000000000FFFFL,
-        0x0000000000FFFFFFL,
-        0x00000000FFFFFFFFL,
-        0x000000FFFFFFFFFFL,
-        0x0000FFFFFFFFFFFFL,
-        0x00FFFFFFFFFFFFFFL,
-    };
-
-    private static MemorySegment slice(LineSegment line) {
-        return line.memorySegment().asSlice(line.startIndex(), line.endIndex());
-    }
 }

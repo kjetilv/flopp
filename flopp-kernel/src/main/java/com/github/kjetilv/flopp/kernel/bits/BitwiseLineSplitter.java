@@ -33,19 +33,21 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     private boolean escaping;
 
+    private boolean quoted;
+
     private int columnNo;
 
-    BitwiseLineSplitter(LineSplit lineSplit, Lines lines) {
-        Objects.requireNonNull(lineSplit, "lineSplit");
+    BitwiseLineSplitter(LinesFormat linesFormat, Lines lines) {
+        Objects.requireNonNull(linesFormat, "lineSplit");
 
         this.lines = Objects.requireNonNull(lines, "lines");
 
-        this.sepMask = createMask(lineSplit.separator());
-        this.quoMask = createMask(lineSplit.quote());
-        this.escMask = createMask(lineSplit.escape());
+        this.sepMask = createMask(linesFormat.separator());
+        this.quoMask = createMask(linesFormat.quote());
+        this.escMask = createMask(linesFormat.escape());
 
-        this.start = new long[lineSplit.columnCount()];
-        this.end = new long[lineSplit.columnCount()];
+        this.start = new long[linesFormat.columnCount()];
+        this.end = new long[linesFormat.columnCount()];
     }
 
     @Override
@@ -70,38 +72,35 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     @Override
     public void accept(LineSegment segment) {
-        this.segment = segment;
-        long length = segment.length();
-
-        startOffset = segment.startIndex();
         try {
+            this.offset = this.currentStart = this.columnNo = 0;
+            this.quoted = this.quoting = this.escaping = false;
+
+            this.segment = Objects.requireNonNull(segment, "segment");
+            this.startOffset = this.segment.startIndex();
+
+            long length = this.segment.length();
             if (length < ALIGNMENT) {
-                findSeps(segment.bytesAt(0, length));
+                findSeps(this.segment.bytesAt(0, length));
                 addSep(currentStart, length);
-                return;
+            } else {
+                long longCount = this.segment.longCount();
+                long headLong = resolveHeadLong(this.segment);
+                findSeps(headLong);
+
+                for (int i = 1; i < longCount; i++) {
+                    findSeps(this.segment.getLong(i));
+                }
+
+                if (this.segment.isAlignedAtEnd()) {
+                    addSep(currentStart, length);
+                } else {
+                    findSeps(this.segment.tail());
+                    addSep(currentStart, length);
+                }
             }
-
-            long longCount = segment.longCount();
-            long headLong = resolveHeadLong(segment);
-            findSeps(headLong);
-
-            for (int i = 1; i < longCount; i++) {
-                findSeps(segment.getLong(i));
-            }
-
-            if (segment.isAlignedAtEnd()) {
-                addSep(currentStart, length);
-                return;
-            }
-
-            findSeps(segment.tail());
-            addSep(currentStart, length);
         } finally {
             lines.line(this);
-
-            this.offset = 0;
-            this.currentStart = 0;
-            this.columnNo = 0;
         }
     }
 
@@ -145,6 +144,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
                     escaping = false;
                 } else {
                     quoting = !quoting;
+                    quoted = true;
                 }
                 quos &= CLEARED[nextQuo];
                 nextQuo = distance(quos);
@@ -157,9 +157,11 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
     }
 
     private void addSep(long start, long end) {
-        this.start[columnNo] = startOffset + start;
-        this.end[columnNo] = startOffset + end;
+        int quoteOffset = quoted ? 1 : 0;
+        this.start[columnNo] = startOffset + start + quoteOffset;
+        this.end[columnNo] = startOffset + end - quoteOffset;
         columnNo++;
+        quoted = false;
     }
 
     private static final long[] CLEARED = {
@@ -190,10 +192,5 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     private static int distance(long bytes) {
         return Long.numberOfTrailingZeros(bytes) / ALIGNMENT_INT;
-    }
-
-    public interface Lines {
-
-        void line(Line line);
     }
 }

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,7 +55,7 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LineSplit(),
+            new LinesFormat(),
             line ->
                 airlines.add(line.column(1))
         );
@@ -81,7 +81,7 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LineSplit(),
+            new LinesFormat(),
             line ->
                 airlines.add(line.column(1))
         );
@@ -104,26 +104,25 @@ class BitwiseFileSplitterTest {
     void fasterStillParallel() {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
+        LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
+        Lines lines = line -> {
+          if ( airlines.add(line.column(1))) {
+              System.out.println(line.columnStream().collect(Collectors.joining(" – ")));
+          }
+        };
         try (
             Stream<Path> list = Files.list(PATH);
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
+            ExecutorService executor = new ForkJoinPool()
         ) {
             List<Partitioned<Path>> partitioneds =
                 list.filter(endsWith(".csv"))
                     .map(BitwiseFileSplitterTest::partitioned)
                     .toList();
-            List<CompletableFuture<Void>> futures = partitioneds.stream()
-                .flatMap(partititioned ->
-                    partititioned.streams().streamers()
-                        .map(partitionStreamer ->
+            List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
+                    partititioned.streams().streamers().map(partitionStreamer ->
                             CompletableFuture.runAsync(
                                 () ->
-                                    partitionStreamer.lines()
-                                        .forEach(new BitwiseLineSplitter(
-                                            new LineSplit(),
-                                            line ->
-                                                airlines.add(line.column(1))
-                                        )),
+                                    partitionStreamer.lines().forEach(new BitwiseLineSplitter(linesFormat, lines)),
                                 executor
                             )))
                 .toList();
