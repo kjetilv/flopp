@@ -85,8 +85,6 @@ final class BitwisePartitionSpliterator
 
         private MemorySegment memorySegment;
 
-        private long lineNo;
-
         private long startIndex;
 
         private long endIndex;
@@ -97,16 +95,10 @@ final class BitwisePartitionSpliterator
 
         @Override
         public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
-            this.lineNo++;
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             this.memorySegment = memorySegment;
             action.accept(this);
-        }
-
-        @Override
-        public long lineNo() {
-            return lineNo;
         }
 
         @Override

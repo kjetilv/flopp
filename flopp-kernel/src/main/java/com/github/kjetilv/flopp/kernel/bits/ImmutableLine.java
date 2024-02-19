@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import java.lang.foreign.MemorySegment;
 
-record ImmutableLine(long lineNo, MemorySegment memorySegment, long startIndex, long endIndex)
+record ImmutableLine(MemorySegment memorySegment, long startIndex, long endIndex)
     implements LineSegment {
 
     @Override
