@@ -53,7 +53,7 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             List<? extends PartitionStreamer> partitionStreamers =
-                bitwisePartitioned.streams().streamersList(true);
+                bitwisePartitioned.streams().streamersList();
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
                 .stream()
                 .map(streamer ->
