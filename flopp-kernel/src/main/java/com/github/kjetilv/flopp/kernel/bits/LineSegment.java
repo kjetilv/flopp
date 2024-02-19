@@ -5,7 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public interface LineSegment {
 
@@ -14,12 +15,7 @@ public interface LineSegment {
     }
 
     static LineSegment of(byte[] bytes) {
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
-        byteBuffer.put(bytes);
-        byteBuffer.flip();
-        MemorySegment memorySegment = MemorySegment.ofBuffer(byteBuffer);
-        LineSegment lineSegment = of(memorySegment);
-        return lineSegment;
+        return of(MemorySegment.ofBuffer(getByteBuffer(bytes)));
     }
 
     static LineSegment of(MemorySegment memorySegment) {
@@ -43,17 +39,20 @@ public interface LineSegment {
     }
 
     static LineSegment of(long l, int len) {
-        byte[] bytes = {
-            (byte) (l & 0xFF),
-            (byte) (l >> 8L & 0xFF),
-            (byte) (l >> 16L & 0xFF),
-            (byte) (l >> 24L & 0xFF),
-            (byte) (l >> 32L & 0xFF),
-            (byte) (l >> 40L & 0xFF),
-            (byte) (l >> 48L & 0xFF),
-            (byte) (l >> 56L & 0xFF)
-        };
-        return of(new String(bytes, 0, len));
+        return of(new String(
+            new byte[] {
+                (byte) (l & 0xFF),
+                (byte) (l >> 8L & 0xFF),
+                (byte) (l >> 16L & 0xFF),
+                (byte) (l >> 24L & 0xFF),
+                (byte) (l >> 32L & 0xFF),
+                (byte) (l >> 40L & 0xFF),
+                (byte) (l >> 48L & 0xFF),
+                (byte) (l >> 56L & 0xFF)
+            },
+            0,
+            len
+        ));
     }
 
     long lineNo();
@@ -146,4 +145,10 @@ public interface LineSegment {
         return startIndex() + offset;
     }
 
+    private static ByteBuffer getByteBuffer(byte[] bytes) {
+        ByteBuffer bb = ByteBuffer.allocateDirect(bytes.length);
+        bb.put(bytes);
+        bb.flip();
+        return bb;
+    }
 }

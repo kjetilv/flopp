@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
+import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionHandler
@@ -27,6 +28,10 @@ final class BitwisePartitionHandler
     private final long limit;
 
     private final long physicalLimit;
+
+    private long lineStart;
+
+    private long offset;
 
     BitwisePartitionHandler(
         Partition partition,
@@ -47,19 +52,16 @@ final class BitwisePartitionHandler
     }
 
     public void run() {
-        State state = null;
         try (action) {
-            state = processHead();
-            if (state == null) {
-                return;
-            }
-            if (partition.last()) {
-                processTail(state);
-            } else {
-                processBody(state);
+            if (processHead()) {
+                if (partition.last()) {
+                    processTail();
+                } else {
+                    processBody();
+                }
             }
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed @ \{state}: \{action}", e);
+            throw new IllegalStateException(STR."\{this} failed @ \{offset}/\{lineStart}: \{action}", e);
         }
     }
 
@@ -68,94 +70,92 @@ final class BitwisePartitionHandler
         return STR."\{getClass().getSimpleName()}[\{partition}]";
     }
 
-    private State processHead() {
+    private boolean processHead() {
         if (partition.first()) {
-            return new State();
+            return true;
         }
         InitState init = initialize();
         if (init == null) {
-            return null; // No newlines in this partition
+            return false; // No newlines in this partition
         }
-        State state = init.state();
         long mask = init.mask();
         if (mask != 0) {
             do { // Newlines found in current mask
-                mask = shipNextLine(state, mask);
+                mask = shipNextLine(mask);
             } while (mask != 0);
-            advance(state);
+            offset += ALIGNMENT;
         }
-        return state;
+        return true;
     }
 
-    private void processBody(State state) {
-        processMain(state, limit);
-        if (processedOverflow(state)) {
+    private void processBody() {
+        processMain(limit);
+        if (processedOverflow()) {
             return; // We found the line in the overflow section
         }
-        transcend(state, this.next.get()); // We need to query the next partition
+        transcend(this.next.get()); // We need to query the next partition
     }
 
     private InitState initialize() {
-        State state = new State();
-        while (state.offset < limit) {
-            long mask = mask(loadLong(state));
+        while (offset < limit) {
+            long mask = mask(loadLong());
             if (mask != 0) {
-                long start = state.offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
-                mask &= CLEARED[Math.toIntExact(start - state.offset)];
+                long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+                mask &= CLEARED[Math.toIntExact(start - offset)];
                 if (mask == 0) { // We cleared the current mask
-                    advance(state);
+                    offset += ALIGNMENT;
                 }
                 // Mark position of new line
-                state.lineStart = start;
-                return new InitState(state, mask); // Return start state
+                lineStart = start;
+                return new InitState(mask); // Return start state
             }
-            advance(state);
+            offset += ALIGNMENT;
         }
         return null; // No newline found in the whole partition
     }
 
-    private void processTail(State state) {
+    private void processTail() {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
-        processMain(state, lastOffset);
+        processMain(lastOffset);
         if (tail > 0) {
-            processTail(state, tail);
+            processTail(tail);
         }
     }
 
-    private void processMain(State state, long lastOffset) {
-        while (state.offset < lastOffset) {
-            long mask = mask(loadLong(state));
+    private void processMain(long lastOffset) {
+        while (offset < lastOffset) {
+            long mask = mask(loadLong());
             while (mask != 0) {
-                mask = shipNextLine(state, mask);
+                mask = shipNextLine(mask);
             }
-            advance(state);
+            offset += ALIGNMENT;
         }
     }
 
-    private boolean processedOverflow(State state) {
-        while (state.offset < physicalLimit) {
-            long mask = mask(loadLong(state));
+    private boolean processedOverflow() {
+        while (offset < physicalLimit) {
+            long mask = mask(loadLong());
             if (mask == 0) {
-                advance(state);
+                offset += ALIGNMENT;
             } else {
-                shipNextLine(state, mask);
+                shipNextLine(mask);
                 return true;
             }
         }
         return false;
     }
 
-    private void processTail(State state, long tail) {
-        long mask = mask(loadTail(state, tail));
+    private void processTail(long tail) {
+        long mask = mask(loadTail(tail));
         if (mask == 0) { // Tail did not end in newline, send what we got
-            action.line(segment, state.lineStart, physicalLimit);
+            action.line(segment, lineStart, physicalLimit);
         } else {
             do { // Newlines spotted, ship lines
-                mask = shipNextLine(state, mask);
+                mask = shipNextLine(mask);
             } while (mask != 0);
-            if (state.lineStart < physicalLimit) { // Tail did not end in newline, send what we got
-                action.line(segment, state.lineStart, physicalLimit);
+            if (lineStart < physicalLimit) { // Tail did not end in newline, send what we got
+                action.line(segment, lineStart, physicalLimit);
             }
         }
     }
@@ -172,50 +172,50 @@ final class BitwisePartitionHandler
         return limit;
     }
 
-    private long shipNextLine(State state, long mask) {
+    private long shipNextLine(long mask) {
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
-        long lineBreakOffset = state.offset + offsetInMask;
-        action.line(segment, state.lineStart, lineBreakOffset);
-        state.lineStart = lineBreakOffset + 1;
+        long lineBreakOffset = offset + offsetInMask;
+        action.line(segment, lineStart, lineBreakOffset);
+        lineStart = lineBreakOffset + 1;
         return mask & CLEARED[offsetInMask + 1];
     }
 
-    private long loadLong(State state) {
-        return segment.get(JAVA_LONG, state.offset);
+    private long loadLong() {
+        return segment.get(JAVA_LONG, offset);
     }
 
-    private long loadTail(State state, long count) {
-        return LineSegments.bytesAt(segment, state.offset, Math.toIntExact(count));
+    private long loadTail(long count) {
+        return LineSegments.bytesAt(segment, offset, Math.toIntExact(count));
     }
 
-    private void transcend(State state, BitwisePartitionHandler next) {
+    private void transcend(BitwisePartitionHandler next) {
         long nextOffset = next.findFirstLine();
         if (nextOffset < next.limit) { // Next partition contains the next newline
-            mergeWithNext(state, next, nextOffset - 1);
+            mergeWithNext(next, nextOffset - 1);
         } else if (next.partition.last()) { // Next partition is the last one and it's missing a newline at the end
-            mergeWithNext(state, next, nextOffset);
+            mergeWithNext(next, nextOffset);
         } else { // Next line is in a later partition!
-            mergeWithMultiple(state, next);
+            mergeWithMultiple(next);
         }
     }
 
-    private void mergeWithNext(State state, BitwisePartitionHandler next, long preamble) {
-        long trail = limit - state.lineStart;
+    private void mergeWithNext(BitwisePartitionHandler next, long preamble) {
+        long trail = limit - lineStart;
         int length = Math.toIntExact(trail + preamble);
         MemorySegment buffer = MemorySegment.ofArray(new byte[length]);
-        MemorySegment.copy(this.segment, state.lineStart, buffer, 0, trail);
-        MemorySegment.copy(next.segment, 0, buffer, trail, preamble);
+        copy(this.segment, lineStart, buffer, 0, trail);
+        copy(next.segment, 0, buffer, trail, preamble);
         action.line(buffer, 0, length);
     }
 
-    private void mergeWithMultiple(State state, BitwisePartitionHandler next) {
+    private void mergeWithMultiple(BitwisePartitionHandler next) {
         List<BitwisePartitionHandler> collector = new ArrayList<>();
         long lastLimit = collectAndFindLimit(next, collector);
-        combineMultiple(state, collector, lastLimit);
+        combineMultiple(collector, lastLimit);
     }
 
-    private void combineMultiple(State state, List<BitwisePartitionHandler> collector, long lastLineOffset) {
-        long trail = limit - state.lineStart;
+    private void combineMultiple(List<BitwisePartitionHandler> collector, long lastLineOffset) {
+        long trail = limit - lineStart;
         int mediaries = collector.size() - 1;
         long mediarySize = collector.stream()
             .limit(mediaries)
@@ -223,11 +223,11 @@ final class BitwisePartitionHandler
             .sum();
         int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
         MemorySegment buffer = MemorySegment.ofArray(new byte[length]);
-        MemorySegment.copy(segment, state.lineStart, buffer, 0, trail);
+        copy(segment, lineStart, buffer, 0, trail);
         long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
             BitwisePartitionHandler step = collector.get(i);
-            MemorySegment.copy(
+            copy(
                 step.segment,
                 0,
                 buffer,
@@ -236,7 +236,7 @@ final class BitwisePartitionHandler
             );
             accumulatedSize += step.limit;
         }
-        MemorySegment.copy(
+        copy(
             collector.getLast().segment,
             0,
             buffer,
@@ -257,10 +257,6 @@ final class BitwisePartitionHandler
         0xFF00000000000000L,
         0x0000000000000000L
     };
-
-    private static void advance(State state) {
-        state.offset += ALIGNMENT;
-    }
 
     private static long mask(long bytes) {
         long masked = bytes ^ 0x0A0A0A0A0A0A0A0AL;
@@ -294,19 +290,7 @@ final class BitwisePartitionHandler
         }
     }
 
-    private record InitState(State state, long mask) {
-    }
-
-    private static class State {
-
-        private long lineStart;
-
-        private long offset;
-
-        @Override
-        public String toString() {
-            return STR."\{getClass().getSimpleName()}[l:\{lineStart}/o:\{offset}]";
-        }
+    private record InitState(long mask) {
     }
 
     @FunctionalInterface
