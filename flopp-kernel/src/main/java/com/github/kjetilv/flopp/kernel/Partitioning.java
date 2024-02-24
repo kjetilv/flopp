@@ -68,6 +68,9 @@ public record Partitioning(int count, long tail) {
     }
 
     private long[] partitionSizes(long total) {
+        if (count == 1) {
+            return new long[] { total };
+        }
         if (total / count < Partitioning.ALIGNMENT * 2L) {
             throw new IllegalArgumentException(
                 STR."Too many partitions for \{total} bytes with alignment \{Partitioning.ALIGNMENT}: \{count}");

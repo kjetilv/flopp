@@ -17,6 +17,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
+import com.github.kjetilv.flopp.kernel.bits.LinesFormat;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -30,7 +31,9 @@ public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
         for (String arg : args) {
-            go1(Path.of(arg));
+            Path path = Path.of(arg);
+            go2(path);
+            go1(path);
         }
     }
 
@@ -49,7 +52,7 @@ public final class CalculateAverage_kjetilvlong {
                 chunks,
                 0, TimeUnit.NANOSECONDS,
                 new LinkedBlockingQueue<>(chunks)
-            );
+            )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             List<? extends PartitionStreamer> partitionStreamers =
@@ -61,6 +64,61 @@ public final class CalculateAverage_kjetilvlong {
                         .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
                 .toList();
             List<Map<String, Result>> maps = list.stream()
+                .map(CompletableFuture::join)
+                .toList();
+            System.out.println(Duration.between(start, Instant.now()));
+            Set<String> keys = keySet(maps);
+            Map<String, Result> map = combineMaps(keys, maps);
+            System.out.println(map);
+            System.out.println(Duration.between(start, Instant.now()));
+        }
+    }
+
+    private static void go2(Path path) {
+        Instant start = Instant.now();
+        Shape shape = Shape.of(path).longestLine(128);
+        Partitioning partitioning = Partitioning.create(
+            Runtime.getRuntime().availableProcessors(),
+            shape.longestLine()
+        ).scaled(2);
+        int chunks = partitioning.of(shape.size()).size();
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                0, TimeUnit.NANOSECONDS,
+                new LinkedBlockingQueue<>(chunks)
+            )
+        ) {
+            System.out.println(Duration.between(start, Instant.now()));
+            List<CompletableFuture<Map<String, Result>>> list1 =
+                bitwisePartitioned.streams().lineSplitters(new LinesFormat(';', 2))
+                    .map(splitsConsumer ->
+                        CompletableFuture.supplyAsync(
+                            () -> {
+                                Map<String, Result> m = new HashMap<>(1024, 1.0f);
+                                splitsConsumer.accept(commaSeparatedLine -> {
+                                    try {
+                                        String station = commaSeparatedLine.column(0);
+                                        int measure = parseValue(commaSeparatedLine.segment(1));
+                                        m.compute(
+                                            station,
+                                            (_, existing) ->
+                                                existing == null
+                                                    ? new Result(measure)
+                                                    : existing.collect(measure)
+                                        );
+                                    } catch (Exception e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                });
+                                return m;
+                            },
+                            executor
+                        ))
+                    .toList();
+            List<Map<String, Result>> maps = list1.stream()
                 .map(CompletableFuture::join)
                 .toList();
             System.out.println(Duration.between(start, Instant.now()));
@@ -128,6 +186,23 @@ public final class CalculateAverage_kjetilvlong {
             }
         }
         throw new IllegalStateException(STR."No split in \{ls.asString()}");
+    }
+
+    private static int parseValue(LineSegment ls) {
+        int value = 0;
+        int pos = 1;
+        for (long i = ls.length() - 1; i >= 0; i--) {
+            byte b = ls.byteAt(i);
+            if (b == '.') {
+                continue;
+            }
+            if (b == '-') {
+                return value * -1;
+            }
+            value += (b - '0') * pos;
+            pos *= 10;
+        }
+        return value;
     }
 
     private static int parseValue(int length, int splitIndex, LineSegment ls) {

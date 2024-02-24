@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +12,7 @@ import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.MemorySegment.ofArray;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -123,9 +125,20 @@ final class BitwisePartitionHandler implements Runnable {
         }
     }
 
+    private void processLastMain(long lastOffset) {
+        while (offset < lastOffset) {
+            long bytes = loadLong();
+            long mask = mask(bytes);
+            do {
+                mask = shipNextLine(mask);
+            } while (mask != 0);
+            offset += ALIGNMENT;
+        }
+    }
     private void processMain(long lastOffset) {
         while (offset < lastOffset) {
-            long mask = mask(loadLong());
+            long bytes = loadLong();
+            long mask = mask(bytes);
             while (mask != 0) {
                 mask = shipNextLine(mask);
             }
@@ -135,7 +148,8 @@ final class BitwisePartitionHandler implements Runnable {
 
     private boolean processedOverflow() {
         while (offset < physicalLimit) {
-            long mask = mask(loadLong());
+            long bytes = loadLong();
+            long mask = mask(bytes);
             if (mask == 0) {
                 offset += ALIGNMENT;
             } else {
@@ -202,7 +216,7 @@ final class BitwisePartitionHandler implements Runnable {
     private void mergeWithNext(BitwisePartitionHandler next, long preamble) {
         long trail = limit - lineStart;
         int length = Math.toIntExact(trail + preamble);
-        MemorySegment buffer = ofArray(new byte[length]);
+        MemorySegment buffer = of(ByteBuffer.allocateDirect(length));
         copy(this.segment, lineStart, buffer, 0, trail);
         copy(next.segment, 0, buffer, trail, preamble);
         action.line(buffer, 0, length);
@@ -222,7 +236,7 @@ final class BitwisePartitionHandler implements Runnable {
             .mapToLong(spliterator -> spliterator.limit)
             .sum();
         int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
-        MemorySegment buffer = ofArray(new byte[length]);
+        MemorySegment buffer = of(new byte[length]);
         copy(segment, lineStart, buffer, 0, trail);
         long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
@@ -255,6 +269,7 @@ final class BitwisePartitionHandler implements Runnable {
         0xFFFFFF0000000000L,
         0xFFFF000000000000L,
         0xFF00000000000000L,
+        0x0000000000000000L,
         0x0000000000000000L
     };
 

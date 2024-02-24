@@ -7,9 +7,9 @@ import java.util.function.Consumer;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 
-public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
+public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparatedLine {
 
-    private final Lines lines;
+    private final Consumer<CommaSeparatedLine> lines;
 
     private final long sepMask;
 
@@ -37,7 +37,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     private int columnNo;
 
-    BitwiseLineSplitter(LinesFormat linesFormat, Lines lines) {
+    BitwiseLineSplitter(LinesFormat linesFormat, Consumer<CommaSeparatedLine> lines) {
         Objects.requireNonNull(linesFormat, "lineSplit");
 
         this.lines = Objects.requireNonNull(lines, "lines");
@@ -72,42 +72,44 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
 
     @Override
     public void accept(LineSegment segment) {
-        try {
-            this.offset = this.currentStart = this.columnNo = 0;
-            this.quoted = this.quoting = this.escaping = false;
+        this.offset = this.currentStart = this.columnNo = 0;
+        this.quoted = this.quoting = this.escaping = false;
 
-            this.segment = Objects.requireNonNull(segment, "segment");
-            this.startOffset = this.segment.startIndex();
+        this.segment = Objects.requireNonNull(segment, "segment");
+        this.startOffset = this.segment.startIndex();
 
-            long length = this.segment.length();
-            if (length < ALIGNMENT) {
-                findSeps(this.segment.bytesAt(0, length));
+        long length = this.segment.length();
+        if (length < ALIGNMENT) {
+            findSeps(this.segment.bytesAt(0, length));
+            addSep(currentStart, length);
+        } else {
+            long longCount = this.segment.longCount();
+            long headLong = resolveHeadLong(this.segment);
+            findSeps(headLong);
+
+            for (int i = 1; i < longCount; i++) {
+                findSeps(this.segment.longNo(i));
+            }
+
+            if (this.segment.isAlignedAtEnd()) {
                 addSep(currentStart, length);
             } else {
-                long longCount = this.segment.longCount();
-                long headLong = resolveHeadLong(this.segment);
-                findSeps(headLong);
-
-                for (int i = 1; i < longCount; i++) {
-                    findSeps(this.segment.getLong(i));
-                }
-
-                if (this.segment.isAlignedAtEnd()) {
-                    addSep(currentStart, length);
-                } else {
-                    findSeps(this.segment.tail());
-                    addSep(currentStart, length);
-                }
+                findSeps(this.segment.tail());
+                addSep(currentStart, length);
             }
-        } finally {
-            lines.line(this);
         }
+        lines.accept(this);
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{segment.asString()}]";
     }
 
     private long resolveHeadLong(LineSegment segment) {
         long headStart = segment.headStart();
         if (headStart == 0) {
-            return segment.getLong(0);
+            return segment.longNo(0);
         }
         offset = -headStart;
         return segment.head(headStart);
@@ -118,41 +120,67 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
         long quos = mask(bytes, quoMask);
         long escs = mask(bytes, escMask);
 
-        int nextSep = distance(seps);
-        int nextQuo = distance(quos);
-        int nextEsc = distance(escs);
+        int nextSep = dist(seps);
+        int nextQuo = dist(quos);
+        int nextEsc = dist(escs);
 
         while (true) {
-            int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
-            if (min == ALIGNMENT) {
-                offset += ALIGNMENT;
-                return;
-            }
-            if (min == nextSep) {
-                if (!quoting) {
-                    if (escaping) {
-                        escaping = false;
-                    } else {
-                        addSep(currentStart, offset + nextSep);
-                        currentStart = offset + nextSep + 1;
-                    }
+            if (nextEsc == ALIGNMENT_INT) {
+                if ((nextSep & nextQuo) == ALIGNMENT) {
+                    offset += ALIGNMENT;
+                    return;
                 }
-                seps &= CLEARED[nextSep];
-                nextSep = distance(seps);
-            } else if (min == nextQuo) {
-                if (escaping) {
-                    escaping = false;
+                int min = Math.min(nextSep, nextQuo);
+                if (min == nextSep) {
+                    handleSeparator(nextSep);
+                    seps &= CLEARED[nextSep];
+                    nextSep = dist(seps);
                 } else {
-                    quoting = !quoting;
-                    quoted = true;
+                    handleQuote();
+                    quos &= CLEARED[nextQuo];
+                    nextQuo = dist(quos);
                 }
-                quos &= CLEARED[nextQuo];
-                nextQuo = distance(quos);
             } else {
-                escaping = true;
-                escs &= CLEARED[nextEsc];
-                nextEsc = distance(escs);
+                if (((nextSep & nextQuo) & nextEsc) == ALIGNMENT) {
+                    offset += ALIGNMENT;
+                    return;
+                }
+                int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
+                if (min == nextSep) {
+                    handleSeparator(nextSep);
+                    seps &= CLEARED[nextSep];
+                    nextSep = dist(seps);
+                } else if (min == nextQuo) {
+                    handleQuote();
+                    quos &= CLEARED[nextQuo];
+                    nextQuo = dist(quos);
+                } else {
+                    escaping = true;
+                    escs &= CLEARED[nextEsc];
+                    nextEsc = dist(escs);
+                }
             }
+        }
+    }
+
+    private void handleQuote() {
+        if (escaping) {
+            escaping = false;
+        } else {
+            quoting = !quoting;
+            quoted = true;
+        }
+    }
+
+    private void handleSeparator(int nextSep) {
+        if (quoting) {
+            return;
+        }
+        if (escaping) {
+            escaping = false;
+        } else {
+            addSep(currentStart, offset + nextSep);
+            currentStart = offset + nextSep + 1;
         }
     }
 
@@ -190,7 +218,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, Line {
         return clearedHighBits & 0x8080808080808080L;
     }
 
-    private static int distance(long bytes) {
+    private static int dist(long bytes) {
         return Long.numberOfTrailingZeros(bytes) / ALIGNMENT_INT;
     }
 }

@@ -1,0 +1,49 @@
+package com.github.kjetilv.flopp.kernel.bits;
+
+import java.lang.foreign.MemorySegment;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public interface CommaSeparatedLine {
+
+    MemorySegment memorySegment();
+
+    int columns();
+
+    long[] start();
+
+    long[] end();
+
+    default Stream<String> columnStream() {
+        return IntStream.range(0, columns()).mapToObj(toColumn());
+    }
+
+    default Stream<LineSegment> segmentStream() {
+        return IntStream.range(0, columns()).mapToObj(toSegment());
+    }
+
+    default String column(int column) {
+        return segment(column).asString();
+    }
+
+    default LineSegment segment(int column) {
+        return toSegment(column, start(), end());
+    }
+
+    private IntFunction<LineSegment> toSegment() {
+        long[] start = start();
+        long[] end = end();
+        return column -> toSegment(column, start, end);
+    }
+
+    private IntFunction<String> toColumn() {
+        long[] start = start();
+        long[] end = end();
+        return column -> toSegment(column, start, end).asString();
+    }
+
+    private LineSegment toSegment(int column, long[] start, long[] end) {
+        return LineSegments.of(memorySegment(), start[column], end[column]);
+    }
+}

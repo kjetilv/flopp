@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,7 +65,7 @@ class BitwiseFileSplitterTest {
             Path path = list.findFirst().orElseThrow();
             try (Stream<String> lines = Files.lines(path)) {
                 lines.skip(1)
-                    .map(LineSegment::of)
+                    .map(LineSegments::of)
                     .forEach(splitter);
             }
         }
@@ -105,10 +106,11 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
-        Lines lines = line -> {
-          if ( airlines.add(line.column(1))) {
-              System.out.println(line.columnStream().collect(Collectors.joining(" – ")));
-          }
+        Consumer<CommaSeparatedLine> lines = line -> {
+            if (airlines.add(line.column(1))) {
+                System.out.println(line.columnStream()
+                    .collect(Collectors.joining(" – ")));
+            }
         };
         try (
             Stream<Path> list = Files.list(PATH);
@@ -119,10 +121,12 @@ class BitwiseFileSplitterTest {
                     .map(BitwiseFileSplitterTest::partitioned)
                     .toList();
             List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
-                    partititioned.streams().streamers().map(partitionStreamer ->
+                    partititioned.streams().streamers()
+                        .map(partitionStreamer ->
                             CompletableFuture.runAsync(
                                 () ->
-                                    partitionStreamer.lines().forEach(new BitwiseLineSplitter(linesFormat, lines)),
+                                    partitionStreamer.lines()
+                                        .forEach(new BitwiseLineSplitter(linesFormat, lines)),
                                 executor
                             )))
                 .toList();

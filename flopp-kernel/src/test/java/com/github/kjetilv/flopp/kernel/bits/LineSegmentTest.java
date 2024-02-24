@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +40,7 @@ class LineSegmentTest {
             FileChannel channel = r.getChannel();
         ) {
             MemorySegment memorySegment = channel.map(READ_ONLY, 0, contents.length, Arena.ofAuto());
-            LineSegment lineSegment = LineSegment.of(memorySegment, 13, 49);
+            LineSegment lineSegment = LineSegments.of(memorySegment, 13, 49);
 
             assertThat(lineSegment.longStart()).isEqualTo(8);
             assertThat(lineSegment.longEnd()).isEqualTo(48);
@@ -51,13 +52,13 @@ class LineSegmentTest {
             String wantedSubstring = line.substring(13, 16);
             assertThat(bytedSubstring).isEqualTo(wantedSubstring);
 
-            long first = lineSegment.head();
+            long first = lineSegment.head(lineSegment.headStart());
             assertThat(first).isEqualTo(firstAsBytes);
 
             assertThat(toString(first, 3)).isEqualTo(wantedSubstring);
 
             for (int i = 0; i < lineSegment.longCount(); i++) {
-                long l = lineSegment.getLong(i);
+                long l = lineSegment.longNo(i);
                 System.out.println(toString(l, 8));
             }
 
