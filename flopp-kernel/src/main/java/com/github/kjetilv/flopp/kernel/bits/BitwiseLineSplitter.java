@@ -56,7 +56,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
     }
 
     @Override
-    public int columns() {
+    public int columnCount() {
         return columnNo;
     }
 
@@ -81,21 +81,19 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         long length = this.segment.length();
         if (length < ALIGNMENT) {
             findSeps(this.segment.bytesAt(0, length));
-            addSep(currentStart, length);
+            addSep(length);
         } else {
             long longCount = this.segment.longCount();
             long headLong = resolveHeadLong(this.segment);
             findSeps(headLong);
-
             for (int i = 1; i < longCount; i++) {
                 findSeps(this.segment.longNo(i));
             }
-
             if (this.segment.isAlignedAtEnd()) {
-                addSep(currentStart, length);
+                addSep(length);
             } else {
                 findSeps(this.segment.tail());
-                addSep(currentStart, length);
+                addSep(length);
             }
         }
         lines.accept(this);
@@ -126,32 +124,28 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
 
         while (true) {
             if (nextEsc == ALIGNMENT_INT) {
-                if ((nextSep & nextQuo) == ALIGNMENT) {
-                    offset += ALIGNMENT;
+                if ((nextSep & nextQuo) == ALIGNMENT_INT) {
+                    offset += ALIGNMENT_INT;
                     return;
                 }
                 int min = Math.min(nextSep, nextQuo);
                 if (min == nextSep) {
-                    handleSeparator(nextSep);
+                    handleSep(nextSep);
                     seps &= CLEARED[nextSep];
                     nextSep = dist(seps);
                 } else {
-                    handleQuote();
+                    handleQuo();
                     quos &= CLEARED[nextQuo];
                     nextQuo = dist(quos);
                 }
             } else {
-                if (((nextSep & nextQuo) & nextEsc) == ALIGNMENT) {
-                    offset += ALIGNMENT;
-                    return;
-                }
                 int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
                 if (min == nextSep) {
-                    handleSeparator(nextSep);
+                    handleSep(nextSep);
                     seps &= CLEARED[nextSep];
                     nextSep = dist(seps);
                 } else if (min == nextQuo) {
-                    handleQuote();
+                    handleQuo();
                     quos &= CLEARED[nextQuo];
                     nextQuo = dist(quos);
                 } else {
@@ -163,7 +157,19 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         }
     }
 
-    private void handleQuote() {
+    private void handleSep(int nextSep) {
+        if (quoting) {
+            return;
+        }
+        if (escaping) {
+            escaping = false;
+        } else {
+            addSep(offset + nextSep);
+            currentStart = offset + nextSep + 1;
+        }
+    }
+
+    private void handleQuo() {
         if (escaping) {
             escaping = false;
         } else {
@@ -172,21 +178,9 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         }
     }
 
-    private void handleSeparator(int nextSep) {
-        if (quoting) {
-            return;
-        }
-        if (escaping) {
-            escaping = false;
-        } else {
-            addSep(currentStart, offset + nextSep);
-            currentStart = offset + nextSep + 1;
-        }
-    }
-
-    private void addSep(long start, long end) {
+    private void addSep(long end) {
         int quoteOffset = quoted ? 1 : 0;
-        this.start[columnNo] = startOffset + start + quoteOffset;
+        this.start[columnNo] = startOffset + currentStart + quoteOffset;
         this.end[columnNo] = startOffset + end - quoteOffset;
         columnNo++;
         quoted = false;

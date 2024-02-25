@@ -108,7 +108,7 @@ class BitwiseFileSplitterTest {
         LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
         Consumer<CommaSeparatedLine> lines = line -> {
             if (airlines.add(line.column(1))) {
-                System.out.println(line.columnStream()
+                System.out.println(line.columns()
                     .collect(Collectors.joining(" – ")));
             }
         };

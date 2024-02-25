@@ -28,9 +28,9 @@ class ByteIndexEstimatorTest {
         }
 
         List<PartitionBytes> partitionBytes = tracker.bytesPartitions();
-        partitionBytes.forEach(System.out::println);
+//        partitionBytes.forEach(System.out::println);
 
-        Partitioning.create(partitioning.count()).of(lineCount)
-            .forEach(System.out::println);
+//        Partitioning.create(partitioning.count()).of(lineCount)
+//            .forEach(System.out::println);
     }
 }

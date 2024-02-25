@@ -148,7 +148,7 @@ public class FastPartitionerTest {
                     bitwisePartitionStreamer.lines()
                         .forEach(l -> {
                             cont.increment();
-                            System.out.println(LineSegments.asString(l));
+//                            System.out.println(LineSegments.asString(l));
                         }));
             assertThat(cont)
                 .describedAs(STR."lineCount \{lineCount} partitionCount \{partitionCount}")

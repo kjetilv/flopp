@@ -14,7 +14,6 @@ import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
-import static java.lang.foreign.MemorySegment.ofArray;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionHandler implements Runnable {
@@ -123,18 +122,11 @@ final class BitwisePartitionHandler implements Runnable {
         if (tail > 0) {
             processTail(tail);
         }
-    }
-
-    private void processLastMain(long lastOffset) {
-        while (offset < lastOffset) {
-            long bytes = loadLong();
-            long mask = mask(bytes);
-            do {
-                mask = shipNextLine(mask);
-            } while (mask != 0);
-            offset += ALIGNMENT;
+        if (lineStart < physicalLimit) {
+            emitAndAdvance(physicalLimit);
         }
     }
+
     private void processMain(long lastOffset) {
         while (offset < lastOffset) {
             long bytes = loadLong();
@@ -163,13 +155,13 @@ final class BitwisePartitionHandler implements Runnable {
     private void processTail(long tail) {
         long mask = mask(loadTail(tail));
         if (mask == 0) { // Tail did not end in newline, send what we got
-            action.line(segment, lineStart, physicalLimit);
+            emitAndAdvance(physicalLimit);
         } else {
             do { // Newlines spotted, ship lines
                 mask = shipNextLine(mask);
             } while (mask != 0);
             if (lineStart < physicalLimit) { // Tail did not end in newline, send what we got
-                action.line(segment, lineStart, physicalLimit);
+                emitAndAdvance(physicalLimit);
             }
         }
     }
@@ -188,10 +180,14 @@ final class BitwisePartitionHandler implements Runnable {
 
     private long shipNextLine(long mask) {
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
-        long lineBreakOffset = offset + offsetInMask;
-        action.line(segment, lineStart, lineBreakOffset);
-        lineStart = lineBreakOffset + 1;
+        long lineOffset = offset + offsetInMask;
+        emitAndAdvance(lineOffset);
         return mask & CLEARED[offsetInMask + 1];
+    }
+
+    private void emitAndAdvance(long length) {
+        action.line(segment, lineStart, length);
+        lineStart = length + 1;
     }
 
     private long loadLong() {

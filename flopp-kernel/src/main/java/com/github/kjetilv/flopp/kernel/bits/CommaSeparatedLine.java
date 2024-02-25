@@ -9,18 +9,18 @@ public interface CommaSeparatedLine {
 
     MemorySegment memorySegment();
 
-    int columns();
+    int columnCount();
 
     long[] start();
 
     long[] end();
 
-    default Stream<String> columnStream() {
-        return IntStream.range(0, columns()).mapToObj(toColumn());
+    default Stream<String> columns() {
+        return IntStream.range(0, columnCount()).mapToObj(toColumn());
     }
 
-    default Stream<LineSegment> segmentStream() {
-        return IntStream.range(0, columns()).mapToObj(toSegment());
+    default Stream<LineSegment> segments() {
+        return IntStream.range(0, columnCount()).mapToObj(toSegment());
     }
 
     default String column(int column) {
@@ -40,7 +40,8 @@ public interface CommaSeparatedLine {
     private IntFunction<String> toColumn() {
         long[] start = start();
         long[] end = end();
-        return column -> toSegment(column, start, end).asString();
+        return column ->
+            toSegment(column, start, end).asString();
     }
 
     private LineSegment toSegment(int column, long[] start, long[] end) {

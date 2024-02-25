@@ -281,14 +281,19 @@ class BitwiseLineSplitterTest {
 
     private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
         try {
-            Path write = Files.writeString(
-                tempDir.resolve(STR."\{UUID.randomUUID().toString()}.txt"),
-                contents, CREATE
-            );
-            return Bitwise.partititioned(write, partitioning);
+            return Bitwise.partititioned(fileWith(contents), partitioning);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Path fileWith(String contents) throws IOException {
+        Path write = Files.writeString(
+            tempDir.resolve(STR."\{UUID.randomUUID().toString()}.txt"),
+            contents,
+            CREATE
+        );
+        return write;
     }
 
     private void assertSplit(Partitioning partitioning, String input) {
@@ -318,7 +323,7 @@ class BitwiseLineSplitterTest {
                     .lineSplitters(new LinesFormat(';', '\''))
                     .forEach(consumer ->
                         consumer.accept(commaSeparatedLine ->
-                            commaSeparatedLine.columnStream()
+                            commaSeparatedLine.columns()
                                 .forEach(splits::add)));
             }
         } catch (Exception e) {
@@ -339,7 +344,7 @@ class BitwiseLineSplitterTest {
         BitwiseLineSplitter splitter = new BitwiseLineSplitter(
             new LinesFormat(';', '\''),
             line ->
-                line.columnStream()
+                line.columns()
                     .forEach(splits::add)
         );
 
@@ -377,7 +382,7 @@ class BitwiseLineSplitterTest {
 
     private static Consumer<CommaSeparatedLine> adder(List<String> splits) {
         return line ->
-            line.columnStream()
+            line.columns()
                 .forEach(splits::add);
     }
 }

@@ -57,7 +57,7 @@ public final class JustSplit_kjetilvlong {
                             CompletableFuture.runAsync(
                                 () ->
                                     splitsConsumer.accept(line ->
-                                        longAdder.add(line.columns())),
+                                        longAdder.add(line.columnCount())),
                                 executor
                             ))
                         .toList();
