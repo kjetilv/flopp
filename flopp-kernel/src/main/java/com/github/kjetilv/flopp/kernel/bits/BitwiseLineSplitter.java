@@ -80,23 +80,34 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
 
         long length = this.segment.length();
         if (length < ALIGNMENT) {
-            findSeps(this.segment.bytesAt(0, length));
+            findSeps(this.segment.bytesAt(0, length), 0);
             addSep(length);
         } else {
+            processHead();
             long longCount = this.segment.longCount();
-            long headLong = resolveHeadLong(this.segment);
-            findSeps(headLong);
             for (int i = 1; i < longCount; i++) {
-                findSeps(this.segment.longNo(i));
+                findSeps(this.segment.longNo(i), 0);
             }
             if (this.segment.isAlignedAtEnd()) {
                 addSep(length);
             } else {
-                findSeps(this.segment.tail());
+                findSeps(this.segment.tail(), 0);
                 addSep(length);
             }
         }
         lines.accept(this);
+    }
+
+    private void processHead() {
+        long headStart = this.segment.headStart();
+        if (headStart == 0) {
+            long headLong = this.segment.longNo(0);
+            findSeps(headLong, 0);
+        } else {
+            offset = -headStart;
+            long headLong = this.segment.head(headStart);
+            findSeps(headLong, headStart);
+        }
     }
 
     @Override
@@ -104,16 +115,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         return STR."\{getClass().getSimpleName()}[\{segment.asString()}]";
     }
 
-    private long resolveHeadLong(LineSegment segment) {
-        long headStart = segment.headStart();
-        if (headStart == 0) {
-            return segment.longNo(0);
-        }
-        offset = -headStart;
-        return segment.head(headStart);
-    }
-
-    private void findSeps(long bytes) {
+    private void findSeps(long bytes, long shift) {
         long seps = mask(bytes, sepMask);
         long quos = mask(bytes, quoMask);
         long escs = mask(bytes, escMask);
@@ -124,13 +126,13 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
 
         while (true) {
             if (nextEsc == ALIGNMENT_INT) {
-                if ((nextSep & nextQuo) == ALIGNMENT_INT) {
+                if (nextSep == ALIGNMENT_INT && nextQuo == ALIGNMENT_INT) {
                     offset += ALIGNMENT_INT;
                     return;
                 }
                 int min = Math.min(nextSep, nextQuo);
                 if (min == nextSep) {
-                    handleSep(nextSep);
+                    handleSep(nextSep, shift);
                     seps &= CLEARED[nextSep];
                     nextSep = dist(seps);
                 } else {
@@ -141,7 +143,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
             } else {
                 int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
                 if (min == nextSep) {
-                    handleSep(nextSep);
+                    handleSep(nextSep, shift);
                     seps &= CLEARED[nextSep];
                     nextSep = dist(seps);
                 } else if (min == nextQuo) {
@@ -157,15 +159,16 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         }
     }
 
-    private void handleSep(int nextSep) {
+    private void handleSep(int nextSep, long shift) {
         if (quoting) {
             return;
         }
         if (escaping) {
             escaping = false;
         } else {
-            addSep(offset + nextSep);
-            currentStart = offset + nextSep + 1;
+            long end = offset + nextSep + shift;
+            addSep(end);
+            currentStart = end + 1;
         }
     }
 

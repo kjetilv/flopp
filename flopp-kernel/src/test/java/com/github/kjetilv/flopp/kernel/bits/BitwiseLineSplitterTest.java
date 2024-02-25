@@ -129,7 +129,8 @@ class BitwiseLineSplitterTest {
     @Test
     void shorterStringProgressive() {
         assertSplit(
-            Partitioning.single(), """
+            Partitioning.single(),
+            """
                 f;a
                 qweqweqweasdasdasdzxczxzxc;qwe
                 a;qweqweqweasdasdasdzxczxzxc
