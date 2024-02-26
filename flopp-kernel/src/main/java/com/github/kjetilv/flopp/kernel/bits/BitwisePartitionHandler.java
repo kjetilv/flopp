@@ -98,17 +98,21 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private Long initialize() {
-        while (offset < limit) {
-            long mask = mask(loadLong());
+        long tail = limit % ALIGNMENT;
+        long lastOffset = limit - tail;
+        while (offset < lastOffset) {
+            long bytes = loadLong();
+            long mask = mask(bytes);
             if (mask != 0) {
-                long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
-                mask &= CLEARED[Math.toIntExact(start - offset)];
-                if (mask == 0) { // We cleared the current mask
-                    offset += ALIGNMENT;
-                }
-                // Mark position of new line
-                lineStart = start;
-                return mask; // Return start state
+                return initializeFrom(mask);
+            }
+            offset += ALIGNMENT;
+        }
+        if (tail > 0) {
+            long bytes = loadTail(tail);
+            long mask = mask(bytes);
+            if (mask != 0) {
+                return initializeFrom(mask);
             }
             offset += ALIGNMENT;
         }
@@ -139,12 +143,21 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private boolean processedOverflow() {
-        while (offset < physicalLimit) {
+        long tail = physicalLimit % ALIGNMENT;
+        long lastAligned = physicalLimit - tail;
+        while (offset < lastAligned) {
             long bytes = loadLong();
             long mask = mask(bytes);
             if (mask == 0) {
                 offset += ALIGNMENT;
             } else {
+                shipNextLine(mask);
+                return true;
+            }
+        }
+        if (tail > 0) {
+            long mask = mask(loadTail(tail));
+            if (mask != 0) { // Tail did not end in newline, send what we got
                 shipNextLine(mask);
                 return true;
             }
@@ -178,16 +191,26 @@ final class BitwisePartitionHandler implements Runnable {
         return limit;
     }
 
+    private Long initializeFrom(long bytes) {
+        long mask = bytes;
+        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+        if (start == physicalLimit) {
+            return null; // First linebreak was the last
+        }
+        mask &= CLEARED[Math.toIntExact(start - offset)];
+        if (mask == 0) { // We cleared the current mask
+            offset += ALIGNMENT;
+        }
+        // Mark position of new line
+        lineStart = start;
+        return mask;
+    }
+
     private long shipNextLine(long mask) {
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
         long lineOffset = offset + offsetInMask;
         emitAndAdvance(lineOffset);
         return mask & CLEARED[offsetInMask + 1];
-    }
-
-    private void emitAndAdvance(long length) {
-        action.line(segment, lineStart, length);
-        lineStart = length + 1;
     }
 
     private long loadLong() {
@@ -196,6 +219,11 @@ final class BitwisePartitionHandler implements Runnable {
 
     private long loadTail(long count) {
         return LineSegments.bytesAt(segment, offset, Math.toIntExact(count));
+    }
+
+    private void emitAndAdvance(long length) {
+        action.line(segment, lineStart, length);
+        lineStart = length + 1;
     }
 
     private void transcend(BitwisePartitionHandler next) {
@@ -215,6 +243,10 @@ final class BitwisePartitionHandler implements Runnable {
         MemorySegment buffer = of(ByteBuffer.allocateDirect(length));
         copy(this.segment, lineStart, buffer, 0, trail);
         copy(next.segment, 0, buffer, trail, preamble);
+        emit(buffer, length);
+    }
+
+    private void emit(MemorySegment buffer, int length) {
         action.line(buffer, 0, length);
     }
 
@@ -253,7 +285,7 @@ final class BitwisePartitionHandler implements Runnable {
             accumulatedSize,
             lastLineOffset
         );
-        action.line(buffer, 0, length);
+        emit(buffer, length);
     }
 
     private static final long[] CLEARED = {
@@ -265,7 +297,6 @@ final class BitwisePartitionHandler implements Runnable {
         0xFFFFFF0000000000L,
         0xFFFF000000000000L,
         0xFF00000000000000L,
-        0x0000000000000000L,
         0x0000000000000000L
     };
 

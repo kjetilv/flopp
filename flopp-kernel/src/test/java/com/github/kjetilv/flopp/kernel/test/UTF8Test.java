@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,13 +48,13 @@ public class UTF8Test {
                 path,
                 partitioning,
                 Shape.of(path).longestLine(20)
-            );
+            )
         ) {
             sb = new StringBuilder();
             try {
                 extract(bitwisePartitioned.streams(), sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + linesOf(path));
+                System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -69,13 +70,13 @@ public class UTF8Test {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path);
+            Partitioned<Path> partitioned = Bitwise.partititioned(path)
         ) {
             sb = new StringBuilder();
             try {
                 extract(partitioned.streams(), sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + linesOf(path));
+                System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -101,7 +102,7 @@ public class UTF8Test {
             try {
                 extract(partititioned.streams(), sb);
             } catch (Exception e) {
-                System.out.println("\n\n###\n\n" + linesOf(path));
+                System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
                 System.err.println();
                 e.printStackTrace(System.err);
@@ -119,16 +120,12 @@ public class UTF8Test {
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
-                Partitioning.create(4, 20),
+                Partitioning.create(2, 20),
                 Shape.of(path).longestLine(512)
-            );
+            )
         ) {
             sb = new StringBuilder();
-            try {
-                extract(bitwisePartitioned.streams(), sb);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            extract(bitwisePartitioned.streams(), sb);
         }
 
     }
@@ -142,7 +139,7 @@ public class UTF8Test {
                 path,
                 Partitioning.create(3, 40),
                 Shape.of(path).longestLine(40)
-            );
+            )
         ) {
             sb = new StringBuilder();
             try {
@@ -155,6 +152,8 @@ public class UTF8Test {
         assertThat(path).content()
             .isEqualTo(sb.toString());
     }
+
+    private static final Pattern LN = Pattern.compile("\n");
 
     private static void assertNonTerminated(String file, int partitionCount) throws IOException {
         Path path = path(file);
@@ -170,14 +169,14 @@ public class UTF8Test {
         Partitioning partitioning = Partitioning.create(partitionCount);
         List<Partition> partitions = partitioning.of(Shape.of(tmp).size());
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning);
+            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
         ) {
             partitioned.streams().streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .forEach(line -> {
                                 String string = line.asString();
-                                System.out.println(string);
+//                                System.out.println(string);
                                 sb.append(string).append("\n");
                             }
                         ));
@@ -195,19 +194,23 @@ public class UTF8Test {
         }
     }
 
-    @SuppressWarnings("DataFlowIssue")
     private static Path path(String name) {
-        URL resource = Thread.currentThread().getContextClassLoader().getResource(name);
-        Path path = Path.of(Objects.requireNonNull(resource.getFile(), "resource.getFile()"));
-        return path;
+        URL resource = Objects.requireNonNull(
+            Thread.currentThread().getContextClassLoader().getResource(name), STR."resource: \{name}"
+        );
+        return Path.of(Objects.requireNonNull(resource.getFile(), "resource.getFile()"));
     }
 
-    private static void extract(PartitionedStreams streams, StringBuilder sb) {
+    private static void extract(
+        PartitionedStreams streams,
+        StringBuilder sb
+    ) {
         streams.streamers()
             .forEach(partitionStreamer ->
                 partitionStreamer.lines()
                     .map(LineSegment::asString)
-                    .map(line -> line.replaceAll("\n", "🦊"))
+                    .map(line ->
+                        LN.matcher(line).replaceAll("🦊"))
                     .forEach(str -> {
                         sb.append(str).append("\n");
                         System.out.println(str);

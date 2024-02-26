@@ -16,6 +16,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.CommaSeparatedLine;
 import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import com.github.kjetilv.flopp.kernel.bits.LinesFormat;
 
@@ -33,8 +34,11 @@ public final class CalculateAverage_kjetilvlong {
         for (String arg : args) {
             Path path = Path.of(arg);
             go2(path);
-            go1(path);
+//            go1(path);
         }
+    }
+
+    private CalculateAverage_kjetilvlong() {
     }
 
     private static void go1(Path path) {
@@ -77,10 +81,14 @@ public final class CalculateAverage_kjetilvlong {
     private static void go2(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
-        Partitioning partitioning = Partitioning.create(
+        System.out.println(go(path, Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
-        ).scaled(2);
+        ).scaled(2), shape));
+        System.out.println(Duration.between(start, Instant.now()));
+    }
+
+    public static Map<String, Result> go(Path path, Partitioning partitioning, Shape shape) {
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -91,28 +99,14 @@ public final class CalculateAverage_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            System.out.println(Duration.between(start, Instant.now()));
             List<CompletableFuture<Map<String, Result>>> list1 =
                 bitwisePartitioned.streams().lineSplitters(new LinesFormat(';', 2))
                     .map(splitsConsumer ->
                         CompletableFuture.supplyAsync(
                             () -> {
                                 Map<String, Result> m = new HashMap<>(1024, 1.0f);
-                                splitsConsumer.accept(commaSeparatedLine -> {
-                                    try {
-                                        String station = commaSeparatedLine.column(0);
-                                        int measure = parseValue(commaSeparatedLine.segment(1));
-                                        m.compute(
-                                            station,
-                                            (_, existing) ->
-                                                existing == null
-                                                    ? new Result(measure)
-                                                    : existing.collect(measure)
-                                        );
-                                    } catch (Exception e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                });
+                                splitsConsumer.accept(commaSeparatedLine ->
+                                    parse(commaSeparatedLine, m));
                                 return m;
                             },
                             executor
@@ -121,11 +115,24 @@ public final class CalculateAverage_kjetilvlong {
             List<Map<String, Result>> maps = list1.stream()
                 .map(CompletableFuture::join)
                 .toList();
-            System.out.println(Duration.between(start, Instant.now()));
             Set<String> keys = keySet(maps);
-            Map<String, Result> map = combineMaps(keys, maps);
-            System.out.println(map);
-            System.out.println(Duration.between(start, Instant.now()));
+            return combineMaps(keys, maps);
+        }
+    }
+
+    private static void parse(CommaSeparatedLine commaSeparatedLine, Map<String, Result> m) {
+        try {
+            String station = commaSeparatedLine.column(0);
+            int measure = parseValue(commaSeparatedLine.segment(1));
+            m.compute(
+                station,
+                (_, existing) ->
+                    existing == null
+                        ? new Result(measure)
+                        : existing.collect(measure)
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -223,7 +230,7 @@ public final class CalculateAverage_kjetilvlong {
         return value;
     }
 
-    private static final class Result {
+    public static final class Result {
 
         private int count;
 

@@ -51,10 +51,10 @@ public class BitwiseSpliteratorTest {
         Shape shape = Shape.of(file).longestLine(10);
         Partitioning partitioning = Partitioning.create(3, 8);
 
-        System.out.println(new String(Files.readAllBytes(file)));
+//        System.out.println(new String(Files.readAllBytes(file)));
 
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(file, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {
             bitwisePartitioned.streams().streamers().forEach(streamer -> {
                 streamer.lines().forEach(line -> {
@@ -62,9 +62,9 @@ public class BitwiseSpliteratorTest {
                         .asSlice(line.startIndex(), line.length())
                         .toArray(ValueLayout.JAVA_BYTE);
                     String x = "## " + new String(utf8String).replace("\n", "^\n");
-                    System.out.println(x);
+//                    System.out.println(x);
                 });
-                System.out.println(STR."Done with \{streamer.partition()}");
+//                System.out.println(STR."Done with \{streamer.partition()}");
             });
 //            for (Partition partition : partitions) {
 //

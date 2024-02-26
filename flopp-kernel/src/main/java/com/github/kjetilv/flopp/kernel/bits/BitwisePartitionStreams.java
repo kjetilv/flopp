@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.*;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -14,8 +13,6 @@ import java.util.function.LongSupplier;
 
 final class BitwisePartitionStreams implements PartitionedStreams {
 
-    private final Path path;
-
     private final Shape shape;
 
     private final List<Partition> partitions;
@@ -23,12 +20,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     private final Function<Partition, MemorySegment> memorySegmentSource;
 
     BitwisePartitionStreams(
-        Path path,
         Shape shape,
         List<Partition> partitions,
         Function<Partition, MemorySegment> memorySegmentSource
     ) {
-        this.path = Objects.requireNonNull(path, "path");
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
         this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");

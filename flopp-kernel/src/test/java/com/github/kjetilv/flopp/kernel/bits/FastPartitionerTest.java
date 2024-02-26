@@ -80,7 +80,7 @@ public class FastPartitionerTest {
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
-            );
+            )
         ) {
             partitioned.streams().streamers()
                 .forEach(streamer ->

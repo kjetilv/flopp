@@ -45,10 +45,13 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     @Override
     public String toString() {
-        String pos1 = first() ? "<" : "";
-        String pos2 = last() ? ">" : "";
-        String frac = first() || last() ? "" : STR."/\{partitionCount}";
-        return STR."\{getClass().getSimpleName()}[\{pos1}\{partitionNo + 1}\{frac}\{pos2}@\{offset}+\{length}]";
+        boolean f = first();
+        boolean l = last();
+        String pos1 = f ? "<" : "";
+        String pos2 = l ? ">" : "";
+        String no = f || l ? "" : STR."\{partitionNo + 1}";
+        String slash = f || l ? "" : "/";
+        return STR."\{getClass().getSimpleName()}[\{pos1}\{no}\{slash}\{partitionCount}\{pos2} \{offset}+\{length}]";
     }
 
     public long bufferedTo(long size) {

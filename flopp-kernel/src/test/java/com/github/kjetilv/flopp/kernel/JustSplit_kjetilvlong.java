@@ -29,8 +29,8 @@ public final class JustSplit_kjetilvlong {
 
     public static void main(String[] args) {
         for (String arg : args) {
-            Path path = Path.of(arg);
             Instant start = Instant.now();
+            Path path = Path.of(arg);
             Shape shape = Shape.of(path).longestLine(128);
 
             Partitioning partitioning = Partitioning.create(
@@ -38,34 +38,37 @@ public final class JustSplit_kjetilvlong {
                 shape.longestLine()
             ).scaled(2);
 
-            int chunks = partitioning.of(shape.size()).size();
-            try (
-                Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-                ExecutorService executor = new ThreadPoolExecutor(
-                    chunks,
-                    chunks,
-                    0, TimeUnit.NANOSECONDS,
-                    new LinkedBlockingQueue<>(chunks)
-                )
-            ) {
-                System.out.println(Duration.between(start, Instant.now()));
-                LongAdder longAdder = new LongAdder();
-                LinesFormat linesFormat = new LinesFormat(';', 2);
-                List<CompletableFuture<Void>> list1 =
-                    bitwisePartitioned.streams().lineSplitters(linesFormat)
-                        .map(splitsConsumer ->
-                            CompletableFuture.runAsync(
-                                () ->
-                                    splitsConsumer.accept(line ->
-                                        longAdder.add(line.columnCount())),
-                                executor
-                            ))
-                        .toList();
-                list1.forEach(CompletableFuture::join);
-                System.out.println(Duration.between(start, Instant.now()));
-                System.out.println(longAdder);
-                System.out.println(Duration.between(start, Instant.now()));
-            }
+            LongAdder longAdder = add(partitioning, shape, path);
+            System.out.println(longAdder);
+            System.out.println(Duration.between(start, Instant.now()));
         }
+    }
+
+    public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
+        LongAdder longAdder = new LongAdder();
+        int chunks = partitioning.of(shape.size()).size();
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                0, TimeUnit.NANOSECONDS,
+                new LinkedBlockingQueue<>(chunks)
+            )
+        ) {
+            LinesFormat linesFormat = new LinesFormat(';', 2);
+            List<CompletableFuture<Void>> list1 =
+                bitwisePartitioned.streams().lineSplitters(linesFormat)
+                    .map(splitsConsumer ->
+                        CompletableFuture.runAsync(
+                            () ->
+                                splitsConsumer.accept(line ->
+                                    longAdder.add(line.columnCount())),
+                            executor
+                        ))
+                    .toList();
+            list1.forEach(CompletableFuture::join);
+        }
+        return longAdder;
     }
 }

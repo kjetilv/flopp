@@ -14,7 +14,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,7 +36,7 @@ class LineSegmentTest {
 
         try (
             RandomAccessFile r = new RandomAccessFile(path.toFile(), "r");
-            FileChannel channel = r.getChannel();
+            FileChannel channel = r.getChannel()
         ) {
             MemorySegment memorySegment = channel.map(READ_ONLY, 0, contents.length, Arena.ofAuto());
             LineSegment lineSegment = LineSegments.of(memorySegment, 13, 49);
@@ -59,7 +58,7 @@ class LineSegmentTest {
 
             for (int i = 0; i < lineSegment.longCount(); i++) {
                 long l = lineSegment.longNo(i);
-                System.out.println(toString(l, 8));
+//                System.out.println(toString(l, 8));
             }
 
             long last = lineSegment.tail();
