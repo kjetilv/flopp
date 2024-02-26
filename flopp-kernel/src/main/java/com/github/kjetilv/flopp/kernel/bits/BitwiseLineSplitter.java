@@ -130,8 +130,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
                     offset += ALIGNMENT_INT;
                     return;
                 }
-                int min = Math.min(nextSep, nextQuo);
-                if (min == nextSep) {
+                if (nextSep < nextQuo) {
                     handleSep(nextSep, shift);
                     seps &= CLEARED[nextSep];
                     nextSep = dist(seps);
