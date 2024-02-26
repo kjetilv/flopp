@@ -116,10 +116,9 @@ class BitwiseFileSplitterTest {
             Stream<Path> list = Files.list(PATH);
             ExecutorService executor = new ForkJoinPool()
         ) {
-            List<Partitioned<Path>> partitioneds =
-                list.filter(endsWith(".csv"))
-                    .map(BitwiseFileSplitterTest::partitioned)
-                    .toList();
+            List<Partitioned<Path>> partitioneds = list.filter(endsWith(".csv"))
+                .map(BitwiseFileSplitterTest::partitioned)
+                .toList();
             List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
                     partititioned.streams().streamers()
                         .map(partitionStreamer ->

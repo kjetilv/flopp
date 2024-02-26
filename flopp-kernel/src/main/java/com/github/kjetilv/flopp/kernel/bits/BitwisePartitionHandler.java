@@ -47,7 +47,7 @@ final class BitwisePartitionHandler implements Runnable {
 
         this.limit = this.partition.length();
         this.physicalLimit = this.segment.byteSize();
-        if (limit > physicalLimit) {
+        if (this.limit > this.physicalLimit) {
             throw new IllegalStateException(STR."\{this} got bad segment \{segment}");
         }
     }
@@ -91,10 +91,9 @@ final class BitwisePartitionHandler implements Runnable {
 
     private void processBody() {
         processMain(limit);
-        if (processedOverflow()) {
-            return; // We found the line in the overflow section
+        if (!processedOverflow()) {
+            transcend(this.next.get()); // We need to query the next partition
         }
-        transcend(this.next.get()); // We need to query the next partition
     }
 
     private Long initialize() {
