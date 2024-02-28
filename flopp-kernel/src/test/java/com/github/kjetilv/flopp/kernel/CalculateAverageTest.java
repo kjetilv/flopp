@@ -49,7 +49,8 @@ class CalculateAverageTest {
                 Thread.currentThread().getContextClassLoader().getResource("smaples")).getFile());
         try (
             Stream<Path> smaples = Files.list(path)
-                .filter(smaple -> smaple.toString().endsWith(".txt"))
+                .filter(smaple ->
+                    smaple.toString().endsWith(".txt"))
         ) {
             smaples.forEach(smaple -> {
                 long size;
