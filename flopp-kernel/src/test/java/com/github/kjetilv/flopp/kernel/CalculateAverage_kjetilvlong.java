@@ -25,6 +25,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,7 +40,45 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
+    public static Map<String, Result> go(
+        Path path,
+        Partitioning partitioning,
+        Shape shape
+    ) {
+        int chunks = partitioning.of(shape.size()).size();
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                0, TimeUnit.NANOSECONDS,
+                new LinkedBlockingQueue<>(chunks)
+            )
+        ) {
+            List<Supplier<Map<String, Result>>> mapSuppliers =
+                bitwisePartitioned.streams()
+                    .lineSplitters(new LinesFormat(';'))
+                    .map(splitsConsumer ->
+                        future(() ->
+                            toMap(path, splitsConsumer), executor))
+                    .map(CalculateAverage_kjetilvlong::joiner)
+                    .toList();
+            List<Map<String, Result>> maps = mapSuppliers.stream()
+                .map(Supplier::get)
+                .toList();
+            return combineMaps(keySet(maps), maps);
+        }
+    }
+
     private CalculateAverage_kjetilvlong() {
+    }
+
+    private static <T> CompletableFuture<T> future(Supplier<T> mapSupplier, ExecutorService executor) {
+        return CompletableFuture.supplyAsync(mapSupplier, executor);
+    }
+
+    private static <T> Supplier<T> joiner(CompletableFuture<T> future) {
+        return future::join;
     }
 
     private static void go1(Path path) {
@@ -80,7 +120,7 @@ public final class CalculateAverage_kjetilvlong {
 
     private static void go2(Path path) {
         Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(128);
+        Shape shape = Shape.of(path).longestLine(64);
         System.out.println(go(path, Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
@@ -88,36 +128,18 @@ public final class CalculateAverage_kjetilvlong {
         System.out.println(Duration.between(start, Instant.now()));
     }
 
-    public static Map<String, Result> go(Path path, Partitioning partitioning, Shape shape) {
-        int chunks = partitioning.of(shape.size()).size();
-        try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
-                chunks,
-                chunks,
-                0, TimeUnit.NANOSECONDS,
-                new LinkedBlockingQueue<>(chunks)
-            )
-        ) {
-            List<CompletableFuture<Map<String, Result>>> list1 =
-                bitwisePartitioned.streams().lineSplitters(new LinesFormat(';', 2))
-                    .map(splitsConsumer ->
-                        CompletableFuture.supplyAsync(
-                            () -> {
-                                Map<String, Result> m = new HashMap<>(1024, 1.0f);
-                                splitsConsumer.accept(commaSeparatedLine ->
-                                    parse(commaSeparatedLine, m));
-                                return m;
-                            },
-                            executor
-                        ))
-                    .toList();
-            List<Map<String, Result>> maps = list1.stream()
-                .map(CompletableFuture::join)
-                .toList();
-            Set<String> keys = keySet(maps);
-            return combineMaps(keys, maps);
+    private static Map<String, Result> toMap(
+        Path path,
+        Consumer<Consumer<CommaSeparatedLine>> splitsConsumer
+    ) {
+        Map<String, Result> m = new HashMap<>(1024, 1.0f);
+        try {
+            splitsConsumer.accept(csvLine ->
+                parse(csvLine, m));
+        } catch (Exception e) {
+            throw new IllegalStateException(STR."Failed with \{path}", e);
         }
+        return m;
     }
 
     private static void parse(CommaSeparatedLine commaSeparatedLine, Map<String, Result> m) {
@@ -166,11 +188,11 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static Map<String, Result> combineMaps(
+    private static SequencedMap<String, Result> combineMaps(
         Set<String> keys,
         List<Map<String, Result>> maps
     ) {
-        TreeMap<String, Result> treeMap = new TreeMap<>(maps.getFirst());
+        SequencedMap<String, Result> treeMap = new TreeMap<>(maps.getFirst());
         maps.stream().skip(1)
             .forEach(map ->
                 keys.forEach(key -> {
@@ -198,8 +220,9 @@ public final class CalculateAverage_kjetilvlong {
     private static int parseValue(LineSegment ls) {
         int value = 0;
         int pos = 1;
-        for (long i = ls.length() - 1; i >= 0; i--) {
-            byte b = ls.byteAt(i);
+        long length = ls.length();
+        for (long i = 0; i < length; i++) {
+            byte b = ls.byteAt(length - i - 1);
             if (b == '.') {
                 continue;
             }

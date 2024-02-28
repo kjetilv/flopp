@@ -21,21 +21,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class UTF8Test {
 
     @Test
-    void nonTerminated() throws IOException {
-        assertNonTerminated("dotted.txt", 2);
-        assertNonTerminated("dotted.txt", 3);
+    void nonTerminated() {
+        assertNonTerminated("dotted.txt", 2, 0);
+        assertNonTerminated("dotted.txt", 3, 0);
     }
 
     @Test
-    void nonTerminatedXyz2() throws IOException {
+    void nonTerminatedXyz2() {
         for (int i = 3; i < 8; i++) {
-            assertNonTerminated("whoopsei.txt", i);
+            assertNonTerminated("whoopsei.txt", i, 0);
         }
     }
 
     @Test
-    void nonTerminatedXyz7parts() throws IOException {
-        assertNonTerminated("whoopsei.txt", 7);
+    void nonTerminatedXyz7parts() {
+        assertNonTerminated("whoopsei.txt", 7, 0);
+    }
+
+    @Test
+    void mergmeMultis() {
+        for (int partitions = 1; partitions < 10; partitions++) {
+            for (int tail = 0; tail < 20; tail++) {
+                assertNonTerminated("mergemulti.txt", partitions, tail);
+            }
+        }
     }
 
     @Test
@@ -131,6 +140,22 @@ public class UTF8Test {
     }
 
     @Test
+    void mystery() {
+        Path path = path("smaples/measurements-complex-utf8.txt");
+        StringBuilder sb;
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
+                path,
+                Partitioning.create(2, 0),
+                Shape.of(path).longestLine(30)
+            )
+        ) {
+            sb = new StringBuilder();
+            extract(bitwisePartitioned.streams(), sb);
+        }
+    }
+
+    @Test
     void test2() {
         Path path = path("a.txt");
         StringBuilder sb;
@@ -155,19 +180,27 @@ public class UTF8Test {
 
     private static final Pattern LN = Pattern.compile("\n");
 
-    private static void assertNonTerminated(String file, int partitionCount) throws IOException {
+    private static void assertNonTerminated(String file, int partitionCount, int longestLine) {
         Path path = path(file);
-        Path tmp = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
+        Path tmp = null;
+        try {
+            tmp = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         String trimmedContent;
         try (
             Stream<String> lines = Files.lines(path)
         ) {
             trimmedContent = lines.collect(Collectors.joining("\n"));
             Files.write(tmp, trimmedContent.trim().getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         StringBuilder sb = new StringBuilder();
         Partitioning partitioning = Partitioning.create(partitionCount);
-        List<Partition> partitions = partitioning.of(Shape.of(tmp).size());
+        Shape shape = Shape.of(tmp).longestLine(longestLine);
+        List<Partition> partitions = partitioning.of(shape.size());
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
         ) {
@@ -205,15 +238,19 @@ public class UTF8Test {
         PartitionedStreams streams,
         StringBuilder sb
     ) {
-        streams.streamers()
-            .forEach(partitionStreamer ->
+        List<String> strings = streams.streamers()
+            .flatMap(partitionStreamer ->
                 partitionStreamer.lines()
                     .map(LineSegment::asString)
                     .map(line ->
-                        LN.matcher(line).replaceAll("🦊"))
-                    .forEach(str -> {
-                        sb.append(str).append("\n");
-                        System.out.println(str);
-                    }));
+                        LN.matcher(line).replaceAll("🦊")))
+            .toList();
+        boolean foxed = strings.stream().anyMatch(string -> string.contains("🦊"));
+        strings.forEach(str -> {
+            sb.append(str).append("\n");
+            if (foxed) {
+                System.out.println(str);
+            }
+        });
     }
 }

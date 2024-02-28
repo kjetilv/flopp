@@ -17,12 +17,12 @@ class FileTempTargets implements TempTargets<Path> {
 
     private final String suffix;
 
-    FileTempTargets(Path source) {
-        this.sourceName = source.getFileName().toString();
+    FileTempTargets(String fileName) {
+        this.sourceName = fileName;
         this.suffixIndex = sourceName.lastIndexOf('.');
         this.suffix = suffixIndex < 0 ? "" : sourceName.substring(suffixIndex + 1);
         try {
-            this.tempDirectory = Files.createTempDirectory(STR."workdir-\{source.getFileName()}-tmp");
+            this.tempDirectory = Files.createTempDirectory(STR."workdir-\{fileName}-tmp");
         } catch (IOException e) {
             throw new IllegalStateException(STR."\{this}: Failed to create temp dir", e);
         }

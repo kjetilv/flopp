@@ -112,7 +112,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{segment.asString()}]";
+        return STR."\{getClass().getSimpleName()}[\{segment == null ? "*" : segment.asString()}]";
     }
 
     private void findSeps(long bytes, long shift) {

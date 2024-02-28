@@ -11,16 +11,16 @@ import java.util.Objects;
 
 final class FileChannelTransfers implements Transfers<Path> {
 
-    private final Path target;
+    private final String target;
 
     private final RandomAccessFile randomAccessFile;
 
     private final FileChannel receivingChannel;
 
     FileChannelTransfers(Path target) {
-        this.target = Objects.requireNonNull(target, "path");
-        this.randomAccessFile = randomAccess(this.target);
+        this.randomAccessFile = randomAccess(Objects.requireNonNull(target, "path"));
         this.receivingChannel = this.randomAccessFile.getChannel();
+        this.target = target.toString();
     }
 
     @Override
@@ -46,9 +46,11 @@ final class FileChannelTransfers implements Transfers<Path> {
         return STR."\{getClass().getSimpleName()}[\{target}]";
     }
 
+    private static final String READ_WRITE = "rw";
+
     private static RandomAccessFile randomAccess(Path file) {
         try {
-            return new RandomAccessFile(file.toFile(), "rw");
+            return new RandomAccessFile(file.toFile(), READ_WRITE);
         } catch (Exception e) {
             throw new IllegalStateException(STR."Failed to open \{file}", e);
         }

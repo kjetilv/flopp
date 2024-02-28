@@ -10,19 +10,17 @@ import static java.lang.Integer.MAX_VALUE;
 public record Partitioning(int count, long tail) {
 
     public static Partitioning create() {
-        return create(0);
+        return new Partitioning(cpus(), 0);
     }
 
-    public static Partitioning create(int partitionCount) {
-        return create(partitionCount, 0);
+    public static Partitioning create(int count) {
+        return create(count, 0);
     }
 
-    public static Partitioning create(int partitionCount, long tail) {
+    public static Partitioning create(int count, long tail) {
         return new Partitioning(
-            Non.negative(partitionCount, "partitionCount") > 0
-                ? partitionCount
-                : cpus(),
-            Non.negative(tail, "tailSize")
+            Non.negativeOrZero(count, "count"),
+            Non.negative(tail, "tail")
         );
     }
 
@@ -50,6 +48,10 @@ public record Partitioning(int count, long tail) {
     }
 
     public List<Partition> of(long total) {
+        long reasonablesize = (tail + count) * 2;
+        if (total < reasonablesize) {
+            throw new IllegalStateException(STR."\{this} requires a length >= \{reasonablesize}: \{total}");
+        }
         return partitions(total);
     }
 

@@ -74,6 +74,14 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private static final int BUFFER_SIZE = 8192;
 
+    private static LinesWriter writer(Path target, Charset charset) {
+        return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
+    }
+
+    private static TempTargets<Path> tempTargets(Path path) {
+        return new FileTempTargets(path.getFileName().toString());
+    }
+
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
             partitioning == null ? Partitioning.create() : partitioning,
@@ -87,16 +95,8 @@ final class BitwisePartitioned implements Partitioned<Path> {
             : partitioning;
     }
 
-    private static MemoryMappedByteArrayLinesWriter writer(Path target, Charset charset) {
-        return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
-    }
-
     private static Transfers<Path> transfers(Path target) {
         return new FileChannelTransfers(target);
-    }
-
-    private static TempTargets<Path> tempTargets(Path source) {
-        return new FileTempTargets(source);
     }
 
     @FunctionalInterface

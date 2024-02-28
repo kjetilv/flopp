@@ -56,7 +56,7 @@ public final class JustSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            LinesFormat linesFormat = new LinesFormat(';', 2);
+            LinesFormat linesFormat = new LinesFormat(';');
             List<CompletableFuture<Void>> list1 =
                 bitwisePartitioned.streams().lineSplitters(linesFormat)
                     .map(splitsConsumer ->
