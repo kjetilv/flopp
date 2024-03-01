@@ -46,10 +46,6 @@ public final class LineSegments {
         return new ImmutableLine(memorySegment, start, end);
     }
 
-    public static LineSegment ofRange(MemorySegment memorySegment, long startIndex, long endIndex) {
-        return new ImmutableLine(memorySegment, startIndex, endIndex);
-    }
-
     public static String asString(MemorySegment segment, long start, long end) {
         return of(segment, start, end).asString();
     }

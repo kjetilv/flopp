@@ -190,7 +190,7 @@ public class UTF8Test {
 
     private static void assertNonTerminated(String file, int partitionCount, int longestLine) {
         Path path = path(file);
-        Path tmp = null;
+        Path tmp;
         try {
             tmp = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
         } catch (IOException e) {

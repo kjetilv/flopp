@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
