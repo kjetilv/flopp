@@ -1,21 +1,16 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.Range;
+
 import java.lang.foreign.MemorySegment;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.*;
 
-public interface LineSegment {
+@SuppressWarnings("unused")
+public interface LineSegment extends Range {
 
     MemorySegment memorySegment();
-
-    long startIndex();
-
-    long endIndex();
-
-    default long length() {
-        return endIndex() - startIndex();
-    }
 
     @SuppressWarnings("unused")
     default LineSegment immutable() {

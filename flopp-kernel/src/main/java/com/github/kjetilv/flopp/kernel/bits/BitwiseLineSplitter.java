@@ -126,7 +126,7 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
 
         while (true) {
             if (nextEsc == ALIGNMENT_INT) {
-                if (nextSep == ALIGNMENT_INT && nextQuo == ALIGNMENT_INT) {
+                if (nextSep == nextQuo) {
                     offset += ALIGNMENT_INT;
                     return;
                 }

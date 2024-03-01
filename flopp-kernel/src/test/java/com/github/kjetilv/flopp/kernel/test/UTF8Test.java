@@ -39,10 +39,18 @@ public class UTF8Test {
     }
 
     @Test
-    void mergmeMultis() {
+    void mergeMultis() {
         for (int partitions = 1; partitions < 10; partitions++) {
             for (int tail = 0; tail < 20; tail++) {
                 assertNonTerminated("mergemulti.txt", partitions, tail);
+            }
+        }
+    }
+    @Test
+    void mergeMultisUTF8() {
+        for (int partitions = 1; partitions < 20; partitions++) {
+            for (int tail = 0; tail < 25; tail++) {
+                assertNonTerminated("mergemulti-utf8.txt", partitions, tail);
             }
         }
     }

@@ -69,7 +69,11 @@ final class BitwisePartitionHandler implements Runnable {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{partition}]";
+        return STR."\{getClass().getSimpleName()}[\{partition} \{asString()}]";
+    }
+
+    public String asString() {
+        return LineSegments.asString(segment, lineStart, offset);
     }
 
     private boolean processHead() {
@@ -185,16 +189,17 @@ final class BitwisePartitionHandler implements Runnable {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            long mask = mask(segment.get(JAVA_LONG, offset));
+            long bytes = segment.get(JAVA_LONG, offset);
+            long mask = mask(bytes);
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
             }
             offset += ALIGNMENT;
         }
         if (tail > 0) {
             long mask = mask(LineSegments.bytesAt(segment, offset, tail));
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
+                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
             }
         }
         return limit;
@@ -203,7 +208,7 @@ final class BitwisePartitionHandler implements Runnable {
     private Long initializeFrom(long bytes) {
         long mask = bytes;
         long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
-        if (start == physicalLimit) {
+        if (partition.last() && start == physicalLimit) {
             return null; // First linebreak was the last
         }
         mask &= CLEARED[Math.toIntExact(start - offset)];
@@ -238,7 +243,7 @@ final class BitwisePartitionHandler implements Runnable {
     private void transcend(BitwisePartitionHandler next) {
         long nextOffset = next.findFirstLine();
         if (nextOffset < next.limit) { // Next partition contains the next newline
-            mergeWithNext(next, nextOffset - 1);
+            mergeWithNext(next, nextOffset);
         } else if (next.partition.last()) { // Next partition is the last one and it's missing a newline at the end
             mergeWithNext(next, nextOffset);
         } else { // Next line is in a later partition!
@@ -246,18 +251,13 @@ final class BitwisePartitionHandler implements Runnable {
         }
     }
 
-    private void mergeWithNext(BitwisePartitionHandler next, long preamble) {
-        long trail = limit - lineStart;
-        int length = Math.toIntExact(trail + preamble);
+    private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
+        long trailing = limit - lineStart;
+        int length = Math.toIntExact(trailing + nextPrefix);
         MemorySegment buffer = of(ByteBuffer.allocateDirect(length));
-        copy(this.segment, lineStart, buffer, 0, trail);
-        copy(next.segment, 0, buffer, trail, preamble);
-        emit(buffer, length, next.partition.last());
-    }
-
-    private void emit(MemorySegment buffer, int length, boolean last) {
-        boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
-        action.line(buffer, 0, length - (trim ? 1 : 0));
+        copy(this.segment, lineStart, buffer, 0, trailing);
+        copy(next.segment, 0, buffer, trailing, nextPrefix);
+        emitMerged(buffer, length, next.partition.last());
     }
 
     private void mergeWithMultiple(BitwisePartitionHandler next) {
@@ -269,10 +269,10 @@ final class BitwisePartitionHandler implements Runnable {
     private void combineMultiple(List<BitwisePartitionHandler> collector, long lastLineOffset) {
         long trail = limit - lineStart;
         int mediaries = collector.size() - 1;
-        long mediarySize = collector.stream()
-            .limit(mediaries)
-            .mapToLong(spliterator -> spliterator.limit)
-            .sum();
+        long mediarySize = 0L;
+        for (int i = 0; i < mediaries; i++) {
+            mediarySize += collector.get(i).limit;
+        }
         int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
         MemorySegment buffer = of(new byte[length]);
         copy(segment, lineStart, buffer, 0, trail);
@@ -296,7 +296,12 @@ final class BitwisePartitionHandler implements Runnable {
             accumulatedSize,
             lastLineOffset
         );
-        emit(buffer, length, lastLineOffset == lastSegment.byteSize());
+        emitMerged(buffer, length, lastLineOffset == lastSegment.byteSize());
+    }
+
+    private void emitMerged(MemorySegment buffer, int length, boolean last) {
+        boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
+        action.line(buffer, 0, length - (trim ? 1 : 0));
     }
 
     private static final long[] CLEARED = {
@@ -325,6 +330,9 @@ final class BitwisePartitionHandler implements Runnable {
         BitwisePartitionHandler next = resolvedNext;
         collector.add(next);
         while (true) {
+            if (next.next == null) {
+                return next.limit;
+            }
             BitwisePartitionHandler nextNext = next.next.get();
             if (nextNext == null) {
                 return next.limit;

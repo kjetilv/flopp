@@ -16,10 +16,10 @@ public final class LineSegments {
         return asString(line, Math.toIntExact(line.length()));
     }
 
-    public static String asString(LineSegment line, int len) {
+    public static String asString(LineSegment segment, int len) {
         byte[] bytes = new byte[len];
         for (int i = 0; i < len; i++) {
-            bytes[i] = line.byteAt(i);
+            bytes[i] = segment.byteAt(i);
         }
         return new String(bytes, StandardCharsets.UTF_8);
     }

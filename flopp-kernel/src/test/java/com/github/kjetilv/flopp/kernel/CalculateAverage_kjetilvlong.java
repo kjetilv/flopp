@@ -45,10 +45,29 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning partitioning,
         Shape shape
     ) {
+        return go(path, partitioning, shape, false);
+    }
+
+    public static Map<String, Result> go(
+        Path path,
+        Partitioning partitioning,
+        Shape shape,
+        boolean slow
+    ) {
+        return go(path, partitioning, shape, slow, null);
+    }
+
+    public static Map<String, Result> go(
+        Path path,
+        Partitioning partitioning,
+        Shape shape,
+        boolean slow,
+        Consumer<CommaSeparatedLine> callbacks
+    ) {
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
+            ExecutorService executor = slow ? null : new ThreadPoolExecutor(
                 chunks,
                 chunks,
                 0, TimeUnit.NANOSECONDS,
@@ -58,10 +77,13 @@ public final class CalculateAverage_kjetilvlong {
             List<Supplier<Map<String, Result>>> mapSuppliers =
                 bitwisePartitioned.streams()
                     .lineSplitters(new LinesFormat(';'))
-                    .map(splitsConsumer ->
-                        future(() ->
-                            toMap(path, splitsConsumer), executor))
-                    .map(CalculateAverage_kjetilvlong::joiner)
+                    .map(splitsConsumer -> {
+                        Supplier<Map<String, Result>> worker = () ->
+                            toMap(path, splitsConsumer, callbacks);
+                        return slow
+                            ? worker
+                            : joiner(future(worker, executor));
+                    })
                     .toList();
             List<Map<String, Result>> maps = mapSuppliers.stream()
                 .map(Supplier::get)
@@ -121,21 +143,30 @@ public final class CalculateAverage_kjetilvlong {
     private static void go2(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(64);
-        System.out.println(go(path, Partitioning.create(
-            Runtime.getRuntime().availableProcessors(),
-            shape.longestLine()
-        ).scaled(2), shape));
+        Map<String, Result> go = go(
+            path,
+            Partitioning.create(
+                Runtime.getRuntime().availableProcessors(),
+                shape.longestLine()
+            ).scaled(2), shape
+        );
+        System.out.println(go);
         System.out.println(Duration.between(start, Instant.now()));
     }
 
     private static Map<String, Result> toMap(
         Path path,
-        Consumer<Consumer<CommaSeparatedLine>> splitsConsumer
+        Consumer<Consumer<CommaSeparatedLine>> splitsConsumer,
+        Consumer<CommaSeparatedLine> callbacks
     ) {
         Map<String, Result> m = new HashMap<>(1024, 1.0f);
         try {
-            splitsConsumer.accept(csvLine ->
-                parse(csvLine, m));
+            splitsConsumer.accept(csvLine -> {
+                if (callbacks != null) {
+                    callbacks.accept(csvLine);
+                }
+                parse(csvLine, m);
+            });
         } catch (Exception e) {
             throw new IllegalStateException(STR."Failed with \{path}", e);
         }

@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
-    implements Comparable<Partition> {
+    implements Comparable<Partition>, Range {
 
     public Partition(int partitionNo, int partitionCount, long offset, long length) {
         this.partitionNo = Non.negative(partitionNo, "partitionNo");
@@ -44,14 +44,22 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
     }
 
     @Override
+    public long startIndex() {
+        return offset();
+    }
+
+    @Override
+    public long endIndex() {
+        return offset() + length();
+    }
+
+    @Override
     public String toString() {
         boolean f = first();
         boolean l = last();
-        String pos1 = f ? "<" : "";
-        String pos2 = l ? ">" : "";
-        String no = f || l ? "" : STR."\{partitionNo + 1}";
-        String slash = f || l ? "" : "/";
-        return STR."\{getClass().getSimpleName()}[\{pos1}\{no}\{slash}\{partitionCount}\{pos2} \{offset}+\{length}]";
+        String pos = f ? "<" : l ? ">" : "";
+        Object no = f || l ? "" : partitionNo;
+        return STR."\{getClass().getSimpleName()}[\{pos}\{no}/\{partitionCount - 1} \{offset}+\{length}]";
     }
 
     public long bufferedTo(long size) {
