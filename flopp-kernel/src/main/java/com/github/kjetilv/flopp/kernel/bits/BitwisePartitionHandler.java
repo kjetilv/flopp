@@ -15,7 +15,6 @@ import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionHandler implements Runnable {
 
@@ -189,7 +188,7 @@ final class BitwisePartitionHandler implements Runnable {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            long bytes = segment.get(JAVA_LONG, offset);
+            long bytes = segment.get(LineSegments.LONG, offset);
             long mask = mask(bytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -207,8 +206,8 @@ final class BitwisePartitionHandler implements Runnable {
 
     private Long initializeFrom(long bytes) {
         long mask = bytes;
-        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT + 1;
-        if (partition.last() && start == physicalLimit) {
+        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+        if (partition.last() && start + 1 == physicalLimit) {
             return null; // First linebreak was the last
         }
         mask &= CLEARED[Math.toIntExact(start - offset)];
@@ -216,7 +215,7 @@ final class BitwisePartitionHandler implements Runnable {
             offset += ALIGNMENT;
         }
         // Mark position of new line
-        lineStart = start;
+        lineStart = start + 1;
         return mask;
     }
 
@@ -224,11 +223,11 @@ final class BitwisePartitionHandler implements Runnable {
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
         long lineOffset = offset + offsetInMask;
         emitAndAdvance(lineOffset);
-        return mask & CLEARED[offsetInMask + 1];
+        return mask & CLEARED[offsetInMask];
     }
 
     private long loadLong() {
-        return segment.get(JAVA_LONG, offset);
+        return segment.get(LineSegments.LONG, offset);
     }
 
     private long loadTail(long count) {
@@ -305,7 +304,6 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private static final long[] CLEARED = {
-        0xFFFFFFFFFFFFFFFFL,
         0xFFFFFFFFFFFFFF00L,
         0xFFFFFFFFFFFF0000L,
         0xFFFFFFFFFF000000L,
@@ -343,7 +341,7 @@ final class BitwisePartitionHandler implements Runnable {
             long tail = next.physicalLimit % ALIGNMENT;
             long lastOffset = next.physicalLimit - tail;
             while (lo < lastOffset) {
-                long prebyte = next.segment.get(JAVA_LONG, lo);
+                long prebyte = next.segment.get(LineSegments.LONG, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;

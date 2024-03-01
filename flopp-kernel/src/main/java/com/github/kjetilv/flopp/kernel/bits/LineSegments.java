@@ -4,11 +4,13 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class LineSegments {
 
@@ -89,4 +91,5 @@ public final class LineSegments {
     private LineSegments() {
     }
 
+    public static final ValueLayout.OfLong LONG = JAVA_LONG;
 }

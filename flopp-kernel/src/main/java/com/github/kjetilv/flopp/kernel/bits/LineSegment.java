@@ -60,12 +60,12 @@ public interface LineSegment extends Range {
     }
 
     default long head(long head) {
-        long l = memorySegment().get(JAVA_LONG, longStart());
+        long l = memorySegment().get(LineSegments.LONG, longStart());
         return l >> head * ALIGNMENT;
     }
 
     default long longNo(int longNo) {
-        return memorySegment().get(JAVA_LONG, longStart() + longNo * 8L);
+        return memorySegment().get(LineSegments.LONG, longStart() + longNo * 8L);
     }
 
     default long longAt(int longIndex) {
