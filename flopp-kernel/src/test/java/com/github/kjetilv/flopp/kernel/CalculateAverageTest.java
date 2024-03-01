@@ -86,7 +86,9 @@ class CalculateAverageTest {
             Partitioning.create(23),
             0,
             true,
-            commaSeparatedLine -> System.out.println(commaSeparatedLine.columns().collect(Collectors.joining(": ")))
+            null
+//            commaSeparatedLine ->
+//                System.out.println(commaSeparatedLine.columns().collect(Collectors.joining(": ")))
         );
     }
 
