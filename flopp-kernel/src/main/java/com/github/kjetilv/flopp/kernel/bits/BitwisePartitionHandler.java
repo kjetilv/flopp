@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
@@ -47,11 +46,9 @@ final class BitwisePartitionHandler implements Runnable {
 
         this.limit = this.partition.length();
         this.physicalLimit = this.segment.byteSize();
-        if (this.limit > this.physicalLimit) {
-            throw new IllegalStateException(STR."\{this} got bad segment \{segment}");
-        }
     }
 
+    @Override
     public void run() {
         try (action) {
             if (processHead()) {
@@ -359,6 +356,8 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     @FunctionalInterface
-    public interface Mediator extends Function<BitwisePartitioned.Action, BitwisePartitioned.Action> {
+    public interface Mediator {
+
+        BitwisePartitioned.Action mediate(BitwisePartitioned.Action action);
     }
 }

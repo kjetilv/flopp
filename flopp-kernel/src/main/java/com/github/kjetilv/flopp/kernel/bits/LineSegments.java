@@ -1,8 +1,5 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
-
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
@@ -13,6 +10,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class LineSegments {
+
+    public static final ValueLayout.OfLong LONG = JAVA_LONG;
 
     public static String asString(LineSegment line) {
         return asString(line, Math.toIntExact(line.length()));
@@ -55,24 +54,11 @@ public final class LineSegments {
     }
 
     public static LineSegment of(long l, int len) {
-        return of(new String(
-            new byte[] {
-                (byte) (l & 0xFF),
-                (byte) (l >> 8L & 0xFF),
-                (byte) (l >> 16L & 0xFF),
-                (byte) (l >> 24L & 0xFF),
-                (byte) (l >> 32L & 0xFF),
-                (byte) (l >> 40L & 0xFF),
-                (byte) (l >> 48L & 0xFF),
-                (byte) (l >> 56L & 0xFF)
-            },
-            0,
-            len
-        ));
+        return of(new String(toBytes(l), 0, len));
     }
 
-    static BitwisePartitionHandler.Mediator actionMediator(Partition partition, Shape shape) {
-        return PartitionActionMediator.create(partition, shape);
+    public static String toString(LineSegment ls) {
+        return STR."\{ls.getClass().getSimpleName()}[\{ls.startIndex()}-\{ls.endIndex()}]";
     }
 
     static long bytesAt(MemorySegment memorySegment, long offset, long count) {
@@ -84,8 +70,19 @@ public final class LineSegments {
         return l;
     }
 
-    private LineSegments() {
+    private static byte[] toBytes(long l) {
+        return new byte[] {
+            (byte) (l & 0xFF),
+            (byte) (l >> 8L & 0xFF),
+            (byte) (l >> 16L & 0xFF),
+            (byte) (l >> 24L & 0xFF),
+            (byte) (l >> 32L & 0xFF),
+            (byte) (l >> 40L & 0xFF),
+            (byte) (l >> 48L & 0xFF),
+            (byte) (l >> 56L & 0xFF)
+        };
     }
 
-    public static final ValueLayout.OfLong LONG = JAVA_LONG;
+    private LineSegments() {
+    }
 }

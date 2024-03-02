@@ -37,7 +37,7 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
     }
 
     @Override
-    public BitwisePartitioned.Action apply(BitwisePartitioned.Action action) {
+    public BitwisePartitioned.Action mediate(BitwisePartitioned.Action action) {
         Objects.requireNonNull(action, "action");
         return header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
             : header > 0 ? new HeaderOnly(action, header)

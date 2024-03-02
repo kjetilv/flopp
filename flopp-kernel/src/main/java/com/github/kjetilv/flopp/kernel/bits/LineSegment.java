@@ -7,7 +7,6 @@ import java.lang.foreign.MemorySegment;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.*;
 
-@SuppressWarnings("unused")
 public interface LineSegment extends Range {
 
     MemorySegment memorySegment();
@@ -68,6 +67,7 @@ public interface LineSegment extends Range {
         return memorySegment().get(LineSegments.LONG, longStart() + longNo * 8L);
     }
 
+    @SuppressWarnings("unused")
     default long longAt(int longIndex) {
         return memorySegment().get(JAVA_LONG_UNALIGNED, longStart() + longIndex);
     }

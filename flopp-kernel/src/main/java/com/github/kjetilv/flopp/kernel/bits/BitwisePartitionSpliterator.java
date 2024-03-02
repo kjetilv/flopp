@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.Mediator;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
@@ -32,7 +32,9 @@ final class BitwisePartitionSpliterator
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = segment;
-        this.mediator = mediator;
+        this.mediator = mediator == null
+            ? action -> action
+            : mediator;
         this.next = next;
         this.copying = copying;
     }
@@ -40,21 +42,16 @@ final class BitwisePartitionSpliterator
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            Action forwarder = copying ? new CopyingForwarder(action) : new MutationForwarder(action);
-            Action mediated = mediator == null ? forwarder : mediator.apply(forwarder);
-            handler(mediated).run();
+            Action mediated = mediator.mediate(forwarder(action));
+            BitwisePartitionHandler handler = handler(mediated);
+            handler.run();
             return false;
         } catch (Exception e) {
             throw new IllegalStateException(STR."\{this} failed: \{action}", e);
         }
     }
 
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[@\{partition}]";
-    }
-
-    private BitwisePartitionHandler handler(Action action) {
+    BitwisePartitionHandler handler(Action action) {
         return new BitwisePartitionHandler(
             partition,
             segment,
@@ -63,6 +60,17 @@ final class BitwisePartitionSpliterator
                 ? null
                 : () -> next.handler(action)
         );
+    }
+
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[@\{partition}]";
+    }
+
+    private Action forwarder(Consumer<? super LineSegment> action) {
+        return copying
+            ? new CopyingForwarder(action)
+            : new MutationForwarder(action);
     }
 
     private static final class CopyingForwarder implements Action {
@@ -124,13 +132,16 @@ final class BitwisePartitionSpliterator
         }
 
         @Override
-        public boolean equals(Object obj) {
-            return obj == this || obj instanceof LineSegment lineSegment && lineSegment.asString().equals(asString());
+        public int hashCode() {
+            return Objects.hash(memorySegment, startIndex, endIndex);
         }
 
         @Override
-        public int hashCode() {
-            return asString().hashCode();
+        public boolean equals(Object obj) {
+            return obj == this ||
+                   obj instanceof LineSegment ls && memorySegment().equals(ls.memorySegment()) &&
+                   startIndex() == ls.startIndex() &&
+                   endIndex() == ls.endIndex();
         }
 
         @Override

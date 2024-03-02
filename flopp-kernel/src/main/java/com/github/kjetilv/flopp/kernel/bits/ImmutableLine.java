@@ -12,16 +12,6 @@ record ImmutableLine(MemorySegment memorySegment, long startIndex, long endIndex
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{startIndex()}-\{endIndex()}]";
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj == this || obj instanceof LineSegment lineSegment && lineSegment.asString().equals(asString());
-    }
-
-    @Override
-    public int hashCode() {
-        return asString().hashCode();
+        return LineSegments.toString(this);
     }
 }
