@@ -1,5 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
+
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Consumer;

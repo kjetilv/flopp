@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,7 +27,7 @@ class LineSegmentTest {
     @Test
     void readPart() throws IOException {
         String line = IntStream.range(0, 10).mapToObj(
-                i -> IntStream.range(0, 10).mapToObj(j -> STR."\{j}")
+                _ -> IntStream.range(0, 10).mapToObj(j -> STR."\{j}")
                     .collect(Collectors.joining()))
             .collect(Collectors.joining());
         byte[] contents = (line + '\n').getBytes();
@@ -56,11 +58,11 @@ class LineSegmentTest {
 
             assertThat(toString(first, 3)).isEqualTo(wantedSubstring);
 
-            for (int i = 0; i < lineSegment.longCount(); i++) {
-                long l = lineSegment.longNo(i);
+//            for (int i = 0; i < lineSegment.longCount(); i++) {
+//                long l = lineSegment.longNo(i);
 //                System.out.println(toString(l, 8));
-            }
-
+//            }
+//
             long last = lineSegment.tail();
             String lastString = toString(last, 1);
             String wantedLastString = line.substring(48, 49);

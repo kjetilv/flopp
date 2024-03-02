@@ -79,7 +79,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     private static TempTargets<Path> tempTargets(Path path) {
-        return new FileTempTargets(path.getFileName().toString());
+        return new PathTempTargets(path.getFileName().toString());
     }
 
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {

@@ -1,11 +1,10 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -38,11 +37,11 @@ public final class LineSegments {
     }
 
     public static LineSegment of(MemorySegment memorySegment) {
-        return new ImmutableSliceLine(memorySegment);
+        return new ImmutableSlice(memorySegment);
     }
 
     public static LineSegment of(MemorySegment memorySegment, long start, long end) {
-        return new ImmutableLine(memorySegment, start, end);
+        return new Immutable(memorySegment, start, end);
     }
 
     public static String asString(MemorySegment segment, long start, long end) {
@@ -61,7 +60,7 @@ public final class LineSegments {
         return STR."\{ls.getClass().getSimpleName()}[\{ls.startIndex()}-\{ls.endIndex()}]";
     }
 
-    static long bytesAt(MemorySegment memorySegment, long offset, long count) {
+    public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         long l = 0;
         for (long i = count - 1; i >= 0; i--) {
             byte b = memorySegment.get(JAVA_BYTE, offset + i);
@@ -69,6 +68,8 @@ public final class LineSegments {
         }
         return l;
     }
+
+    public static final long ALIGNMENT = JAVA_LONG.byteSize();
 
     private static byte[] toBytes(long l) {
         return new byte[] {
@@ -84,5 +85,52 @@ public final class LineSegments {
     }
 
     private LineSegments() {
+    }
+
+    record ImmutableSlice(MemorySegment memorySegment, long length)
+        implements LineSegment {
+
+        ImmutableSlice(MemorySegment memorySegment) {
+            this(memorySegment, memorySegment.byteSize());
+        }
+
+        @Override
+        public long startIndex() {
+            return 0;
+        }
+
+        @Override
+        public long endIndex() {
+            return length;
+        }
+
+        @Override
+        public LineSegment immutable() {
+            return this;
+        }
+
+        @Override
+        public LineSegment immutableSlice() {
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return LineSegments.toString(this);
+        }
+    }
+
+    record Immutable(MemorySegment memorySegment, long startIndex, long endIndex)
+        implements LineSegment {
+
+        @Override
+        public LineSegment immutable() {
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return LineSegments.toString(this);
+        }
     }
 }

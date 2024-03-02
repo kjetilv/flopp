@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel.test;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.bits.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

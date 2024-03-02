@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.bits.LineSegment;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +116,7 @@ class PartitionedTest {
         Partitioning partitioning = new Partitioning(partitionCount, 16);
 
         try (
-            Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
+            Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
             pf1.streams().streamers()
                 .forEach(partitionStreamer ->
@@ -187,7 +186,7 @@ class PartitionedTest {
         List<String> asyncLines = new ArrayList<>();
         try (
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
-            ExecutorService executorService = Executors.newFixedThreadPool(10);
+            ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
             pf2.streams().streamers()
                 .map(streamer ->

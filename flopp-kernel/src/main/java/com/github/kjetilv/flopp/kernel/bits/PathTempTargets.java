@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-class FileTempTargets implements TempTargets<Path> {
+class PathTempTargets implements TempTargets<Path> {
 
     private final Path tempDirectory;
 
@@ -17,7 +17,7 @@ class FileTempTargets implements TempTargets<Path> {
 
     private final String suffix;
 
-    FileTempTargets(String fileName) {
+    PathTempTargets(String fileName) {
         this.sourceName = fileName;
         this.suffixIndex = sourceName.lastIndexOf('.');
         this.suffix = suffixIndex < 0 ? "" : sourceName.substring(suffixIndex + 1);

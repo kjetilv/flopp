@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.IntFunction;

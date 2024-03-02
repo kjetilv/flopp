@@ -1,8 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.CommaSeparatedLine;
-import com.github.kjetilv.flopp.kernel.bits.LinesFormat;
-
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;

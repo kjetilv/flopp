@@ -16,7 +16,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.bits.LinesFormat;
 
 import java.nio.file.Path;
 import java.time.Duration;

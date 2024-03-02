@@ -1,7 +1,6 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.Non;
-
+@SuppressWarnings("unused")
 public record LinesFormat(
     char separator,
     char quote,

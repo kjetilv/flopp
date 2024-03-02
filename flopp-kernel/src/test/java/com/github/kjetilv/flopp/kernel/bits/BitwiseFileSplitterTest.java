@@ -3,9 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -149,7 +147,7 @@ class BitwiseFileSplitterTest {
         List<CompletableFuture<Void>> voids;
         try (
             Stream<Path> list = Files.list(PATH);
-            ExecutorService executor = new ForkJoinPool();
+            ExecutorService executor = new ForkJoinPool()
         ) {
             voids = list.filter(endsWith(".csv"))
                 .parallel()

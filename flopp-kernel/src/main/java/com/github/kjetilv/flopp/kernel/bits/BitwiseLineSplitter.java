@@ -1,5 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.CommaSeparatedLine;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LinesFormat;
+
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -7,7 +11,7 @@ import java.util.function.Consumer;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 
-public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparatedLine {
+final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparatedLine {
 
     private final Consumer<CommaSeparatedLine> lines;
 
@@ -98,6 +102,11 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
         lines.accept(this);
     }
 
+    @Override
+    public String toString() {
+        return STR."\{getClass().getSimpleName()}[\{segment == null ? "*" : segment.asString()}]";
+    }
+
     private void processHead() {
         long headStart = this.segment.headStart();
         if (headStart == 0) {
@@ -108,11 +117,6 @@ public final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSe
             long headLong = this.segment.head(headStart);
             findSeps(headLong, headStart);
         }
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{segment == null ? "*" : segment.asString()}]";
     }
 
     private void findSeps(long bytes, long shift) {

@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -9,9 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 

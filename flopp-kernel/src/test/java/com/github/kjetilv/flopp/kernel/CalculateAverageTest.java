@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.CommaSeparatedLine;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

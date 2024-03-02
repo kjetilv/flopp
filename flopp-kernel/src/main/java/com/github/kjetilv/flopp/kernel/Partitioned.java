@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.LineSegment;
-
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.List;
