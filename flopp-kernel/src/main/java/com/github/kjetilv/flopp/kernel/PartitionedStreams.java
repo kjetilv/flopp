@@ -15,8 +15,8 @@ public interface PartitionedStreams {
         return streamers(false);
     }
 
-    default Stream<? extends PartitionStreamer> streamers(boolean copying) {
-        return streamersList(copying).stream();
+    default Stream<? extends PartitionStreamer> streamers(boolean immutable) {
+        return streamersList(immutable).stream();
     }
 
     default Stream<LongSupplier> lineCounters() {

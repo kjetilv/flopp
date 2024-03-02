@@ -21,7 +21,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         Shape shape,
         Function<Partition, MemorySegment> memorySegmentSource,
         BitwisePartitionStreamer next,
-        boolean copying
+        boolean immutable
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.spliterator = new BitwisePartitionSpliterator(
@@ -29,7 +29,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
             memorySegmentSource.apply(partition),
             PartitionActionMediator.create(partition, shape),
             next == null ? null : next.spliterator,
-            copying
+            immutable
         );
     }
 

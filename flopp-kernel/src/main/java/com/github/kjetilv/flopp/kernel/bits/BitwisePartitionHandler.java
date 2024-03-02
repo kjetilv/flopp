@@ -133,7 +133,7 @@ final class BitwisePartitionHandler implements Runnable {
 
     private void processMain(long lastOffset) {
         long steps = (lastOffset - offset) / ALIGNMENT;
-        for (int l = 0; l < steps; l++) {
+        for (long l = 0; l < steps; l++) {
             long bytes = loadLong();
             long mask = mask(bytes);
             while (mask != 0) {
