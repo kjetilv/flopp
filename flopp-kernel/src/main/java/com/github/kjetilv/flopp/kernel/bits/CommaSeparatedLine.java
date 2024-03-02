@@ -19,6 +19,7 @@ public interface CommaSeparatedLine {
         return IntStream.range(0, columnCount()).mapToObj(toColumn());
     }
 
+    @SuppressWarnings("unused")
     default Stream<LineSegment> segments() {
         return IntStream.range(0, columnCount()).mapToObj(toSegment());
     }

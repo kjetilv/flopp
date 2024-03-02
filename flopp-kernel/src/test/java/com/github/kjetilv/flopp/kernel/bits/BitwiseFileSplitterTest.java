@@ -1,11 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -102,16 +106,86 @@ class BitwiseFileSplitterTest {
     }
 
     @Test
-    void fasterStillParallel() {
+    void jacksonCsv() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
+        CsvMapper mapper = new CsvMapper();
+        mapper.enable(CsvParser.Feature.WRAP_AS_ARRAY);
+
+        try (Stream<Path> list = Files.list(PATH)) {
+            list.filter(endsWith(".csv"))
+                .parallel()
+                .forEach(file -> {
+                    try {
+                        try (
+                            BufferedReader bufferedReader = Files.newBufferedReader(file);
+                            MappingIterator<String[]> iterator = mapper.readerFor(String[].class)
+                                .readValues(bufferedReader)
+                        ) {
+                            while (iterator.hasNext()) {
+                                String[] row = iterator.next();
+                                airlines.add(row[1]);
+                            }
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        }
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
+        Duration time = Duration.between(now, Instant.now());
+        System.out.println(time);
+    }
+
+    @Test
+    void jacksonCsvParallel() throws IOException {
+        Set<String> airlines = new HashSet<>();
+        CsvMapper mapper = new CsvMapper();
+        mapper.enable(CsvParser.Feature.WRAP_AS_ARRAY);
+
+        Instant now = Instant.now();
+        List<CompletableFuture<Void>> voids;
+        try (
+            Stream<Path> list = Files.list(PATH);
+            ExecutorService executor = new ForkJoinPool();
+        ) {
+            voids = list.filter(endsWith(".csv"))
+                .parallel()
+                .map(file ->
+                    CompletableFuture.runAsync(() -> {
+                            try (
+                                BufferedReader bufferedReader = Files.newBufferedReader(file);
+                                MappingIterator<String[]> iterator = mapper.readerFor(String[].class)
+                                    .readValues(bufferedReader)
+                            ) {
+                                while (iterator.hasNext()) {
+                                    String[] row = iterator.next();
+                                    airlines.add(row[1]);
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }, executor
+                    ))
+                .toList();
+        }
+        voids.forEach(CompletableFuture::join);
+
+        System.out.println(airlines.size());
+        System.out.println(airlines.stream().limit(10)
+            .collect(Collectors.joining(", ")));
+        Duration time = Duration.between(now, Instant.now());
+        System.out.println(time);
+    }
+
+    @Test
+    void fasterStillParallel() {
+        Set<String> airlines = new HashSet<>();
         LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
-        Consumer<CommaSeparatedLine> lines = line -> {
-            if (airlines.add(line.column(1))) {
-                System.out.println(line.columns()
-                    .collect(Collectors.joining(" – ")));
-            }
-        };
+        Consumer<CommaSeparatedLine> lines = line -> airlines.add(line.column(1));
+        Instant now = Instant.now();
         try (
             Stream<Path> list = Files.list(PATH);
             ExecutorService executor = new ForkJoinPool()
