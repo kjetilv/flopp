@@ -17,43 +17,42 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final List<Partition> partitions;
 
-    private final Function<Partition, MemorySegment> memorySegmentSource;
+    private final Function<Partition, MemorySegment> source;
 
-    BitwisePartitionStreams(
-        Shape shape,
-        List<Partition> partitions,
-        Function<Partition, MemorySegment> memorySegmentSource
-    ) {
+    BitwisePartitionStreams(Shape shape, List<Partition> partitions, Function<Partition, MemorySegment> source) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
-        this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
+        this.source = Objects.requireNonNull(source, "memorySegmentSource");
     }
 
     @Override
     public List<? extends PartitionStreamer> streamersList(boolean immutable) {
-        return BitwisePartitionStreams.<BitwisePartitionStreamer>buildUp(
+        return windup(
             new LinkedList<>(partitions),
-            (partition, streamer) ->
-                new BitwisePartitionStreamer(partition, shape, memorySegmentSource, streamer, immutable)
+            (partition, streamer) -> new BitwisePartitionStreamer(
+                partition,
+                shape,
+                source,
+                streamer,
+                immutable
+            ),
+            new LinkedList<BitwisePartitionStreamer>()
         );
     }
 
     @Override
     public List<LongSupplier> lineCountersList() {
-        return BitwisePartitionStreams.<BitwiseCounter>buildUp(
-                new LinkedList<>(partitions),
-                (partition, counter) ->
-                    new BitwiseCounter(partition, memorySegmentSource, counter)
-            )
-            .stream()
+        return windup(
+            new LinkedList<>(partitions),
+            (partition, counter) -> new BitwiseCounter(partition, source, counter),
+            new LinkedList<BitwiseCounter>()
+        ).stream()
             .map(BitwisePartitionStreams::counter)
             .toList();
     }
 
     @Override
-    public List<Consumer<Consumer<CommaSeparatedLine>>> lineSplittersList(
-        LinesFormat linesFormat
-    ) {
+    public List<Consumer<Consumer<CommaSeparatedLine>>> lineSplittersList(LinesFormat linesFormat) {
         return streamers(false)
             .map(streamer ->
                 (Consumer<Consumer<CommaSeparatedLine>>) consumer ->
@@ -66,17 +65,17 @@ final class BitwisePartitionStreams implements PartitionedStreams {
         return counter::count;
     }
 
-    private static <T> LinkedList<T> buildUp(
-        LinkedList<Partition> partitionsTail,
-        BiFunction<Partition, T, T> function
+    private static <T> List<T> windup(
+        List<Partition> partitions,
+        BiFunction<Partition, T, T> function,
+        List<T> target
     ) {
-        if (partitionsTail.isEmpty()) {
-            return new LinkedList<>();
+        Partition head = partitions.removeFirst();
+        if (!partitions.isEmpty()) {
+            windup(partitions, function, target);
         }
-        Partition head = partitionsTail.removeFirst();
-        LinkedList<T> ts = buildUp(partitionsTail, function);
-        T nextT = ts.isEmpty() ? null : ts.getFirst();
-        ts.addFirst(function.apply(head, nextT));
-        return ts;
+        T nextT = target.isEmpty() ? null : target.getFirst();
+        target.addFirst(function.apply(head, nextT));
+        return target;
     }
 }
