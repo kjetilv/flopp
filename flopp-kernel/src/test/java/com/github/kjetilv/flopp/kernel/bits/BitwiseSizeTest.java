@@ -81,7 +81,7 @@ public class BitwiseSizeTest {
     @Disabled
     @Test
     void realStuff(TestInfo testInfo) {
-        logTime(200, () -> doRealStuff(testInfo, null, OP));
+        logTime(100, () -> doRealStuff(testInfo, null, OP));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class BitwiseSizeTest {
     @Disabled
     @Test
     void theStraightStoryParallel(TestInfo testInfo) {
-        logTime(15, () -> doTheStraightStoryParallel(testInfo, OPS));
+        logTime(50, () -> doTheStraightStoryParallel(testInfo, OPS));
     }
 
     @BeforeEach
@@ -151,8 +151,8 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions);
-        Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
         try (
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = partititioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
@@ -160,6 +160,7 @@ public class BitwiseSizeTest {
         return log(testInfo, start);
     }
 
+    @SuppressWarnings("unused")
     private Duration doRealStuffQr(
         TestInfo testInfo,
         String qual,
@@ -169,8 +170,8 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = new Partitioning(partitions, bufferSize);
-        Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
         try (
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> partitioned = partititioned.processor(tmp)
         ) {
             partitioned.process(processor, readerExec);
@@ -182,8 +183,8 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
         Partitioning partitioning = new Partitioning(partitions, 8192);
-        Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
         try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
@@ -198,8 +199,8 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
-        Partitioned<Path> partitioned = Bitwise.partititioned(path, partitioning, shape);
         try (
+            Partitioned<Path> partitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = partitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
