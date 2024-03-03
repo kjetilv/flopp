@@ -27,7 +27,18 @@ public interface PartitionedStreams {
     default Stream<Consumer<Consumer<SeparatedLine>>> lineSplitters(
         LinesFormat linesFormat
     ) {
-        return lineSplittersList(linesFormat).stream();
+        return lineSplitters(linesFormat, false);
+    }
+
+    default Stream<Consumer<Consumer<SeparatedLine>>> lineSplitters(
+        LinesFormat linesFormat,
+        boolean immutable
+    ) {
+        return lineSplittersList(linesFormat, immutable).stream();
+    }
+
+    default List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(LinesFormat linesFormat) {
+        return lineSplittersList(linesFormat, false);
     }
 
     List<? extends PartitionStreamer> streamersList(boolean copying);
@@ -35,6 +46,7 @@ public interface PartitionedStreams {
     List<LongSupplier> lineCountersList();
 
     List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(
-        LinesFormat linesFormat
+        LinesFormat linesFormat,
+        boolean immutable
     );
 }

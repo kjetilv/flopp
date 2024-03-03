@@ -8,9 +8,6 @@ class BitsTest {
 
     @Test
     void countOne() {
-        int i = Bits.countOccurrences(0x120A340A560AL, '\n');
-        assertThat(i).isEqualTo(3);
-
         Bits.Counter counter = Bits.counter('\n');
         assertThat(counter.count(0x120A340A560AL)).isEqualTo(3);
     }

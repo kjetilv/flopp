@@ -2,17 +2,21 @@ package com.github.kjetilv.flopp.kernel;
 
 public final class Bits {
 
+    /**
+     * @param c Char
+     * @return A counter for finding the number of chars in a long
+     */
     public static Counter counter(char c) {
-        long mask = createMask(c);
-        return new BytesCounter(mask);
+        long mask = maskFor(c);
+        return new Counter(mask);
     }
 
+    /**
+     * @param c Char
+     * @return Finder for cycling through the occurrences in a long
+     */
     public static Finder finder(char c) {
-        return new ByteFinder(c);
-    }
-
-    public static int countOccurrences(long bytes, char c) {
-        return count(bytes, createMask(c));
+        return new Finder(maskFor(c));
     }
 
     private Bits() {
@@ -53,7 +57,7 @@ public final class Bits {
         return clearedHighBits & 0x8080808080808080L;
     }
 
-    private static long createMask(char s) {
+    private static long maskFor(char s) {
         long mask = s;
         for (int i = 0; i < ALIGNMENT; i++) {
             mask = (mask << ALIGNMENT) + s;
@@ -61,23 +65,35 @@ public final class Bits {
         return mask;
     }
 
-    private static final class ByteFinder implements Finder {
+    /**
+     * Returns occurrences of a byte in a long.
+     */
+    public static final class Finder {
 
         private long find;
 
         private final long mask;
 
-        private ByteFinder(char c) {
-            this.mask = createMask(c);
+        private Finder(long mask) {
+            this.mask = mask;
         }
 
-        @Override
+        /**
+         * Set the given long, and return the first occurrence.  Mutates this finder.
+         *
+         * @param bytes Long
+         * @return First occurrence
+         */
         public int next(long bytes) {
             find = find(bytes, mask);
             return next();
         }
 
-        @Override
+        /**
+         * Retuns the next occurrence.  Mutates this finder.
+         *
+         * @return Next occurrence, or the number of bytes in a long (ie. 8) if done
+         */
         public int next() {
             if (find == 0L) {
                 return ALIGNMENT;
@@ -87,37 +103,24 @@ public final class Bits {
             return dist;
         }
 
-        @Override
         public boolean hasNext() {
             return find != 0;
         }
     }
 
-    private static final class BytesCounter implements Counter {
+    /**
+     * Counts occurrences of a byte in a long
+     */
+    public static final class Counter {
 
         private final long mask;
 
-        private BytesCounter(long mask) {
+        private Counter(long mask) {
             this.mask = mask;
         }
 
-        @Override
         public int count(long bytes) {
             return Bits.count(bytes, mask);
         }
-    }
-
-    public sealed interface Counter {
-
-        int count(long bytes);
-    }
-
-    public sealed interface Finder {
-
-        int next(long bytes);
-
-        int next();
-
-        boolean hasNext();
     }
 }
