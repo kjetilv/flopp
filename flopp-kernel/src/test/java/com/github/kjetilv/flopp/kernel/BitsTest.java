@@ -17,14 +17,14 @@ class BitsTest {
 
     @Test
     void findOne() {
-        Bits.Finder finder = Bits.finder(0x120A340A560AL, '\n');
+        Bits.Finder finder = Bits.finder('n');
 
-        assertThat(finder.hasNext()).isTrue();
-        assertThat(finder.next()).isEqualTo(0);
+        assertThat(finder.next(0x120A340A560AL)).isEqualTo(0);
         assertThat(finder.hasNext()).isTrue();
         assertThat(finder.next()).isEqualTo(2);
         assertThat(finder.hasNext()).isTrue();
         assertThat(finder.next()).isEqualTo(4);
         assertThat(finder.hasNext()).isFalse();
+        assertThat(finder.next()).isEqualTo(8);
     }
 }

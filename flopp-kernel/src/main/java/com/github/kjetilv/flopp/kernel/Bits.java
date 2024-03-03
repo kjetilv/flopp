@@ -4,12 +4,7 @@ public final class Bits {
 
     public static Counter counter(char c) {
         long mask = createMask(c);
-        return bytes ->
-            count(bytes, mask);
-    }
-
-    public static Finder finder(long bytes, char c) {
-        return finder(c).init(bytes);
+        return new BytesCounter(mask);
     }
 
     public static Finder finder(char c) {
@@ -37,11 +32,11 @@ public final class Bits {
     };
 
     private static int count(long bytes, long mask) {
-        long occurrences = occurrences(bytes, mask);
+        long find = find(bytes, mask);
         int count = 0;
-        while (occurrences != 0) {
-            int dist = dist(occurrences);
-            occurrences &= CLEARED[dist];
+        while (find != 0) {
+            int dist = dist(find);
+            find &= CLEARED[dist];
             count++;
         }
         return count;
@@ -51,7 +46,7 @@ public final class Bits {
         return Long.numberOfTrailingZeros(bytes) / ALIGNMENT;
     }
 
-    private static long occurrences(long bytes, long mask) {
+    private static long find(long bytes, long mask) {
         long masked = bytes ^ mask;
         long underflown = masked - 0x0101010101010101L;
         long clearedHighBits = underflown & ~masked;
@@ -68,7 +63,7 @@ public final class Bits {
 
     private static final class ByteFinder implements Finder {
 
-        private long occurrences;
+        private long find;
 
         private final long mask;
 
@@ -77,32 +72,49 @@ public final class Bits {
         }
 
         @Override
-        public Finder init(long bytes) {
-            occurrences = occurrences(bytes, mask);
-            return this;
+        public int next(long bytes) {
+            find = find(bytes, mask);
+            return next();
         }
 
         @Override
         public int next() {
-            int dist = dist(occurrences);
-            occurrences &= CLEARED[dist];
+            if (find == 0L) {
+                return ALIGNMENT;
+            }
+            int dist = dist(find);
+            find &= CLEARED[dist];
             return dist;
         }
 
         @Override
         public boolean hasNext() {
-            return occurrences != 0;
+            return find != 0;
         }
     }
 
-    public interface Counter {
+    private static final class BytesCounter implements Counter {
+
+        private final long mask;
+
+        private BytesCounter(long mask) {
+            this.mask = mask;
+        }
+
+        @Override
+        public int count(long bytes) {
+            return Bits.count(bytes, mask);
+        }
+    }
+
+    public sealed interface Counter {
 
         int count(long bytes);
     }
 
-    public interface Finder {
+    public sealed interface Finder {
 
-        Finder init(long bytes);
+        int next(long bytes);
 
         int next();
 
