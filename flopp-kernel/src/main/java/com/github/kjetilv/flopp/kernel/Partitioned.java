@@ -13,13 +13,13 @@ public interface Partitioned<P> extends Closeable {
 
     List<Partition> partitions();
 
-    PartitionedStreams streams();
+    PartitionedProcessor<LineSegment> processor(Path target);
 
     PartitionedMapper mapper();
 
     PartitionedConsumer consumer();
 
-    PartitionedProcessor<LineSegment> processor(Path target);
+    PartitionedStreams streams();
 
     @Override
     void close();

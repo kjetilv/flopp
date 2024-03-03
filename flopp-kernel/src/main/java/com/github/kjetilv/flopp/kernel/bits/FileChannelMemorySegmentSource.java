@@ -33,7 +33,7 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
     }
 
     @Override
-    public MemorySegment apply(Partition partition) {
+    public MemorySegment get(Partition partition) {
         try {
             return channel.map(READ_ONLY, partition.offset(), partition.length(shape), arena);
         } catch (IOException e) {

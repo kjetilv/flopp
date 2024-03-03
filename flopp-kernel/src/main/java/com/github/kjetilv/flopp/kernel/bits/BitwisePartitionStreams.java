@@ -2,13 +2,11 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
 
-import java.lang.foreign.MemorySegment;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.LongSupplier;
 
 final class BitwisePartitionStreams implements PartitionedStreams {
@@ -17,9 +15,9 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final List<Partition> partitions;
 
-    private final Function<Partition, MemorySegment> source;
+    private final MemorySegmentSource source;
 
-    BitwisePartitionStreams(Shape shape, List<Partition> partitions, Function<Partition, MemorySegment> source) {
+    BitwisePartitionStreams(Shape shape, List<Partition> partitions, MemorySegmentSource source) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
         this.source = Objects.requireNonNull(source, "memorySegmentSource");
@@ -44,7 +42,8 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     public List<LongSupplier> lineCountersList() {
         return windup(
             new LinkedList<>(partitions),
-            (partition, counter) -> new BitwiseCounter(partition, source, counter),
+            (partition, counter) ->
+                new BitwiseCounter(partition, source, counter),
             new LinkedList<BitwiseCounter>()
         ).stream()
             .map(BitwisePartitionStreams::counter)

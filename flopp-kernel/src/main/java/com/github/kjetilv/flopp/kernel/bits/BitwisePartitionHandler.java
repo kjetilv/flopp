@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +12,6 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -218,7 +217,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long shipNextLine(long mask) {
-        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
+        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
         long lineOffset = offset + offsetInMask;
         emitAndAdvance(lineOffset);
         return mask & CLEARED[offsetInMask];
@@ -300,6 +299,8 @@ final class BitwisePartitionHandler implements Runnable {
         boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
         action.line(buffer, 0, length - (trim ? 1 : 0));
     }
+
+    private static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,

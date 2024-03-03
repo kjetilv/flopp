@@ -5,11 +5,9 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LinesFormat;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.bits.Bits.ALIGNMENT_INT;
 
 final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparatedLine {
 
@@ -129,9 +127,9 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
         int nextEsc = dist(escs);
 
         while (true) {
-            if (nextEsc == ALIGNMENT_INT) {
+            if (nextEsc == ALIGNMENT) {
                 if (nextSep == nextQuo) {
-                    offset += ALIGNMENT_INT;
+                    offset += ALIGNMENT;
                     return;
                 }
                 if (nextSep < nextQuo) {
@@ -192,6 +190,9 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
         quoted = false;
     }
 
+    private static final int ALIGNMENT =
+        Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
+
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
         0xFFFFFFFFFFFF0000L,
@@ -219,6 +220,6 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
     }
 
     private static int dist(long bytes) {
-        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT_INT;
+        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT;
     }
 }

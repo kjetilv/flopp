@@ -37,11 +37,6 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedStreams streams() {
-        return new BitwisePartitionStreams(shape, partitions, memorySegmentSource);
-    }
-
-    @Override
     public PartitionedMapper mapper() {
         return new BitwisePartitionedMapper(streams());
     }
@@ -49,6 +44,11 @@ final class BitwisePartitioned implements Partitioned<Path> {
     @Override
     public PartitionedConsumer consumer() {
         return new BitwisePartitionedConsumer(streams());
+    }
+
+    @Override
+    public PartitionedStreams streams() {
+        return new BitwisePartitionStreams(shape, partitions, memorySegmentSource);
     }
 
     @Override
