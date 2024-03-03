@@ -5,7 +5,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public interface CommaSeparatedLine {
+public interface SeparatedLine {
 
     MemorySegment memorySegment();
 

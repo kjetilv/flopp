@@ -24,7 +24,7 @@ public interface PartitionedStreams {
         return streamersList(false);
     }
 
-    default Stream<Consumer<Consumer<CommaSeparatedLine>>> lineSplitters(
+    default Stream<Consumer<Consumer<SeparatedLine>>> lineSplitters(
         LinesFormat linesFormat
     ) {
         return lineSplittersList(linesFormat).stream();
@@ -34,7 +34,7 @@ public interface PartitionedStreams {
 
     List<LongSupplier> lineCountersList();
 
-    List<Consumer<Consumer<CommaSeparatedLine>>> lineSplittersList(
+    List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(
         LinesFormat linesFormat
     );
 }

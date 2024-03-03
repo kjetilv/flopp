@@ -51,10 +51,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     }
 
     @Override
-    public List<Consumer<Consumer<CommaSeparatedLine>>> lineSplittersList(LinesFormat linesFormat) {
+    public List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(LinesFormat linesFormat) {
         return streamers(false)
             .map(streamer ->
-                (Consumer<Consumer<CommaSeparatedLine>>) consumer ->
+                (Consumer<Consumer<SeparatedLine>>) consumer ->
                     streamer.lines()
                         .forEach(new BitwiseLineSplitter(linesFormat, consumer)))
             .toList();

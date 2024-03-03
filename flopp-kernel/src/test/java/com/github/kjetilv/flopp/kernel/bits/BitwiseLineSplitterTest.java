@@ -380,7 +380,7 @@ class BitwiseLineSplitterTest {
             .toList();
     }
 
-    private static Consumer<CommaSeparatedLine> adder(List<String> splits) {
+    private static Consumer<SeparatedLine> adder(List<String> splits) {
         return line ->
             line.columns()
                 .forEach(splits::add);

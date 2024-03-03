@@ -182,7 +182,7 @@ class BitwiseFileSplitterTest {
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
         LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
-        Consumer<CommaSeparatedLine> lines = line -> airlines.add(line.column(1));
+        Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
         Instant now = Instant.now();
         try (
             Stream<Path> list = Files.list(PATH);

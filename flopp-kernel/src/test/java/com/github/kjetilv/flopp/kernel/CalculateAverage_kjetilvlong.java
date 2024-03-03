@@ -59,7 +59,7 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning partitioning,
         Shape shape,
         boolean slow,
-        Consumer<CommaSeparatedLine> callbacks
+        Consumer<SeparatedLine> callbacks
     ) {
         int chunks = partitioning.of(shape.size()).size();
         try (
@@ -153,8 +153,8 @@ public final class CalculateAverage_kjetilvlong {
 
     private static Map<String, Result> toMap(
         Path path,
-        Consumer<Consumer<CommaSeparatedLine>> splitsConsumer,
-        Consumer<CommaSeparatedLine> callbacks
+        Consumer<Consumer<SeparatedLine>> splitsConsumer,
+        Consumer<SeparatedLine> callbacks
     ) {
         Map<String, Result> m = new HashMap<>(1024, 1.0f);
         try {
@@ -170,10 +170,10 @@ public final class CalculateAverage_kjetilvlong {
         return m;
     }
 
-    private static void parse(CommaSeparatedLine commaSeparatedLine, Map<String, Result> m) {
+    private static void parse(SeparatedLine separatedLine, Map<String, Result> m) {
         try {
-            String station = commaSeparatedLine.column(0);
-            int measure = parseValue(commaSeparatedLine.segment(1));
+            String station = separatedLine.column(0);
+            int measure = parseValue(separatedLine.segment(1));
             m.compute(
                 station,
                 (_, existing) ->

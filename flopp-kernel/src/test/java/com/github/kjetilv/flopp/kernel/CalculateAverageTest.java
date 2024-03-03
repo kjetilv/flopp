@@ -104,7 +104,7 @@ class CalculateAverageTest {
         Partitioning partitioning,
         int tail,
         boolean slow,
-        Consumer<CommaSeparatedLine> callbacks
+        Consumer<SeparatedLine> callbacks
     ) {
         String path = Objects.requireNonNull(
             Thread.currentThread().getContextClassLoader().getResource("smaples/" + smaple), "resource"
@@ -126,7 +126,7 @@ class CalculateAverageTest {
         Partitioning partitioning,
         int tail,
         boolean slow,
-        Consumer<CommaSeparatedLine> callbacks
+        Consumer<SeparatedLine> callbacks
     ) {
         Shape shape = Shape.of(smaple).longestLine(tail);
         Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(

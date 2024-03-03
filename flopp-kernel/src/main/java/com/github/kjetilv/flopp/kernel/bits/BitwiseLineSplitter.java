@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.CommaSeparatedLine;
+import com.github.kjetilv.flopp.kernel.Bits;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LinesFormat;
 
@@ -9,15 +10,9 @@ import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparatedLine {
+final class BitwiseLineSplitter implements Consumer<LineSegment>, SeparatedLine {
 
-    private final Consumer<CommaSeparatedLine> lines;
-
-    private final long sepMask;
-
-    private final long quoMask;
-
-    private final long escMask;
+    private final Consumer<SeparatedLine> lines;
 
     private final long[] start;
 
@@ -39,14 +34,20 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
 
     private int columnNo;
 
-    BitwiseLineSplitter(LinesFormat linesFormat, Consumer<CommaSeparatedLine> lines) {
+    private final Bits.Finder sepFinder;
+
+    private final Bits.Finder quoFinder;
+
+    private final Bits.Finder escFinder;
+
+    BitwiseLineSplitter(LinesFormat linesFormat, Consumer<SeparatedLine> lines) {
         Objects.requireNonNull(linesFormat, "lineSplit");
 
         this.lines = Objects.requireNonNull(lines, "lines");
 
-        this.sepMask = createMask(linesFormat.separator());
-        this.quoMask = createMask(linesFormat.quote());
-        this.escMask = createMask(linesFormat.escape());
+        this.sepFinder = Bits.finder(linesFormat.separator());
+        this.quoFinder = Bits.finder(linesFormat.quote());
+        this.escFinder = Bits.finder(linesFormat.escape());
 
         this.start = new long[linesFormat.columnCount()];
         this.end = new long[linesFormat.columnCount()];
@@ -118,43 +119,33 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
     }
 
     private void findSeps(long bytes, long shift) {
-        long seps = mask(bytes, sepMask);
-        long quos = mask(bytes, quoMask);
-        long escs = mask(bytes, escMask);
-
-        int nextSep = dist(seps);
-        int nextQuo = dist(quos);
-        int nextEsc = dist(escs);
+        int nextSep = sepFinder.next(bytes);
+        int nextQuo = quoFinder.next(bytes);
+        int nextEsc = escFinder.next(bytes);
 
         while (true) {
             if (nextEsc == ALIGNMENT) {
-                if (nextSep == nextQuo) {
-                    offset += ALIGNMENT;
-                    return;
-                }
                 if (nextSep < nextQuo) {
                     handleSep(nextSep, shift);
-                    seps &= CLEARED[nextSep];
-                    nextSep = dist(seps);
+                    nextSep = sepFinder.next();
+                } else if (nextSep == nextQuo) {
+                    offset += ALIGNMENT;
+                    return;
                 } else {
                     handleQuo();
-                    quos &= CLEARED[nextQuo];
-                    nextQuo = dist(quos);
+                    nextQuo = quoFinder.next();
                 }
             } else {
                 int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
                 if (min == nextSep) {
                     handleSep(nextSep, shift);
-                    seps &= CLEARED[nextSep];
-                    nextSep = dist(seps);
+                    nextSep = sepFinder.next();
                 } else if (min == nextQuo) {
                     handleQuo();
-                    quos &= CLEARED[nextQuo];
-                    nextQuo = dist(quos);
+                    nextQuo = quoFinder.next();
                 } else {
                     escaping = true;
-                    escs &= CLEARED[nextEsc];
-                    nextEsc = dist(escs);
+                    nextEsc = escFinder.next();
                 }
             }
         }
@@ -190,36 +181,5 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, CommaSeparated
         quoted = false;
     }
 
-    private static final int ALIGNMENT =
-        Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
-
-    private static final long[] CLEARED = {
-        0xFFFFFFFFFFFFFF00L,
-        0xFFFFFFFFFFFF0000L,
-        0xFFFFFFFFFF000000L,
-        0xFFFFFFFF00000000L,
-        0xFFFFFF0000000000L,
-        0xFFFF000000000000L,
-        0xFF00000000000000L,
-        0x0000000000000000L
-    };
-
-    private static long createMask(char s) {
-        long mask = s;
-        for (int i = 0; i < ALIGNMENT; i++) {
-            mask = (mask << ALIGNMENT) + s;
-        }
-        return mask;
-    }
-
-    private static long mask(long bytes, long mask) {
-        long masked = bytes ^ mask;
-        long underflown = masked - 0x0101010101010101L;
-        long clearedHighBits = underflown & ~masked;
-        return clearedHighBits & 0x8080808080808080L;
-    }
-
-    private static int dist(long bytes) {
-        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT;
-    }
+    private static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
 }
