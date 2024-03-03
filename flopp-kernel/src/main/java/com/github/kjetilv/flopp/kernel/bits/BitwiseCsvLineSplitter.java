@@ -3,14 +3,14 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Bits;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LinesFormat;
+import com.github.kjetilv.flopp.kernel.CsvFormat;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class BitwiseLineSplitter implements Consumer<LineSegment>, SeparatedLine {
+final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLine {
 
     private final Consumer<SeparatedLine> lines;
 
@@ -40,17 +40,17 @@ final class BitwiseLineSplitter implements Consumer<LineSegment>, SeparatedLine 
 
     private final Bits.Finder escFinder;
 
-    BitwiseLineSplitter(LinesFormat linesFormat, Consumer<SeparatedLine> lines) {
-        Objects.requireNonNull(linesFormat, "lineSplit");
+    BitwiseCsvLineSplitter(CsvFormat csvFormat, Consumer<SeparatedLine> lines) {
+        Objects.requireNonNull(csvFormat, "lineSplit");
 
         this.lines = Objects.requireNonNull(lines, "lines");
 
-        this.sepFinder = Bits.finder(linesFormat.separator());
-        this.quoFinder = Bits.finder(linesFormat.quote());
-        this.escFinder = Bits.finder(linesFormat.escape());
+        this.sepFinder = Bits.finder(csvFormat.separator());
+        this.quoFinder = Bits.finder(csvFormat.quote());
+        this.escFinder = Bits.finder(csvFormat.escape());
 
-        this.start = new long[linesFormat.columnCount()];
-        this.end = new long[linesFormat.columnCount()];
+        this.start = new long[csvFormat.columnCount()];
+        this.end = new long[csvFormat.columnCount()];
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
@@ -24,29 +23,7 @@ public interface PartitionedStreams {
         return streamersList(false);
     }
 
-    default Stream<Consumer<Consumer<SeparatedLine>>> lineSplitters(
-        LinesFormat linesFormat
-    ) {
-        return lineSplitters(linesFormat, false);
-    }
-
-    default Stream<Consumer<Consumer<SeparatedLine>>> lineSplitters(
-        LinesFormat linesFormat,
-        boolean immutable
-    ) {
-        return lineSplittersList(linesFormat, immutable).stream();
-    }
-
-    default List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(LinesFormat linesFormat) {
-        return lineSplittersList(linesFormat, false);
-    }
-
     List<? extends PartitionStreamer> streamersList(boolean copying);
 
     List<LongSupplier> lineCountersList();
-
-    List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(
-        LinesFormat linesFormat,
-        boolean immutable
-    );
 }

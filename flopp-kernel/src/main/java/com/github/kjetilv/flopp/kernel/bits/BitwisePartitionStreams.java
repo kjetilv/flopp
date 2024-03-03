@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 final class BitwisePartitionStreams implements PartitionedStreams {
@@ -47,22 +46,6 @@ final class BitwisePartitionStreams implements PartitionedStreams {
             new LinkedList<BitwiseCounter>()
         ).stream()
             .map(BitwisePartitionStreams::counter)
-            .toList();
-    }
-
-    @Override
-    public List<Consumer<Consumer<SeparatedLine>>> lineSplittersList(
-        LinesFormat linesFormat,
-        boolean immutable
-    ) {
-        return streamers(immutable)
-            .map(streamer ->
-                (Consumer<Consumer<SeparatedLine>>) consumer ->
-                    streamer.lines()
-                        .forEach(new BitwiseLineSplitter(
-                            linesFormat,
-                            consumer
-                        )))
             .toList();
     }
 

@@ -55,13 +55,13 @@ public final class JustSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            LinesFormat linesFormat = new LinesFormat(';');
+            CsvFormat csvFormat = new CsvFormat(';');
             List<CompletableFuture<Void>> list1 =
-                bitwisePartitioned.streams().lineSplitters(linesFormat)
+                bitwisePartitioned.csvSplitters().splitters(csvFormat)
                     .map(splitsConsumer ->
                         CompletableFuture.runAsync(
                             () ->
-                                splitsConsumer.accept(line ->
+                                splitsConsumer.process(line ->
                                     longAdder.add(line.columnCount())),
                             executor
                         ))

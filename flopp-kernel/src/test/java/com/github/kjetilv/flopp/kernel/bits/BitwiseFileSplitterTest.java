@@ -57,8 +57,8 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(),
             line ->
                 airlines.add(line.column(1))
         );
@@ -83,8 +83,8 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(),
             line ->
                 airlines.add(line.column(1))
         );
@@ -181,7 +181,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        LinesFormat linesFormat = new LinesFormat(',', '"', '\\');
+        CsvFormat csvFormat = new CsvFormat(',', '"', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
         Instant now = Instant.now();
         try (
@@ -197,7 +197,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseLineSplitter(linesFormat, lines)),
+                                        .forEach(new BitwiseCsvLineSplitter(csvFormat, lines)),
                                 executor
                             )))
                 .toList();

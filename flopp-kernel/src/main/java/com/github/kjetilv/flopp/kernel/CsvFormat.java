@@ -1,44 +1,46 @@
 package com.github.kjetilv.flopp.kernel;
 
 @SuppressWarnings("unused")
-public record LinesFormat(
+public record CsvFormat(
     char separator,
     char quote,
     char escape,
     int columnCount
 ) {
 
-    public LinesFormat {
+    public CsvFormat {
         Non.negativeOrZero(columnCount, "column count");
     }
 
-    public LinesFormat() {
+    public CsvFormat() {
         this(DEFAULT_SEPARATOR);
     }
 
-    public LinesFormat(char separator) {
+    public CsvFormat(char separator) {
         this(separator, DEFAULT_COLUMN_COUNT);
     }
 
-    public LinesFormat(int columnCount) {
+    public CsvFormat(int columnCount) {
         this(DEFAULT_SEPARATOR, columnCount);
     }
 
-    public LinesFormat(char separator, int columnCount) {
+    public CsvFormat(char separator, int columnCount) {
         this(separator, DEFAULT_QUOTE, DEFAULT_ESC, columnCount);
     }
 
-    public LinesFormat(char separator, char quote) {
+    public CsvFormat(char separator, char quote) {
         this(separator, quote, DEFAULT_ESC);
     }
 
-    public LinesFormat(char separator, char quote, char escape) {
+    public CsvFormat(char separator, char quote, char escape) {
         this(separator, quote, escape, DEFAULT_COLUMN_COUNT);
     }
 
-    public LinesFormat columns(int columnCount) {
-        return new LinesFormat(separator, quote, escape, columnCount);
+    public CsvFormat columns(int columnCount) {
+        return new CsvFormat(separator, quote, escape, columnCount);
     }
+
+    public static final CsvFormat DEFAULT = new CsvFormat();
 
     public static final char DEFAULT_SEPARATOR = ',';
 

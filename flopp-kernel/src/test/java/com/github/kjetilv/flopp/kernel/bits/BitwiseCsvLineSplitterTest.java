@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseLineSplitterTest {
+class BitwiseCsvLineSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -25,8 +25,8 @@ class BitwiseLineSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(';'),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(';'),
             adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456");
@@ -43,8 +43,8 @@ class BitwiseLineSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(';'),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(';'),
             adder(splits)
         );
         splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
@@ -175,8 +175,8 @@ class BitwiseLineSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(';', '\''),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(';', '\''),
             adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -190,8 +190,8 @@ class BitwiseLineSplitterTest {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;';';'\\;'";
         String[] expected = {"foo 1", "bar", "234", "ab; cd;ef", "it is \\'aight", "", "234", ";", "\\;"};
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(';', '\''),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(';', '\''),
             adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -319,10 +319,10 @@ class BitwiseLineSplitterTest {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input)) {
-                partitioned.streams()
-                    .lineSplitters(new LinesFormat(';', '\''))
+                partitioned.csvSplitters()
+                    .splitters(new CsvFormat(';', '\''))
                     .forEach(consumer ->
-                        consumer.accept(commaSeparatedLine ->
+                        consumer.process(commaSeparatedLine ->
                             commaSeparatedLine.columns()
                                 .forEach(splits::add)));
             }
@@ -341,8 +341,8 @@ class BitwiseLineSplitterTest {
                     .split("\n")
             )
         );
-        BitwiseLineSplitter splitter = new BitwiseLineSplitter(
-            new LinesFormat(';', '\''),
+        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
+            new CsvFormat(';', '\''),
             line ->
                 line.columns()
                     .forEach(splits::add)

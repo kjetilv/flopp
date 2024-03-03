@@ -72,8 +72,8 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             List<Supplier<Map<String, Result>>> mapSuppliers =
-                bitwisePartitioned.streams()
-                    .lineSplitters(new LinesFormat(';'))
+                bitwisePartitioned.csvSplitters()
+                    .splitters(new CsvFormat(';'))
                     .map(splitsConsumer -> {
                         Supplier<Map<String, Result>> worker = () ->
                             toMap(path, splitsConsumer, callbacks);
@@ -153,12 +153,12 @@ public final class CalculateAverage_kjetilvlong {
 
     private static Map<String, Result> toMap(
         Path path,
-        Consumer<Consumer<SeparatedLine>> splitsConsumer,
+        PartitionedSplitter splitsConsumer,
         Consumer<SeparatedLine> callbacks
     ) {
         Map<String, Result> m = new HashMap<>(1024, 1.0f);
         try {
-            splitsConsumer.accept(csvLine -> {
+            splitsConsumer.process(csvLine -> {
                 if (callbacks != null) {
                     callbacks.accept(csvLine);
                 }
