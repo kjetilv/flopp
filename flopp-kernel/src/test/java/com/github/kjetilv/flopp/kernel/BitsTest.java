@@ -17,7 +17,7 @@ class BitsTest {
 
     @Test
     void findOne() {
-        Bits.Finder finder = Bits.finder('n');
+        Bits.Finder finder = Bits.finder('\n');
 
         assertThat(finder.next(0x120A340A560AL)).isEqualTo(0);
         assertThat(finder.hasNext()).isTrue();
