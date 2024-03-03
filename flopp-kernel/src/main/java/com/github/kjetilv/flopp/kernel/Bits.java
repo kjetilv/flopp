@@ -9,7 +9,11 @@ public final class Bits {
     }
 
     public static Finder finder(long bytes, char c) {
-        return new ByteFinder(bytes, createMask(c));
+        return finder(c).init(bytes);
+    }
+
+    public static Finder finder(char c) {
+        return new ByteFinder(c);
     }
 
     public static int countOccurrences(long bytes, char c) {
@@ -66,8 +70,16 @@ public final class Bits {
 
         private long occurrences;
 
-        private ByteFinder(long bytes, long mask) {
+        private final long mask;
+
+        private ByteFinder(char c) {
+            this.mask = createMask(c);
+        }
+
+        @Override
+        public Finder init(long bytes) {
             occurrences = occurrences(bytes, mask);
+            return this;
         }
 
         @Override
@@ -89,6 +101,8 @@ public final class Bits {
     }
 
     public interface Finder {
+
+        Finder init(long bytes);
 
         int next();
 

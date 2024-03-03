@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.lc;
 
+import com.github.kjetilv.flopp.kernel.Bits;
 import com.github.kjetilv.flopp.kernel.Non;
 
 import java.nio.ByteBuffer;
@@ -79,6 +80,7 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
                 if (nextPosition < size) {
                     fork(linesCount, nextPosition);
                 }
+                byteBuffer.flip();
                 linesCount.add(countLines(read));
             } finally {
                 byteBuffers.release(this.byteBuffer);
@@ -90,25 +92,23 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
     }
 
     private long countLines(int read) {
-        byte[] buffer = buffers.acquire();
-        try {
-            long newLinesFound = 0;
-            int actualLength = Math.min(read, buffer.length);
-            this.byteBuffer.get(0, buffer, 0, actualLength);
-            for (int i = 0; i < actualLength; i++) {
-                if (buffer[i] == '\n') {
-                    newLinesFound++;
-                }
-            }
-            return newLinesFound;
-        } finally {
-            buffers.release(buffer);
+        long longs = read / ALIGNMENT;
+        long newLinesFound = 0;
+        for (int i = 0; i < longs; i++) {
+            newLinesFound += counter.count(this.byteBuffer.getLong());
         }
+        long tail = read % ALIGNMENT;
+        for (int i = 0; i < tail; i++) {
+            if (this.byteBuffer.get() == '\n') {
+                newLinesFound++;
+            }
+        }
+        return newLinesFound;
     }
 
     @Override
     public void failed(Throwable exc, LongAdder attachment) {
-        throw new IllegalStateException("Failed @ " + attachment, exc);
+        throw new IllegalStateException(STR."Failed @ \{attachment}", exc);
     }
 
     private void fork(LongAdder linesCount, long position) {
@@ -130,4 +130,8 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
             )
         );
     }
+
+    private static final Bits.Counter counter = Bits.counter('\n');
+
+    public static final int ALIGNMENT = 8;
 }
