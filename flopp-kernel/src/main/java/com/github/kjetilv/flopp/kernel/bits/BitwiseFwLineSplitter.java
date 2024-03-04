@@ -20,10 +20,10 @@ final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLin
     private LineSegment segment;
 
     BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines) {
-        length = fwFormat.ranges().length;
+        this.length = fwFormat.ranges().length;
         this.start = Arrays.stream(fwFormat.ranges()).mapToLong(Range::startIndex).toArray();
         this.end = Arrays.stream(fwFormat.ranges()).mapToLong(Range::endIndex).toArray();
-        this.lines = lines;
+        this.lines = Objects.requireNonNull(lines, "lines");
     }
 
     @Override

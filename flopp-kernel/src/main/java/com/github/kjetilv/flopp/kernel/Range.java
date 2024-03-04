@@ -6,7 +6,6 @@ public interface Range {
         return new Immutable(start, end);
     }
 
-
     long startIndex();
 
     long endIndex();
@@ -15,5 +14,14 @@ public interface Range {
         return endIndex() - startIndex();
     }
 
-    record Immutable(long startIndex, long endIndex) implements Range {}
+    record Immutable(long startIndex, long endIndex) implements Range {
+
+        public Immutable {
+            Non.negative(startIndex, "startIndex");
+            Non.negative(endIndex, "endIndex");
+            if (endIndex < startIndex) {
+                throw new IllegalStateException(STR."Range: \{startIndex} >= \{endIndex}");
+            }
+        }
+    }
 }
