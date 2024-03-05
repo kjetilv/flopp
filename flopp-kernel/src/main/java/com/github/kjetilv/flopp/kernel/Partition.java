@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 
+@SuppressWarnings("StringTemplateMigration")
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
     implements Comparable<Partition>, Range {
 
@@ -11,9 +12,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         this.offset = Non.negative(offset, "offset");
         this.length = Non.negative(length, "count");
         if (partitionNo >= partitionCount) {
-            throw new IllegalStateException(
-                STR."partitionNo >= partitionCount: \{partitionNo} >= \{partitionCount}"
-            );
+            throw new IllegalStateException("partitionNo >= partitionCount: " + partitionNo + " >= " + partitionCount);
         }
     }
 
@@ -59,7 +58,9 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         boolean l = last();
         String pos = f ? "<" : l ? ">" : "";
         Object no = f || l ? "" : partitionNo;
-        return STR."\{getClass().getSimpleName()}[\{pos}\{no}/\{partitionCount - 1} \{offset}+\{length}]";
+        return getClass().getSimpleName() + "[" +
+               pos + no + "/" + (partitionCount - 1) + " " + offset + "+" + length +
+               "]";
     }
 
     public long bufferedTo(long size) {

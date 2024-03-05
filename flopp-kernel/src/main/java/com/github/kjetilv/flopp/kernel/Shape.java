@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "StringTemplateMigration"})
 public record Shape(long size, Charset charset, Decor decor, long longestLine) {
 
     public static Shape decor(int header, int footer) {
@@ -24,9 +24,9 @@ public record Shape(long size, Charset charset, Decor decor, long longestLine) {
                 return size(Files.size(file));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException(STR."Bad file: \{file}", e);
+            throw new IllegalArgumentException("Bad file:" + file, e);
         }
-        throw new IllegalArgumentException(STR."Not a file: \{file}");
+        throw new IllegalArgumentException("Not a file: " + file);
     }
 
     public Shape(long size) {

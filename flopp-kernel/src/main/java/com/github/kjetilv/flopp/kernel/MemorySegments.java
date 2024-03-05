@@ -23,13 +23,13 @@ public final class MemorySegments {
         return MemorySegment.ofBuffer(byteBuffer(bytes));
     }
 
-    private MemorySegments() {
-    }
-
     private static ByteBuffer byteBuffer(byte[] bytes) {
         ByteBuffer bb = ByteBuffer.allocateDirect(bytes.length);
         bb.put(bytes);
         bb.flip();
         return bb;
+    }
+
+    private MemorySegments() {
     }
 }

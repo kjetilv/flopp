@@ -15,6 +15,7 @@ import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
+@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionHandler implements Runnable {
 
     private final Partition partition;
@@ -59,13 +60,13 @@ final class BitwisePartitionHandler implements Runnable {
                 }
             }
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed @ \{offset}/\{lineStart}: \{action}", e);
+            throw new IllegalStateException(this + " failed @ " + offset + "/" + lineStart + ": " + action, e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{partition} \{asString()}]";
+        return getClass().getSimpleName() + "[" + partition + " " + asString() + "]";
     }
 
     public String asString() {
