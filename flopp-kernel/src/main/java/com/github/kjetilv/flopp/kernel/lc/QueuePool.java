@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.lc;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
@@ -8,7 +9,19 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public final class QueuePool<T> implements Pool<T> {
+public final class QueuePool<T> {
+
+    public static QueuePool<ByteBuffer> byteBuffers(int length) {
+        return new QueuePool<>(
+                () ->
+                        ByteBuffer.allocate(length),
+                ByteBuffer::clear
+        );
+    }
+
+    public static QueuePool<byte[]> byteArrays(int length) {
+        return new QueuePool<>(() -> new byte[length]);
+    }
 
     private final Queue<T> queue;
 
@@ -34,12 +47,10 @@ public final class QueuePool<T> implements Pool<T> {
         this.queue = size > 0 ? new ArrayBlockingQueue<>(size) : new LinkedTransferQueue<>();
     }
 
-    @Override
     public T acquire() {
         return Optional.ofNullable(queue.poll()).orElseGet(create);
     }
 
-    @Override
     public void release(T t) {
         if (release != null) {
             release.accept(t);

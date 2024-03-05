@@ -23,9 +23,9 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
 
     private final Runnable signalDone;
 
-    private final Pool<ByteBuffer> byteBuffers;
+    private final QueuePool<ByteBuffer> byteBuffers;
 
-    private final Pool<byte[]> buffers;
+    private final QueuePool<byte[]> buffers;
 
     private final LongAdder bytesRead;
 
@@ -47,8 +47,8 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
         int bufferSize,
         long size,
         Runnable signalDone,
-        Pool<ByteBuffer> byteBuffers,
-        Pool<byte[]> buffers,
+        QueuePool<ByteBuffer> byteBuffers,
+        QueuePool<byte[]> buffers,
         LongAdder bytesRead
     ) {
         this.channel = Objects.requireNonNull(channel, "channel");
@@ -58,8 +58,8 @@ final class LineCountingCompletionHandler implements CompletionHandler<Integer, 
         this.size = Non.negativeOrZero(size, "total");
         this.signalDone = signalDone;
 
-        this.byteBuffers = byteBuffers == null ? Pool.byteBuffers(bufferSize) : byteBuffers;
-        this.buffers = buffers == null ? Pool.byteArrays(bufferSize) : buffers;
+        this.byteBuffers = byteBuffers == null ? QueuePool.byteBuffers(bufferSize) : byteBuffers;
+        this.buffers = buffers == null ? QueuePool.byteArrays(bufferSize) : buffers;
         this.bytesRead = bytesRead == null
             ? new LongAdder()
             : bytesRead;

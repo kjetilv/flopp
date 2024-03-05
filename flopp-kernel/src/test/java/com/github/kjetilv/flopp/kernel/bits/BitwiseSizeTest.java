@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.lc.IndexingLineCounter;
-import com.github.kjetilv.flopp.kernel.lc.SimpleLineCounter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -10,7 +8,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -52,31 +49,6 @@ public class BitwiseSizeTest {
 
     @SuppressWarnings("FieldCanBeLocal")
     private int columnCount;
-
-    @Disabled
-    @Test
-    void countLinesStraight() {
-        Shape shape1;
-        Partitioning partitioning = new Partitioning(10, 8192);
-        try {
-            shape1 = Shape.size(Files.size(path));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        long straight = countLinesStraight(path);
-        logTime(10, () -> {
-            long start = System.nanoTime();
-            long count = new SimpleLineCounter().count(path);
-            assertEquals(straight, count);
-            return Duration.ofNanos(System.nanoTime() - start);
-        });
-        logTime(10, () -> {
-            long start = System.nanoTime();
-            long count = new IndexingLineCounter(partitioning, shape1, 10).count(path);
-            assertEquals(straight, count);
-            return Duration.ofNanos(System.nanoTime() - start);
-        });
-    }
 
     @Disabled
     @Test
@@ -348,11 +320,4 @@ public class BitwiseSizeTest {
         return duration;
     }
 
-    private static long countLinesStraight(Path path) {
-        try (Stream<String> lines = Files.lines(path, StandardCharsets.ISO_8859_1)) {
-            return lines.count();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }
