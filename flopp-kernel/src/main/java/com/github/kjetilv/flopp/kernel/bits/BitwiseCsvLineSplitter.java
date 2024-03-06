@@ -174,11 +174,11 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
     }
 
     private void addSep(long end) {
-        int quoteOffset = quoted ? 1 : 0;
-        this.start[columnNo] = startOffset + currentStart + quoteOffset;
-        this.end[columnNo] = startOffset + end - quoteOffset;
-        columnNo++;
-        quoted = false;
+        int quote = quoted ? 1 : 0;
+        this.start[columnNo] = startOffset + currentStart + quote;
+        this.end[columnNo] = startOffset + end - quote;
+        this.columnNo++;
+        this.quoted = false;
     }
 
     private static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());

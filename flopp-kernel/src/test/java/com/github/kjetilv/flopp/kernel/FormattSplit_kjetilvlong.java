@@ -16,7 +16,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.readers.Reader;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -25,8 +25,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
-import static com.github.kjetilv.flopp.kernel.readers.Readers.column;
-import static com.github.kjetilv.flopp.kernel.readers.Readers.reader;
+import static com.github.kjetilv.flopp.kernel.readers.Reader.column;
 
 public final class FormattSplit_kjetilvlong {
 
@@ -50,7 +49,7 @@ public final class FormattSplit_kjetilvlong {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        Readers.Reader reader = reader(
+        Reader reader = Reader.of(
             column("Station", 1),
             column("Temperature", 2, Double::parseDouble)
         );
@@ -72,15 +71,18 @@ public final class FormattSplit_kjetilvlong {
         return longAdder;
     }
 
+    private FormattSplit_kjetilvlong() {
+    }
+
     private static Function<PartitionedSplitter, CompletableFuture<Void>> countFuture(
-        Readers.Reader reader,
+        Reader reader,
         LongAdder longAdder,
         ExecutorService executor
     ) {
         return splitsConsumer ->
             CompletableFuture.runAsync(
                 () ->
-                    reader.read(splitsConsumer, entry ->
+                    reader.read(splitsConsumer, _ ->
                         longAdder.increment()),
                 executor
             );

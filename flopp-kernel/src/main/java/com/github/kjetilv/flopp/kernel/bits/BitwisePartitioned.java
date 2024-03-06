@@ -88,10 +88,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
-        return withTail(
-            partitioning == null ? Partitioning.create() : partitioning,
-            shape
-        );
+        return withTail(partitioning == null ? Partitioning.create() : partitioning, shape);
     }
 
     private static Partitioning withTail(Partitioning partitioning, Shape shape) {

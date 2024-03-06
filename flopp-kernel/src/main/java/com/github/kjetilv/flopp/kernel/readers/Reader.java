@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
+import com.github.kjetilv.flopp.kernel.Maps;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 
@@ -8,33 +9,30 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.github.kjetilv.flopp.kernel.readers.Maps.map;
+public interface Reader {
 
-public final class Readers {
-
-    public static Column column(String name, int columnNo) {
+    static Column column(String name, int columnNo) {
         return column(name, columnNo, null);
     }
 
-    public static Column column(String name, int columnNo, Function<String, Object> parser) {
+    static Column column(String name, int columnNo, Function<String, Object> parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Reader reader(Column... columns) {
+    static Reader of(Column... columns) {
         return (splitter, values) ->
             splitter.process(separatedLine ->
-                map(
+                values.accept(Maps.map(
                     List.of(columns),
                     Column::name,
                     column ->
                         column.parse(separatedLine.column(column.colunmNo() - 1))
-                ));
+                )));
     }
 
-    private Readers() {
-    }
+    void read(PartitionedSplitter splitter, Consumer<Map<String, Object>> values);
 
-    public record Column(String name, int colunmNo, Function<String, Object> parser) {
+    record Column(String name, int colunmNo, Function<String, Object> parser) {
 
         public Column {
             Non.negativeOrZero(colunmNo, "Columns are 1-indexed");
@@ -45,10 +43,5 @@ public final class Readers {
                 ? string
                 : parser.apply(string);
         }
-    }
-
-    public interface Reader {
-
-        void read(PartitionedSplitter splitter, Consumer<Map<String, Object>> values);
     }
 }
