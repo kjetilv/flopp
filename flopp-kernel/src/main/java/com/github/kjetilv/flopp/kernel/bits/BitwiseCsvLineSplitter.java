@@ -40,8 +40,22 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
 
     private final Bits.Finder escFinder;
 
-    BitwiseCsvLineSplitter(CsvFormat csvFormat, Consumer<SeparatedLine> lines) {
+    private final boolean immutable;
+
+    BitwiseCsvLineSplitter(
+        CsvFormat csvFormat,
+        Consumer<SeparatedLine> lines
+    ) {
+        this(csvFormat, lines, false);
+    }
+
+    BitwiseCsvLineSplitter(
+        CsvFormat csvFormat,
+        Consumer<SeparatedLine> lines,
+        boolean immutable
+    ) {
         Objects.requireNonNull(csvFormat, "lineSplit");
+        this.immutable = immutable;
 
         this.lines = Objects.requireNonNull(lines, "lines");
 
@@ -98,7 +112,7 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
                 addSep(length);
             }
         }
-        lines.accept(this);
+        lines.accept(immutable ? this.immutable() : this);
     }
 
     @Override

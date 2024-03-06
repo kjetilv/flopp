@@ -32,6 +32,15 @@ public interface SeparatedLine {
         return toSegment(column, start(), end());
     }
 
+    default SeparatedLine immutable() {
+        return new ImmutableSeparatedLine(
+            memorySegment(),
+            columnCount(),
+            start().clone(),
+            end().clone()
+        );
+    }
+
     private IntFunction<LineSegment> toSegment() {
         long[] start = start();
         long[] end = end();

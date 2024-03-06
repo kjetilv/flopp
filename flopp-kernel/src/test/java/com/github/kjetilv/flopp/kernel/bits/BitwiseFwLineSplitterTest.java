@@ -23,10 +23,11 @@ class BitwiseFwLineSplitterTest {
         assertFileContents(
             "foobarzot",
             new FwFormat(new Range[] {Range.of(3, 6)}),
-            "bar");
+            "bar"
+        );
     }
 
-    private static void assertFileContents(String contents, FwFormat fwFormat,  String... lines)  {
+    private static void assertFileContents(String contents, FwFormat fwFormat, String... lines) {
         List<String> splits = new ArrayList<>();
         Path path = null;
         try {

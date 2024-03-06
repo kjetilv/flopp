@@ -11,14 +11,17 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final CsvFormat format;
 
-    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format) {
+    private final boolean immutable;
+
+    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format, boolean immutable) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = format == null ? CsvFormat.DEFAULT : format;
+        this.immutable = immutable;
     }
 
     @Override
     public void process(Consumer<SeparatedLine> consumer) {
-        streamer.lines().forEach(new BitwiseCsvLineSplitter(format, consumer));
+        streamer.lines().forEach(new BitwiseCsvLineSplitter(format, consumer, immutable));
     }
 
     @Override

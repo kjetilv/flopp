@@ -15,15 +15,22 @@ final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLin
 
     private final Consumer<SeparatedLine> lines;
 
+    private final boolean immutable;
+
     private final int length;
 
     private LineSegment segment;
 
     BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines) {
+        this(fwFormat, lines, false);
+    }
+
+    BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines, boolean immutable) {
         this.length = fwFormat.ranges().length;
         this.start = Arrays.stream(fwFormat.ranges()).mapToLong(Range::startIndex).toArray();
         this.end = Arrays.stream(fwFormat.ranges()).mapToLong(Range::endIndex).toArray();
         this.lines = Objects.requireNonNull(lines, "lines");
+        this.immutable = immutable;
     }
 
     @Override
@@ -49,7 +56,7 @@ final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLin
     @Override
     public void accept(LineSegment segment) {
         this.segment = Objects.requireNonNull(segment, "segment");
-        lines.accept(this);
+        lines.accept(immutable ? this.immutable() : this);
     }
 
     @Override
