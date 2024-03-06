@@ -1,39 +1,10 @@
-plugins {
-    java
-    `maven-publish`
-}
-
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.assertj:assertj-core:3.25.3")
 
     testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.16.1")
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.14")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-    withSourcesJar()
-    modularity.inferModulePath
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-tasks {
-    withType<JavaCompile> {
-        options.compilerArgs.add("--enable-preview")
-        options.forkOptions.jvmArgs!!.add("--enable-preview")
-    }
-    withType<Test>() {
-        jvmArgs("--enable-preview")
-        useJUnitPlatform()
-    }
-    withType<JavaExec>() {
-        jvmArgs("--enable-preview")
-    }
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.5.2")
 }
 
 publishing {
