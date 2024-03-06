@@ -6,7 +6,6 @@ import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.nio.file.Path;
 
-@SuppressWarnings("unused")
 public final class Bitwise {
 
     public static Partitioned<Path> partititioned(Path path) {

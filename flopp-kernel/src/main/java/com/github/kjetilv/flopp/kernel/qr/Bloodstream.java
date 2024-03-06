@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.qr;
 
 import com.github.kjetilv.flopp.kernel.Non;
-import com.github.kjetilv.flopp.kernel.lc.QueuePool;
 
 import java.time.Duration;
 import java.util.ArrayList;
