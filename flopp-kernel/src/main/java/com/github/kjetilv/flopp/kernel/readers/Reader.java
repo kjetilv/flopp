@@ -3,8 +3,8 @@ package com.github.kjetilv.flopp.kernel.readers;
 import com.github.kjetilv.flopp.kernel.Maps;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,16 +21,22 @@ public interface Reader {
 
     static Reader of(Column... columns) {
         return (splitter, values) ->
-            splitter.process(separatedLine ->
+            splitter.forEach(separatedLine ->
                 values.accept(Maps.map(
-                    List.of(columns),
                     Column::name,
-                    column ->
-                        column.parse(separatedLine.column(column.colunmNo() - 1))
+                    column -> value(separatedLine, column),
+                    columns
                 )));
     }
 
     void read(PartitionedSplitter splitter, Consumer<Map<String, Object>> values);
+
+    private static Object value(
+        SeparatedLine separatedLine,
+        Column column
+    ) {
+        return column.parse(separatedLine.column(column.colunmNo() - 1));
+    }
 
     record Column(String name, int colunmNo, Function<String, Object> parser) {
 

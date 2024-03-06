@@ -20,7 +20,7 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
     }
 
     @Override
-    public void process(Consumer<SeparatedLine> consumer) {
+    public void forEach(Consumer<SeparatedLine> consumer) {
         streamer.lines().forEach(new BitwiseFwLineSplitter(fwFormat, consumer, immutable));
     }
 

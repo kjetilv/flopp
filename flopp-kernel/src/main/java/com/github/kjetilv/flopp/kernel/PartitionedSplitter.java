@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 public interface PartitionedSplitter {
 
-    void process(Consumer<SeparatedLine> consumer);
+    void forEach(Consumer<SeparatedLine> consumer);
 
     Partition partition();
 }

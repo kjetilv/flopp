@@ -20,7 +20,7 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
     }
 
     @Override
-    public void process(Consumer<SeparatedLine> consumer) {
+    public void forEach(Consumer<SeparatedLine> consumer) {
         streamer.lines().forEach(new BitwiseCsvLineSplitter(format, consumer, immutable));
     }
 

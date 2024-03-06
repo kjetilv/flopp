@@ -1,18 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Bits;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLine {
-
-    private final Consumer<SeparatedLine> lines;
+final class BitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final long[] start;
 
@@ -40,8 +37,6 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
 
     private final Bits.Finder escFinder;
 
-    private final boolean immutable;
-
     BitwiseCsvLineSplitter(
         CsvFormat csvFormat,
         Consumer<SeparatedLine> lines
@@ -54,10 +49,8 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
         Consumer<SeparatedLine> lines,
         boolean immutable
     ) {
+        super(lines, immutable);
         Objects.requireNonNull(csvFormat, "lineSplit");
-        this.immutable = immutable;
-
-        this.lines = Objects.requireNonNull(lines, "lines");
 
         this.sepFinder = Bits.finder(csvFormat.separator());
         this.quoFinder = Bits.finder(csvFormat.quote());
@@ -65,6 +58,11 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
 
         this.start = new long[csvFormat.columnCount()];
         this.end = new long[csvFormat.columnCount()];
+    }
+
+    @Override
+    protected LineSegment lineSegment() {
+        return segment;
     }
 
     @Override
@@ -112,12 +110,7 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
                 addSep(length);
             }
         }
-        lines.accept(immutable ? this.immutable() : this);
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{segment == null ? "*" : segment.asString()}]";
+        emit();
     }
 
     private void processHead() {
@@ -194,6 +187,4 @@ final class BitwiseCsvLineSplitter implements Consumer<LineSegment>, SeparatedLi
         this.columnNo++;
         this.quoted = false;
     }
-
-    private static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
 }

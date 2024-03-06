@@ -36,8 +36,8 @@ public interface SeparatedLine {
         return new ImmutableSeparatedLine(
             memorySegment(),
             columnCount(),
-            start().clone(),
-            end().clone()
+            copy(start()),
+            copy(end())
         );
     }
 
@@ -52,6 +52,13 @@ public interface SeparatedLine {
         long[] end = end();
         return column ->
             toSegment(column, start, end).asString();
+    }
+
+    private long[] copy(long[] ls) {
+        int len = columnCount();
+        long[] cp = new long[len];
+        System.arraycopy(ls, 0, cp, 0, len);
+        return cp;
     }
 
     private LineSegment toSegment(int column, long[] start, long[] end) {

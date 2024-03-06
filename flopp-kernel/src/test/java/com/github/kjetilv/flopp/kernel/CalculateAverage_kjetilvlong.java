@@ -158,7 +158,7 @@ public final class CalculateAverage_kjetilvlong {
     ) {
         Map<String, Result> m = new HashMap<>(1024, 1.0f);
         try {
-            splitsConsumer.process(csvLine -> {
+            splitsConsumer.forEach(csvLine -> {
                 if (callbacks != null) {
                     callbacks.accept(csvLine);
                 }

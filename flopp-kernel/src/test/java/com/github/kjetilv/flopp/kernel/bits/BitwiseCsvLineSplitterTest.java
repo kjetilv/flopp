@@ -322,7 +322,7 @@ class BitwiseCsvLineSplitterTest {
                 partitioned.csvSplitters()
                     .splitters(new CsvFormat(';', '\''))
                     .forEach(consumer ->
-                        consumer.process(commaSeparatedLine ->
+                        consumer.forEach(commaSeparatedLine ->
                             commaSeparatedLine.columns()
                                 .forEach(splits::add)));
             }

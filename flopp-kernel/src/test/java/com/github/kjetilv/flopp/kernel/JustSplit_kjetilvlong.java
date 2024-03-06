@@ -61,7 +61,7 @@ public final class JustSplit_kjetilvlong {
                     .map(splitsConsumer ->
                         CompletableFuture.runAsync(
                             () ->
-                                splitsConsumer.process(line ->
+                                splitsConsumer.forEach(line ->
                                     longAdder.add(line.columnCount())),
                             executor
                         ))

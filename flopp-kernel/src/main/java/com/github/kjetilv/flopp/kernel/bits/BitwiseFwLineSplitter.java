@@ -7,15 +7,11 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLine {
+final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final long[] start;
 
     private final long[] end;
-
-    private final Consumer<SeparatedLine> lines;
-
-    private final boolean immutable;
 
     private final int length;
 
@@ -26,11 +22,15 @@ final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLin
     }
 
     BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines, boolean immutable) {
+        super(lines, immutable);
         this.length = fwFormat.ranges().length;
         this.start = Arrays.stream(fwFormat.ranges()).mapToLong(Range::startIndex).toArray();
         this.end = Arrays.stream(fwFormat.ranges()).mapToLong(Range::endIndex).toArray();
-        this.lines = Objects.requireNonNull(lines, "lines");
-        this.immutable = immutable;
+    }
+
+    @Override
+    protected LineSegment lineSegment() {
+        return segment;
     }
 
     @Override
@@ -56,11 +56,6 @@ final class BitwiseFwLineSplitter implements Consumer<LineSegment>, SeparatedLin
     @Override
     public void accept(LineSegment segment) {
         this.segment = Objects.requireNonNull(segment, "segment");
-        lines.accept(immutable ? this.immutable() : this);
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{segment == null ? "*" : segment.asString()}]";
+        emit();
     }
 }
