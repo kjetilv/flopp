@@ -54,7 +54,7 @@ public final class Lc {
             .scaled(2);
 
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape)
         ) {
             List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.streams()
                 .lineCounters()
