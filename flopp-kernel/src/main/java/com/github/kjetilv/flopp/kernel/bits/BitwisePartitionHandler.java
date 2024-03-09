@@ -186,7 +186,7 @@ final class BitwisePartitionHandler implements Runnable {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            long bytes = segment.get(LineSegments.LONG, offset);
+            long bytes = segment.get(LineSegments.LAYOUT, offset);
             long mask = mask(bytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -225,7 +225,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long loadLong() {
-        return segment.get(LineSegments.LONG, offset);
+        return segment.get(LineSegments.LAYOUT, offset);
     }
 
     private long loadTail(long count) {
@@ -341,7 +341,7 @@ final class BitwisePartitionHandler implements Runnable {
             long tail = next.physicalLimit % ALIGNMENT;
             long lastOffset = next.physicalLimit - tail;
             while (lo < lastOffset) {
-                long prebyte = next.segment.get(LineSegments.LONG, lo);
+                long prebyte = next.segment.get(LineSegments.LAYOUT, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;

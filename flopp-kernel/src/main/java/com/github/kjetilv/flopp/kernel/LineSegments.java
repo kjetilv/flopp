@@ -6,11 +6,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class LineSegments {
-
-    public static final ValueLayout.OfLong LONG = JAVA_LONG;
 
     public static String asString(LineSegment line) {
         return asString(line, Math.toIntExact(line.length()));
@@ -53,7 +50,7 @@ public final class LineSegments {
     }
 
     public static LineSegment of(long l, int len) {
-        return of(new String(toBytes(l), 0, len));
+        return of(new String(Bits.toBytes(l), 0, len));
     }
 
     public static String toString(LineSegment ls) {
@@ -61,31 +58,20 @@ public final class LineSegments {
     }
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
-        long l = 0;
+        long bytes = 0;
         for (long i = count - 1; i >= 0; i--) {
             byte b = memorySegment.get(JAVA_BYTE, offset + i);
-            l = (l << ALIGNMENT) + (b & 0xFFL);
+            bytes = (bytes << ALIGNMENT) + (b & 0xFFL);
         }
-        return l;
-    }
-
-    public static final long ALIGNMENT = JAVA_LONG.byteSize();
-
-    private static byte[] toBytes(long l) {
-        return new byte[] {
-            (byte) (l & 0xFF),
-            (byte) (l >> 8L & 0xFF),
-            (byte) (l >> 16L & 0xFF),
-            (byte) (l >> 24L & 0xFF),
-            (byte) (l >> 32L & 0xFF),
-            (byte) (l >> 40L & 0xFF),
-            (byte) (l >> 48L & 0xFF),
-            (byte) (l >> 56L & 0xFF)
-        };
+        return bytes;
     }
 
     private LineSegments() {
     }
+
+    public static final ValueLayout.OfLong LAYOUT = ValueLayout.JAVA_LONG;
+
+    public static final long ALIGNMENT = ValueLayout.JAVA_LONG.byteSize();
 
     record ImmutableSlice(MemorySegment memorySegment, long length)
         implements LineSegment {

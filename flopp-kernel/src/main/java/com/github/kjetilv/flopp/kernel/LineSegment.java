@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 
+import static com.github.kjetilv.flopp.kernel.LineSegments.LAYOUT;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
@@ -35,36 +36,58 @@ public interface LineSegment extends Range {
     }
 
     default long longCount() {
-        return (longEnd() - longStart()) / LineSegments.ALIGNMENT;
+        return (longEnd() - longStart()) / ALIGNMENT;
+    }
+
+    default long fullLongCount() {
+        return (longEnd() - fullLongStart()) / ALIGNMENT;
     }
 
     default long headStart() {
-        return startIndex() % LineSegments.ALIGNMENT;
+        return startIndex() % ALIGNMENT;
     }
 
     default boolean isAlignedAtEnd() {
-        return endIndex() % LineSegments.ALIGNMENT == 0;
+        return endIndex() % ALIGNMENT == 0;
     }
 
     default long longStart() {
         long startIndex = startIndex();
-        long head = startIndex % LineSegments.ALIGNMENT;
+        long head = startIndex % ALIGNMENT;
         return startIndex - head;
+    }
+
+    default long fullLongStart() {
+        return startIndex() + headLength();
+    }
+
+    default int headLength() {
+        long head = startIndex() % ALIGNMENT;
+        long padding = head == 0L ? 0L : ALIGNMENT - head;
+        return Math.toIntExact(padding);
     }
 
     default long longEnd() {
         long endIndex = endIndex();
-        long tailEnd = endIndex % LineSegments.ALIGNMENT;
+        long tailEnd = endIndex % ALIGNMENT;
         return endIndex - tailEnd;
     }
 
+    default long head() {
+        return bytesAt(0, headLength());
+    }
+
     default long head(long head) {
-        long l = memorySegment().get(LineSegments.LONG, longStart());
-        return l >> head * LineSegments.ALIGNMENT;
+        long l = memorySegment().get(LAYOUT, longStart());
+        return l >> head * ALIGNMENT;
     }
 
     default long longNo(int longNo) {
-        return memorySegment().get(LineSegments.LONG, longStart() + longNo * LineSegments.ALIGNMENT);
+        return memorySegment().get(LAYOUT, longStart() + longNo * ALIGNMENT);
+    }
+
+    default long fullLongNo(int longNo) {
+        return memorySegment().get(LAYOUT, fullLongStart() + longNo * ALIGNMENT);
     }
 
     @SuppressWarnings("unused")
@@ -74,7 +97,7 @@ public interface LineSegment extends Range {
 
     default long tail() {
         long endIndex = endIndex();
-        long tail = endIndex % LineSegments.ALIGNMENT;
+        long tail = endIndex % ALIGNMENT;
         return LineSegments.bytesAt(memorySegment(), longEnd(), tail);
     }
 
@@ -86,4 +109,13 @@ public interface LineSegment extends Range {
         return LineSegments.bytesAt(memorySegment(), startIndex() + offset, count);
     }
 
+    default LineSegment slice(long startIndex, long endIndex) {
+        return LineSegments.of(memorySegment(), startIndex, endIndex);
+    }
+
+    default int tailLength() {
+        return Math.toIntExact(endIndex() % ALIGNMENT);
+    }
+
+    long ALIGNMENT = LineSegments.ALIGNMENT;
 }

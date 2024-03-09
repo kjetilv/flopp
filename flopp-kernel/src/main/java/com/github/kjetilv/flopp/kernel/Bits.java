@@ -1,6 +1,42 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.nio.charset.Charset;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class Bits {
+
+    public static String toString(long l) {
+        return toString(l, -1, null);
+    }
+
+    public static String toString(long l, Charset charset) {
+        return toString(l, -1, charset);
+    }
+
+    public static String toString(long l, int len) {
+        return toString(l, len, null);
+    }
+
+    public static String toString(long l, int len, Charset charset) {
+        Charset cs = charset == null ? UTF_8 : charset;
+        return len < 0
+            ? new String(toBytes(l), cs)
+            : new String(toBytes(l), 0, len, cs);
+    }
+
+    public static byte[] toBytes(long l) {
+        return new byte[] {
+            (byte) (l & 0xFF),
+            (byte) (l >> 8L & 0xFF),
+            (byte) (l >> 16L & 0xFF),
+            (byte) (l >> 24L & 0xFF),
+            (byte) (l >> 32L & 0xFF),
+            (byte) (l >> 40L & 0xFF),
+            (byte) (l >> 48L & 0xFF),
+            (byte) (l >> 56L & 0xFF)
+        };
+    }
 
     /**
      * @param c Char
