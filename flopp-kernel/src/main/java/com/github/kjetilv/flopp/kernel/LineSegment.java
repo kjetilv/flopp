@@ -35,6 +35,10 @@ public interface LineSegment extends Range {
         return LineSegments.asString(this, length);
     }
 
+    default long longStart() {
+        return startIndex() - headStart();
+    }
+
     default long longCount() {
         return (longEnd() - longStart()) / ALIGNMENT;
     }
@@ -47,30 +51,28 @@ public interface LineSegment extends Range {
         return startIndex() % ALIGNMENT;
     }
 
-    default boolean isAlignedAtEnd() {
-        return endIndex() % ALIGNMENT == 0;
+    default boolean isAlignedAtStart() {
+        return headStart() == 0L;
     }
 
-    default long longStart() {
-        long startIndex = startIndex();
-        long head = startIndex % ALIGNMENT;
-        return startIndex - head;
+    default boolean isAlignedAtEnd() {
+        return endIndex() % ALIGNMENT == 0;
     }
 
     default long fullLongStart() {
         return startIndex() + headLength();
     }
 
-    default int headLength() {
-        long head = startIndex() % ALIGNMENT;
-        long padding = head == 0L ? 0L : ALIGNMENT - head;
-        return Math.toIntExact(padding);
-    }
-
     default long longEnd() {
         long endIndex = endIndex();
         long tailEnd = endIndex % ALIGNMENT;
         return endIndex - tailEnd;
+    }
+
+    default int headLength() {
+        long head = startIndex() % ALIGNMENT;
+        long padding = head == 0L ? 0L : ALIGNMENT - head;
+        return Math.toIntExact(padding);
     }
 
     default long head() {
@@ -101,6 +103,10 @@ public interface LineSegment extends Range {
         return LineSegments.bytesAt(memorySegment(), longEnd(), tail);
     }
 
+    default int tailLength() {
+        return Math.toIntExact(endIndex() % ALIGNMENT);
+    }
+
     default byte byteAt(long i) {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
@@ -111,10 +117,6 @@ public interface LineSegment extends Range {
 
     default LineSegment slice(long startIndex, long endIndex) {
         return LineSegments.of(memorySegment(), startIndex, endIndex);
-    }
-
-    default int tailLength() {
-        return Math.toIntExact(endIndex() % ALIGNMENT);
     }
 
     long ALIGNMENT = LineSegments.ALIGNMENT;
