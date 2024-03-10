@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 
-public record ImmutableSeparatedLine(
+record ImmutableSeparatedLine(
     MemorySegment memorySegment,
     int columnCount,
     long[] start,
