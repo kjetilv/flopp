@@ -10,12 +10,17 @@ import java.io.IOException;
 import java.lang.foreign.ValueLayout;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SuppressWarnings("StringTemplateMigration")
 public class BitwiseSpliteratorTest {
 
     @Test
@@ -37,54 +42,42 @@ public class BitwiseSpliteratorTest {
                                 .mapToObj(x -> (char) x)
                                 .map(Object::toString)
                                 .collect(Collectors.joining());
-                            return STR."\{l}\{n}";
+                            return l + "/" + n;
                         }))
                     .flatMap(Function.identity())
             ).flatMap(Function.identity());
 
         String csq = content.collect(Collectors.joining("\n")) + "\n";
-        Path file = Files.writeString(
-            dir.resolve(STR."\{UUID.randomUUID()}.bin"),
-            csq
-        );
+        Path file = Files.writeString(dir.resolve(UUID.randomUUID() + ".bin"), csq);
 
         Shape shape = Shape.of(file).longestLine(10);
         Partitioning partitioning = Partitioning.create(3, 8);
 
+        List<String> expected;
+        try (Stream<String> lines = Files.lines(file)) {
+            expected = lines
+                .map(line -> "## " + line.replace("\n", "^\n"))
+                .toList();
+        }
+
 //        System.out.println(new String(Files.readAllBytes(file)));
 
+        List<String> convs = new ArrayList<>();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {
-            bitwisePartitioned.streams().streamers().forEach(streamer -> {
-                streamer.lines().forEach(line -> {
-                    byte[] utf8String = line.memorySegment()
-                        .asSlice(line.startIndex(), line.length())
-                        .toArray(ValueLayout.JAVA_BYTE);
-                    String x = "## " + new String(utf8String).replace("\n", "^\n");
-//                    System.out.println(x);
-                });
-//                System.out.println(STR."Done with \{streamer.partition()}");
-            });
-//            for (Partition partition : partitions) {
-//
-//                BitwiseAlignedPartitionSpliterator spliterator =
-//                    new BitwiseAlignedPartitionSpliterator(
-//                        partition,
-//                        memorySegmentSources.source(partition).get().memorySegment()
-//                    );
-//
-//                spliterator.tryAdvance(line ->
-//                    {
-//                        byte[] utf8String = line.memorySegment()
-//                            .asSlice(line.offset(), line.length())
-//                            .toArray(ValueLayout.JAVA_BYTE);
-//                        String x = new String(utf8String);
-//                        System.out.println(x);
-//                    }
-//                );
-//                System.out.println(STR."Done with \{partition}");
-//            }
+            bitwisePartitioned.streams().streamers()
+                .forEach(streamer ->
+                    streamer.lines()
+                        .map(line -> {
+                            byte[] utf8String = line.memorySegment()
+                                .asSlice(line.startIndex(), line.length())
+                                .toArray(ValueLayout.JAVA_BYTE);
+                            return "## " + new String(utf8String).replace("\n", "^\n");
+                        })
+                        .forEach(convs::add));
         }
+
+        assertThat(convs).containsExactlyElementsOf(expected);
     }
 }

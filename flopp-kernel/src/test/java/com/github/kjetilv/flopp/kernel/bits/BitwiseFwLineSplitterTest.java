@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("StringTemplateMigration")
 class BitwiseFwLineSplitterTest {
 
     @Test
@@ -29,7 +30,7 @@ class BitwiseFwLineSplitterTest {
 
     private static void assertFileContents(String contents, FwFormat fwFormat, String... lines) {
         List<String> splits = new ArrayList<>();
-        Path path = null;
+        Path path;
         try {
             path = Files.write(
                 Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
@@ -66,10 +67,7 @@ class BitwiseFwLineSplitterTest {
             }
         } catch (Exception e) {
             throw new IllegalStateException(
-                STR."""
-                   Failed with list:
-                     \{String.join("\n  ", splits)}
-                   """, e);
+                "Failed with list:\n  " + String.join("\n", splits), e);
         }
     }
 }

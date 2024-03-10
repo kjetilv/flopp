@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
+@SuppressWarnings("StringTemplateMigration")
 public final class LineSegments {
 
     public static String asString(LineSegment line) {
@@ -54,7 +55,7 @@ public final class LineSegments {
     }
 
     public static String toString(LineSegment ls) {
-        return STR."\{ls.getClass().getSimpleName()}[\{ls.startIndex()}-\{ls.endIndex()}]";
+        return ls.getClass().getSimpleName() + "[" + ls.startIndex() + "-" + ls.endIndex() + "]";
     }
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {

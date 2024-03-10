@@ -6,7 +6,7 @@ import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "StringTemplateMigration"})
 public record Partitioning(int count, long tail) {
 
     public static Partitioning create() {
@@ -50,7 +50,7 @@ public record Partitioning(int count, long tail) {
     public List<Partition> of(long total) {
         long reasonablesize = (tail + count) * 2;
         if (total < reasonablesize) {
-            throw new IllegalStateException(STR."\{this} requires a length >= \{reasonablesize}: \{total}");
+            throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ":" + total);
         }
         return partitions(total);
     }
@@ -58,9 +58,7 @@ public record Partitioning(int count, long tail) {
     private List<Partition> partitions(long total) {
         Non.negativeOrZero(total, "total");
         if (count > total) {
-            throw new IllegalStateException(
-                STR."Too many partitions for \{total}: \{count} partitions"
-            );
+            throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
         }
         if (total > count) {
             long[] sizes = partitionSizes(total);
@@ -71,11 +69,11 @@ public record Partitioning(int count, long tail) {
 
     private long[] partitionSizes(long total) {
         if (count == 1) {
-            return new long[] { total };
+            return new long[] {total};
         }
         if (total / count < Partitioning.ALIGNMENT * 2L) {
             throw new IllegalArgumentException(
-                STR."Too many partitions for \{total} bytes with alignment \{Partitioning.ALIGNMENT}: \{count}");
+                "Too many partitions for " + total + " bytes with alignment " + Partitioning.ALIGNMENT + ": " + count);
         }
         if (tail > 0) {
             return alignedSizesWithTail(total);
@@ -146,7 +144,7 @@ public record Partitioning(int count, long tail) {
 
     private static int intSized(long count) {
         if (count > MAX_VALUE) {
-            throw new IllegalStateException(STR."Expected integer-sized partition: \{count} > \{MAX_VALUE}");
+            throw new IllegalStateException("Expected integer-sized partition: " + count + " > " + MAX_VALUE);
         }
         return Math.toIntExact(count);
     }

@@ -7,6 +7,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SuppressWarnings("StringTemplateMigration")
 class PartitionsTest {
 
     @Test
@@ -45,7 +46,7 @@ class PartitionsTest {
             assertEquals(
                 expectedSizes[i],
                 partitions.get(i).length(),
-                STR."Partition had wrong size #\{i}: \{partitions.get(i)}"
+                "Partition had wrong size #" + i + ":" + partitions.get(i)
             );
         }
         assertThat(partitions.getFirst().first()).isTrue();

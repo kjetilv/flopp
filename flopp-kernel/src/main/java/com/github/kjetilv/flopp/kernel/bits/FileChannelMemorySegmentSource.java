@@ -13,6 +13,7 @@ import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
+@SuppressWarnings("StringTemplateMigration")
 final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     private final Path path;
@@ -37,7 +38,7 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
         try {
             return channel.map(READ_ONLY, partition.offset(), partition.length(shape), arena);
         } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} could not open [\{partition}", e);
+            throw new IllegalStateException(this + " could not open " + partition, e);
         }
     }
 
@@ -47,20 +48,20 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
             channel.close();
             randomAccessFile.close();
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to close", e);
+            throw new IllegalStateException(this + " failed to close", e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{path}]";
+        return getClass().getSimpleName() + "[" + path + "]";
     }
 
     private RandomAccessFile openRandomAccess(Path path) {
         try {
             return new RandomAccessFile(path.toFile(), "r");
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} could not access file", e);
+            throw new IllegalStateException(this + " could not access file", e);
         }
     }
 }

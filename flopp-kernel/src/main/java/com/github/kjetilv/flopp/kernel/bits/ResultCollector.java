@@ -7,7 +7,8 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-final class ResultCollector<T>  {
+@SuppressWarnings("StringTemplateMigration")
+final class ResultCollector<T> {
 
     private final ResultConsumerSpliterator<T> consumerSpliterator;
 
@@ -25,6 +26,6 @@ final class ResultCollector<T>  {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{consumerSpliterator}]";
+        return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
     }
 }

@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
+@SuppressWarnings("StringTemplateMigration")
 class MemoryMappedByteArrayLinesWriter implements LinesWriter {
 
     private final RandomAccessFile randomAccessFile;
@@ -18,7 +19,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter {
         try {
             this.randomAccessFile = new RandomAccessFile(target.toFile(), "rw");
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to open \{target}", e);
+            throw new IllegalStateException("Failed to open " + target, e);
         }
         this.charset = charset;
         byte[] bytes = new byte[bufferSize];
@@ -28,8 +29,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter {
                 try {
                     randomAccessFile.write(bytes, 0, length);
                 } catch (Exception e) {
-                    throw new IllegalStateException(
-                        STR."Failed to write \{length} bytes to \{randomAccessFile}", e);
+                    throw new IllegalStateException("Failed to write " + length + " bytes to " + randomAccessFile, e);
                 }
             }
         );
@@ -46,7 +46,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter {
         try {
             randomAccessFile.close();
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to close \{randomAccessFile}", e);
+            throw new IllegalStateException("Failed to close " + randomAccessFile, e);
         }
     }
 }

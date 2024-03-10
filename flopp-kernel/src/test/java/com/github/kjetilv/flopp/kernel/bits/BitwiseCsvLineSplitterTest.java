@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("StringTemplateMigration")
 class BitwiseCsvLineSplitterTest {
 
     @TempDir
@@ -208,8 +209,8 @@ class BitwiseCsvLineSplitterTest {
                 abc234;foo;456;dfgfgh;1234
                 foo;bar;zot
                 foo;bar
-                            
-                            
+                
+                
                 zot;
                 moreStuff;1;2;3;4;5;6
                 """,
@@ -287,13 +288,9 @@ class BitwiseCsvLineSplitterTest {
         }
     }
 
+    @SuppressWarnings("StringTemplateMigration")
     private Path fileWith(String contents) throws IOException {
-        Path write = Files.writeString(
-            tempDir.resolve(STR."\{UUID.randomUUID().toString()}.txt"),
-            contents,
-            CREATE
-        );
-        return write;
+        return Files.writeString(tempDir.resolve(UUID.randomUUID() + ".txt"), contents, CREATE);
     }
 
     private void assertSplit(Partitioning partitioning, String input) {
@@ -365,11 +362,7 @@ class BitwiseCsvLineSplitterTest {
                         .toList());
             }
         } catch (Exception e) {
-            throw new IllegalStateException(
-                STR."""
-                   Failed with list:
-                     \{String.join("\n  ", splits)}
-                   """, e);
+            throw new IllegalStateException("Failed with list: " + String.join("\n  ", splits), e);
         }
     }
 

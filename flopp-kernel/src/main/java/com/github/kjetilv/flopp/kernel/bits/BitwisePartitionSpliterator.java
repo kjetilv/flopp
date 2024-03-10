@@ -10,8 +10,8 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-final class BitwisePartitionSpliterator
-    extends Spliterators.AbstractSpliterator<LineSegment> {
+@SuppressWarnings("StringTemplateMigration")
+final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
@@ -48,8 +48,13 @@ final class BitwisePartitionSpliterator
             handler.run();
             return false;
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed: \{action}", e);
+            throw new IllegalStateException(this + " failed: " + action, e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[@" + partition + "]";
     }
 
     BitwisePartitionHandler handler(Action action) {
@@ -57,15 +62,8 @@ final class BitwisePartitionSpliterator
             partition,
             segment,
             action,
-            next == null
-                ? null
-                : () -> next.handler(action)
+            next == null ? null : () -> next.handler(action)
         );
-    }
-
-    @Override
-    public String toString() {
-        return STR."\{getClass().getSimpleName()}[@\{partition}]";
     }
 
     private Action forwarder(Consumer<? super LineSegment> action) {

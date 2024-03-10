@@ -9,6 +9,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
+@SuppressWarnings("StringTemplateMigration")
 final class FileChannelTransfers implements Transfers<Path> {
 
     private final String target;
@@ -37,22 +38,22 @@ final class FileChannelTransfers implements Transfers<Path> {
                 randomAccessFile.close();
             }
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed to close \{receivingChannel}/\{randomAccessFile}", e);
+            throw new IllegalStateException(this + " failed to close " + receivingChannel + "/" + randomAccessFile, e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{target}]";
+        return getClass().getSimpleName() + "[" + target + "]";
     }
 
-    private static final String READ_WRITE = "rw";
-
-    private static RandomAccessFile randomAccess(Path file) {
+    private RandomAccessFile randomAccess(Path file) {
         try {
             return new RandomAccessFile(file.toFile(), READ_WRITE);
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to open \{file}", e);
+            throw new IllegalStateException(this + " failed to open " + file, e);
         }
     }
+
+    private static final String READ_WRITE = "rw";
 }

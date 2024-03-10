@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@SuppressWarnings("StringTemplateMigration")
 class PathTempTargets implements TempTargets<Path> {
 
     private final Path tempDirectory;
@@ -21,17 +22,18 @@ class PathTempTargets implements TempTargets<Path> {
         this.sourceName = fileName;
         this.suffixIndex = sourceName.lastIndexOf('.');
         this.suffix = suffixIndex < 0 ? "" : sourceName.substring(suffixIndex + 1);
+        String prefix = "workdir-" + fileName + "-tmp";
         try {
-            this.tempDirectory = Files.createTempDirectory(STR."workdir-\{fileName}-tmp");
+            this.tempDirectory = Files.createTempDirectory(prefix);
         } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this}: Failed to create temp dir", e);
+            throw new IllegalStateException(this + " Failed to create temp dir " + prefix, e);
         }
     }
 
     @Override
     public Path temp(Partition partition) {
         int no = partition.partitionNo();
-        String tmpFilename = STR."\{sourceName}-\{no}.tmp\{suffixIndex < 0 ? "" : STR.".\{suffix}"}";
+        String tmpFilename = sourceName + "-" + no + ".tmp." + (suffixIndex < 0 ? "" : suffix);
         return tempDirectory.resolve(tmpFilename);
     }
 
@@ -46,6 +48,6 @@ class PathTempTargets implements TempTargets<Path> {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{tempDirectory}]";
+        return getClass().getSimpleName() + "[" + tempDirectory + "]";
     }
 }

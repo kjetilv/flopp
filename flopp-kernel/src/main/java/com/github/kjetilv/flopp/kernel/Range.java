@@ -14,13 +14,14 @@ public interface Range {
         return endIndex() - startIndex();
     }
 
+    @SuppressWarnings("StringTemplateMigration")
     record Immutable(long startIndex, long endIndex) implements Range {
 
         public Immutable {
             Non.negative(startIndex, "startIndex");
             Non.negative(endIndex, "endIndex");
             if (endIndex < startIndex) {
-                throw new IllegalStateException(STR."Range: \{startIndex} >= \{endIndex}");
+                throw new IllegalStateException("Range: " + startIndex + " + >= " + endIndex);
             }
         }
     }

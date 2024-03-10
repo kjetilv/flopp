@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
+@SuppressWarnings("StringTemplateMigration")
 final class BitwiseCounter {
 
     private final Partition partition;
@@ -29,13 +30,13 @@ final class BitwiseCounter {
             handler(action).run();
             return action.lc;
         } catch (Exception e) {
-            throw new IllegalStateException(STR."\{this} failed", e);
+            throw new IllegalStateException(this + " failed", e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[@\{partition}]";
+        return getClass().getSimpleName() + "[@" + partition + "]";
     }
 
     private BitwisePartitionHandler handler(BitwisePartitioned.Action action) {

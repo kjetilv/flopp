@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
 
     private final PartitionedMapper partitionedMapper;
@@ -55,7 +56,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
                             lines.forEach(line ->
                                 linesWriter.accept(processor.apply(line)));
                         } catch (Exception e) {
-                            throw new RuntimeException(STR."Failed to write \{tempTaget}", e);
+                            throw new RuntimeException("Failed to write " + tempTaget, e);
                         }
                         return tempTaget;
                     };

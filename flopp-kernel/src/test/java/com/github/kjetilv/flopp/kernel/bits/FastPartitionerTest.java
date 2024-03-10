@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.FileBuilder;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -16,6 +19,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("StringTemplateMigration")
 public class FastPartitionerTest {
 
     @TempDir
@@ -28,7 +32,7 @@ public class FastPartitionerTest {
                 try {
                     run(testInfo, i, p);
                 } catch (Exception e) {
-                    throw new IllegalStateException(STR."Failed \{i} lines with \{p} partitions", e);
+                    throw new IllegalStateException("Failed " + i + " lines with " + p + " partitions", e);
                 }
             }
         }
@@ -56,7 +60,7 @@ public class FastPartitionerTest {
                 try {
                     run3(testInfo, i, p);
                 } catch (Exception e) {
-                    throw new IllegalStateException(STR."Failed \{i} lines with \{p} partitions", e);
+                    throw new IllegalStateException("Failed " + i + " lines with " + p + " partitions", e);
                 }
             }
         }
@@ -103,18 +107,22 @@ public class FastPartitionerTest {
         );
 
         Shape shape = Shape.size(Files.size(file)).longestLine(32).headerFooter(1, 1);
-        Partitioned<Path> partitioned = Bitwise.partititioned(
-            file,
-            Partitioning.create(partitionCount, 10),
-            shape
-        );
-        LongAdder cont = new LongAdder();
-        partitioned.consumer().forEachLine(
-                (_, entries) ->
-                    entries.forEach(_ -> cont.increment())
+        LongAdder cont;
+        try (
+            Partitioned<Path> partitioned = Bitwise.partititioned(
+                file,
+                Partitioning.create(partitionCount, 10),
+                shape
             )
-            .toList()
-            .forEach(CompletableFuture::join);
+        ) {
+            cont = new LongAdder();
+            partitioned.consumer().forEachLine(
+                    (_, entries) ->
+                        entries.forEach(_ -> cont.increment())
+                )
+                .toList()
+                .forEach(CompletableFuture::join);
+        }
         assertThat(cont).hasValue(lineCount);
     }
 
@@ -146,12 +154,12 @@ public class FastPartitionerTest {
             partitioned.streams().streamers()
                 .forEach(bitwisePartitionStreamer ->
                     bitwisePartitionStreamer.lines()
-                        .forEach(l -> {
+                        .forEach(_ -> {
                             cont.increment();
 //                            System.out.println(LineSegments.asString(l));
                         }));
             assertThat(cont)
-                .describedAs(STR."lineCount \{lineCount} partitionCount \{partitionCount}")
+                .describedAs(lineCount + " lineCount, " + partitionCount + " partitionCount")
                 .hasValue(lineCount);
         }
     }

@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("StringTemplateMigration")
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
@@ -100,6 +101,7 @@ public final class CalculateAverage_kjetilvlong {
         return future::join;
     }
 
+    @SuppressWarnings("unused")
     private static void go1(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
@@ -165,7 +167,7 @@ public final class CalculateAverage_kjetilvlong {
                 parse(csvLine, m);
             });
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed with \{path}", e);
+            throw new IllegalStateException("Failed with " + path, e);
         }
         return m;
     }
@@ -242,7 +244,7 @@ public final class CalculateAverage_kjetilvlong {
                 return i;
             }
         }
-        throw new IllegalStateException(STR."No split in \{ls.asString()}");
+        throw new IllegalStateException("No split in " + ls.asString());
     }
 
     private static int parseValue(LineSegment ls) {
@@ -299,7 +301,7 @@ public final class CalculateAverage_kjetilvlong {
         }
 
         public String toString() {
-            return STR."\{round(min)}/\{round(1.0 * sum / count)}/\{round(max)}";
+            return round(min) + "/" + round(1.0 * sum / count) + "/" + round(max);
         }
 
         public Result merge(Result coll) {

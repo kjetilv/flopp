@@ -17,6 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
+@SuppressWarnings("StringTemplateMigration")
 final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
     implements Consumer<CompletableFuture<PartitionResult<T>>> {
 
@@ -75,10 +76,10 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{cachedSizes}, completed:\{completed.keySet()}]";
+        return getClass().getSimpleName() + "[" + cachedSizes + ", completed: " + completed.keySet() + "]";
     }
 
-    protected void recordCompletion(PartitionResult<T> future, Throwable e) {
+    private void recordCompletion(PartitionResult<T> future, Throwable e) {
         Objects.requireNonNull(future, "future");
         updateLock.lock();
         try {
@@ -87,7 +88,7 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
                 updated.signalAll();
             } else {
                 throw new IllegalStateException(
-                    STR."Partition \{future.partition().partitionNo()} already present: \{duplicate}");
+                    "Partition " + future.partition().partitionNo() + " already present: " + duplicate);
             }
         } finally {
             updateLock.unlock();

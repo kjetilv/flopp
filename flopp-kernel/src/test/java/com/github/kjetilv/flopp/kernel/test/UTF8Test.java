@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.test;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -18,6 +17,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("StringTemplateMigration")
 public class UTF8Test {
 
     @Test
@@ -46,6 +46,7 @@ public class UTF8Test {
             }
         }
     }
+
     @Test
     void mergeMultisUTF8() {
         for (int partitions = 1; partitions < 20; partitions++) {
@@ -223,7 +224,7 @@ public class UTF8Test {
                         ));
         }
         assertThat(tmp).content()
-            .describedAs(STR."Failed with \{partitionCount} partitions: \{partitions}")
+            .describedAs("Failed with " + partitionCount + " partitions: " + partitions)
             .isEqualTo(sb.toString().trim());
     }
 
@@ -237,7 +238,7 @@ public class UTF8Test {
 
     private static Path path(String name) {
         URL resource = Objects.requireNonNull(
-            Thread.currentThread().getContextClassLoader().getResource(name), STR."resource: \{name}"
+            Thread.currentThread().getContextClassLoader().getResource(name), "resource: " + name
         );
         return Path.of(Objects.requireNonNull(resource.getFile(), "resource.getFile()"));
     }

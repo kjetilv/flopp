@@ -24,11 +24,10 @@ import static java.lang.Character.toLowerCase;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Disabled
-@SuppressWarnings("SameParameterValue")
+@SuppressWarnings({"SameParameterValue", "StringTemplateMigration"})
 public class BitwiseSizeTest {
 
     private ExecutorService readerExec;
@@ -98,7 +97,7 @@ public class BitwiseSizeTest {
             .map(Class::getSimpleName).orElseThrow();
         String methodName = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
-        String pathBase = STR."\{className}-\{methodName}";
+        String pathBase = className + "-" + methodName;
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
@@ -221,10 +220,12 @@ public class BitwiseSizeTest {
     private Path out(Path path, TestInfo testInfo, Partition partition, String qual) {
         String name = testInfo.getTestMethod()
             .map(Method::getName).orElseThrow();
-        Path tmp = Path.of(STR."\{path.getFileName()}-\{name}\{qual == null ? "" : STR."-\{qual}"}\{partition == null
-            ? ""
-            : STR."-\{partition.partitionNo()}"}.txt");
-        return tempDirectory.resolve(tmp);
+        return tempDirectory.resolve(
+            Path.of(path.getFileName() + "-" + name +
+                    (qual == null ? ""
+                        : "-" + qual +
+                          (partition == null ? ""
+                              : "-" + partition.partitionNo()) + ".txt")));
     }
 
     private Path out(Path path, TestInfo testInfo, String qual) {
@@ -269,7 +270,7 @@ public class BitwiseSizeTest {
             try {
                 time = doer.get();
             } catch (Throwable e) {
-                throw new IllegalStateException(STR."Failed on run #\{i + 1}/\{times}", e);
+                throw new IllegalStateException("Failed on run #" + (i + 1) + " " + times, e);
             }
             if (times < 5 || i > 2) {
                 duration = duration.plus(time);
@@ -313,7 +314,7 @@ public class BitwiseSizeTest {
             .chars()
             .mapToObj(c ->
                 isUpperCase(c) ?
-                    STR." \{Character.toString(toLowerCase(c))}"
+                    " " + Character.toString(toLowerCase(c))
                     : Character.toString(c))
             .collect(joining());
         System.out.printf("%s: %s%n", method, time);

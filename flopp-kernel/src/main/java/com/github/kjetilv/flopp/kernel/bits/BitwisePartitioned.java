@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitioned implements Partitioned<Path> {
 
     private final Path path;
@@ -37,6 +38,18 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
+    public PartitionedProcessor<LineSegment> processor(Path target) {
+        return new BitwisePartitionProcessor(
+            mapper(),
+            partitions,
+            shape.charset(),
+            BitwisePartitioned::writer,
+            tempTargets(path),
+            transfers(target)
+        );
+    }
+
+    @Override
     public PartitionedMapper mapper() {
         return new BitwisePartitionedMapper(streams());
     }
@@ -57,23 +70,11 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedProcessor<LineSegment> processor(Path target) {
-        return new BitwisePartitionProcessor(
-            mapper(),
-            partitions,
-            shape.charset(),
-            BitwisePartitioned::writer,
-            tempTargets(path),
-            transfers(target)
-        );
-    }
-
-    @Override
     public void close() {
         try {
             memorySegmentSource.close();
         } catch (Exception e) {
-            throw new RuntimeException(STR."\{this} could not close", e);
+            throw new RuntimeException(this + " could not close", e);
         }
     }
 

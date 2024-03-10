@@ -37,27 +37,20 @@ final class BitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final Bits.Finder escFinder;
 
-    BitwiseCsvLineSplitter(
-        CsvFormat csvFormat,
-        Consumer<SeparatedLine> lines
-    ) {
+    BitwiseCsvLineSplitter(CsvFormat csvFormat, Consumer<SeparatedLine> lines) {
         this(csvFormat, lines, false);
     }
 
-    BitwiseCsvLineSplitter(
-        CsvFormat csvFormat,
-        Consumer<SeparatedLine> lines,
-        boolean immutable
-    ) {
+    BitwiseCsvLineSplitter(CsvFormat format, Consumer<SeparatedLine> lines, boolean immutable) {
         super(lines, immutable);
-        Objects.requireNonNull(csvFormat, "lineSplit");
+        Objects.requireNonNull(format, "lineSplit");
 
-        this.sepFinder = Bits.finder(csvFormat.separator());
-        this.quoFinder = Bits.finder(csvFormat.quote());
-        this.escFinder = Bits.finder(csvFormat.escape());
+        this.sepFinder = Bits.finder(format.separator());
+        this.quoFinder = Bits.finder(format.quote());
+        this.escFinder = Bits.finder(format.escape());
 
-        this.start = new long[csvFormat.columnCount()];
-        this.end = new long[csvFormat.columnCount()];
+        this.start = new long[format.columnCount()];
+        this.end = new long[format.columnCount()];
     }
 
     @Override

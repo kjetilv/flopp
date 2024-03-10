@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
@@ -44,6 +45,6 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{partition}]";
+        return getClass().getSimpleName() + "[" + partition + "]";
     }
 }

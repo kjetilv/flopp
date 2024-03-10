@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 
+@SuppressWarnings("StringTemplateMigration")
 final class FileChannelTransfer implements Transfer {
 
     private final FileChannel receivingChannel;
@@ -41,13 +42,13 @@ final class FileChannelTransfer implements Transfer {
                 );
             } while (totalTransferred < partition.length());
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to write \{source}", e);
+            throw new IllegalStateException("Failed to write " + source, e);
         }
     }
 
     @Override
     public String toString() {
-        return STR."\{getClass().getSimpleName()}[\{partition}]";
+        return getClass().getSimpleName() + "[" + partition + "]";
     }
 
     @Override
@@ -55,15 +56,15 @@ final class FileChannelTransfer implements Transfer {
         try {
             receivingChannel.close();
         } catch (IOException e) {
-            throw new IllegalStateException(STR."\{this} failed to close \{receivingChannel}", e);
+            throw new IllegalStateException(this + " failed to close " + receivingChannel, e);
         }
     }
 
-    private static RandomAccessFile randomAccess(Path path) {
+    private RandomAccessFile randomAccess(Path path) {
         try {
             return new RandomAccessFile(path.toFile(), "r");
         } catch (Exception e) {
-            throw new IllegalStateException(STR."Failed to open rw: \{path}", e);
+            throw new IllegalStateException(this + " failed to open rw: " + path, e);
         }
     }
 }

@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("StringTemplateMigration")
 class CalculateAverageTest {
 
     @Test
@@ -90,6 +91,7 @@ class CalculateAverageTest {
         );
     }
 
+    @SuppressWarnings("unused")
     private static void test(
         String smaple,
         Partitioning partitioning,
@@ -138,11 +140,7 @@ class CalculateAverageTest {
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).content()
-            .describedAs(STR."\{smaple.toString()}, \{partitioning}, \{shape}")
-            .isEqualTo(
-                STR."""
-        \{map}
-        """);
+            .describedAs(smaple + ", " + partitioning + ", " + shape)
+            .isEqualTo(map + "\n");
     }
-
 }

@@ -7,6 +7,7 @@ import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@SuppressWarnings("StringTemplateMigration")
 abstract class AbstractBitwiseLineSplitter implements Consumer<LineSegment>, SeparatedLine {
 
     private final Consumer<SeparatedLine> lines;
@@ -28,6 +29,6 @@ abstract class AbstractBitwiseLineSplitter implements Consumer<LineSegment>, Sep
 
     @Override
     public final String toString() {
-        return STR."\{getClass().getSimpleName()}[\{lineSegment() == null ? "*" : lineSegment().asString()}]";
+        return getClass().getSimpleName() +"[" + (lineSegment() == null ? "*" : lineSegment().asString()) + "]";
     }
 }
