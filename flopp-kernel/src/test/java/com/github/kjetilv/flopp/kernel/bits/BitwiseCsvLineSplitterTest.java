@@ -366,13 +366,6 @@ class BitwiseCsvLineSplitterTest {
         }
     }
 
-    private static List<String> lines(String... lines) {
-        return Arrays.stream(lines)
-            .map(line -> line.split(";"))
-            .flatMap(Arrays::stream)
-            .toList();
-    }
-
     private static Consumer<SeparatedLine> adder(List<String> splits) {
         return line ->
             line.columns()
