@@ -202,7 +202,7 @@ class BitwiseCsvLineSplitterTest {
     }
 
     @Test
-    void splitFile() throws IOException {
+    void splitFile() {
         assertFileContents(
             """
                 def123;cba;234;abcdef;3456
@@ -244,7 +244,7 @@ class BitwiseCsvLineSplitterTest {
     }
 
     @Test
-    void quotesFiles() throws IOException {
+    void quotesFiles() {
         assertFileContents(
             """
                 foo;'123; ok'
@@ -256,7 +256,7 @@ class BitwiseCsvLineSplitterTest {
     }
 
     @Test
-    void trickyFile() throws IOException {
+    void trickyFile() {
         assertFileContents(
             """
                 '';
@@ -329,15 +329,20 @@ class BitwiseCsvLineSplitterTest {
         return splits;
     }
 
-    private static void assertFileContents(String contents, String... lines) throws IOException {
+    private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
-        Path path = Files.write(
-            Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
-            List.of(
-                contents
-                    .split("\n")
-            )
-        );
+        Path path;
+        try {
+            path = Files.write(
+                Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
+                List.of(
+                    contents
+                        .split("\n")
+                )
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
             new CsvFormat(';', '\''),
             line ->
