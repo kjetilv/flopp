@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
-import com.github.kjetilv.flopp.kernel.Maps;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;

@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel.qr;
 
-import com.github.kjetilv.flopp.kernel.Non;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;

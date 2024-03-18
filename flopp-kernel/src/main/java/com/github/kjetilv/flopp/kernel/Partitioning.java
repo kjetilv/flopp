@@ -6,11 +6,11 @@ import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
-@SuppressWarnings({"unused", "StringTemplateMigration"})
+@SuppressWarnings("StringTemplateMigration")
 public record Partitioning(int count, long tail) {
 
     public static Partitioning create() {
-        return new Partitioning(cpus(), 0);
+        return new Partitioning(Runtime.getRuntime().availableProcessors(), 0);
     }
 
     public static Partitioning create(int count) {
@@ -82,8 +82,6 @@ public record Partitioning(int count, long tail) {
     }
 
     private long[] alignedSizesWithTail(long total) {
-        long overshoot = total % ALIGNMENT;
-        long alignedSlices = total / ALIGNMENT;
         long headTotal = total - tail;
         long alignedHeadSlices = headTotal / ALIGNMENT;
         long headOvershoot = headTotal % ALIGNMENT;
@@ -136,10 +134,6 @@ public record Partitioning(int count, long tail) {
 
     private static List<Partition> singlePartition(long total) {
         return List.of(new Partition(0, 1, 0, total));
-    }
-
-    private static int cpus() {
-        return Runtime.getRuntime().availableProcessors();
     }
 
     private static int intSized(long count) {
