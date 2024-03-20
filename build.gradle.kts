@@ -17,25 +17,37 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
+            languageVersion.set(JavaLanguageVersion.of(22))
         }
         withSourcesJar()
         modularity.inferModulePath
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_22
+        targetCompatibility = JavaVersion.VERSION_22
     }
 
-    tasks {
-        withType<JavaCompile> {
-            options.compilerArgs.add("--enable-preview")
-            options.forkOptions.jvmArgs!!.add("--enable-preview")
-        }
-        withType<Test> {
-            jvmArgs("--enable-preview")
-            useJUnitPlatform()
-        }
-        withType<JavaExec> {
-            jvmArgs("--enable-preview")
+    publishing {
+        publications {
+            register<MavenPublication>("floppPublication") {
+                pom {
+                    name.set("Flopp")
+                    description.set("Flopp")
+                    url.set("https://github.com/kjetilv/flopp")
+
+                    licenses {
+                        license {
+                            name.set("GNU General Public License v3.0")
+                            url.set("https://github.com/kjetilv/flopp/blob/main/LICENSE")
+                        }
+                    }
+
+                    scm {
+                        connection.set("scm:git:https://github.com/kjetilv/uplift")
+                        developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
+                        url.set("https://github.com/kjetilv/flopp")
+                    }
+                }
+                from(components["java"])
+            }
         }
     }
 }
