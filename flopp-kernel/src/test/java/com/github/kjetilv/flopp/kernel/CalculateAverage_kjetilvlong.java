@@ -73,7 +73,7 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             List<Supplier<Map<String, Result>>> mapSuppliers =
-                bitwisePartitioned.csvSplitters()
+                bitwisePartitioned.splitters()
                     .splitters(new CsvFormat(';'))
                     .map(splitsConsumer -> {
                         Supplier<Map<String, Result>> worker = () ->

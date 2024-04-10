@@ -19,7 +19,7 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedConsumer consumer();
 
-    PartitionedSplitters csvSplitters();
+    PartitionedSplitters splitters();
 
     PartitionedStreams streams();
 

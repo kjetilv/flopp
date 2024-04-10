@@ -16,20 +16,24 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.readers.Reader;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-public final class JustSplit_kjetilvlong {
+public final class Trolls {
+
     public static void main(String[] args) {
         for (String arg : args) {
             Instant start = Instant.now();
             Path path = Path.of(arg);
-            Shape shape = Shape.of(path).longestLine(128);
+            Shape shape = Shape.of(path).header(1).longestLine(1024);
 
             Partitioning partitioning = Partitioning.create(
                 Runtime.getRuntime().availableProcessors(),
@@ -45,6 +49,8 @@ public final class JustSplit_kjetilvlong {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
+        CsvFormat csvFormat = new CsvFormat(',', '"');
+        Reader reader = Reader.of(path, csvFormat);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
@@ -54,23 +60,40 @@ public final class JustSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            CsvFormat csvFormat = new CsvFormat(';');
-            List<CompletableFuture<Void>> list1 =
-                bitwisePartitioned.splitters().splitters(csvFormat)
-                    .map(splitsConsumer ->
-                        CompletableFuture.runAsync(
-                            () ->
-                                splitsConsumer.forEach(line ->
-                                    longAdder.add(line.columnCount())),
-                            executor
-                        ))
-                    .toList();
-            list1.forEach(CompletableFuture::join);
+            LongAdder entryCount = new LongAdder();
+            LongAdder failures = new LongAdder();
+            LongAdder followersCount = new LongAdder();
+
+            Consumer<Map<String, Object>> entryHandler = x -> {
+                entryCount.increment();
+                Object followers = x.get("followers");
+                long x1 = 0;
+                try {
+                    x1 = Long.parseLong(followers.toString());
+                } catch (NumberFormatException e) {
+                    failures.increment();
+                    System.out.println(x);
+                }
+                followersCount.add(x1);
+            };
+
+            Function<PartitionedSplitter, CompletableFuture<Void>> partitionFuture = splitter ->
+                    CompletableFuture.runAsync(
+                        () -> reader.read(splitter, entryHandler),
+                        executor
+                    );
+            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
+            partitionedSplitters.splitters(csvFormat)
+                .map(partitionFuture)
+                .toList()
+                .forEach(CompletableFuture::join);
+
+            System.out.println(followersCount.longValue() / entryCount.longValue());
+            System.out.println(failures);
         }
         return longAdder;
     }
 
-    private JustSplit_kjetilvlong() {
-
+    private Trolls() {
     }
 }

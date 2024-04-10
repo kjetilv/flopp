@@ -63,7 +63,7 @@ public final class FormattSplit_kjetilvlong {
             )
         ) {
             CsvFormat csvFormat = new CsvFormat(';');
-            bitwisePartitioned.csvSplitters().splitters(csvFormat)
+            bitwisePartitioned.splitters().splitters(csvFormat)
                 .map(countFuture(reader, longAdder, executor))
                 .toList()
                 .forEach(CompletableFuture::join);

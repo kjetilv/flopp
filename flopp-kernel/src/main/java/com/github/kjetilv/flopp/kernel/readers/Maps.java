@@ -9,7 +9,9 @@ import java.util.stream.Collectors;
 final class Maps {
 
     @SafeVarargs
-    static <K, V, T> Map<K, V> map(Function<T, K> key, Function<T, V> value, T... list) {
+    static <K, V, T> Map<K, V> map(
+        Function<T, K> key, Function<T, V> value, T... list
+    ) {
         return Arrays.stream(list).collect(Collectors.toMap(key, value));
     }
 

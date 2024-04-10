@@ -41,7 +41,7 @@ subprojects {
                     }
 
                     scm {
-                        connection.set("scm:git:https://github.com/kjetilv/uplift")
+                        connection.set("scm:git:https://github.com/kjetilv/flopp")
                         developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
                         url.set("https://github.com/kjetilv/flopp")
                     }

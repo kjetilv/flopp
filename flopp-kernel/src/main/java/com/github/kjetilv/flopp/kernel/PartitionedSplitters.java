@@ -14,7 +14,6 @@ public interface PartitionedSplitters {
         return splittersList(csvFormat, immutable).stream();
     }
 
-
     default List<PartitionedSplitter> splittersList(CsvFormat csvFormat) {
         return splittersList(csvFormat, false);
     }

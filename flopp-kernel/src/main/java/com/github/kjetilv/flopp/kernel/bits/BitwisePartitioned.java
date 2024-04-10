@@ -60,7 +60,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedSplitters csvSplitters() {
+    public PartitionedSplitters splitters() {
         return new BitwisePartitionedSplitters(streams());
     }
 

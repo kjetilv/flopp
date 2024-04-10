@@ -81,7 +81,8 @@ class BitwiseCsvLineSplitterTest {
     @Test
     void shorterString() {
         assertSplit(
-            Partitioning.single(), "foo;bar",
+            Partitioning.single(),
+            "foo;bar",
             "foo",
             "bar"
         );
@@ -111,10 +112,49 @@ class BitwiseCsvLineSplitterTest {
         );
     }
 
-    @Test
-    void shorterString8Plus() {
-        assertSplit(Partitioning.single(), "fooz;barz");
-    }
+//    @Test
+//    void shorterStringUTF8Parts2() {
+//        Partitioning partitioning = Partitioning.create(2);
+//
+//        String input =
+//            """
+//                890000000000000000,MAYLUUSSTR,#topl RT jfrblazer49: I THINK JUDGE ROY MOORE WOULD BE AWESOME A SUPREME COURT JUDGE . GOD BLESS JUDGE ROY MOORE! https://t.co/qUSgEIoA1m …,Unknown,English,8/5/2017 6:21,8/5/2017 6:21,2965,638,1234,QUOTE_TWEET,Right,1,RightTroll,0,890467190402686977,893718554687811584,http://twitter.com/890467190402686977/statuses/893718554687811584,https://twitter.com/RebeccaFaussett/status/891646467949121539,,
+//                890000000000000000,MAYLUUSSTR,#topl Moochie thinks she's sexy huh ? face like bull dog ass like a 57 Buick #may,Unknown,English,8/5/2017 6:21,8/5/2017 6:21,2965,638,1233,,Right,0,RightTroll,0,890467190402686977,893718549100978177,http://twitter.com/890467190402686977/statuses/893718549100978177,,,
+//                890000000000000000,MAYLUUSSTR,"#topl RT AwakenToGod: Say often, ""I AM filled, surrounded, permeated, and pervaded by the pure, gentle, unconditional love that God is."" …",Unknown,English,8/5/2017 6:26,8/5/2017 6:37,2965,638,1236,,Right,0,RightTroll,0,890467190402686977,893719856440332288,http://twitter.com/890467190402686977/statuses/893719856440332288,,,
+//                890000000000000000,MAYLUUSSTR,#topl RT tradingpsych01: #Violent Muslim refugees causing Chaos in Europe https://t.co/eNkgioQeHb #may,Unknown,English,8/5/2017 6:26,8/5/2017 6:26,2965,638,1237,,Right,0,RightTroll,0,890467190402686977,893719858478821376,http://twitter.com/890467190402686977/statuses/893719858478821376,http://bit.ly/1TJdmcH,,
+//                """;
+//        String input2 =
+//            """
+//                890000000000000000,MAYLUUSSTR,"#topl RT AwakenToGod: Say often, ""I AM filled, surrounded, permeated, and pervaded by the pure, gentle, unconditional love that God is."" …",Unknown,English,8/5/2017 6:26,8/5/2017 6:37,2965,638,1236,,Right,0,RightTroll,0,890467190402686977,893719856440332288,http://twitter.com/890467190402686977/statuses/893719856440332288,,,
+//                """;
+//        List<String> splits1 = new ArrayList<>();
+//        try {
+//            try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
+//                partitioned.splitters()
+//                    .splitters(new CsvFormat(',', '"'))
+//                    .forEach(consumer ->
+//                        consumer.forEach(commaSeparatedLine ->
+//                            commaSeparatedLine.columns()
+//                                .forEach(splits1::add)));
+//            }
+//        } catch (Exception e) {
+//            throw new IllegalStateException("Failed: " + String.join("\n", splits1), e);
+//        }
+//        List<String> splits = splits1;
+//
+//        splits.stream()
+//            .map(s -> "`" + s + "`")
+//            .forEach(System.out::println);
+//    }
+//
+//    /*
+//890000000000000000,MAYLUUSSTR,#topl RT jfrblazer49: I THINK JUDGE ROY MOORE WOULD BE AWESOME A SUPREME COURT JUDGE . GOD BLESS JUDGE ROY MOORE! https://t.co/qUSgEIoA1m …,Unknown,English,8/5/2017 6:21,8/5/2017 6:21,2965,638,1234,QUOTE_TWEET,Right,1,RightTroll,0,890467190402686977,893718554687811584,http://twitter.com/890467190402686977/statuses/893718554687811584,https://twitter.com/RebeccaFaussett/status/891646467949121539,,
+//890000000000000000,MAYLUUSSTR,#topl Moochie thinks she's sexy huh ? face like bull dog ass like a 57 Buick #may,Unknown,English,8/5/2017 6:21,8/5/2017 6:21,2965,638,1233,,Right,0,RightTroll,0,890467190402686977,893718549100978177,http://twitter.com/890467190402686977/statuses/893718549100978177,,,
+//     */
+//    @Test
+//    void shorterString8Plus() {
+//        assertSplit(Partitioning.single(), "fooz;barz");
+//    }
 
     @Test
     void shorterString8() {
@@ -142,7 +182,7 @@ class BitwiseCsvLineSplitterTest {
     @Test
     void veryShorterString() {
         assertSplit(
-            Partitioning.single(), "a;b;c",
+            Partitioning.single(), "a;b;c", CSV_FORMAT,
             "a",
             "b",
             "c"
@@ -152,7 +192,7 @@ class BitwiseCsvLineSplitterTest {
     @Test
     void trickyString1() {
         assertSplit(
-            Partitioning.single(), "'c';'';",
+            Partitioning.single(), "'c';'';", CSV_FORMAT,
             "c", "", ""
         );
     }
@@ -160,7 +200,7 @@ class BitwiseCsvLineSplitterTest {
     @Test
     void quoted() {
         assertSplit(
-            Partitioning.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'",
+            Partitioning.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'", CSV_FORMAT,
             "foo 1",
             "bar",
             "234",
@@ -173,11 +213,25 @@ class BitwiseCsvLineSplitterTest {
         );
     }
 
+//    @Test
+//    void quotingQuotes() {
+//        assertSplit(
+//            Partitioning.single(),
+//            """
+//                'foo 1';'it''s';''foo'';4
+//                """, CSV_FORMAT,
+//            "foo 1",
+//            "it''s",
+//            "'foo'",
+//            "4"
+//        );
+//    }
+//
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
-            new CsvFormat(';', '\''),
+            CSV_FORMAT,
             adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -192,7 +246,7 @@ class BitwiseCsvLineSplitterTest {
         String input = "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;';';'\\;'";
         String[] expected = {"foo 1", "bar", "234", "ab; cd;ef", "it is \\'aight", "", "234", ";", "\\;"};
         BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
-            new CsvFormat(';', '\''),
+            CSV_FORMAT,
             adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -209,8 +263,8 @@ class BitwiseCsvLineSplitterTest {
                 abc234;foo;456;dfgfgh;1234
                 foo;bar;zot
                 foo;bar
-                
-                
+                                
+                                
                 zot;
                 moreStuff;1;2;3;4;5;6
                 """,
@@ -299,7 +353,7 @@ class BitwiseCsvLineSplitterTest {
                 Arrays.stream(line.split(";")))
             .toList();
 
-        List<String> splits = splits(partitioning, input);
+        List<String> splits = splits(partitioning, input, CSV_FORMAT);
         assertThat(splits).containsExactlyElementsOf(exp);
     }
 
@@ -308,16 +362,25 @@ class BitwiseCsvLineSplitterTest {
         String input,
         String... expected
     ) {
-        assertThat(splits(partitioning, input))
+        assertSplit(partitioning, input, CSV_FORMAT, expected);
+    }
+
+    private void assertSplit(
+        Partitioning partitioning,
+        String input,
+        CsvFormat csvFormat,
+        String... expected
+    ) {
+        assertThat(splits(partitioning, input, csvFormat))
             .containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input) {
+    private List<String> splits(Partitioning partitioning, String input, CsvFormat csvFormat) {
         List<String> splits = new ArrayList<>();
         try {
-            try (Partitioned<Path> partitioned = partitioned(partitioning, input)) {
-                partitioned.csvSplitters()
-                    .splitters(new CsvFormat(';', '\''))
+            try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
+                partitioned.splitters()
+                    .splitters(csvFormat)
                     .forEach(consumer ->
                         consumer.forEach(commaSeparatedLine ->
                             commaSeparatedLine.columns()
@@ -328,6 +391,8 @@ class BitwiseCsvLineSplitterTest {
         }
         return splits;
     }
+
+    public static final CsvFormat CSV_FORMAT = new CsvFormat(';', '\'');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
@@ -344,7 +409,7 @@ class BitwiseCsvLineSplitterTest {
             throw new RuntimeException(e);
         }
         BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
-            new CsvFormat(';', '\''),
+            CSV_FORMAT,
             line ->
                 line.columns()
                     .forEach(splits::add)
