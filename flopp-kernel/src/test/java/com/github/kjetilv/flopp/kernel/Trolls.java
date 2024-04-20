@@ -49,7 +49,7 @@ public final class Trolls {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        CsvFormat csvFormat = new CsvFormat(',', '"');
+        CsvFormat csvFormat = new CsvFormat.DoubleQuoted(',', '"');
         Reader reader = Reader.of(path, csvFormat);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -79,7 +79,8 @@ public final class Trolls {
 
             Function<PartitionedSplitter, CompletableFuture<Void>> partitionFuture = splitter ->
                     CompletableFuture.runAsync(
-                        () -> reader.read(splitter, entryHandler),
+                        () ->
+                            reader.read(splitter, entryHandler),
                         executor
                     );
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();

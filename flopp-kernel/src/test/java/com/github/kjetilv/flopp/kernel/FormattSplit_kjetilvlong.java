@@ -62,7 +62,7 @@ public final class FormattSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            CsvFormat csvFormat = new CsvFormat(';');
+            CsvFormat csvFormat = new CsvFormat.Escaped(';');
             bitwisePartitioned.splitters().splitters(csvFormat)
                 .map(countFuture(reader, longAdder, executor))
                 .toList()

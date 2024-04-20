@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.*;
 
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 final class BitwiseCsvSplitter implements PartitionedSplitter {
 
@@ -20,7 +19,7 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
         boolean immutable
     ) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
-        this.format = format == null ? CsvFormat.DEFAULT : format;
+        this.format = Objects.requireNonNull(format, "format");
         this.immutable = immutable;
     }
 
@@ -31,13 +30,22 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        Consumer<LineSegment> splitter =
-            new BitwiseCsvLineSplitter(format, consumer, immutable);
-        lines().forEach(splitter);
+        streamer.lines()
+            .forEach(splitter(consumer));
     }
 
-    @Override
-    public Stream<LineSegment> lines() {
-        return streamer.lines();
+    private Consumer<? super LineSegment> splitter(Consumer<SeparatedLine> consumer) {
+        return switch (format) {
+            case CsvFormat.Escaped escaped -> new BitwiseEscapedCsvLineSplitter(
+                consumer,
+                escaped,
+                immutable
+            );
+            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseDoubleQuotedCsvLineSplitter(
+                consumer,
+                doubleQuoted,
+                immutable
+            );
+        };
     }
 }

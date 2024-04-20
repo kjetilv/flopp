@@ -50,7 +50,8 @@ public interface Reader {
             splitter.forEach(separatedLine ->
                 values.accept(Maps.map(
                     Column::name,
-                    column -> value(separatedLine, column),
+                    column ->
+                        value(separatedLine, column),
                     columns
                 )));
     }

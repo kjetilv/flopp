@@ -57,10 +57,9 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
-            new CsvFormat(),
+        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
             line ->
-                airlines.add(line.column(1))
+                airlines.add(line.column(1)), new CsvFormat.Escaped()
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
@@ -83,10 +82,9 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        BitwiseCsvLineSplitter splitter = new BitwiseCsvLineSplitter(
-            new CsvFormat(),
+        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
             line ->
-                airlines.add(line.column(1))
+                airlines.add(line.column(1)), new CsvFormat.Escaped()
         );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))
@@ -181,7 +179,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat csvFormat = new CsvFormat(',', '"', '\\');
+        CsvFormat.Escaped csvFormat = new CsvFormat.Escaped(',', '"', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
         Instant now = Instant.now();
         try (
@@ -197,7 +195,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseCsvLineSplitter(csvFormat, lines)),
+                                        .forEach(new BitwiseEscapedCsvLineSplitter(lines, csvFormat)),
                                 executor
                             )))
                 .toList();

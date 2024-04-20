@@ -29,6 +29,13 @@ abstract class AbstractBitwiseLineSplitter implements Consumer<LineSegment>, Sep
 
     @Override
     public final String toString() {
-        return getClass().getSimpleName() +"[" + (lineSegment() == null ? "*" : lineSegment().asString()) + "]";
+        String sub = substring();
+        return getClass().getSimpleName() + "[" +
+               (sub == null ? "" : sub + " ") + (lineSegment() == null ? "*" : lineSegment().asString()) +
+               "]";
+    }
+
+    protected String substring() {
+        return null;
     }
 }

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+import static com.github.kjetilv.flopp.kernel.bits.Bits.hex;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 public class LongTest {
@@ -38,9 +39,5 @@ public class LongTest {
         assertThat(l1 & 0x0A)
             .describedAs(hex(l1org) + " " + hex(l1))
             .isEqualTo(0x0A);
-    }
-
-    private static String hex(long l1) {
-        return String.format("0x%08X", l1);
     }
 }
