@@ -5,7 +5,6 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwiseCounter {
 
     private final Partition partition;

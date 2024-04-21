@@ -12,7 +12,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
 
     private final PartitionedMapper partitionedMapper;

@@ -46,6 +46,11 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
                 doubleQuoted,
                 immutable
             );
+            case CsvFormat.Simple simple -> new BitwiseSimpleCsvLineSplitter(
+                consumer,
+                simple,
+                immutable
+            );
         };
     }
 }

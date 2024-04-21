@@ -20,7 +20,6 @@ import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings("StringTemplateMigration")
 class LineSegmentTest {
 
     @TempDir

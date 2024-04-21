@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;

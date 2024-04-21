@@ -44,7 +44,8 @@ public interface SeparatedLine {
     private IntFunction<LineSegment> toSegment() {
         long[] start = start();
         long[] end = end();
-        return column -> toSegment(column, start, end);
+        return column ->
+            toSegment(column, start, end);
     }
 
     private IntFunction<String> toColumn() {

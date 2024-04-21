@@ -17,7 +17,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
-@SuppressWarnings("StringTemplateMigration")
 final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
     implements Consumer<CompletableFuture<PartitionResult<T>>> {
 

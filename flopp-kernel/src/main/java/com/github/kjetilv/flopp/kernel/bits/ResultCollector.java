@@ -7,7 +7,6 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-@SuppressWarnings("StringTemplateMigration")
 final class ResultCollector<T> {
 
     private final ResultConsumerSpliterator<T> consumerSpliterator;

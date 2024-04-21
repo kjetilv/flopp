@@ -6,7 +6,6 @@ import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
-@SuppressWarnings("StringTemplateMigration")
 public record Partitioning(int count, long tail) {
 
     public static Partitioning create() {

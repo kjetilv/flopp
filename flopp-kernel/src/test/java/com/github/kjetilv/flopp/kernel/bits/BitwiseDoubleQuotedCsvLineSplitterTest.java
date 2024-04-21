@@ -19,7 +19,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Disabled
-@SuppressWarnings("StringTemplateMigration")
 class BitwiseDoubleQuotedCsvLineSplitterTest {
 
     @TempDir
@@ -335,14 +334,17 @@ class BitwiseDoubleQuotedCsvLineSplitterTest {
     private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
         try {
             return Bitwise.partititioned(fileWith(contents), partitioning);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @SuppressWarnings("StringTemplateMigration")
-    private Path fileWith(String contents) throws IOException {
-        return Files.writeString(tempDir.resolve(UUID.randomUUID() + ".txt"), contents, CREATE);
+    private Path fileWith(String contents)  {
+        try {
+            return Files.writeString(tempDir.resolve(UUID.randomUUID() + ".txt"), contents, CREATE);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void assertSplit(Partitioning partitioning, String input) {

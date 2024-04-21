@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
-@SuppressWarnings("StringTemplateMigration")
 class MemoryMappedByteArrayLinesWriter implements LinesWriter {
 
     private final RandomAccessFile randomAccessFile;

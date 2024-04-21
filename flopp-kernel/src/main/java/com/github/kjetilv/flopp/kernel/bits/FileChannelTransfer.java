@@ -8,7 +8,6 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 
-@SuppressWarnings("StringTemplateMigration")
 final class FileChannelTransfer implements Transfer {
 
     private final FileChannel receivingChannel;

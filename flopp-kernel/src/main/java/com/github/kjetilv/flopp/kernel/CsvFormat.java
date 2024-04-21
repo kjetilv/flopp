@@ -19,6 +19,24 @@ public sealed interface CsvFormat {
 
     int DEFAULT_COLUMN_COUNT = 128;
 
+    record Simple(char separator, int columnCount) implements CsvFormat {
+
+        @Override
+        public char quote() {
+            return 0;
+        }
+
+        @Override
+        public boolean fast() {
+            return true;
+        }
+
+        @Override
+        public CsvFormat fast(boolean fast) {
+            return this;
+        }
+    }
+
     record DoubleQuoted(
         char separator,
         char quote,

@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel;
 
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 
-@SuppressWarnings("StringTemplateMigration")
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
     implements Comparable<Partition>, Range {
 

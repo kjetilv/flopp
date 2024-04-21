@@ -10,6 +10,10 @@ public record Column(String name, int colunmNo, Function<String, Object> parser)
         Non.negativeOrZero(colunmNo, "Columns are 1-indexed, first column is 1");
     }
 
+    public Column(String name, int colunmNo) {
+        this(name, colunmNo, string -> string);
+    }
+
     Object parse(String string) {
         return string == null || parser == null
             ? string

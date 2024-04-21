@@ -13,7 +13,6 @@ import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-@SuppressWarnings("StringTemplateMigration")
 final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     private final Path path;

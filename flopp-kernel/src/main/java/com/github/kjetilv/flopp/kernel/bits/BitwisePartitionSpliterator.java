@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;

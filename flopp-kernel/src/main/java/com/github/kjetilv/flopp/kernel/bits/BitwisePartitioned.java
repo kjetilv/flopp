@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitioned implements Partitioned<Path> {
 
     private final Path path;

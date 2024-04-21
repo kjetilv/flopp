@@ -9,7 +9,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
-@SuppressWarnings("StringTemplateMigration")
 final class FileChannelTransfers implements Transfers<Path> {
 
     private final String target;

@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings("StringTemplateMigration")
 class BitwiseEscapedCsvLineSplitterTest {
 
     @TempDir
@@ -346,7 +345,6 @@ class BitwiseEscapedCsvLineSplitterTest {
         }
     }
 
-    @SuppressWarnings("StringTemplateMigration")
     private Path fileWith(String contents) throws IOException {
         return Files.writeString(tempDir.resolve(UUID.randomUUID() + ".txt"), contents, CREATE);
     }

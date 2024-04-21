@@ -14,7 +14,6 @@ public interface Range {
         return endIndex() - startIndex();
     }
 
-    @SuppressWarnings("StringTemplateMigration")
     record Immutable(long startIndex, long endIndex) implements Range {
 
         public Immutable {

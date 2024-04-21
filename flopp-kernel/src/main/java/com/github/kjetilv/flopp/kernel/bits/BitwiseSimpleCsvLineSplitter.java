@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 /**
  * @noinspection DuplicatedCode
  */
-final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
+final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final long[] start;
 
@@ -25,31 +25,23 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private long offset;
 
-    private boolean quoting;
-
-    private boolean escaping;
-
-    private boolean quoted;
-
     private int columnNo;
 
     private final Bits.Finder sepFinder;
 
-    private final Bits.Finder quoFinder;
-
-    private final Bits.Finder escFinder;
-
-    BitwiseEscapedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped csvFormat) {
+    BitwiseSimpleCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple csvFormat) {
         this(lines, csvFormat, false);
     }
 
-    BitwiseEscapedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format, boolean immutable) {
+    BitwiseSimpleCsvLineSplitter(
+        Consumer<SeparatedLine> lines,
+        CsvFormat.Simple format,
+        boolean immutable
+    ) {
         super(lines, immutable);
         Objects.requireNonNull(format, "lineSplit");
 
-        this.sepFinder = Bits.finder(format.separator(), format.fast());
-        this.quoFinder = Bits.finder(format.quote(), format.fast());
-        this.escFinder = Bits.finder(format.escape(), format.fast());
+        this.sepFinder = Bits.finder(format.separator(), true);
 
         this.start = new long[format.columnCount()];
         this.end = new long[format.columnCount()];
@@ -78,7 +70,6 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public void accept(LineSegment segment) {
         this.offset = this.currentStart = this.columnNo = 0;
-        this.quoted = this.quoting = this.escaping = false;
 
         this.segment = Objects.requireNonNull(segment, "segment");
         this.startOffset = this.segment.startIndex();
@@ -104,15 +95,13 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    protected String substring() {
-        return escaping ? "escaping"
-            : quoting ? "quoting"
-                : "";
+    protected LineSegment lineSegment() {
+        return segment;
     }
 
     @Override
-    protected LineSegment lineSegment() {
-        return segment;
+    protected String substring() {
+        return "";
     }
 
     private void processHead() {
@@ -129,63 +118,18 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private void findSeps(long bytes, long shift) {
         int nextSep = sepFinder.next(bytes);
-        int nextQuo = quoFinder.next(bytes);
-        int nextEsc = escFinder.next(bytes);
-
         while (true) {
-            if (nextEsc == ALIGNMENT) { // Not escape
-                if (nextSep < nextQuo) { // Separator
-                    handleSep(nextSep + shift);
-                    nextSep = sepFinder.next();
-                } else if (nextSep == nextQuo) { // Nothing
-                    handleNext();
-                    return;
-                } else { // Quote
-                    handleQuo();
-                    nextQuo = quoFinder.next();
-                }
-            } else {
-                int min = Math.min(nextSep, Math.min(nextQuo, nextEsc));
-                if (min == nextSep) { // Separator
-                    handleSep(nextSep + shift);
-                    nextSep = sepFinder.next();
-                } else if (min == nextQuo) { // Quote
-                    handleQuo();
-                    nextQuo = quoFinder.next();
-                } else { // Escape
-                    handleEscape();
-                    nextEsc = escFinder.next();
-                }
+            if (nextSep == ALIGNMENT) { // No match
+                offset += ALIGNMENT;
+                return;
             }
+            handleSep(nextSep + shift);
+            nextSep = sepFinder.next();
         }
-    }
-
-    private void handleNext() {
-        offset += ALIGNMENT;
     }
 
     private void handleSep(long index) {
-        if (quoting) {
-            return;
-        }
-        if (escaping) {
-            escaping = false;
-        } else {
-            markColumn(index);
-        }
-    }
-
-    private void handleQuo() {
-        if (escaping) {
-            escaping = false;
-        } else {
-            quoting = !quoting;
-            quoted = true;
-        }
-    }
-
-    private void handleEscape() {
-        escaping = true;
+        markColumn(index);
     }
 
     private void markColumn(long index) {
@@ -195,10 +139,8 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     private void addSep(long end) {
-        int quote = quoted ? 1 : 0;
-        this.start[columnNo] = startOffset + currentStart + quote;
-        this.end[columnNo] = startOffset + end - quote;
+        this.start[columnNo] = startOffset + currentStart;
+        this.end[columnNo] = startOffset + end;
         this.columnNo++;
-        this.quoted = false;
     }
 }

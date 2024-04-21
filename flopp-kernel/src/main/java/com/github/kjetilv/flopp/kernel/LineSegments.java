@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-@SuppressWarnings("StringTemplateMigration")
 public final class LineSegments {
 
     public static String asString(LineSegment line) {
@@ -18,8 +17,19 @@ public final class LineSegments {
 
     public static String asString(LineSegment segment, int len) {
         byte[] bytes = new byte[len];
-        for (int i = 0; i < len; i++) {
+        int head = segment.headLength();
+        int longs = Math.toIntExact(segment.longCount()) - 1;
+        int tail = len % 8;
+        for (int i = 0; i < head; i++) {
             bytes[i] = segment.byteAt(i);
+        }
+        for (int i = 0; i < longs; i++) {
+            long l = segment.longAt(i + 1);
+            Bits.setBytes(bytes, head + i * 8, l);
+        }
+        for (int i = 0; i < tail; i++) {
+            int pos = longs * 8;
+            bytes[pos + i] = segment.byteAt(pos + i);
         }
         return new String(bytes, StandardCharsets.UTF_8);
     }

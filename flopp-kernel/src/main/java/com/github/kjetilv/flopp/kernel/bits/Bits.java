@@ -65,6 +65,17 @@ public final class Bits {
         };
     }
 
+    public static void setBytes(byte[] bytes, int offset, long value) {
+        bytes[offset] = (byte) (value & 0xFF);
+        bytes[offset + 1] = (byte) (value >> 8 & 0xFF);
+        bytes[offset + 2] = (byte) (value >> 16 & 0xFF);
+        bytes[offset + 3] = (byte) (value >> 24 & 0xFF);
+        bytes[offset + 4] = (byte) (value >> 32 & 0xFF);
+        bytes[offset + 5] = (byte) (value >> 40 & 0xFF);
+        bytes[offset + 6] = (byte) (value >> 48 & 0xFF);
+        bytes[offset + 7] = (byte) (value >> 56 & 0xFF);
+    }
+
     /**
      * @param c Char
      * @return A counter for finding the number of chars in a long
@@ -78,7 +89,15 @@ public final class Bits {
      * @return Finder for cycling through the occurrences in a long
      */
     public static Finder finder(char c) {
-        return new CyclingFinder(c);
+        return finder(c, false);
+    }
+
+    /**
+     * @param c Char
+     * @return Finder for cycling through the occurrences in a long
+     */
+    public static Finder finder(char c, boolean fast) {
+        return fast ? new SwarFinder(c) : new CyclingFinder(c);
     }
 
     public static Finder cyclingFinder(char c) {

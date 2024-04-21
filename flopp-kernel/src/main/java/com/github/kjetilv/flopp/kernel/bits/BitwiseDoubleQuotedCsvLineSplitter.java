@@ -47,8 +47,8 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
         super(lines, immutable);
         Objects.requireNonNull(format, "lineSplit");
 
-        this.sepFinder = Bits.finder(format.separator());
-        this.quoFinder = Bits.finder(format.quote());
+        this.sepFinder = Bits.finder(format.separator(), format.fast());
+        this.quoFinder = Bits.finder(format.quote(), format.fast());
 
         this.start = new long[format.columnCount()];
         this.end = new long[format.columnCount()];

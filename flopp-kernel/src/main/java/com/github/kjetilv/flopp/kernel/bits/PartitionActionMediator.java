@@ -9,7 +9,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-@SuppressWarnings("StringTemplateMigration")
 final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
 
     static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {

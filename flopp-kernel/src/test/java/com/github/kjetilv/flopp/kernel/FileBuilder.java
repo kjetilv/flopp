@@ -12,7 +12,6 @@ import static java.util.stream.Collectors.joining;
 
 public final class FileBuilder {
 
-    @SuppressWarnings("StringTemplateMigration")
     public static Path file(Path tmp, String base, int lineCount, int columnCount, Shape.Decor decor) {
         try {
             Path path = tmp.resolve(base + "-data.txt");

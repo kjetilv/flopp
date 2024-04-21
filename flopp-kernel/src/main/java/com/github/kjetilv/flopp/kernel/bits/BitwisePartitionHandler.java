@@ -15,7 +15,6 @@ import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-@SuppressWarnings("StringTemplateMigration")
 final class BitwisePartitionHandler implements Runnable {
 
     private final Partition partition;

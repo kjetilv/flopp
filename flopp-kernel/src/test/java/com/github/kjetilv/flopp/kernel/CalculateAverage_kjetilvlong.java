@@ -16,7 +16,12 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.readers.Column;
+import com.github.kjetilv.flopp.kernel.readers.Reader;
+import com.github.kjetilv.flopp.kernel.readers.Readers;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,13 +32,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("StringTemplateMigration")
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
         for (String arg : args) {
             Path path = Path.of(arg);
-            go2(path);
+            go3(path);
 //            go1(path);
         }
     }
@@ -127,6 +131,60 @@ public final class CalculateAverage_kjetilvlong {
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines)
                         .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
+                .toList();
+            List<Map<String, Result>> maps = list.stream()
+                .map(CompletableFuture::join)
+                .toList();
+            System.out.println(Duration.between(start, Instant.now()));
+            Set<String> keys = keySet(maps);
+            Map<String, Result> map = combineMaps(keys, maps);
+            System.out.println(map);
+            System.out.println(Duration.between(start, Instant.now()));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static void go3(Path path) {
+        Instant start = Instant.now();
+        Shape shape = Shape.of(path).longestLine(128);
+        Partitioning partitioning = Partitioning.create(
+            Runtime.getRuntime().availableProcessors(),
+            shape.longestLine());
+        CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
+        Reader reader = Readers.create(
+            new Column("station", 1),
+            new Column("measurement", 2, measurement ->
+                new BigDecimal(measurement).setScale(2, RoundingMode.UNNECESSARY))
+        );
+        int chunks = partitioning.of(shape.size()).size();
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                0, TimeUnit.NANOSECONDS,
+                new LinkedBlockingQueue<>(chunks)
+            )
+        ) {
+            System.out.println(Duration.between(start, Instant.now()));
+            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
+            List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
+                .map(streamer ->
+                    CompletableFuture.supplyAsync(
+                        () -> {
+                            Map<String, Result> m = new HashMap<>(1024, 1.0f);
+                            reader.read(streamer, map ->
+                                m.compute(
+                                    (String) map.get("station"),
+                                    (_, existing) -> {
+                                        int dec = ((BigDecimal) map.get("measurement")).scaleByPowerOfTen(2).intValue();
+                                        return existing == null ? new Result(dec) : existing.collect(dec);
+                                    }
+                                ));
+                            return m;
+                        },
+                        executor
+                    ))
                 .toList();
             List<Map<String, Result>> maps = list.stream()
                 .map(CompletableFuture::join)
