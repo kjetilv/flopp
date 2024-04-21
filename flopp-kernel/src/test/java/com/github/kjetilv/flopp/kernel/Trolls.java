@@ -17,6 +17,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
+import com.github.kjetilv.flopp.kernel.readers.Readers;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -50,7 +51,7 @@ public final class Trolls {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
         CsvFormat csvFormat = new CsvFormat.DoubleQuoted(',', '"');
-        Reader reader = Reader.of(path, csvFormat);
+        Reader reader = Readers.create(path, csvFormat);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
@@ -64,15 +65,15 @@ public final class Trolls {
             LongAdder failures = new LongAdder();
             LongAdder followersCount = new LongAdder();
 
-            Consumer<Map<String, Object>> entryHandler = x -> {
+            Consumer<Map<String, Object>> entryHandler = map -> {
                 entryCount.increment();
-                Object followers = x.get("followers");
+                Object followers = map.get("followers");
                 long x1 = 0;
                 try {
                     x1 = Long.parseLong(followers.toString());
                 } catch (NumberFormatException e) {
                     failures.increment();
-                    System.out.println(x);
+                    System.out.println(map);
                 }
                 followersCount.add(x1);
             };

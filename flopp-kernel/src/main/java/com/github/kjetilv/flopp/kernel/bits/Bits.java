@@ -260,10 +260,9 @@ public final class Bits {
         public int next(long bytes) {
             offset = 0;
             dists = bytes ^ mask;
-            if (hasZero(dists)) {
-                return next();
-            }
-            return offset = ALIGNMENT;
+            return hasZero(dists)
+                ? next()
+                : (offset = ALIGNMENT);
         }
 
 

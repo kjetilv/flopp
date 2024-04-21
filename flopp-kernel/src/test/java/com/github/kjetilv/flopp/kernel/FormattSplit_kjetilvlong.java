@@ -17,6 +17,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
+import com.github.kjetilv.flopp.kernel.readers.Readers;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -25,7 +26,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
-import static com.github.kjetilv.flopp.kernel.readers.Reader.column;
+import static com.github.kjetilv.flopp.kernel.readers.Readers.column;
 
 public final class FormattSplit_kjetilvlong {
 
@@ -49,7 +50,7 @@ public final class FormattSplit_kjetilvlong {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        Reader reader = Reader.of(
+        Reader reader = Readers.create(
             column("Station", 1),
             column("Temperature", 2, Double::parseDouble)
         );
