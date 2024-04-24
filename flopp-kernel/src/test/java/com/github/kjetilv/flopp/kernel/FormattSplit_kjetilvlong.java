@@ -52,7 +52,7 @@ public final class FormattSplit_kjetilvlong {
         int chunks = partitioning.of(shape.size()).size();
         Reader reader = Readers.create(
             column("Station", 1),
-            column("Temperature", 2, Double::parseDouble)
+            column("Temperature", 2, lineSegment -> Double.parseDouble(lineSegment.asString()))
         );
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);

@@ -28,6 +28,14 @@ public interface SeparatedLine {
         return segment(column).asString();
     }
 
+    default long start(int column) {
+        return start()[column];
+    }
+
+    default long end(int column) {
+        return end()[column];
+    }
+
     default LineSegment segment(int column) {
         return toSegment(column, start(), end());
     }

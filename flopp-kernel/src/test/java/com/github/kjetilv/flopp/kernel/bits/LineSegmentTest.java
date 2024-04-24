@@ -35,8 +35,8 @@ class LineSegmentTest {
                 """);
         assertThat(ls.length()).isEqualTo(36L);
         assertThat(ls.isAlignedAtEnd()).isFalse();
-        assertThat(ls.longEnd()).isEqualTo(32L);
-        assertThat(ls.longCount()).isEqualTo(4L);
+        assertThat(ls.alignedEnd()).isEqualTo(32L);
+        assertThat(ls.alignedCount()).isEqualTo(4L);
         assertThat(ls.fullLongCount()).isEqualTo(4L);
         assertThat(ls.startIndex()).isEqualTo(0L);
         assertThat(Bits.toString(ls.longNo(0))).isEqualTo("foo bar ");
@@ -46,13 +46,36 @@ class LineSegmentTest {
         LineSegment slice = ls.slice(5L, 24L);
 
         assertThat(slice.length()).isEqualTo(19L);
-        assertThat(slice.longEnd()).isEqualTo(24L);
-        assertThat(slice.longCount()).isEqualTo(3L);
+        assertThat(slice.alignedEnd()).isEqualTo(24L);
+        assertThat(slice.alignedCount()).isEqualTo(3L);
         assertThat(slice.fullLongCount()).isEqualTo(2L);
         assertThat(slice.startIndex()).isEqualTo(5L);
         assertThat(Bits.toString(slice.fullLongNo(0))).isEqualTo("zot\nfoo ");
 
         assertThat(Bits.toString(slice.head(), slice.headLength())).isEqualTo(slice.asString().substring(0, 3));
+    }
+
+    @Test
+    void asString() {
+        String string = "foo bar zot is the string";
+        LineSegment lineSegment = LineSegments.of(string);
+        assertThat(LineSegments.asString(lineSegment))
+            .describedAs("Should self-describe")
+            .isEqualTo(string);
+        assertThat(LineSegments.asString(lineSegment.slice(7, 23)))
+            .describedAs("Should sub-scribe too")
+            .isEqualTo(string.substring(7, 23));
+        for (int i = 0; i < string.length(); i++) {
+            for (int j = i + 1; j < string.length(); j++) {
+                try {
+                    assertThat(LineSegments.asString(lineSegment.slice(i, j)))
+                        .describedAs("Should sub-scribe too: " + i + "-" + j)
+                        .isEqualTo(string.substring(i, j));
+                } catch (Exception e) {
+                    throw new RuntimeException("Should sub-scribe too: " + i + "-" + j, e);
+                }
+            }
+        }
     }
 
     @Test
@@ -74,10 +97,10 @@ class LineSegmentTest {
             MemorySegment memorySegment = channel.map(READ_ONLY, 0, contents.length, Arena.ofAuto());
             LineSegment lineSegment = LineSegments.of(memorySegment, 13, 49);
 
-            assertThat(lineSegment.longStart()).isEqualTo(8);
-            assertThat(lineSegment.fullLongStart()).isEqualTo(16);
-            assertThat(lineSegment.longEnd()).isEqualTo(48);
-            assertThat(lineSegment.longCount()).isEqualTo(5);
+            assertThat(lineSegment.alignedStart()).isEqualTo(8);
+            assertThat(lineSegment.firstAlignedStart()).isEqualTo(16);
+            assertThat(lineSegment.alignedEnd()).isEqualTo(48);
+            assertThat(lineSegment.alignedCount()).isEqualTo(5);
             assertThat(lineSegment.fullLongCount()).isEqualTo(4);
 
             long firstAsBytes = lineSegment.bytesAt(0, 3);

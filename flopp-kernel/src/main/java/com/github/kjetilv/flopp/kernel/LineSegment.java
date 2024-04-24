@@ -35,16 +35,30 @@ public interface LineSegment extends Range {
         return LineSegments.asString(this, length);
     }
 
-    default long longStart() {
+    /**
+     * The aligned start of this segment. May be ahead of/less-than {@link #startIndex() start index}.
+     * @return Aligned start
+     */
+    default long alignedStart() {
         return startIndex() - headStart();
     }
 
-    default long longCount() {
-        return (longEnd() - longStart()) / ALIGNMENT;
+    /**
+     * The aligned end of this segment. May be ahead of/less-than {@link #endIndex() end index}.
+     * @return Aligned end
+     */
+    default long alignedEnd() {
+        long endIndex = endIndex();
+        long tailEnd = endIndex % ALIGNMENT;
+        return endIndex - tailEnd;
+    }
+
+    default long alignedCount() {
+        return (alignedEnd() - alignedStart()) / ALIGNMENT;
     }
 
     default long fullLongCount() {
-        return (longEnd() - fullLongStart()) / ALIGNMENT;
+        return (alignedEnd() - firstAlignedStart()) / ALIGNMENT;
     }
 
     default long headStart() {
@@ -59,14 +73,8 @@ public interface LineSegment extends Range {
         return endIndex() % ALIGNMENT == 0;
     }
 
-    default long fullLongStart() {
+    default long firstAlignedStart() {
         return startIndex() + headLength();
-    }
-
-    default long longEnd() {
-        long endIndex = endIndex();
-        long tailEnd = endIndex % ALIGNMENT;
-        return endIndex - tailEnd;
     }
 
     default int headLength() {
@@ -80,27 +88,27 @@ public interface LineSegment extends Range {
     }
 
     default long head(long head) {
-        long l = memorySegment().get(LAYOUT, longStart());
+        long l = memorySegment().get(LAYOUT, alignedStart());
         return l >> head * ALIGNMENT;
     }
 
     default long longNo(int longNo) {
-        return memorySegment().get(LAYOUT, longStart() + longNo * ALIGNMENT);
+        return memorySegment().get(LAYOUT, alignedStart() + longNo * ALIGNMENT);
     }
 
     default long fullLongNo(int longNo) {
-        return memorySegment().get(LAYOUT, fullLongStart() + longNo * ALIGNMENT);
+        return memorySegment().get(LAYOUT, firstAlignedStart() + longNo * ALIGNMENT);
     }
 
     @SuppressWarnings("unused")
     default long longAt(int longIndex) {
-        return memorySegment().get(JAVA_LONG_UNALIGNED, longStart() + longIndex);
+        return memorySegment().get(JAVA_LONG_UNALIGNED, alignedStart() + longIndex);
     }
 
     default long tail() {
         long endIndex = endIndex();
         long tail = endIndex % ALIGNMENT;
-        return LineSegments.bytesAt(memorySegment(), longEnd(), tail);
+        return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
     }
 
     default int tailLength() {

@@ -76,6 +76,45 @@ public final class Bits {
         bytes[offset + 7] = (byte) (value >> 56 & 0xFF);
     }
 
+    public static void setBytes(long data, int startIndex, byte[] target) {
+
+    }
+
+    public static void setBytes(long data, int offset, int length, byte[] target) {
+        if (length <= 0) {
+            return;
+        }
+        target[offset] = (byte) (data & 0xFF);
+        if (length == 1) {
+            return;
+        }
+        target[offset + 1] = (byte) (data >> 8 & 0xFF);
+        if (length == 2) {
+            return;
+        }
+        target[offset + 2] = (byte) (data >> 16 & 0xFF);
+        if (length == 3) {
+            return;
+        }
+        target[offset + 3] = (byte) (data >> 24 & 0xFF);
+        if (length == 4) {
+            return;
+        }
+        target[offset + 4] = (byte) (data >> 32 & 0xFF);
+        if (length == 5) {
+            return;
+        }
+        target[offset + 5] = (byte) (data >> 40 & 0xFF);
+        if (length == 6) {
+            return;
+        }
+        target[offset + 6] = (byte) (data >> 48 & 0xFF);
+        if (length == 7) {
+            return;
+        }
+        target[offset + 7] = (byte) (data >> 56 & 0xFF);
+    }
+
     /**
      * @param c Char
      * @return A counter for finding the number of chars in a long
@@ -113,6 +152,8 @@ public final class Bits {
 
     public static final long EIGHTIES = 0x8080808080808080L;
 
+    public static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
+
     private static final int ALIGNMENT = 8;
 
     private static final long[] CLEARED = {
@@ -144,8 +185,6 @@ public final class Bits {
     private static final long SEPARATOR_XOR_MASK = 0X3B3B3B3B3B3B3B3BL;
 
     private static final long ONES = 0x0101010101010101L;
-
-    public static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
 
     private static String dot(String s, int interval) {
         int len = s.length();
@@ -283,7 +322,6 @@ public final class Bits {
                 ? next()
                 : (offset = ALIGNMENT);
         }
-
 
         /**
          * Retuns the next occurrence.  Mutates this finder.

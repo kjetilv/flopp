@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public final class Readers {
@@ -16,7 +15,7 @@ public final class Readers {
         return column(name, columnNo, null);
     }
 
-    public static Column column(String name, int columnNo, Function<String, Object> parser) {
+    public static Column column(String name, int columnNo, Column.Parser parser) {
         return new Column(name, columnNo, parser);
     }
 
@@ -32,23 +31,18 @@ public final class Readers {
         String[] headers = header.split(Character.toString(format.separator()));
         return create(IntStream.range(0, headers.length)
             .mapToObj(i ->
-                new Column(
-                    headers[i],
-                    i + 1,
-                    s -> s
-                ))
+                new Column(headers[i], i + 1))
             .toList());
     }
 
     public static Reader create(List<Column> columns) {
         return (splitter, values) ->
-            splitter.forEach(separatedLine ->
-                values.accept(Maps.map(
-                    Column::name,
-                    column ->
-                        column.parse(separatedLine.column(column.colunmNo() - 1)),
+            splitter.forEach(separatedLine -> {
+                values.accept(Maps.map(Column::name, column ->
+                        column.parse(separatedLine.segment(column.colunmNo() - 1)),
                     columns
-                )));
+                ));
+            });
     }
 
     private Readers() {

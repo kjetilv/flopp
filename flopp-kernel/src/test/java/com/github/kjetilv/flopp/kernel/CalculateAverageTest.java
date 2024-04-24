@@ -132,8 +132,6 @@ class CalculateAverageTest {
         Shape shape = Shape.of(smaple).longestLine(tail);
         Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
             smaple,
-            partitioning,
-            shape,
             slow,
             callbacks
         );

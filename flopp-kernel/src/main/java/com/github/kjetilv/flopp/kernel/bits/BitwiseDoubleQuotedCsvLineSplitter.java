@@ -91,7 +91,7 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
             addSep(length);
         } else {
             processHead();
-            long longCount = this.segment.longCount();
+            long longCount = this.segment.alignedCount();
             for (int i = 1; i < longCount; i++) {
                 findSeps(this.segment.longNo(i), 0);
             }

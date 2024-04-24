@@ -20,8 +20,6 @@ import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,35 +35,27 @@ public final class CalculateAverage_kjetilvlong {
     public static void main(String[] args) {
         for (String arg : args) {
             Path path = Path.of(arg);
+//            go(path);
             go3(path);
 //            go1(path);
         }
     }
 
-    public static Map<String, Result> go(
-        Path path,
-        Partitioning partitioning,
-        Shape shape
-    ) {
-        return go(path, partitioning, shape, false);
+    public static Map<String, Result> go(Path path) {
+        return go(path, false);
     }
 
-    public static Map<String, Result> go(
-        Path path,
-        Partitioning partitioning,
-        Shape shape,
-        boolean slow
-    ) {
-        return go(path, partitioning, shape, slow, null);
+    public static Map<String, Result> go(Path path, boolean slow) {
+        return go(path, slow, null);
     }
 
-    public static Map<String, Result> go(
-        Path path,
-        Partitioning partitioning,
-        Shape shape,
-        boolean slow,
-        Consumer<SeparatedLine> callbacks
-    ) {
+    public static Map<String, Result> go(Path path, boolean slow, Consumer<SeparatedLine> callbacks) {
+        Instant start = Instant.now();
+        Shape shape = Shape.of(path).longestLine(128);
+        Partitioning partitioning = Partitioning.create(
+            Runtime.getRuntime().availableProcessors(),
+            shape.longestLine()
+        ).scaled(2);
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -76,6 +66,7 @@ public final class CalculateAverage_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
+            System.out.println(Duration.between(start, Instant.now()));
             List<Supplier<Map<String, Result>>> mapSuppliers =
                 bitwisePartitioned.splitters()
                     .splitters(new CsvFormat.Escaped(';'))
@@ -90,7 +81,10 @@ public final class CalculateAverage_kjetilvlong {
             List<Map<String, Result>> maps = mapSuppliers.stream()
                 .map(Supplier::get)
                 .toList();
-            return combineMaps(keySet(maps), maps);
+            SequencedMap<String, Result> combinedMaps = combineMaps(keySet(maps), maps);
+            System.out.println(combinedMaps);
+            System.out.println(Duration.between(start, Instant.now()));
+            return combinedMaps;
         }
     }
 
@@ -149,12 +143,12 @@ public final class CalculateAverage_kjetilvlong {
         Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
-            shape.longestLine());
+            shape.longestLine()
+        );
         CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
             new Column("station", 1),
-            new Column("measurement", 2, measurement ->
-                new BigDecimal(measurement).setScale(2, RoundingMode.UNNECESSARY))
+            new Column("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
         );
         int chunks = partitioning.of(shape.size()).size();
         try (
@@ -177,7 +171,7 @@ public final class CalculateAverage_kjetilvlong {
                                 m.compute(
                                     (String) map.get("station"),
                                     (_, existing) -> {
-                                        int dec = ((BigDecimal) map.get("measurement")).scaleByPowerOfTen(2).intValue();
+                                        int dec = (Integer) map.get("measurement");
                                         return existing == null ? new Result(dec) : existing.collect(dec);
                                     }
                                 ));
@@ -197,19 +191,19 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static void go2(Path path) {
-        Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(64);
-        Map<String, Result> go = go(
-            path,
-            Partitioning.create(
-                Runtime.getRuntime().availableProcessors(),
-                shape.longestLine()
-            ).scaled(2), shape
-        );
-        System.out.println(go);
-        System.out.println(Duration.between(start, Instant.now()));
-    }
+//    private static void go2(Path path) {
+//        Instant start = Instant.now();
+//        Shape shape = Shape.of(path).longestLine(64);
+//        Map<String, Result> go = go(
+//            path,
+//            Partitioning.create(
+//                Runtime.getRuntime().availableProcessors(),
+//                shape.longestLine()
+//            ).scaled(2), shape
+//        );
+//        System.out.println(go);
+//        System.out.println(Duration.between(start, Instant.now()));
+//    }
 
     private static Map<String, Result> toMap(
         Path path,
@@ -305,24 +299,6 @@ public final class CalculateAverage_kjetilvlong {
         throw new IllegalStateException("No split in " + ls.asString());
     }
 
-    private static int parseValue(LineSegment ls) {
-        int value = 0;
-        int pos = 1;
-        long length = ls.length();
-        for (long i = 0; i < length; i++) {
-            byte b = ls.byteAt(length - i - 1);
-            if (b == '.') {
-                continue;
-            }
-            if (b == '-') {
-                return value * -1;
-            }
-            value += (b - '0') * pos;
-            pos *= 10;
-        }
-        return value;
-    }
-
     private static int parseValue(int length, int splitIndex, LineSegment ls) {
         int value = 0;
         int boundary = splitIndex + 1;
@@ -336,6 +312,24 @@ public final class CalculateAverage_kjetilvlong {
                 return value * -1;
             }
             value += (b - '0') * pos;
+            pos *= 10;
+        }
+        return value;
+    }
+
+    private static int parseValue(LineSegment segment) {
+        int value = 0;
+        int pos = 1;
+        for (long i = segment.length() - 1; i >= 0; i--) {
+            byte b = segment.byteAt(i);
+            if (b == '.') {
+                continue;
+            }
+            if (b == '-') {
+                return value * -1;
+            }
+            int j = b - '0';
+            value += j * pos;
             pos *= 10;
         }
         return value;

@@ -11,25 +11,38 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public final class LineSegments {
 
-    public static String asString(LineSegment line) {
-        return asString(line, Math.toIntExact(line.length()));
+    public static String asString(LineSegment segment) {
+        int length = Math.toIntExact(segment.length());
+        byte[] bytes = new byte[length];
+        int headLength = segment.headLength();
+        if (headLength > 0) {
+            long value = segment.head();//segment.longNo(0);
+            Bits.setBytes(
+                value, 0, Math.min(headLength, length), bytes
+            );
+        }
+        if (length > headLength) {
+            int longs = Math.toIntExact(segment.alignedCount());
+            int firstLong = headLength == 0 ? 0 : 1;
+            int byteOffset = headLength;
+            for (int i = firstLong; i < longs; i++) {
+                long l = segment.longNo(i);
+                Bits.setBytes(bytes, byteOffset, l);
+                byteOffset += 8;
+            }
+            int tailLength = segment.tailLength();
+            if (tailLength > 0) {
+                long tail = segment.tail();
+                Bits.setBytes(tail, byteOffset, tailLength, bytes);
+            }
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     public static String asString(LineSegment segment, int len) {
         byte[] bytes = new byte[len];
-        int head = segment.headLength();
-        int longs = Math.toIntExact(segment.longCount()) - 1;
-        int tail = len % 8;
-        for (int i = 0; i < head; i++) {
+        for (int i = 0; i < len; i++) {
             bytes[i] = segment.byteAt(i);
-        }
-        for (int i = 0; i < longs; i++) {
-            long l = segment.longAt(i + 1);
-            Bits.setBytes(bytes, head + i * 8, l);
-        }
-        for (int i = 0; i < tail; i++) {
-            int pos = longs * 8;
-            bytes[pos + i] = segment.byteAt(pos + i);
         }
         return new String(bytes, StandardCharsets.UTF_8);
     }
