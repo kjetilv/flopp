@@ -57,7 +57,7 @@ class LineSegmentTest {
 
     @Test
     void asString() {
-        String string = "foo bar zot is the string";
+        String string = "foo bar zot is the string and you will like it, or else";
         LineSegment lineSegment = LineSegments.of(string);
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")

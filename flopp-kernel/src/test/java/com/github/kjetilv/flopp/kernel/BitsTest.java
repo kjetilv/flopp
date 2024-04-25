@@ -68,4 +68,22 @@ class BitsTest {
         assertThat(finder.next()).isEqualTo(6);
         assertThat(finder.hasNext()).isFalse();
     }
+
+    @Test
+    void setBytes() {
+        long l = 0x0A320A330A340A35L;
+        byte[] bytes = Bits.toBytes(l);
+        byte[] alsoBytes = new byte[8];
+        Bits.transferDataTo(l, 0, 8, alsoBytes);
+        assertThat(alsoBytes).containsExactly(bytes);
+    }
+
+    @Test
+    void setBytesTail() {
+        long l = 0x0A3231330A340A35L;
+        byte[] bytes = Bits.toBytes(l);
+        byte[] alsoBytes = new byte[5];
+        Bits.transferTailDataTo(l, 5, 3, alsoBytes);
+        assertThat(alsoBytes).containsExactly(0x31, 0x32, 0x0A, 0x00, 0x00);
+    }
 }

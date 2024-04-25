@@ -31,6 +31,10 @@ public final class Bits {
         return hex(mask, false);
     }
 
+    public static String hxD(long mask) {
+        return hex(mask, true);
+    }
+
     public static String hex(long mask, boolean dotted) {
         if (mask == 0) {
             return "0x0";
@@ -44,6 +48,10 @@ public final class Bits {
         return bin(mask, false);
     }
 
+    public static String bnD(long mask) {
+        return bin(mask, true);
+    }
+
     public static String bin(long mask, boolean dotted) {
         if (mask == 0) {
             return "0x0";
@@ -52,35 +60,42 @@ public final class Bits {
         return dotted ? dot(padded, 8) : padded;
     }
 
-    public static byte[] toBytes(long l) {
+    public static byte[] toBytes(long data) {
         return new byte[] {
-            (byte) (l & 0xFF),
-            (byte) (l >> 8L & 0xFF),
-            (byte) (l >> 16L & 0xFF),
-            (byte) (l >> 24L & 0xFF),
-            (byte) (l >> 32L & 0xFF),
-            (byte) (l >> 40L & 0xFF),
-            (byte) (l >> 48L & 0xFF),
-            (byte) (l >> 56L & 0xFF)
+            (byte) (data & 0xFF),
+            (byte) (data >> 8L & 0xFF),
+            (byte) (data >> 16L & 0xFF),
+            (byte) (data >> 24L & 0xFF),
+            (byte) (data >> 32L & 0xFF),
+            (byte) (data >> 40L & 0xFF),
+            (byte) (data >> 48L & 0xFF),
+            (byte) (data >> 56L & 0xFF)
         };
     }
 
-    public static void setBytes(byte[] bytes, int offset, long value) {
-        bytes[offset] = (byte) (value & 0xFF);
-        bytes[offset + 1] = (byte) (value >> 8 & 0xFF);
-        bytes[offset + 2] = (byte) (value >> 16 & 0xFF);
-        bytes[offset + 3] = (byte) (value >> 24 & 0xFF);
-        bytes[offset + 4] = (byte) (value >> 32 & 0xFF);
-        bytes[offset + 5] = (byte) (value >> 40 & 0xFF);
-        bytes[offset + 6] = (byte) (value >> 48 & 0xFF);
-        bytes[offset + 7] = (byte) (value >> 56 & 0xFF);
+    public static void transferTailDataTo(long data, int offset, int length, byte[] target) {
+        if (offset >= 8) {
+            return;
+        }
+        int bytesToWrite = Math.min(length, ALIGNMENT - offset);
+        for (int i = 0; i < bytesToWrite; i++) {
+            int shift = (offset + i) * ALIGNMENT;
+            target[i] = (byte) (data >> shift & 0xFF);
+        }
     }
 
-    public static void setBytes(long data, int startIndex, byte[] target) {
-
+    public static void transferDataTo(long data, int offset, byte[] target) {
+        target[offset] = (byte) (data & 0xFF);
+        target[offset + 1] = (byte) (data >> 8 & 0xFF);
+        target[offset + 2] = (byte) (data >> 16 & 0xFF);
+        target[offset + 3] = (byte) (data >> 24 & 0xFF);
+        target[offset + 4] = (byte) (data >> 32 & 0xFF);
+        target[offset + 5] = (byte) (data >> 40 & 0xFF);
+        target[offset + 6] = (byte) (data >> 48 & 0xFF);
+        target[offset + 7] = (byte) (data >> 56 & 0xFF);
     }
 
-    public static void setBytes(long data, int offset, int length, byte[] target) {
+    public static void transferDataTo(long data, int offset, int length, byte[] target) {
         if (length <= 0) {
             return;
         }

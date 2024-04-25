@@ -144,7 +144,7 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
-        );
+        ).scaled(2);
         CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
             new Column("station", 1),

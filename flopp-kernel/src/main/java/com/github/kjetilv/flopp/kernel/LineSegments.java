@@ -12,31 +12,43 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public final class LineSegments {
 
     public static String asString(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
-        byte[] bytes = new byte[length];
-        int headLength = segment.headLength();
-        if (headLength > 0) {
-            long value = segment.head();//segment.longNo(0);
-            Bits.setBytes(
-                value, 0, Math.min(headLength, length), bytes
-            );
+        int len = Math.toIntExact(segment.length());
+        byte[] string = new byte[len];
+        int headLen = segment.headLength();
+        if (headLen > 0) {
+            long value;
+            if (len > headLen) {
+                value = segment.longNo(0);
+                Bits.transferTailDataTo(value, 8 - headLen, headLen, string);
+            } else {
+                value = segment.bytesAt(0, len);
+                Bits.transferDataTo(value, 0, len, string);
+            }
         }
-        if (length > headLength) {
+        if (len > headLen) {
             int longs = Math.toIntExact(segment.alignedCount());
-            int firstLong = headLength == 0 ? 0 : 1;
-            int byteOffset = headLength;
-            for (int i = firstLong; i < longs; i++) {
-                long l = segment.longNo(i);
-                Bits.setBytes(bytes, byteOffset, l);
-                byteOffset += 8;
-            }
-            int tailLength = segment.tailLength();
-            if (tailLength > 0) {
-                long tail = segment.tail();
-                Bits.setBytes(tail, byteOffset, tailLength, bytes);
+            int firstLong = headLen == 0 ? 0 : 1;
+            int tailLen = segment.tailLength();
+            boolean noLongs = longs == 0 || firstLong == 1 && longs == 1;
+            if (noLongs) {
+                if (tailLen > 0) {
+                    long data = headLen > 0 ? segment.tail() : segment.slowTail();
+                    Bits.transferDataTo(data, headLen, tailLen, string);
+                }
+            } else {
+                int offset = headLen;
+                for (int i = firstLong; i < longs; i++) {
+                    long data = segment.longNo(i);
+                    Bits.transferDataTo(data, offset, string);
+                    offset += 8;
+                }
+                if (tailLen > 0) {
+                    long data = segment.tail();
+                    Bits.transferDataTo(data, offset, tailLen, string);
+                }
             }
         }
-        return new String(bytes, StandardCharsets.UTF_8);
+        return new String(string, StandardCharsets.UTF_8);
     }
 
     public static String asString(LineSegment segment, int len) {
@@ -96,6 +108,8 @@ public final class LineSegments {
     }
 
     public static final ValueLayout.OfLong LAYOUT = ValueLayout.JAVA_LONG;
+
+    public static final ValueLayout.OfLong UNALIGNED_LAYOUT = ValueLayout.JAVA_LONG_UNALIGNED;
 
     public static final long ALIGNMENT = ValueLayout.JAVA_LONG.byteSize();
 

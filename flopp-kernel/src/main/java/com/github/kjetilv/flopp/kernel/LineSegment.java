@@ -3,8 +3,8 @@ package com.github.kjetilv.flopp.kernel;
 import java.lang.foreign.MemorySegment;
 
 import static com.github.kjetilv.flopp.kernel.LineSegments.LAYOUT;
+import static com.github.kjetilv.flopp.kernel.LineSegments.UNALIGNED_LAYOUT;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
 public interface LineSegment extends Range {
 
@@ -25,6 +25,10 @@ public interface LineSegment extends Range {
             memorySegment().asSlice(startIndex(), length),
             length
         );
+    }
+
+    default boolean hasRange(int startIndex, int endIndex) {
+        return startIndex() == startIndex && endIndex() == endIndex;
     }
 
     default String asString() {
@@ -102,13 +106,20 @@ public interface LineSegment extends Range {
 
     @SuppressWarnings("unused")
     default long longAt(int longIndex) {
-        return memorySegment().get(JAVA_LONG_UNALIGNED, alignedStart() + longIndex);
+        return memorySegment().get(UNALIGNED_LAYOUT, alignedStart() + longIndex);
+    }
+
+    default long slowTail() {
+        long endIndex = endIndex();
+        long tail = endIndex % ALIGNMENT;
+        return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
     }
 
     default long tail() {
         long endIndex = endIndex();
         long tail = endIndex % ALIGNMENT;
-        return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
+        long value = memorySegment().get(UNALIGNED_LAYOUT, endIndex - ALIGNMENT);
+        return value >> (ALIGNMENT - ((tail + 1) * 8L));
     }
 
     default int tailLength() {
