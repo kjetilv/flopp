@@ -62,20 +62,25 @@ class LineSegmentTest {
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
-        assertThat(LineSegments.asString(lineSegment.slice(7, 23)))
-            .describedAs("Should sub-scribe too")
-            .isEqualTo(string.substring(7, 23));
+        assertSub(lineSegment, string, 7, 23);
+        assertSub(lineSegment, string, 7, 8);
+        assertSub(lineSegment, string, 7, 9);
+        assertSub(lineSegment, string, 8, 9);
         for (int i = 0; i < string.length(); i++) {
             for (int j = i + 1; j < string.length(); j++) {
                 try {
-                    assertThat(LineSegments.asString(lineSegment.slice(i, j)))
-                        .describedAs("Should sub-scribe too: " + i + "-" + j)
-                        .isEqualTo(string.substring(i, j));
+                    assertSub(lineSegment, string, i,j);
                 } catch (Exception e) {
                     throw new RuntimeException("Should sub-scribe too: " + i + "-" + j, e);
                 }
             }
         }
+    }
+
+    private static void assertSub(LineSegment lineSegment, String string, int beginIndex, int endIndex) {
+        assertThat(LineSegments.asString(lineSegment.slice(beginIndex, endIndex)))
+            .describedAs("Should sub-scribe too: " + beginIndex + "-" + endIndex)
+            .isEqualTo(string.substring(beginIndex, endIndex));
     }
 
     @Test

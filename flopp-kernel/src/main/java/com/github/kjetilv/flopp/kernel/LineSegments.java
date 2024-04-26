@@ -16,12 +16,11 @@ public final class LineSegments {
         byte[] string = new byte[len];
         int headLen = segment.headLength();
         if (headLen > 0) {
-            long value;
             if (len > headLen) {
-                value = segment.longNo(0);
+                long value = segment.longNo(0);
                 Bits.transferTailDataTo(value, 8 - headLen, headLen, string);
             } else {
-                value = segment.bytesAt(0, len);
+                long value = segment.bytesAt(0, len);
                 Bits.transferDataTo(value, 0, len, string);
             }
         }
@@ -29,23 +28,15 @@ public final class LineSegments {
             int longs = Math.toIntExact(segment.alignedCount());
             int firstLong = headLen == 0 ? 0 : 1;
             int tailLen = segment.tailLength();
-            boolean noLongs = longs == 0 || firstLong == 1 && longs == 1;
-            if (noLongs) {
-                if (tailLen > 0) {
-                    long data = headLen > 0 ? segment.tail() : segment.slowTail();
-                    Bits.transferDataTo(data, headLen, tailLen, string);
-                }
-            } else {
-                int offset = headLen;
-                for (int i = firstLong; i < longs; i++) {
-                    long data = segment.longNo(i);
-                    Bits.transferDataTo(data, offset, string);
-                    offset += 8;
-                }
-                if (tailLen > 0) {
-                    long data = segment.tail();
-                    Bits.transferDataTo(data, offset, tailLen, string);
-                }
+            int offset = headLen;
+            for (int i = firstLong; i < longs; i++) {
+                long data = segment.longNo(i);
+                Bits.transferDataTo(data, offset, string);
+                offset += 8;
+            }
+            if (tailLen > 0) {
+                long data = segment.tail();
+                Bits.transferDataTo(data, offset, tailLen, string);
             }
         }
         return new String(string, StandardCharsets.UTF_8);

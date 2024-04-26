@@ -109,17 +109,22 @@ public interface LineSegment extends Range {
         return memorySegment().get(UNALIGNED_LAYOUT, alignedStart() + longIndex);
     }
 
+    default long tail() {
+        long endIndex = endIndex();
+        if (startIndex() < ALIGNMENT) {
+            long tail = endIndex % ALIGNMENT;
+            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
+        }
+        long tail = endIndex % ALIGNMENT;
+        long value = memorySegment().get(UNALIGNED_LAYOUT, endIndex - ALIGNMENT);
+        long shift = (ALIGNMENT - tail) * ALIGNMENT;
+        return value >> shift;
+    }
+
     default long slowTail() {
         long endIndex = endIndex();
         long tail = endIndex % ALIGNMENT;
         return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
-    }
-
-    default long tail() {
-        long endIndex = endIndex();
-        long tail = endIndex % ALIGNMENT;
-        long value = memorySegment().get(UNALIGNED_LAYOUT, endIndex - ALIGNMENT);
-        return value >> (ALIGNMENT - ((tail + 1) * 8L));
     }
 
     default int tailLength() {
