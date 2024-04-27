@@ -11,7 +11,7 @@ record ImmutableSeparatedLine(
     implements SeparatedLine {
 
     @Override
-    public SeparatedLine immutable() {
+    public SeparatedLine immutableSeparatedLine() {
         return this;
     }
 }

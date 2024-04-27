@@ -27,6 +27,10 @@ public interface LineSegment extends Range {
         );
     }
 
+    default long underlyingSize() {
+        return memorySegment().byteSize();
+    }
+
     default boolean hasRange(int startIndex, int endIndex) {
         return startIndex() == startIndex && endIndex() == endIndex;
     }
@@ -88,7 +92,11 @@ public interface LineSegment extends Range {
     }
 
     default long head() {
-        return bytesAt(0, headLength());
+        long len = length();
+        return memorySegment().byteSize() - startIndex() < ALIGNMENT
+            ? bytesAt(0, Math.min(headLength(), len))
+            : memorySegment().get(UNALIGNED_LAYOUT, startIndex()
+        );
     }
 
     default long head(long head) {
@@ -119,16 +127,20 @@ public interface LineSegment extends Range {
         long value = memorySegment().get(UNALIGNED_LAYOUT, endIndex - ALIGNMENT);
         long shift = (ALIGNMENT - tail) * ALIGNMENT;
         return value >> shift;
-    }
-
-    default long slowTail() {
-        long endIndex = endIndex();
-        long tail = endIndex % ALIGNMENT;
-        return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
+        //        long endIndex = endIndex();
+        //        long tail = endIndex % ALIGNMENT;
+        //        if (memorySegment().byteSize() - endIndex() < ALIGNMENT) {
+        //            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
+        //        }
+        //        return memorySegment().get(UNALIGNED_LAYOUT, endIndex - tail);
     }
 
     default int tailLength() {
         return Math.toIntExact(endIndex() % ALIGNMENT);
+    }
+
+    default boolean onEdge() {
+        return underlyingSize() - endIndex() < ALIGNMENT;
     }
 
     default byte byteAt(long i) {

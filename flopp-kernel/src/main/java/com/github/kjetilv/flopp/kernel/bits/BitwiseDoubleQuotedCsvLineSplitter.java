@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 /**
  * @noinspection DuplicatedCode
  */
-final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitter {
+final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
 
     private final long[] start;
 
@@ -34,6 +34,10 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
     private final Bits.Finder sepFinder;
 
     private final Bits.Finder quoFinder;
+
+    private long lineSegmentStart;
+
+    private long lineSegmentEnd;
 
     BitwiseDoubleQuotedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted csvFormat) {
         this(lines, csvFormat, false);
@@ -113,6 +117,23 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
     @Override
     protected LineSegment lineSegment() {
         return segment;
+    }
+
+    @Override
+    public LineSegment segment(int column) {
+        lineSegmentStart = start[column];
+        lineSegmentEnd = end[column];
+        return this;
+    }
+
+    @Override
+    public long startIndex() {
+        return lineSegmentStart;
+    }
+
+    @Override
+    public long endIndex() {
+        return lineSegmentEnd;
     }
 
     private void processHead() {

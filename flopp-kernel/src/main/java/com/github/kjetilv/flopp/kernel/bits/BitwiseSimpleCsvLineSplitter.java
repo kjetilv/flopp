@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 /**
  * @noinspection DuplicatedCode
  */
-final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter {
+final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
 
     private final long[] start;
 
@@ -29,9 +29,9 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final Bits.Finder sepFinder;
 
-    BitwiseSimpleCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple csvFormat) {
-        this(lines, csvFormat, false);
-    }
+    private long lineSegmentStart;
+
+    private long lineSegmentEnd;
 
     BitwiseSimpleCsvLineSplitter(
         Consumer<SeparatedLine> lines,
@@ -65,6 +65,23 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public long[] end() {
         return end;
+    }
+
+    @Override
+    public LineSegment segment(int column) {
+        lineSegmentStart = start[column];
+        lineSegmentEnd = end[column];
+        return this;
+    }
+
+    @Override
+    public long startIndex() {
+        return lineSegmentStart;
+    }
+
+    @Override
+    public long endIndex() {
+        return lineSegmentEnd;
     }
 
     @Override
@@ -139,8 +156,12 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     private void addSep(long end) {
-        this.start[columnNo] = startOffset + currentStart;
-        this.end[columnNo] = startOffset + end;
-        this.columnNo++;
+        try {
+            this.start[columnNo] = startOffset + currentStart;
+            this.end[columnNo] = startOffset + end;
+            this.columnNo++;
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " could not set " + columnNo, e);
+        }
     }
 }

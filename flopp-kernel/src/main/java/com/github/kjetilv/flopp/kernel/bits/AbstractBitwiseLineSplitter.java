@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -19,12 +18,10 @@ abstract class AbstractBitwiseLineSplitter implements Consumer<LineSegment>, Sep
     }
 
     protected final void emit() {
-        lines.accept(immutable ? immutable() : this);
+        lines.accept(immutable ? immutableSeparatedLine() : this);
     }
 
     protected abstract LineSegment lineSegment();
-
-    protected static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
 
     @Override
     public final String toString() {

@@ -84,6 +84,7 @@ public final class Bits {
         }
     }
 
+    @SuppressWarnings("DuplicatedCode")
     public static void transferDataTo(long data, int offset, byte[] target) {
         target[offset] = (byte) (data & 0xFF);
         target[offset + 1] = (byte) (data >> 8 & 0xFF);
@@ -95,39 +96,54 @@ public final class Bits {
         target[offset + 7] = (byte) (data >> 56 & 0xFF);
     }
 
+    @SuppressWarnings("DuplicatedCode")
     public static void transferDataTo(long data, int offset, int length, byte[] target) {
-        if (length <= 0) {
-            return;
+        switch (length) {
+            case 1 ->
+                target[offset] = (byte) (data & 0xFF);
+            case 2 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+            }
+            case 3 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+                target[offset + 2] = (byte) (data >> 16 & 0xFF);
+            }
+            case 4 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+                target[offset + 2] = (byte) (data >> 16 & 0xFF);
+                target[offset + 3] = (byte) (data >> 24 & 0xFF);
+            }
+            case 5 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+                target[offset + 2] = (byte) (data >> 16 & 0xFF);
+                target[offset + 3] = (byte) (data >> 24 & 0xFF);
+                target[offset + 4] = (byte) (data >> 32 & 0xFF);
+            }
+            case 6 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+                target[offset + 2] = (byte) (data >> 16 & 0xFF);
+                target[offset + 3] = (byte) (data >> 24 & 0xFF);
+                target[offset + 4] = (byte) (data >> 32 & 0xFF);
+                target[offset + 5] = (byte) (data >> 40 & 0xFF);
+            }
+            case 7 -> {
+                target[offset] = (byte) (data & 0xFF);
+                target[offset + 1] = (byte) (data >> 8 & 0xFF);
+                target[offset + 2] = (byte) (data >> 16 & 0xFF);
+                target[offset + 3] = (byte) (data >> 24 & 0xFF);
+                target[offset + 4] = (byte) (data >> 32 & 0xFF);
+                target[offset + 5] = (byte) (data >> 40 & 0xFF);
+                target[offset + 6] = (byte) (data >> 48 & 0xFF);
+            }
+            case 8 -> {
+                transferDataTo(data, offset, target);
+            }
         }
-        target[offset] = (byte) (data & 0xFF);
-        if (length == 1) {
-            return;
-        }
-        target[offset + 1] = (byte) (data >> 8 & 0xFF);
-        if (length == 2) {
-            return;
-        }
-        target[offset + 2] = (byte) (data >> 16 & 0xFF);
-        if (length == 3) {
-            return;
-        }
-        target[offset + 3] = (byte) (data >> 24 & 0xFF);
-        if (length == 4) {
-            return;
-        }
-        target[offset + 4] = (byte) (data >> 32 & 0xFF);
-        if (length == 5) {
-            return;
-        }
-        target[offset + 5] = (byte) (data >> 40 & 0xFF);
-        if (length == 6) {
-            return;
-        }
-        target[offset + 6] = (byte) (data >> 48 & 0xFF);
-        if (length == 7) {
-            return;
-        }
-        target[offset + 7] = (byte) (data >> 56 & 0xFF);
     }
 
     /**

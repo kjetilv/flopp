@@ -40,7 +40,7 @@ public interface SeparatedLine {
         return toSegment(column, start(), end());
     }
 
-    default SeparatedLine immutable() {
+    default SeparatedLine immutableSeparatedLine() {
         return new ImmutableSeparatedLine(
             memorySegment(),
             columnCount(),

@@ -16,13 +16,8 @@ public final class LineSegments {
         byte[] string = new byte[len];
         int headLen = segment.headLength();
         if (headLen > 0) {
-            if (len > headLen) {
-                long value = segment.longNo(0);
-                Bits.transferTailDataTo(value, 8 - headLen, headLen, string);
-            } else {
-                long value = segment.bytesAt(0, len);
-                Bits.transferDataTo(value, 0, len, string);
-            }
+            long data = segment.head();
+            Bits.transferDataTo(data, 0, Math.min(len, headLen), string);
         }
         if (len > headLen) {
             int longs = Math.toIntExact(segment.alignedCount());

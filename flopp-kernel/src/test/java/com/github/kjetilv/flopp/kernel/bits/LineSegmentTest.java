@@ -57,30 +57,29 @@ class LineSegmentTest {
 
     @Test
     void asString() {
-        String string = "foo bar zot is the string and you will like it, or else";
+        String string = "foo bar zot is the string and you will like it, or else find something elser to do";
         LineSegment lineSegment = LineSegments.of(string);
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
+        assertSub(lineSegment, string, 0, 1);
+        assertSub(lineSegment, string, 26, 33);
+        assertSub(lineSegment, string, 1, 9);
         assertSub(lineSegment, string, 7, 23);
+        assertSub(lineSegment, string, 1, 3);
         assertSub(lineSegment, string, 7, 8);
+        assertSub(lineSegment, string, 1, 2);
         assertSub(lineSegment, string, 7, 9);
         assertSub(lineSegment, string, 8, 9);
         for (int i = 0; i < string.length(); i++) {
             for (int j = i + 1; j < string.length(); j++) {
                 try {
-                    assertSub(lineSegment, string, i,j);
+                    assertSub(lineSegment, string, i, j);
                 } catch (Exception e) {
                     throw new RuntimeException("Should sub-scribe too: " + i + "-" + j, e);
                 }
             }
         }
-    }
-
-    private static void assertSub(LineSegment lineSegment, String string, int beginIndex, int endIndex) {
-        assertThat(LineSegments.asString(lineSegment.slice(beginIndex, endIndex)))
-            .describedAs("Should sub-scribe too: " + beginIndex + "-" + endIndex)
-            .isEqualTo(string.substring(beginIndex, endIndex));
     }
 
     @Test
@@ -128,6 +127,16 @@ class LineSegmentTest {
             String lastString = Bits.toString(last, 1, UTF_8);
             String wantedLastString = line.substring(48, 49);
             assertThat(lastString).isEqualTo(wantedLastString);
+        }
+    }
+
+    private static void assertSub(LineSegment lineSegment, String string, int beginIndex, int endIndex) {
+        try {
+            assertThat(LineSegments.asString(lineSegment.slice(beginIndex, endIndex)))
+                .describedAs("Should sub-scribe too: " + beginIndex + "-" + endIndex)
+                .isEqualTo(string.substring(beginIndex, endIndex));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed on " + beginIndex + "-" + endIndex, e);
         }
     }
 }

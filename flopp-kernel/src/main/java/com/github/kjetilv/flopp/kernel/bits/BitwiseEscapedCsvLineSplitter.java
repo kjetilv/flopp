@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 /**
  * @noinspection DuplicatedCode
  */
-final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
+final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
 
     private final long[] start;
 
@@ -38,6 +38,10 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
     private final Bits.Finder quoFinder;
 
     private final Bits.Finder escFinder;
+
+    private long lineSegmentStart;
+
+    private long lineSegmentEnd;
 
     BitwiseEscapedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped csvFormat) {
         this(lines, csvFormat, false);
@@ -113,6 +117,23 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     protected LineSegment lineSegment() {
         return segment;
+    }
+
+    @Override
+    public LineSegment segment(int column) {
+        lineSegmentStart = start[column];
+        lineSegmentEnd = end[column];
+        return this;
+    }
+
+    @Override
+    public long startIndex() {
+        return lineSegmentStart;
+    }
+
+    @Override
+    public long endIndex() {
+        return lineSegmentEnd;
     }
 
     private void processHead() {
