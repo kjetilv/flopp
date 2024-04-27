@@ -149,10 +149,6 @@ public interface LineSegment extends Range {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
 
-    default long bytesAt(long offset, long count) {
-        return LineSegments.bytesAt(memorySegment(), startIndex() + offset, count);
-    }
-
     default LineSegment slice(long startIndex, long endIndex) {
         return LineSegments.of(memorySegment(), startIndex, endIndex);
     }

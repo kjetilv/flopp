@@ -109,7 +109,7 @@ class LineSegmentTest {
             assertThat(lineSegment.alignedCount()).isEqualTo(5);
             assertThat(lineSegment.fullLongCount()).isEqualTo(4);
 
-            long firstAsBytes = lineSegment.bytesAt(0, 3);
+            long firstAsBytes = LineSegments.bytesAt(lineSegment.memorySegment(), lineSegment.startIndex(), 3);
 
             String bytedSubstring = Bits.toString(firstAsBytes, 3, UTF_8);
             String wantedSubstring = line.substring(13, 16);
