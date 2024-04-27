@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionHandler implements Runnable {
 
@@ -185,7 +186,7 @@ final class BitwisePartitionHandler implements Runnable {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            long bytes = segment.get(LineSegments.LAYOUT, offset);
+            long bytes = segment.get(JAVA_LONG, offset);
             long mask = mask(bytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -193,7 +194,8 @@ final class BitwisePartitionHandler implements Runnable {
             offset += ALIGNMENT;
         }
         if (tail > 0) {
-            long mask = mask(LineSegments.bytesAt(segment, offset, tail));
+            long tailBytes = LineSegments.bytesAt(segment, offset, tail);
+            long mask = mask(tailBytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
             }
@@ -224,7 +226,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long loadLong() {
-        return segment.get(LineSegments.LAYOUT, offset);
+        return segment.get(JAVA_LONG, offset);
     }
 
     private long loadTail(long count) {
@@ -300,7 +302,7 @@ final class BitwisePartitionHandler implements Runnable {
         action.line(buffer, 0, length - (trim ? 1 : 0));
     }
 
-    private static final int ALIGNMENT = Math.toIntExact(ValueLayout.JAVA_LONG.byteSize());
+    private static final int ALIGNMENT = Math.toIntExact(JAVA_LONG.byteSize());
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -340,7 +342,7 @@ final class BitwisePartitionHandler implements Runnable {
             long tail = next.physicalLimit % ALIGNMENT;
             long lastOffset = next.physicalLimit - tail;
             while (lo < lastOffset) {
-                long prebyte = next.segment.get(LineSegments.LAYOUT, lo);
+                long prebyte = next.segment.get(JAVA_LONG, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;

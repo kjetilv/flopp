@@ -4,9 +4,7 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
 
-import static com.github.kjetilv.flopp.kernel.LineSegments.LAYOUT;
-import static com.github.kjetilv.flopp.kernel.LineSegments.UNALIGNED_LAYOUT;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.*;
 
 public interface LineSegment extends Range {
 
@@ -98,25 +96,25 @@ public interface LineSegment extends Range {
     default long head() {
         return startsOnEdge()
             ? LineSegments.bytesAt(memorySegment(), startIndex(), Math.min(headLength(), length()))
-            : memorySegment().get(UNALIGNED_LAYOUT, startIndex());
+            : memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());
     }
 
     default long head(long head) {
-        long l = memorySegment().get(LAYOUT, alignedStart());
+        long l = memorySegment().get(JAVA_LONG, alignedStart());
         return l >> head * ALIGNMENT;
     }
 
     default long longNo(int longNo) {
-        return memorySegment().get(LAYOUT, alignedStart() + longNo * ALIGNMENT);
+        return memorySegment().get(JAVA_LONG, alignedStart() + longNo * ALIGNMENT);
     }
 
     default long fullLongNo(int longNo) {
-        return memorySegment().get(LAYOUT, firstAlignedStart() + longNo * ALIGNMENT);
+        return memorySegment().get(JAVA_LONG, firstAlignedStart() + longNo * ALIGNMENT);
     }
 
     @SuppressWarnings("unused")
     default long longAt(int longIndex) {
-        return memorySegment().get(UNALIGNED_LAYOUT, alignedStart() + longIndex);
+        return memorySegment().get(JAVA_LONG_UNALIGNED, alignedStart() + longIndex);
     }
 
     default long tail() {
@@ -124,12 +122,14 @@ public interface LineSegment extends Range {
     }
 
     default long tail(boolean truncate) {
+        MemorySegment ms = memorySegment();
+        int tail = tailLength();
         if (endsOnEdge()) {
-            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tailLength());
+            return LineSegments.readTail(ms, tail, endIndex());
         }
-        long value = memorySegment().get(UNALIGNED_LAYOUT, alignedEnd());
+        long value = ms.get(JAVA_LONG_UNALIGNED, alignedEnd());
         return truncate
-            ? Bits.lowerBytes(value, tailLength())
+            ? Bits.lowerBytes(value, tail)
             : value;
     }
 

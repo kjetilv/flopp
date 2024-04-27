@@ -3,11 +3,10 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.*;
 
 public final class LineSegments {
 
@@ -90,14 +89,27 @@ public final class LineSegments {
         return bytes;
     }
 
+    public static long readTail(MemorySegment memorySegment, int length, long last) {
+        return switch (length) {
+            case 1 -> memorySegment.get(JAVA_BYTE, last - 1);
+            case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, last - 2);
+            case 3 -> ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, last - 2) << 8) +
+                      memorySegment.get(JAVA_BYTE, last - 3);
+            case 4 -> memorySegment.get(JAVA_INT_UNALIGNED, last - 4);
+            case 5 -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 8) +
+                      memorySegment.get(JAVA_BYTE, last - 5);
+            case 6 -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 16) +
+                      memorySegment.get(JAVA_SHORT_UNALIGNED, last - 6);
+            default -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 24) +
+                       ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, last - 6) << 8) +
+                       memorySegment.get(JAVA_BYTE, last - 7);
+        };
+    }
+
     private LineSegments() {
     }
 
-    public static final ValueLayout.OfLong LAYOUT = ValueLayout.JAVA_LONG;
-
-    public static final ValueLayout.OfLong UNALIGNED_LAYOUT = ValueLayout.JAVA_LONG_UNALIGNED;
-
-    public static final long ALIGNMENT = ValueLayout.JAVA_LONG.byteSize();
+    public static final long ALIGNMENT = JAVA_LONG.byteSize();
 
     record ImmutableSlice(MemorySegment memorySegment, long length)
         implements LineSegment {

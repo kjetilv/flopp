@@ -57,11 +57,12 @@ class LineSegmentTest {
 
     @Test
     void asString() {
-        String string = "foo bar zot is the string and you will like it, or else find something elser to do";
+        String string = "foo bar zot is the string and you will like it, or else find something elser to 00";
         LineSegment lineSegment = LineSegments.of(string);
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
+        assertSub(lineSegment, string, 0, 77);
         assertSub(lineSegment, string, 0, 1);
         assertSub(lineSegment, string, 26, 33);
         assertSub(lineSegment, string, 1, 9);

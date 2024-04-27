@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@SuppressWarnings("unused")
 public final class Bits {
 
     public static String toString(long l) {
@@ -223,14 +224,6 @@ public final class Bits {
         0xFF00000000000000L
     };
 
-    private static final long ZION_80 = 0x8080808080808080L;
-
-    private static final long UNDERTAKER = 0x0101010101010101L;
-
-    private static final long SEPARATOR_XOR_MASK = 0X3B3B3B3B3B3B3B3BL;
-
-    private static final long ONES = 0x0101010101010101L;
-
     private static String dot(String s, int interval) {
         int len = s.length();
         if (len % interval == 0) {
@@ -272,7 +265,7 @@ public final class Bits {
 
     private static long findInstances(long bytes, long mask) {
         long masked = bytes ^ mask;
-        long underflown = masked - ONES;
+        long underflown = masked - 0x0101010101010101L;
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & EIGHTIES;
     }
@@ -294,7 +287,7 @@ public final class Bits {
 
         private SwarFinder(char c) {
             this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = 0x0101010101010101L * this.c;
         }
 
         /**
@@ -350,7 +343,7 @@ public final class Bits {
 
         private CyclingFinder(char c) {
             this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = 0x0101010101010101L * this.c;
         }
 
         /**
@@ -416,7 +409,7 @@ public final class Bits {
 
         private SimpleCounter(char c) {
             this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = 0x0101010101010101L * this.c;
         }
 
         @Override
