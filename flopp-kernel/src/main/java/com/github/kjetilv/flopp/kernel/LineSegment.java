@@ -118,6 +118,15 @@ public interface LineSegment extends Range {
     }
 
     default long tail() {
+        if (endsOnEdge()) {
+            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tailLength());
+        }
+//        try {
+//            return memorySegment().get(LAYOUT, alignedEnd());
+//        } catch (Exception e) {
+//            throw new IllegalStateException(this + " failed to provide tail", e);
+//        }
+//        return memorySegment().get(UNALIGNED_LAYOUT, alignedEnd());
         long endIndex = endIndex();
         if (startIndex() < ALIGNMENT) {
             long tail = endIndex % ALIGNMENT;
