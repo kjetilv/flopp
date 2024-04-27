@@ -89,6 +89,24 @@ public final class LineSegments {
         return bytes;
     }
 
+    public static long readHead(MemorySegment memorySegment, int length, long first) {
+        return switch (length) {
+            case 1 -> memorySegment.get(JAVA_BYTE, first);
+            case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, first);
+            case 3 -> (long) memorySegment.get(JAVA_SHORT_UNALIGNED, first) +
+                      (memorySegment.get(JAVA_BYTE, first + 2) << 16);
+            case 4 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first);
+            case 5 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
+                      ((long) memorySegment.get(JAVA_BYTE, first + 4) << 32);
+            case 6 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
+                      (long) memorySegment.get(JAVA_SHORT_UNALIGNED, first + 4) << 32;
+            case 7 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
+                      ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, first + 4) << 32) +
+                      (long) memorySegment.get(JAVA_BYTE, first + 6) >> 48;
+            default -> throw new IllegalStateException("Invalid head: " + length);
+        };
+    }
+
     public static long readTail(MemorySegment memorySegment, int length, long last) {
         return switch (length) {
             case 1 -> memorySegment.get(JAVA_BYTE, last - 1);
@@ -100,9 +118,10 @@ public final class LineSegments {
                       memorySegment.get(JAVA_BYTE, last - 5);
             case 6 -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 16) +
                       memorySegment.get(JAVA_SHORT_UNALIGNED, last - 6);
-            default -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 24) +
-                       ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, last - 6) << 8) +
-                       memorySegment.get(JAVA_BYTE, last - 7);
+            case 7 -> ((long) memorySegment.get(JAVA_INT_UNALIGNED, last - 4) << 24) +
+                      ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, last - 6) << 8) +
+                      memorySegment.get(JAVA_BYTE, last - 7);
+            default -> throw new IllegalStateException("Invalid tail: " + length);
         };
     }
 

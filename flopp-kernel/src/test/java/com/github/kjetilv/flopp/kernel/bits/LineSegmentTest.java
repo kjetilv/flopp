@@ -62,6 +62,7 @@ class LineSegmentTest {
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
+        assertSub(lineSegment, string, 75, 80);
         assertSub(lineSegment, string, 0, 77);
         assertSub(lineSegment, string, 0, 1);
         assertSub(lineSegment, string, 26, 33);

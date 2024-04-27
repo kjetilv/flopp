@@ -95,7 +95,7 @@ public interface LineSegment extends Range {
 
     default long head() {
         return startsOnEdge()
-            ? LineSegments.bytesAt(memorySegment(), startIndex(), Math.min(headLength(), length()))
+            ? LineSegments.readHead(memorySegment(), Math.toIntExact(Math.min(headLength(), length())), startIndex())
             : memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());
     }
 

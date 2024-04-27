@@ -194,7 +194,7 @@ final class BitwisePartitionHandler implements Runnable {
             offset += ALIGNMENT;
         }
         if (tail > 0) {
-            long tailBytes = LineSegments.bytesAt(segment, offset, tail);
+            long tailBytes = LineSegments.readTail(segment, Math.toIntExact(tail), limit);
             long mask = mask(tailBytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -230,7 +230,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long loadTail(long count) {
-        return LineSegments.bytesAt(segment, offset, Math.toIntExact(count));
+        return LineSegments.readTail(segment, Math.toIntExact(count), limit);
     }
 
     private void emitAndAdvance(long endIndex) {
@@ -350,7 +350,7 @@ final class BitwisePartitionHandler implements Runnable {
                 lo += ALIGNMENT;
             }
             if (tail > 0) {
-                long prebyte = LineSegments.bytesAt(next.segment, lo, tail);
+                long prebyte = LineSegments.readTail(next.segment, Math.toIntExact(tail),next.limit);
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
