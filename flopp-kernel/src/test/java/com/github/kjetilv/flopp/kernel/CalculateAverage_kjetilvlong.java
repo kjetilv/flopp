@@ -15,6 +15,7 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
@@ -318,21 +319,24 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static int parseValue(LineSegment segment) {
-        int value = 0;
-        int pos = 1;
-        for (long i = segment.length() - 1; i >= 0; i--) {
-            byte b = segment.byteAt(i);
+        long value = 0;
+        long pos = 1;
+        long head = segment.head();
+        int intExact = Math.toIntExact(segment.length());
+        for (int i = intExact - 1; i >= 0; i--) {
+            int shift = i * 8;
+            long b = (head >> shift) & 0xFF;
             if (b == '.') {
                 continue;
             }
             if (b == '-') {
-                return value * -1;
+                return (int)value * -1;
             }
-            int j = b - '0';
+            long j = b - '0';
             value += j * pos;
             pos *= 10;
         }
-        return value;
+        return (int)value;
     }
 
     public static final class Result {

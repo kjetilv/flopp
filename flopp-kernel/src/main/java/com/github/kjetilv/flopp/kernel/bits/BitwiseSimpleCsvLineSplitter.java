@@ -95,7 +95,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
         long length = this.segment.length();
         if (length < ALIGNMENT) {
-            findSeps(this.segment.bytesAt(0, length), 0);
+            findSeps(this.segment.head(), 0);
             addSep(length);
         } else {
             processHead();
