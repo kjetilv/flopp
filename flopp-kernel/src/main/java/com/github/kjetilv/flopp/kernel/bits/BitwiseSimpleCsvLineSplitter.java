@@ -33,13 +33,15 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
     private long lineSegmentEnd;
 
+    private final CsvFormat.Simple format;
+
     BitwiseSimpleCsvLineSplitter(
         Consumer<SeparatedLine> lines,
         CsvFormat.Simple format,
         boolean immutable
     ) {
         super(lines, immutable);
-        Objects.requireNonNull(format, "lineSplit");
+        this.format = Objects.requireNonNull(format, "lineSplit");
 
         this.sepFinder = Bits.finder(format.separator(), true);
 
@@ -118,7 +120,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
     @Override
     protected String substring() {
-        return "";
+        return "format=" + format.toString();
     }
 
     private void processHead() {
@@ -161,7 +163,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
             this.end[columnNo] = startOffset + end;
             this.columnNo++;
         } catch (Exception e) {
-            throw new IllegalStateException(this + " could not set " + columnNo, e);
+            throw new IllegalStateException(this + " could not set column #" + (columnNo + 1), e);
         }
     }
 }
