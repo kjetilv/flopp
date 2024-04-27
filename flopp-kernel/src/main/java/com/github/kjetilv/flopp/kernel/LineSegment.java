@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+
 import java.lang.foreign.MemorySegment;
 
 import static com.github.kjetilv.flopp.kernel.LineSegments.LAYOUT;
@@ -118,33 +120,17 @@ public interface LineSegment extends Range {
     }
 
     default long tail() {
+        return tail(false);
+    }
+
+    default long tail(boolean truncate) {
         if (endsOnEdge()) {
             return LineSegments.bytesAt(memorySegment(), alignedEnd(), tailLength());
         }
-//        try {
-//            return memorySegment().get(LAYOUT, alignedEnd());
-//        } catch (Exception e) {
-//            throw new IllegalStateException(this + " failed to provide tail", e);
-//        }
-//        return memorySegment().get(UNALIGNED_LAYOUT, alignedEnd());
-        long endIndex = endIndex();
-        if (startIndex() < ALIGNMENT) {
-            long tail = endIndex % ALIGNMENT;
-            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
-        }
-        long tail = endIndex % ALIGNMENT;
-        long value = memorySegment().get(UNALIGNED_LAYOUT, endIndex - ALIGNMENT);
-        long shift = (ALIGNMENT - tail) * ALIGNMENT;
-        return value >> shift;
-        //        long endIndex = endIndex();
-        //        long tail = endIndex % ALIGNMENT;
-        //        if (memorySegment().byteSize() - endIndex() < ALIGNMENT) {
-        //            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
-        //        }
-        //        return memorySegment().get(UNALIGNED_LAYOUT, endIndex - tail);
-//        return endsOnEdge()
-//            ? LineSegments.bytesAt(memorySegment(), alignedEnd(), tailLength())
-//            : memorySegment().get(UNALIGNED_LAYOUT, endIndex() - tailLength());
+        long value = memorySegment().get(UNALIGNED_LAYOUT, alignedEnd());
+        return truncate
+            ? Bits.lowerBytes(value, tailLength())
+            : value;
     }
 
     default int tailLength() {

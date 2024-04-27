@@ -60,6 +60,10 @@ public final class Bits {
         return dotted ? dot(padded, 8) : padded;
     }
 
+    public static long lowerBytes(long data, int bytes) {
+        return data & PICKED[bytes];
+    }
+
     public static byte[] toBytes(long data) {
         return new byte[] {
             (byte) (data & 0xFF),
@@ -140,9 +144,8 @@ public final class Bits {
                 target[offset + 5] = (byte) (data >> 40 & 0xFF);
                 target[offset + 6] = (byte) (data >> 48 & 0xFF);
             }
-            case 8 -> {
+            case 8 ->
                 transferDataTo(data, offset, target);
-            }
         }
     }
 
@@ -196,6 +199,17 @@ public final class Bits {
         0xFFFF000000000000L,
         0xFF00000000000000L,
         0x0000000000000000L
+    };
+
+    private static final long[] PICKED = {
+        0x0000000000000000L,
+        0x00000000000000FFL,
+        0x000000000000FFFFL,
+        0x0000000000FFFFFFL,
+        0x00000000FFFFFFFFL,
+        0x000000FFFFFFFFFFL,
+        0x0000FFFFFFFFFFFFL,
+        0x00FFFFFFFFFFFFFFL,
     };
 
     private static final long[] CHECK = {
