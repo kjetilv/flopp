@@ -94,14 +94,9 @@ public interface LineSegment extends Range {
     }
 
     default long head() {
-        long len = length();
-        return memorySegment().byteSize() - startIndex() < ALIGNMENT
-            ? bytesAt(0, Math.min(headLength(), len))
-            : memorySegment().get(UNALIGNED_LAYOUT, startIndex()
-            );
-        //        return startsOnEdge()
-        //            ? LineSegments.bytesAt(memorySegment(), startIndex(), Math.min(headLength(), length()))
-        //            : memorySegment().get(UNALIGNED_LAYOUT, startIndex());
+        return startsOnEdge()
+            ? LineSegments.bytesAt(memorySegment(), startIndex(), Math.min(headLength(), length()))
+            : memorySegment().get(UNALIGNED_LAYOUT, startIndex());
     }
 
     default long head(long head) {
