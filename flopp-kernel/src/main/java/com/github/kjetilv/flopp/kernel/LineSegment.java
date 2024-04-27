@@ -45,6 +45,7 @@ public interface LineSegment extends Range {
 
     /**
      * The aligned start of this segment. May be ahead of/less-than {@link #startIndex() start index}.
+     *
      * @return Aligned start
      */
     default long alignedStart() {
@@ -53,6 +54,7 @@ public interface LineSegment extends Range {
 
     /**
      * The aligned end of this segment. May be ahead of/less-than {@link #endIndex() end index}.
+     *
      * @return Aligned end
      */
     default long alignedEnd() {
@@ -96,7 +98,10 @@ public interface LineSegment extends Range {
         return memorySegment().byteSize() - startIndex() < ALIGNMENT
             ? bytesAt(0, Math.min(headLength(), len))
             : memorySegment().get(UNALIGNED_LAYOUT, startIndex()
-        );
+            );
+        //        return startsOnEdge()
+        //            ? LineSegments.bytesAt(memorySegment(), startIndex(), Math.min(headLength(), length()))
+        //            : memorySegment().get(UNALIGNED_LAYOUT, startIndex());
     }
 
     default long head(long head) {
@@ -133,13 +138,20 @@ public interface LineSegment extends Range {
         //            return LineSegments.bytesAt(memorySegment(), alignedEnd(), tail);
         //        }
         //        return memorySegment().get(UNALIGNED_LAYOUT, endIndex - tail);
+//        return endsOnEdge()
+//            ? LineSegments.bytesAt(memorySegment(), alignedEnd(), tailLength())
+//            : memorySegment().get(UNALIGNED_LAYOUT, endIndex() - tailLength());
     }
 
     default int tailLength() {
         return Math.toIntExact(endIndex() % ALIGNMENT);
     }
 
-    default boolean onEdge() {
+    default boolean startsOnEdge() {
+        return underlyingSize() - startIndex() < ALIGNMENT;
+    }
+
+    default boolean endsOnEdge() {
         return underlyingSize() - endIndex() < ALIGNMENT;
     }
 
