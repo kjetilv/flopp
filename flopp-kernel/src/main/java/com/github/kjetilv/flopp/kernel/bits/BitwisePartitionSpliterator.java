@@ -43,9 +43,10 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            Action mediated = mediator.mediate(forwarder(action));
-            BitwisePartitionHandler handler = handler(mediated);
-            handler.run();
+            Action delegate = immutable
+                ? new ImmutableForwarder(action)
+                : new MutableForwarder(action);
+            handler(mediator.mediate(delegate)).run();
             return false;
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed: " + action, e);
@@ -64,12 +65,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             action,
             next == null ? null : () -> next.handler(action)
         );
-    }
-
-    private Action forwarder(Consumer<? super LineSegment> action) {
-        return immutable
-            ? new ImmutableForwarder(action)
-            : new MutableForwarder(action);
     }
 
     private static final class ImmutableForwarder implements Action {
@@ -102,9 +97,12 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+            if (endIndex < startIndex) {
+                throw new IllegalArgumentException(endIndex + " < " + startIndex);
+            }
             this.startIndex = startIndex;
             this.endIndex = endIndex;
-            this.memorySegment = memorySegment;
+            this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegment");
             action.accept(this);
         }
 
@@ -131,21 +129,10 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(memorySegment, startIndex, endIndex);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return obj == this ||
-                   obj instanceof LineSegment ls && memorySegment().equals(ls.memorySegment()) &&
-                   startIndex() == ls.startIndex() &&
-                   endIndex() == ls.endIndex();
-        }
-
-        @Override
         public String toString() {
-            return LineSegments.asString(memorySegment, startIndex, endIndex);
+            return memorySegment == null
+                ? "CLOSED"
+                : LineSegments.asString(memorySegment, startIndex, endIndex);
         }
     }
 }

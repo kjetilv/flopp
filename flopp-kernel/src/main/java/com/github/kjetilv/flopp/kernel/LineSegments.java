@@ -5,13 +5,18 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import static java.lang.foreign.ValueLayout.*;
 
 public final class LineSegments {
 
     public static String asString(LineSegment segment) {
-        int len = Math.toIntExact(segment.length());
+        long length = segment.length();
+        if (length == 0) {
+            return "";
+        }
+        int len = Math.toIntExact(length);
         byte[] string = new byte[len];
         int headLen = segment.headLength();
         if (headLen > 0) {
@@ -81,6 +86,9 @@ public final class LineSegments {
     }
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
+        if (count < ALIGNMENT) {
+            return readHead(memorySegment, offset, Math.toIntExact(count));
+        }
         long bytes = 0;
         for (long i = count - 1; i >= 0; i--) {
             byte b = memorySegment.get(JAVA_BYTE, offset + i);
@@ -89,26 +97,28 @@ public final class LineSegments {
         return bytes;
     }
 
-    public static long readHead(MemorySegment memorySegment, int length, long first) {
+    public static long readHead(MemorySegment memorySegment, long offset, int length) {
         return switch (length) {
-            case 1 -> memorySegment.get(JAVA_BYTE, first);
-            case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, first);
-            case 3 -> (long) memorySegment.get(JAVA_SHORT_UNALIGNED, first) +
-                      (memorySegment.get(JAVA_BYTE, first + 2) << 16);
-            case 4 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first);
-            case 5 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
-                      ((long) memorySegment.get(JAVA_BYTE, first + 4) << 32);
-            case 6 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
-                      (long) memorySegment.get(JAVA_SHORT_UNALIGNED, first + 4) << 32;
-            case 7 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, first) +
-                      ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, first + 4) << 32) +
-                      (long) memorySegment.get(JAVA_BYTE, first + 6) >> 48;
+            case 0 -> 0L;
+            case 1 -> memorySegment.get(JAVA_BYTE, offset);
+            case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, offset);
+            case 3 -> (long) memorySegment.get(JAVA_SHORT_UNALIGNED, offset) +
+                      (memorySegment.get(JAVA_BYTE, offset + 2) << 16);
+            case 4 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, offset);
+            case 5 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, offset) +
+                      ((long) memorySegment.get(JAVA_BYTE, offset + 4) << 32);
+            case 6 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, offset) +
+                      (long) memorySegment.get(JAVA_SHORT_UNALIGNED, offset + 4) << 32;
+            case 7 -> (long) memorySegment.get(JAVA_INT_UNALIGNED, offset) +
+                      ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, offset + 4) << 32) +
+                      (long) memorySegment.get(JAVA_BYTE, offset + 6) >> 48;
             default -> throw new IllegalStateException("Invalid head: " + length);
         };
     }
 
     public static long readTail(MemorySegment memorySegment, int length, long last) {
         return switch (length) {
+            case 0 -> 0L;
             case 1 -> memorySegment.get(JAVA_BYTE, last - 1);
             case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, last - 2);
             case 3 -> ((long) memorySegment.get(JAVA_SHORT_UNALIGNED, last - 2) << 8) +
@@ -128,10 +138,15 @@ public final class LineSegments {
     private LineSegments() {
     }
 
-    public static final long ALIGNMENT = JAVA_LONG.byteSize();
+    public static final long ALIGNMENT = 8L;
 
     record ImmutableSlice(MemorySegment memorySegment, long length)
         implements LineSegment {
+
+        ImmutableSlice {
+            Objects.requireNonNull(memorySegment, "memorySegment");
+            Non.negative(length, "length");
+        }
 
         ImmutableSlice(MemorySegment memorySegment) {
             this(memorySegment, memorySegment.byteSize());
@@ -165,6 +180,13 @@ public final class LineSegments {
 
     record Immutable(MemorySegment memorySegment, long startIndex, long endIndex)
         implements LineSegment {
+
+        Immutable {
+            Objects.requireNonNull(memorySegment, "memorySegment");
+            if (startIndex > endIndex) {
+                throw new IllegalStateException("Negative length: " + startIndex + " > " + endIndex + " in " + memorySegment);
+            }
+        }
 
         @Override
         public LineSegment immutable() {

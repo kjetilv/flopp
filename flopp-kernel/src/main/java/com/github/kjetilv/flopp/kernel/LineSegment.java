@@ -94,9 +94,24 @@ public interface LineSegment extends Range {
     }
 
     default long head() {
-        return startsOnEdge()
-            ? LineSegments.readHead(memorySegment(), Math.toIntExact(Math.min(headLength(), length())), startIndex())
-            : memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());
+        return head(false);
+    }
+
+    default long head(boolean truncate) {
+        if (startsOnEdge()) {
+            int headLength = headLength();
+            long length = length();
+            int readLength = Math.toIntExact(headLength == 0 ? length : Math.min(headLength, length));
+            return LineSegments.readHead(memorySegment(), startIndex(), readLength);
+        }
+        long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());
+        if (truncate) {
+            int headLength = headLength();
+            long length = length();
+            int readLength = Math.toIntExact(headLength == 0 ? length : Math.min(headLength, length));
+            return Bits.lowerBytes(value,readLength);
+        }
+        return value;
     }
 
     default long head(long head) {
@@ -147,6 +162,10 @@ public interface LineSegment extends Range {
 
     default byte byteAt(long i) {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
+    }
+
+    default long bytesAt(long offset, long count) {
+        return LineSegments.bytesAt(memorySegment(), startIndex() + offset, count);
     }
 
     default LineSegment slice(long startIndex, long endIndex) {

@@ -35,6 +35,14 @@ public sealed interface CsvFormat {
         public CsvFormat fast(boolean fast) {
             return this;
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() +
+                   "[separator:`" + separator + "`" +
+                   " columnCount:`" + columnCount +
+                   "`]";
+        }
     }
 
     record DoubleQuoted(
@@ -79,6 +87,15 @@ public sealed interface CsvFormat {
         @Override
         public CsvFormat fast(boolean fast) {
             return new DoubleQuoted(separator, quote, columnCount, fast);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() +
+                   "[separator:`" + separator + "`" +
+                   " quote:`" + quote + "`" +
+                   " columnCount:`" + columnCount + "`" +
+                   " fast:`" + fast + "`]";
         }
 
         public static final DoubleQuoted DEFAULT = new DoubleQuoted();
@@ -131,6 +148,17 @@ public sealed interface CsvFormat {
         @Override
         public CsvFormat fast(boolean fast) {
             return new Escaped(separator, quote, escape, fast, columnCount);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() +
+                   "[separator:`" + separator + "`" +
+                   " quote:`" + quote + "`" +
+                   " escape:`" + escape + "`" +
+                   " fast:`" + fast + "`" +
+                   " columnCount:`" + columnCount +
+                   "`]";
         }
 
         public static final char DEFAULT_ESC = '\\';

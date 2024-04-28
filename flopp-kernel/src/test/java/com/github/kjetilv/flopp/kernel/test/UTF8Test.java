@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -198,10 +199,10 @@ public class UTF8Test {
         }
         String trimmedContent;
         try (
-            Stream<String> lines = Files.lines(path)
+            Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)
         ) {
             trimmedContent = lines.collect(Collectors.joining("\n"));
-            Files.write(tmp, trimmedContent.trim().getBytes());
+            Files.write(tmp, (trimmedContent.trim() + "\n").getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -222,9 +223,9 @@ public class UTF8Test {
                             }
                         ));
         }
-        assertThat(tmp).content()
+        assertThat(tmp).content(StandardCharsets.UTF_8)
             .describedAs("Failed with " + partitionCount + " partitions: " + partitions)
-            .isEqualTo(sb.toString().trim());
+            .isEqualTo(sb.toString());
     }
 
     private static String linesOf(Path path) {
