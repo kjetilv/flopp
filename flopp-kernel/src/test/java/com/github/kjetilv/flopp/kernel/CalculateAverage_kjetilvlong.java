@@ -56,7 +56,7 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
-        ).scaled(2);
+        );
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);

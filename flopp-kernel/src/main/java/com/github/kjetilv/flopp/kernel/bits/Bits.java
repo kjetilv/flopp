@@ -62,7 +62,7 @@ public final class Bits {
     }
 
     public static long lowerBytes(long data, int bytes) {
-        return data & PICKED[bytes];
+        return data & PICK_LOWER[bytes];
     }
 
     public static byte[] toBytes(long data) {
@@ -202,7 +202,7 @@ public final class Bits {
         0x0000000000000000L
     };
 
-    private static final long[] PICKED = {
+    private static final long[] PICK_LOWER = {
         0x0000000000000000L,
         0x00000000000000FFL,
         0x000000000000FFFFL,

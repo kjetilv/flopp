@@ -1,0 +1,47 @@
+package com.github.kjetilv.flopp.kernel;
+
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class LineSegmentsTest {
+
+    @Test
+    void readTail() {
+        assertTail("foobarzt");
+        assertTail("foobarzt1");
+        assertTail("foobarzt12");
+        assertTail("foobarzt123");
+        assertTail("foobarzt1234");
+        assertTail("foobarzt12345");
+        assertTail("foobarzt123456");
+        assertTail("foobarzt1234567");
+    }
+
+    @Test
+    void readHead() {
+        assertHead("foobarzt");
+        assertHead("1foobarzt");
+        assertHead("12foobarzt");
+        assertHead("123foobarzt");
+        assertHead("1234foobarzt");
+        assertHead("12345foobarzt");
+        assertHead("123456foobarzt");
+        assertHead("1234567foobarzt");
+    }
+
+    private static void assertTail(String string) {
+        LineSegment lineSegment = LineSegments.of(string);
+        int tail = string.length() - 8;
+        long l = LineSegments.readTail(lineSegment.memorySegment(), lineSegment.length(), tail);
+        assertThat(Bits.toString(l, tail)).isEqualTo(string.substring(8));
+    }
+
+    private static void assertHead(String string) {
+        LineSegment lineSegment = LineSegments.of(string);
+        int head = string.length() - 8;
+        long l = LineSegments.readHead(lineSegment.memorySegment(), 0, head);
+        assertThat(Bits.toString(l, head)).isEqualTo(string.substring(0, head));
+    }
+}

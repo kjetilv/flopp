@@ -140,7 +140,7 @@ public interface LineSegment extends Range {
         MemorySegment ms = memorySegment();
         int tail = tailLength();
         if (endsOnEdge()) {
-            return LineSegments.readTail(ms, tail, endIndex());
+            return LineSegments.readTail(ms, endIndex(), tail);
         }
         long value = ms.get(JAVA_LONG_UNALIGNED, alignedEnd());
         return truncate
