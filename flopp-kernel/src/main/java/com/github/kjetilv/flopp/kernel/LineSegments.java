@@ -150,11 +150,6 @@ public final class LineSegments {
     record ImmutableSlice(MemorySegment memorySegment, long length)
         implements LineSegment {
 
-        ImmutableSlice {
-            Objects.requireNonNull(memorySegment, "memorySegment");
-            Non.negative(length, "length");
-        }
-
         ImmutableSlice(MemorySegment memorySegment) {
             this(memorySegment, memorySegment.byteSize());
         }
@@ -187,13 +182,6 @@ public final class LineSegments {
 
     record Immutable(MemorySegment memorySegment, long startIndex, long endIndex)
         implements LineSegment {
-
-        Immutable {
-            Objects.requireNonNull(memorySegment, "memorySegment");
-            if (startIndex > endIndex) {
-                throw new IllegalStateException("Negative length: " + startIndex + " > " + endIndex + " in " + memorySegment);
-            }
-        }
 
         @Override
         public LineSegment immutable() {

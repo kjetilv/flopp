@@ -84,7 +84,7 @@ final class BitwiseEscapedCsvLineSplitter extends AbstractBitwiseLineSplitter im
         this.offset = this.currentStart = this.columnNo = 0;
         this.quoted = this.quoting = this.escaping = false;
 
-        this.segment = Objects.requireNonNull(segment, "segment");
+        this.segment = segment;
         this.startOffset = this.segment.startIndex();
 
         long length = this.segment.length();

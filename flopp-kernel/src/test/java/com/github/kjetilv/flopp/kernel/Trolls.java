@@ -22,7 +22,6 @@ import com.github.kjetilv.flopp.kernel.readers.Readers;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
@@ -65,7 +64,7 @@ public final class Trolls {
             LongAdder failures = new LongAdder();
             LongAdder followersCount = new LongAdder();
 
-            Consumer<Map<String, Object>> entryHandler = map -> {
+            Consumer<Reader.Columns> entryHandler = map -> {
                 entryCount.increment();
                 Object followers = map.get("followers");
                 long x1 = 0;

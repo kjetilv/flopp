@@ -16,6 +16,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 
@@ -25,8 +26,6 @@ import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
-
-import static com.github.kjetilv.flopp.kernel.readers.Readers.column;
 
 public final class FormattSplit_kjetilvlong {
 
@@ -51,8 +50,8 @@ public final class FormattSplit_kjetilvlong {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
         Reader reader = Readers.create(
-            column("Station", 1),
-            column("Temperature", 2, lineSegment -> Double.parseDouble(lineSegment.asString()))
+            Column.ofString("station", 1),
+            Column.ofType("temperature", 2, FormattSplit_kjetilvlong::parseValue)
         );
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -71,6 +70,28 @@ public final class FormattSplit_kjetilvlong {
         }
         return longAdder;
     }
+
+    private static int parseValue(LineSegment segment) {
+        long value = 0;
+        long pos = 1;
+        long head = segment.head();
+        int intExact = Math.toIntExact(segment.length());
+        for (int i = intExact - 1; i >= 0; i--) {
+            int shift = i * 8;
+            long b = (head >> shift) & 0xFF;
+            if (b == '.') {
+                continue;
+            }
+            if (b == '-') {
+                return (int)value * -1;
+            }
+            long j = b - '0';
+            value += j * pos;
+            pos *= 10;
+        }
+        return (int)value;
+    }
+
 
     private FormattSplit_kjetilvlong() {
     }

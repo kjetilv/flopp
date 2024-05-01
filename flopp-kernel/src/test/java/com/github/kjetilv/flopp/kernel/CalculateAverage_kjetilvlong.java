@@ -15,7 +15,6 @@
  */
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
@@ -148,8 +147,8 @@ public final class CalculateAverage_kjetilvlong {
         ).scaled(2);
         CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
-            new Column("station", 1),
-            new Column("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
+            Column.ofString("station", 1),
+            Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
         );
         int chunks = partitioning.of(shape.size()).size();
         try (
@@ -164,15 +163,15 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
             Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
-                .map(streamer ->
+                .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
                             Map<String, Result> m = new HashMap<>(1024, 1.0f);
-                            reader.read(streamer, map ->
+                            reader.read(splitter, columns ->
                                 m.compute(
-                                    (String) map.get("station"),
+                                    (String) columns.get("station"),
                                     (_, existing) -> {
-                                        int dec = (Integer) map.get("measurement");
+                                        int dec = (Integer) columns.get("measurement");
                                         return existing == null ? new Result(dec) : existing.collect(dec);
                                     }
                                 ));
