@@ -98,20 +98,21 @@ public interface LineSegment extends Range {
     }
 
     default long head(boolean truncate) {
-        if (startsOnEdge()) {
-            int headLength = headLength();
-            long length = length();
-            long readLength = headLength == 0 ? length : Math.min(headLength, length);
-            return LineSegments.readHead(memorySegment(), startIndex(), readLength);
+        long startIndex = startIndex();
+        if (underlyingSize() - startIndex < ALIGNMENT) {
+            return LineSegments.readHead(memorySegment(), startIndex, readLength());
         }
-        long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());
-        if (truncate) {
-            int headLength = headLength();
-            long length = length();
-            int readLength = Math.toIntExact(headLength == 0 ? length : Math.min(headLength, length));
-            return Bits.lowerBytes(value,readLength);
-        }
-        return value;
+        long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
+        return truncate
+            ? Bits.lowerBytes(value, Math.toIntExact(readLength()))
+            : value;
+    }
+
+    private long readLength() {
+        int headLength = headLength();
+        long length = length();
+        long value1 = headLength == 0 ? length : Math.min(headLength, length);
+        return value1;
     }
 
     default long head(long head) {
@@ -139,8 +140,9 @@ public interface LineSegment extends Range {
     default long tail(boolean truncate) {
         MemorySegment ms = memorySegment();
         int tail = tailLength();
-        if (endsOnEdge()) {
-            return LineSegments.readTail(ms, endIndex(), tail);
+        long endIndex = endIndex();
+        if (underlyingSize() - endIndex < ALIGNMENT) {
+            return LineSegments.readTail(ms, endIndex, tail);
         }
         long value = ms.get(JAVA_LONG_UNALIGNED, alignedEnd());
         return truncate
@@ -150,14 +152,6 @@ public interface LineSegment extends Range {
 
     default int tailLength() {
         return Math.toIntExact(endIndex() % ALIGNMENT);
-    }
-
-    default boolean startsOnEdge() {
-        return underlyingSize() - startIndex() < ALIGNMENT;
-    }
-
-    default boolean endsOnEdge() {
-        return underlyingSize() - endIndex() < ALIGNMENT;
     }
 
     default byte byteAt(long i) {

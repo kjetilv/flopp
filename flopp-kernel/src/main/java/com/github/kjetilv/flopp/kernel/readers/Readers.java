@@ -37,12 +37,10 @@ public final class Readers {
 
     public static Reader create(List<Column> columns) {
         return (splitter, values) ->
-            splitter.forEach(separatedLine -> {
-                values.accept(Maps.map(Column::name, column ->
-                        column.parse(separatedLine.segment(column.colunmNo() - 1)),
-                    columns
-                ));
-            });
+            splitter.forEach(separatedLine ->
+                values.accept(Maps.map(columns, Column::name, column ->
+                        column.parse(separatedLine.segment(column.colunmNo() - 1))
+                )));
     }
 
     private Readers() {

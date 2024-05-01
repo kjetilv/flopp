@@ -54,7 +54,7 @@ public final class Bits {
     }
 
     public static String bin(long mask, boolean dotted) {
-        if (mask == 0) {
+        if (mask == 0L) {
             return "0x0";
         }
         String padded = zeroPad(Long.toBinaryString(mask), 64);

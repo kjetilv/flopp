@@ -4,8 +4,6 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Non;
 
-import java.lang.foreign.MemorySegment;
-
 public record Column(String name, int colunmNo, Parser parser) {
 
     public Column {
@@ -20,14 +18,11 @@ public record Column(String name, int colunmNo, Parser parser) {
         return parser.parse(lineSegment);
     }
 
-    public static final Parser TO_STRING = LineSegment::asString;
+    public static final Parser TO_STRING = LineSegments::asString;
 
+    @FunctionalInterface
     public interface Parser {
 
         Object parse(LineSegment lineSegment);
-
-        default Object parse(MemorySegment memorySegment, long start, long end) {
-            return parse(LineSegments.of(memorySegment, start, end));
-        }
     }
 }
