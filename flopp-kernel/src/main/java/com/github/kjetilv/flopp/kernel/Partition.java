@@ -53,12 +53,8 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     @Override
     public String toString() {
-        boolean f = first();
-        boolean l = last();
-        String pos = f ? "<" : l ? ">" : "";
-        Object no = f || l ? "" : partitionNo;
         return getClass().getSimpleName() + "[" +
-               pos + no + "/" + (partitionCount - 1) + " " + offset + "+" + length +
+               str() + " " + offset + "+" + length +
                "]";
     }
 
@@ -72,5 +68,17 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     public boolean single() {
         return partitionCount == 1;
+    }
+
+    private String str() {
+        boolean f = first();
+        boolean l = last();
+        if (f && l) {
+            return "<>";
+        }
+        String pos = f ? "<" : l ? ">" : "";
+        Object no = f || l ? "" : partitionNo;
+        String s = pos + no + "/" + (partitionCount - 1);
+        return s;
     }
 }

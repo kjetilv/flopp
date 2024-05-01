@@ -55,17 +55,20 @@ public final class JustSplit_kjetilvlong {
             )
         ) {
             CsvFormat csvFormat = new CsvFormat.Escaped(';');
-            List<CompletableFuture<Void>> list1 =
+            List<Runnable> list1 =
                 bitwisePartitioned.splitters().splitters(csvFormat)
                     .map(splitsConsumer ->
-                        CompletableFuture.runAsync(
+//                        CompletableFuture.runAsync(
+                        (Runnable)
                             () ->
                                 splitsConsumer.forEach(line ->
-                                    longAdder.add(line.columnCount())),
-                            executor
-                        ))
+                                    longAdder.add(line.columnCount()))
+//                        ,
+//                            executor
+                        )
+//                    .map(cf -> (Runnable) cf::join)
                     .toList();
-            list1.forEach(CompletableFuture::join);
+            list1.forEach(Runnable::run);
         }
         return longAdder;
     }
