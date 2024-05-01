@@ -12,18 +12,17 @@ import static java.lang.foreign.ValueLayout.*;
 public final class LineSegments {
 
     public static String asString(LineSegment segment) {
-        long length = segment.length();
+        int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return "";
         }
-        int len = Math.toIntExact(length);
-        byte[] string = new byte[len];
+        byte[] string = new byte[length];
         int headLen = segment.headLength();
         if (headLen > 0) {
             long data = segment.head();
-            Bits.transferDataTo(data, 0, Math.min(len, headLen), string);
+            Bits.transferDataTo(data, 0, Math.min(length, headLen), string);
         }
-        if (len > headLen) {
+        if (length > headLen) {
             int longs = Math.toIntExact(segment.alignedCount());
             int firstLong = headLen == 0 ? 0 : 1;
             int tailLen = segment.tailLength();

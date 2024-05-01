@@ -78,17 +78,6 @@ public final class Bits {
         };
     }
 
-    public static void transferTailDataTo(long data, int offset, int length, byte[] target) {
-        if (offset >= 8) {
-            return;
-        }
-        int bytesToWrite = Math.min(length, ALIGNMENT - offset);
-        for (int i = 0; i < bytesToWrite; i++) {
-            int shift = (offset + i) * ALIGNMENT;
-            target[i] = (byte) (data >> shift & 0xFF);
-        }
-    }
-
     @SuppressWarnings("DuplicatedCode")
     public static void transferDataTo(long data, int offset, byte[] target) {
         target[offset] = (byte) (data & 0xFF);
