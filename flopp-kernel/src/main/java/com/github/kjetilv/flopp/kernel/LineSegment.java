@@ -101,7 +101,7 @@ public interface LineSegment extends Range {
         if (startsOnEdge()) {
             int headLength = headLength();
             long length = length();
-            int readLength = Math.toIntExact(headLength == 0 ? length : Math.min(headLength, length));
+            long readLength = headLength == 0 ? length : Math.min(headLength, length);
             return LineSegments.readHead(memorySegment(), startIndex(), readLength);
         }
         long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex());

@@ -95,7 +95,7 @@ public final class LineSegments {
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         if (count < ALIGNMENT) {
-            return readHead(memorySegment, offset, Math.toIntExact(count));
+            return readHead(memorySegment, offset, count);
         }
         long bytes = 0;
         for (long i = count - 1; i >= 0; i--) {
@@ -105,8 +105,8 @@ public final class LineSegments {
         return bytes;
     }
 
-    public static long readHead(MemorySegment memorySegment, long offset, int length) {
-        return switch (length) {
+    public static long readHead(MemorySegment memorySegment, long offset, long length) {
+        return switch (Math.toIntExact(length)) {
             case 0 -> 0L;
             case 1 -> memorySegment.get(JAVA_BYTE, offset);
             case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, offset);

@@ -49,7 +49,7 @@ public record Partitioning(int count, long tail) {
     public List<Partition> of(long total) {
         long reasonablesize = tail + count;
         if (total < reasonablesize) {
-            throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ":" + total);
+            throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ", total size is " + total);
         }
         return partitions(total);
     }
