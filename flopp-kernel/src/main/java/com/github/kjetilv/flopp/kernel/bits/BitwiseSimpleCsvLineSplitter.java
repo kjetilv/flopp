@@ -13,9 +13,9 @@ import java.util.function.Consumer;
  */
 final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
 
-    private final long[] start;
+    private final long[] startPositions;
 
-    private final long[] end;
+    private final long[] startPosition;
 
     private LineSegment segment;
 
@@ -29,9 +29,9 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
     private final Bits.Finder sepFinder;
 
-    private long lineSegmentStart;
+    private long startIndex;
 
-    private long lineSegmentEnd;
+    private long endIndex;
 
     private final CsvFormat.Simple format;
 
@@ -45,8 +45,8 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
         this.sepFinder = Bits.finder(format.separator(), true);
 
-        this.start = new long[format.columnCount()];
-        this.end = new long[format.columnCount()];
+        this.startPositions = new long[format.columnCount()];
+        this.startPosition = new long[format.columnCount()];
     }
 
     @Override
@@ -61,29 +61,33 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
     @Override
     public long[] start() {
-        return start;
+        return startPositions;
     }
 
     @Override
     public long[] end() {
-        return end;
+        return startPosition;
     }
 
     @Override
     public LineSegment segment(int column) {
-        lineSegmentStart = start[column];
-        lineSegmentEnd = end[column];
+        startIndex = startPositions[column];
+        endIndex = startPosition[column];
         return this;
     }
 
     @Override
     public long startIndex() {
-        return lineSegmentStart;
+        return startIndex;
     }
 
     @Override
     public long endIndex() {
-        return lineSegmentEnd;
+        return endIndex;
+    }
+
+    public long underlyingSize() {
+        return segment.underlyingSize();
     }
 
     @Override
@@ -159,8 +163,8 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
 
     private void addSep(long end) {
         try {
-            this.start[columnNo] = startOffset + currentStart;
-            this.end[columnNo] = startOffset + end;
+            this.startPositions[columnNo] = startOffset + currentStart;
+            this.startPosition[columnNo] = startOffset + end;
             this.columnNo++;
         } catch (Exception e) {
             throw new IllegalStateException(this + " could not set column #" + (columnNo + 1), e);

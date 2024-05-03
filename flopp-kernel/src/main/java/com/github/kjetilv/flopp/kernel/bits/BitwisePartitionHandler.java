@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -200,7 +201,7 @@ final class BitwisePartitionHandler implements Runnable {
             offset += ALIGNMENT;
         }
         if (tail > 0) {
-            long tailBytes = LineSegments.readTail(segment, limit, Math.toIntExact(tail));
+            long tailBytes = MemorySegments.readTail(segment, limit, Math.toIntExact(tail));
             long mask = mask(tailBytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -236,7 +237,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long loadTail(long count) {
-        return LineSegments.readTail(segment, limit, Math.toIntExact(count));
+        return MemorySegments.readTail(segment, limit, Math.toIntExact(count));
     }
 
     private void emitAndAdvance(long endIndex) {
@@ -344,7 +345,7 @@ final class BitwisePartitionHandler implements Runnable {
                 lo += ALIGNMENT;
             }
             if (tail > 0) {
-                long prebyte = LineSegments.readTail(next.segment, next.limit, Math.toIntExact(tail));
+                long prebyte = MemorySegments.readTail(next.segment, next.limit, Math.toIntExact(tail));
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;

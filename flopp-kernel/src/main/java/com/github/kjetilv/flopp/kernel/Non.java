@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.util.Collection;
 
-@SuppressWarnings({"unused", "StringTemplateMigration"})
+@SuppressWarnings({"unused", "StringTemplateMigration", "UnusedReturnValue"})
 public final class Non {
 
     public static <T, C extends Collection<T>> C empty(C cs, String contents) {

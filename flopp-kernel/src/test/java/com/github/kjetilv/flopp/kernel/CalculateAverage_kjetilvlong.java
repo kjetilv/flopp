@@ -19,6 +19,7 @@ import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -166,7 +167,7 @@ public final class CalculateAverage_kjetilvlong {
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
-                            Map<String, Result> m = new HashMap<>(1024, 1.0f);
+                            Map<String, Result> m = Maps.ofSize(512);
                             reader.read(splitter, columns ->
                                 m.compute(
                                     (String) columns.get("station"),

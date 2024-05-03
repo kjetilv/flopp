@@ -12,7 +12,7 @@ public interface LineSegment extends Range {
 
     @SuppressWarnings("unused")
     default LineSegment immutable() {
-        return new LineSegments.Immutable(memorySegment(), startIndex(), endIndex());
+        return new ImmutableLineSegment(memorySegment(), startIndex(), endIndex());
     }
 
     @SuppressWarnings("unused")
@@ -21,7 +21,7 @@ public interface LineSegment extends Range {
     }
 
     default LineSegment immutableSLice(long length) {
-        return new LineSegments.ImmutableSlice(
+        return new ImmutableSliceSegment(
             memorySegment().asSlice(startIndex(), length),
             length
         );
@@ -100,7 +100,7 @@ public interface LineSegment extends Range {
     default long head(boolean truncate) {
         long startIndex = startIndex();
         if (underlyingSize() - startIndex < ALIGNMENT) {
-            return LineSegments.readHead(memorySegment(), startIndex, readLength());
+            return MemorySegments.readHead(memorySegment(), startIndex, readLength());
         }
         long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
         return truncate
@@ -142,7 +142,7 @@ public interface LineSegment extends Range {
         int tail = tailLength();
         long endIndex = endIndex();
         if (underlyingSize() - endIndex < ALIGNMENT) {
-            return LineSegments.readTail(ms, endIndex, tail);
+            return MemorySegments.readTail(ms, endIndex, tail);
         }
         long value = ms.get(JAVA_LONG_UNALIGNED, alignedEnd());
         return truncate
@@ -159,7 +159,7 @@ public interface LineSegment extends Range {
     }
 
     default long bytesAt(long offset, long count) {
-        return LineSegments.bytesAt(memorySegment(), startIndex() + offset, count);
+        return MemorySegments.bytesAt(memorySegment(), startIndex() + offset, count);
     }
 
     default LineSegment slice(long startIndex, long endIndex) {

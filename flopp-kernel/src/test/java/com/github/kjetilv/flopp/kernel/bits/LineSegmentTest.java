@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -109,7 +110,7 @@ class LineSegmentTest {
             assertThat(lineSegment.alignedCount()).isEqualTo(5);
             assertThat(lineSegment.fullLongCount()).isEqualTo(4);
 
-            long firstAsBytes = LineSegments.bytesAt(lineSegment.memorySegment(), lineSegment.startIndex(), 3);
+            long firstAsBytes = MemorySegments.bytesAt(lineSegment.memorySegment(), lineSegment.startIndex(), 3);
 
             String bytedSubstring = Bits.toString(firstAsBytes, 3, UTF_8);
             String wantedSubstring = line.substring(13, 16);

@@ -22,7 +22,7 @@ public record Column<T>(String name, int colunmNo, Parser<T> parser) {
         return parser.parse(lineSegment);
     }
 
-    public static final Parser<String> TO_STRING = LineSegments::asString;
+    private static final Parser<String> TO_STRING = LineSegments::asString;
 
     @FunctionalInterface
     public interface Parser<T> {

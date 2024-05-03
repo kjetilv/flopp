@@ -119,6 +119,11 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
+        public long underlyingSize() {
+            return memorySegment.byteSize();
+        }
+
+        @Override
         public long startIndex() {
             return startIndex;
         }

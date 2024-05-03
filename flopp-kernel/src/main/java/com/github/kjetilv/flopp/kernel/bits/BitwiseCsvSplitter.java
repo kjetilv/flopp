@@ -30,8 +30,8 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines()
-            .forEach(splitter(consumer));
+        Consumer<? super LineSegment> splitter = splitter(consumer);
+        streamer.lines().forEach(splitter);
     }
 
     private Consumer<? super LineSegment> splitter(Consumer<SeparatedLine> consumer) {
