@@ -5,10 +5,17 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Spliterators;
+import java.util.function.LongConsumer;
+import java.util.stream.LongStream;
+import java.util.stream.StreamSupport;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
+import static java.util.Spliterator.IMMUTABLE;
+import static java.util.Spliterator.ORDERED;
 
+@SuppressWarnings("DuplicatedCode")
 public final class LineSegments {
 
     public static boolean equals(LineSegment seg1, LineSegment seg2) {
@@ -22,7 +29,7 @@ public final class LineSegments {
     }
 
     public static int hashCode(LineSegment segment) {
-        long length = Math.toIntExact(segment.length());
+        int length = Math.toIntExact(segment.length());
         if (length == 0L) {
             return 0;
         }
@@ -31,32 +38,53 @@ public final class LineSegments {
         long alignedStart = segment.alignedStart();
         long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
         if (headLen > 0) {
-            long data = segment.head();
+            long data = segment.head(true);
             hashCode = data * 31L ^ (longs == 0 ? 1 : longs);
         }
         if (length > headLen) {
-            int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
             long tailLen = endIndex % ALIGNMENT;
-            int offset = headLen;
-            for (int i = firstLong; i < longs; i++) {
+            for (int i = headLen == 0 ? 0 : 1; i < longs; i++) {
                 long data = segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT);
                 hashCode += data * 31L ^ longs - i;
-                offset += 8;
             }
             if (tailLen > 0) {
-                if (length < ALIGNMENT) {
-                    long data = segment.tail(false);
-                    hashCode += data * 31L;
-                } else {
-                    long data = segment.memorySegment().get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
-                    long shift = ALIGNMENT * (ALIGNMENT - tailLen);
-                    data >>= shift;
-                    hashCode += data * 31L;
-                }
+                hashCode += readTail(segment, length, endIndex, tailLen, false) * 31L;
             }
         }
-        return (int)hashCode;
+        return (int) hashCode;
+    }
+
+    public static LongStream longs(LineSegment segment) {
+        return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
+            segment.fullLongCount() + 2,
+            IMMUTABLE | ORDERED) {
+
+            @Override
+            public boolean tryAdvance(LongConsumer action) {
+                int length = Math.toIntExact(segment.length());
+                if (length == 0) {
+                    return false;
+                }
+                int headLen = segment.headLength();
+                if (headLen > 0) {
+                    action.accept(segment.head(true));
+                }
+                if (length > headLen) {
+                    long alignedStart = segment.alignedStart();
+                    long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
+                    long endIndex = segment.endIndex();
+                    int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+                    for (int i = headLen == 0 ? 0 : 1; i < longs; i++) {
+                        action.accept(segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT));
+                    }
+                    if (tailLen > 0) {
+                        action.accept(readTail(segment, length, endIndex, tailLen, true));
+                    }
+                }
+                return false;
+            }
+        }, false);
     }
 
     public static String asString(LineSegment segment) {
@@ -67,7 +95,7 @@ public final class LineSegments {
         byte[] string = new byte[length];
         int headLen = segment.headLength();
         if (headLen > 0) {
-            long data = segment.head();
+            long data = segment.head(false);
             Bits.transferDataTo(data, 0, Math.min(length, headLen), string);
         }
         if (length > headLen) {
@@ -83,15 +111,8 @@ public final class LineSegments {
                 offset += 8;
             }
             if (tailLen > 0) {
-                if (length < ALIGNMENT) {
-                    long data = segment.tail(true);
-                    Bits.transferDataTo(data, offset, tailLen, string);
-                } else {
-                    long data = segment.memorySegment().get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
-                    long shift = ALIGNMENT * (ALIGNMENT - tailLen);
-                    data >>= shift;
-                    Bits.transferDataTo(data, offset, tailLen, string);
-                }
+                long data = readTail(segment, length, endIndex, tailLen, false);
+                Bits.transferDataTo(data, offset, tailLen, string);
             }
         }
         return new String(string, StandardCharsets.UTF_8);
@@ -145,4 +166,19 @@ public final class LineSegments {
     }
 
     static final long ALIGNMENT = 8L;
+
+    private static long readTail(
+        LineSegment segment,
+        int length,
+        long endIndex,
+        long tailLen,
+        boolean truncate
+    ) {
+        if (length < ALIGNMENT) {
+            return segment.tail(truncate);
+        }
+        long data = segment.memorySegment().get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
+        long shift = ALIGNMENT * (ALIGNMENT - tailLen);
+        return data >> shift;
+    }
 }

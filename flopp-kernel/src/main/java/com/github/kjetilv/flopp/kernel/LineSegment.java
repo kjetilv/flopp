@@ -3,12 +3,17 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
+import java.util.stream.LongStream;
 
 import static java.lang.foreign.ValueLayout.*;
 
 public interface LineSegment extends Range {
 
     MemorySegment memorySegment();
+
+    default LongStream longs() {
+        return LineSegments.longs(this);
+    }
 
     @SuppressWarnings("unused")
     default LineSegment immutable() {

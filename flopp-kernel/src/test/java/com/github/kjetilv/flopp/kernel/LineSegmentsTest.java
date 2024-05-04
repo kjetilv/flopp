@@ -3,9 +3,20 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 import org.junit.jupiter.api.Test;
 
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LineSegmentsTest {
+
+    @Test
+    void longs() {
+        String string = "123foobarzot 123foobarzot 123foobarzotXX";
+        LongStream longs = LineSegments.of(string).longs();
+        String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
+        assertThat(str).isEqualTo(string);
+    }
 
     @Test
     void readTail() {

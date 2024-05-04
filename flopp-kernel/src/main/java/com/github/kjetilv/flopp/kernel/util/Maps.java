@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.util;
 
 import com.github.kjetilv.flopp.kernel.Non;
-import com.github.kjetilv.flopp.kernel.readers.Column;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -56,7 +56,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseCsvLineSplitter 
         }
     }
 
-    protected void findSeps(long bytes, long shift) {
+    private void findSeps(long bytes, long shift) {
         int nextSep = sepFinder.next(bytes);
         while (true) {
             if (nextSep == ALIGNMENT) { // No match

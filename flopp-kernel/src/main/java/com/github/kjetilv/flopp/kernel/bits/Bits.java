@@ -74,7 +74,7 @@ public final class Bits {
             (byte) (data >> 32L & 0xFF),
             (byte) (data >> 40L & 0xFF),
             (byte) (data >> 48L & 0xFF),
-            (byte) (data >> 56L & 0xFF)
+            (byte) (data >> 56L)
         };
     }
 
@@ -87,7 +87,7 @@ public final class Bits {
         target[offset + 4] = (byte) (data >> 32 & 0xFF);
         target[offset + 5] = (byte) (data >> 40 & 0xFF);
         target[offset + 6] = (byte) (data >> 48 & 0xFF);
-        target[offset + 7] = (byte) (data >> 56 & 0xFF);
+        target[offset + 7] = (byte) (data >> 56);
     }
 
     @SuppressWarnings("DuplicatedCode")
