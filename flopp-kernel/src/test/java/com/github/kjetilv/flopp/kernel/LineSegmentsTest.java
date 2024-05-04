@@ -20,10 +20,19 @@ class LineSegmentsTest {
 
     @Test
     void misalignedLongs() {
-        String string = "___1234abcdabcd5678__";
-        LongStream longs = LineSegments.of(string).longs();
+        assertLongs("___12345678abcdefghABCDEFGH__", 3, 27);
+        assertLongs("___12345678abcdefgh__", 3, 19);
+        assertLongs("___12345678__", 3, 11);
+        assertLongs("_sdf__", 1, 4);
+        assertLongs("_____", 3, 3);
+    }
+
+    private static void assertLongs(String string, int startIndex, int endIndex) {
+        LongStream longs = LineSegments.of(string).slice(startIndex, endIndex).longs(true);
         String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
-        assertThat(str).isEqualTo(string + Bits.toString(0, 3));
+        String substring = string.substring(startIndex, endIndex);
+        String pad = !substring.isEmpty() && substring.length() < 8 ? Bits.toString(0, 8 - substring.length()) : "";
+        assertThat(str).isEqualTo(substring + pad);
     }
 
     @Test

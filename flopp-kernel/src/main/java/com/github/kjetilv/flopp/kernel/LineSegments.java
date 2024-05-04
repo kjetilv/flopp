@@ -56,28 +56,29 @@ public final class LineSegments {
     }
 
     public static LongStream longs(LineSegment segment) {
+        int length = Math.toIntExact(segment.length());
+        if (length == 0) {
+            return LongStream.empty();
+        }
+        int headLen = segment.headLength();
+        long alignedStart = segment.alignedStart();
+        long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
         return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
             segment.fullLongCount() + 2,
-            IMMUTABLE | ORDERED) {
+            IMMUTABLE | ORDERED
+        ) {
 
             @Override
             public boolean tryAdvance(LongConsumer action) {
-                int length = Math.toIntExact(segment.length());
-                if (length == 0) {
-                    return false;
-                }
-                int headLen = segment.headLength();
                 if (headLen > 0) {
                     action.accept(segment.head(true));
                 }
                 if (length > headLen) {
-                    long alignedStart = segment.alignedStart();
-                    long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
                     long endIndex = segment.endIndex();
-                    int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
                     for (int i = headLen == 0 ? 0 : 1; i < longs; i++) {
                         action.accept(segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT));
                     }
+                    int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
                     if (tailLen > 0) {
                         action.accept(readTail(segment, length, endIndex, tailLen, true));
                     }
@@ -85,6 +86,50 @@ public final class LineSegments {
                 return false;
             }
         }, false);
+    }
+
+    public static LongStream longs(LineSegment segment, boolean align) {
+        if (!align) {
+            return longs(segment);
+        }
+        int length = Math.toIntExact(segment.length());
+        if (length == 0) {
+            return LongStream.empty();
+        }
+        int headLen = segment.headLength();
+        if (headLen == 0) {
+            return longs(segment);
+        }
+        int shift = Math.toIntExact(ALIGNMENT - headLen);
+        long alignedStart = segment.alignedStart();
+        long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
+        long endIndex = segment.endIndex();
+        int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+        if (length > headLen) {
+            return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
+                segment.fullLongCount() + 2,
+                IMMUTABLE | ORDERED
+            ) {
+
+                @Override
+                public boolean tryAdvance(LongConsumer action) {
+                    long data = segment.head(true);
+                    for (int i = 1; i < longs; i++) {
+                        long alignedData = segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT);
+                        data |= alignedData << headLen * ALIGNMENT;
+                        action.accept(data);
+                        data = alignedData >> shift * ALIGNMENT;
+                    }
+                    if (tailLen > 0) {
+                        long alignedData = readTail(segment, length, endIndex, tailLen, true);
+                        data |= alignedData << headLen * ALIGNMENT;
+                        action.accept(data);
+                    }
+                    return false;
+                }
+            }, false);
+        }
+        return LongStream.of(segment.head(true));
     }
 
     public static String asString(LineSegment segment) {
