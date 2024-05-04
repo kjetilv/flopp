@@ -12,10 +12,18 @@ class LineSegmentsTest {
 
     @Test
     void longs() {
-        String string = "123foobarzot 123foobarzot 123foobarzotXX";
+        String string = "1234abcdabcd5678";
         LongStream longs = LineSegments.of(string).longs();
         String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
         assertThat(str).isEqualTo(string);
+    }
+
+    @Test
+    void misalignedLongs() {
+        String string = "___1234abcdabcd5678__";
+        LongStream longs = LineSegments.of(string).longs();
+        String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
+        assertThat(str).isEqualTo(string + Bits.toString(0, 3));
     }
 
     @Test

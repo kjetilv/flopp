@@ -38,6 +38,7 @@ public final class CalculateAverage_kjetilvlong {
             Path path = Path.of(arg);
 //            go(path);
             go3(path);
+//            go4It(path);
 //            go1(path);
         }
     }
@@ -217,20 +218,22 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
-            List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers
-                .map(splitter ->
+            List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers.map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
-                            Map<LineSegment, Result> m = Maps.ofSize(512);
-                            reader.read(splitter, columns ->
-                                m.compute(
-                                    (LineSegment) columns.get("station"),
-                                    (_, existing) -> {
-                                        int dec = (Integer) columns.get("measurement");
-                                        return existing == null ? new Result(dec) : existing.collect(dec);
-                                    }
-                                ));
-                            return m;
+                            Map<LineSegment, Result> results = Maps.ofSize(512);
+                            reader.read(splitter, columns -> {
+                                LineSegment station = (LineSegment) columns.get("station");
+                                int dec = (Integer) columns.get("measurement");
+                                results.compute(
+                                    station.immutable(),
+                                    (_, existing) ->
+                                        existing == null
+                                            ? new Result(dec)
+                                            : existing.collect(dec)
+                                );
+                            });
+                            return results;
                         },
                         executor
                     ))

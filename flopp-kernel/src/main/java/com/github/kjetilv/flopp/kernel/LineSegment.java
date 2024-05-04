@@ -116,8 +116,7 @@ public interface LineSegment extends Range {
     private long readLength() {
         int headLength = headLength();
         long length = length();
-        long value1 = headLength == 0 ? length : Math.min(headLength, length);
-        return value1;
+        return headLength == 0 ? length : Math.min(headLength, length);
     }
 
     default long head(long head) {
