@@ -64,7 +64,7 @@ public final class LineSegments {
         long alignedStart = segment.alignedStart();
         long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
         return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
-            segment.fullLongCount() + 2,
+            length / ALIGNMENT + 2,
             IMMUTABLE | ORDERED
         ) {
 
@@ -100,14 +100,15 @@ public final class LineSegments {
         if (headLen == 0) {
             return longs(segment);
         }
-        int shift = Math.toIntExact(ALIGNMENT - headLen);
+        int tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
+        int headShift = Math.toIntExact(headLen * ALIGNMENT);
         long alignedStart = segment.alignedStart();
         long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
         long endIndex = segment.endIndex();
         int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
         if (length > headLen) {
             return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
-                segment.fullLongCount() + 2,
+                length / ALIGNMENT + 2,
                 IMMUTABLE | ORDERED
             ) {
 
@@ -116,13 +117,13 @@ public final class LineSegments {
                     long data = segment.head(true);
                     for (int i = 1; i < longs; i++) {
                         long alignedData = segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT);
-                        data |= alignedData << headLen * ALIGNMENT;
+                        data |= alignedData << headShift;
                         action.accept(data);
-                        data = alignedData >> shift * ALIGNMENT;
+                        data = alignedData >> tailShift;
                     }
                     if (tailLen > 0) {
                         long alignedData = readTail(segment, length, endIndex, tailLen, true);
-                        data |= alignedData << headLen * ALIGNMENT;
+                        data |= alignedData << headShift;
                         action.accept(data);
                     }
                     return false;
