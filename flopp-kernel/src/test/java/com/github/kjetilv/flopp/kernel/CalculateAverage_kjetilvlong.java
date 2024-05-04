@@ -192,6 +192,60 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static void go4It(Path path) {
+        Instant start = Instant.now();
+        Shape shape = Shape.of(path).longestLine(128);
+        Partitioning partitioning = Partitioning.create(
+            Runtime.getRuntime().availableProcessors(),
+            shape.longestLine()
+        ).scaled(2);
+        CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
+        Reader reader = Readers.create(
+            Column.ofBinary("station", 1),
+            Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
+        );
+        int chunks = partitioning.of(shape.size()).size();
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            ExecutorService executor = new ThreadPoolExecutor(
+                chunks,
+                chunks,
+                0, TimeUnit.NANOSECONDS,
+                new LinkedBlockingQueue<>(chunks)
+            )
+        ) {
+            System.out.println(Duration.between(start, Instant.now()));
+            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
+            List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers
+                .map(splitter ->
+                    CompletableFuture.supplyAsync(
+                        () -> {
+                            Map<LineSegment, Result> m = Maps.ofSize(512);
+                            reader.read(splitter, columns ->
+                                m.compute(
+                                    (LineSegment) columns.get("station"),
+                                    (_, existing) -> {
+                                        int dec = (Integer) columns.get("measurement");
+                                        return existing == null ? new Result(dec) : existing.collect(dec);
+                                    }
+                                ));
+                            return m;
+                        },
+                        executor
+                    ))
+                .toList();
+            List<Map<LineSegment, Result>> maps = list.stream()
+                .map(CompletableFuture::join)
+                .toList();
+            System.out.println(Duration.between(start, Instant.now()));
+            Set<LineSegment> keys = keySet(maps);
+            SequencedMap<String, Result> map = combineMapsToStringKey(keys, maps);
+            System.out.println(map);
+            System.out.println(Duration.between(start, Instant.now()));
+        }
+    }
+
 //    private static void go2(Path path) {
 //        Instant start = Instant.now();
 //        Shape shape = Shape.of(path).longestLine(64);
@@ -241,7 +295,7 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static Set<String> keySet(List<Map<String, Result>> maps) {
+    private static <T> Set<T> keySet(List<Map<T, Result>> maps) {
         return maps.stream()
             .map(Map::keySet).flatMap(Collection::stream)
             .collect(Collectors.toSet());
@@ -271,11 +325,11 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static SequencedMap<String, Result> combineMaps(
-        Set<String> keys,
-        List<Map<String, Result>> maps
+    private static <T> SequencedMap<T, Result> combineMaps(
+        Set<T> keys,
+        List<Map<T, Result>> maps
     ) {
-        SequencedMap<String, Result> treeMap = new TreeMap<>(maps.getFirst());
+        SequencedMap<T, Result> treeMap = new TreeMap<>(maps.getFirst());
         maps.stream().skip(1)
             .forEach(map ->
                 keys.forEach(key -> {
@@ -288,6 +342,26 @@ public final class CalculateAverage_kjetilvlong {
                         treeMap.put(key, merged);
                     }
                 }));
+        return treeMap;
+    }
+
+    private static SequencedMap<String, Result> combineMapsToStringKey(
+        Set<LineSegment> keys,
+        List<Map<LineSegment, Result>> maps
+    ) {
+        SequencedMap<String, Result> treeMap = new TreeMap<>();
+        maps.forEach(map ->
+            keys.forEach(key -> {
+                String stringKey = key.asString();
+                Result base = treeMap.get(stringKey);
+                Result addendum = map.get(key);
+                if (base == null) {
+                    treeMap.put(stringKey, addendum);
+                } else if (addendum != null) {
+                    Result merged = base.merge(addendum);
+                    treeMap.put(stringKey, merged);
+                }
+            }));
         return treeMap;
     }
 
@@ -325,18 +399,18 @@ public final class CalculateAverage_kjetilvlong {
         int intExact = Math.toIntExact(segment.length());
         for (int i = intExact - 1; i >= 0; i--) {
             int shift = i * 8;
-            long b = (head >> shift) & 0xFF;
+            long b = head >> shift & 0xFF;
             if (b == '.') {
                 continue;
             }
             if (b == '-') {
-                return (int)value * -1;
+                return (int) value * -1;
             }
             long j = b - '0';
             value += j * pos;
             pos *= 10;
         }
-        return (int)value;
+        return (int) value;
     }
 
     public static final class Result {

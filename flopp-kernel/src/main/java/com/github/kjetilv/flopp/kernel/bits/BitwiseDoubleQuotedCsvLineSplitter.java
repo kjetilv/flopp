@@ -4,40 +4,17 @@ import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * @noinspection DuplicatedCode
- */
-final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
-
-    private final long[] start;
-
-    private final long[] end;
-
-    private LineSegment segment;
-
-    private long currentStart;
-
-    private long startOffset;
-
-    private long offset;
+@SuppressWarnings("DuplicatedCode")
+final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private State state;
 
     private boolean quoted;
 
-    private int columnNo;
-
-    private final Bits.Finder sepFinder;
-
     private final Bits.Finder quoFinder;
-
-    private long lineSegmentStart;
-
-    private long lineSegmentEnd;
 
     BitwiseDoubleQuotedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted csvFormat) {
         this(lines, csvFormat, false);
@@ -48,36 +25,12 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
         CsvFormat.DoubleQuoted format,
         boolean immutable
     ) {
-        super(lines, immutable);
+        super(lines, format, immutable);
         Objects.requireNonNull(format, "lineSplit");
 
-        this.sepFinder = Bits.finder(format.separator(), format.fast());
         this.quoFinder = Bits.finder(format.quote(), format.fast());
 
-        this.start = new long[format.columnCount()];
-        this.end = new long[format.columnCount()];
-
         this.state = State.STARTING_COLUMN;
-    }
-
-    @Override
-    public MemorySegment memorySegment() {
-        return segment.memorySegment();
-    }
-
-    @Override
-    public int columnCount() {
-        return columnNo;
-    }
-
-    @Override
-    public long[] start() {
-        return start;
-    }
-
-    @Override
-    public long[] end() {
-        return end;
     }
 
     @Override
@@ -107,33 +60,6 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
             }
         }
         emit();
-    }
-
-    @Override
-    protected String substring() {
-        return state == null ? "<no state>" : state.name();
-    }
-
-    @Override
-    protected LineSegment lineSegment() {
-        return segment;
-    }
-
-    @Override
-    public LineSegment segment(int column) {
-        lineSegmentStart = start[column];
-        lineSegmentEnd = end[column];
-        return this;
-    }
-
-    @Override
-    public long startIndex() {
-        return lineSegmentStart;
-    }
-
-    @Override
-    public long endIndex() {
-        return lineSegmentEnd;
     }
 
     private void processHead() {
@@ -195,8 +121,8 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseLineSplitt
 
     private void addSep(long end) {
         int quote = quoted ? 1 : 0;
-        this.start[columnNo] = startOffset + currentStart + quote;
-        this.end[columnNo] = startOffset + end - quote;
+        this.startPositions[columnNo] = startOffset + currentStart + quote;
+        this.endPositions[columnNo] = startOffset + end - quote;
         this.columnNo++;
         this.quoted = false;
     }

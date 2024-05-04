@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.FwFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.Range;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
@@ -29,11 +32,6 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    protected LineSegment lineSegment() {
-        return segment;
-    }
-
-    @Override
     public MemorySegment memorySegment() {
         return segment.memorySegment();
     }
@@ -54,8 +52,23 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
+    public long start(int column) {
+        return start[column];
+    }
+
+    @Override
+    public long end(int column) {
+        return end[column];
+    }
+
+    @Override
     public void accept(LineSegment segment) {
         this.segment = Objects.requireNonNull(segment, "segment");
         emit();
+    }
+
+    @Override
+    protected LineSegment lineSegment() {
+        return segment;
     }
 }

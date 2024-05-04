@@ -30,19 +30,21 @@ import java.util.function.Function;
 public final class Trolls {
 
     public static void main(String[] args) {
-        for (String arg : args) {
-            Instant start = Instant.now();
-            Path path = Path.of(arg);
-            Shape shape = Shape.of(path).header(1).longestLine(1024);
+        for (int i = 0; i < 10; i++) {
+            for (String arg : args) {
+                Instant start = Instant.now();
+                Path path = Path.of(arg);
+                Shape shape = Shape.of(path).header(1).longestLine(1024);
 
-            Partitioning partitioning = Partitioning.create(
-                Runtime.getRuntime().availableProcessors(),
-                shape.longestLine()
-            ).scaled(2);
+                Partitioning partitioning = Partitioning.create(
+                    Runtime.getRuntime().availableProcessors(),
+                    shape.longestLine()
+                );
 
-            LongAdder longAdder = add(partitioning, shape, path);
-            System.out.println(longAdder);
-            System.out.println(Duration.between(start, Instant.now()));
+                LongAdder longAdder = add(partitioning, shape, path);
+                System.out.println(longAdder);
+                System.out.println(Duration.between(start, Instant.now()));
+            }
         }
     }
 

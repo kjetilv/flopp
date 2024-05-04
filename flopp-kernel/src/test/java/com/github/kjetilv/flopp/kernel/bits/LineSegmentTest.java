@@ -86,6 +86,24 @@ class LineSegmentTest {
     }
 
     @Test
+    void hashCoode() {
+        String string = "foo bar zot is the string and you will like it, or else find something elser to 00";
+        LineSegment lineSegment = LineSegments.of(string);
+        assertThat(LineSegments.asString(lineSegment))
+            .describedAs("Should self-describe")
+            .isEqualTo(string);
+        for (int i = 0; i < string.length(); i++) {
+            for (int j = i + 1; j < string.length(); j++) {
+                try {
+                    assertSub(lineSegment, string, i, j);
+                } catch (Exception e) {
+                    throw new RuntimeException("Should sub-scribe too: " + i + "-" + j, e);
+                }
+            }
+        }
+    }
+
+    @Test
     void readPart() throws IOException {
         String line = IntStream.range(0, 10).mapToObj(
                 _ -> IntStream.range(0, 10).mapToObj(String::valueOf)

@@ -4,96 +4,23 @@ import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * @noinspection DuplicatedCode
- */
-final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
-
-    private final long[] startPositions;
-
-    private final long[] startPosition;
-
-    private LineSegment segment;
-
-    private long currentStart;
-
-    private long startOffset;
-
-    private long offset;
-
-    private int columnNo;
-
-    private final Bits.Finder sepFinder;
-
-    private long startIndex;
-
-    private long endIndex;
-
-    private final CsvFormat.Simple format;
+@SuppressWarnings("DuplicatedCode")
+final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseCsvLineSplitter {
 
     BitwiseSimpleCsvLineSplitter(
         Consumer<SeparatedLine> lines,
         CsvFormat.Simple format,
         boolean immutable
     ) {
-        super(lines, immutable);
-        this.format = Objects.requireNonNull(format, "lineSplit");
-
-        this.sepFinder = Bits.finder(format.separator(), true);
-
-        this.startPositions = new long[format.columnCount()];
-        this.startPosition = new long[format.columnCount()];
-    }
-
-    @Override
-    public MemorySegment memorySegment() {
-        return segment.memorySegment();
-    }
-
-    @Override
-    public int columnCount() {
-        return columnNo;
-    }
-
-    @Override
-    public long[] start() {
-        return startPositions;
-    }
-
-    @Override
-    public long[] end() {
-        return startPosition;
-    }
-
-    @Override
-    public LineSegment segment(int column) {
-        startIndex = startPositions[column];
-        endIndex = startPosition[column];
-        return this;
-    }
-
-    @Override
-    public long startIndex() {
-        return startIndex;
-    }
-
-    @Override
-    public long endIndex() {
-        return endIndex;
-    }
-
-    public long underlyingSize() {
-        return segment.underlyingSize();
+        super(lines, format, immutable);
     }
 
     @Override
     public void accept(LineSegment segment) {
         this.offset = this.currentStart = this.columnNo = 0;
-
         this.segment = Objects.requireNonNull(segment, "segment");
         this.startOffset = this.segment.startIndex();
 
@@ -117,16 +44,6 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
         emit();
     }
 
-    @Override
-    protected LineSegment lineSegment() {
-        return segment;
-    }
-
-    @Override
-    protected String substring() {
-        return "format=" + format.toString();
-    }
-
     private void processHead() {
         long headStart = this.segment.headStart();
         if (headStart == 0) {
@@ -139,7 +56,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
         }
     }
 
-    private void findSeps(long bytes, long shift) {
+    protected void findSeps(long bytes, long shift) {
         int nextSep = sepFinder.next(bytes);
         while (true) {
             if (nextSep == ALIGNMENT) { // No match
@@ -164,7 +81,7 @@ final class BitwiseSimpleCsvLineSplitter extends AbstractBitwiseLineSplitter imp
     private void addSep(long end) {
         try {
             this.startPositions[columnNo] = startOffset + currentStart;
-            this.startPosition[columnNo] = startOffset + end;
+            this.endPositions[columnNo] = startOffset + end;
             this.columnNo++;
         } catch (Exception e) {
             throw new IllegalStateException(this + " could not set column #" + (columnNo + 1), e);
