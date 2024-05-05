@@ -26,7 +26,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         this.spliterator = new BitwisePartitionSpliterator(
             partition,
             memorySegmentSource.get(partition),
-            PartitionActionMediator.create(partition, shape),
+            HeadersAndFooters.middleMan(partition, shape),
             next == null ? null : next.spliterator,
             immutable
         );

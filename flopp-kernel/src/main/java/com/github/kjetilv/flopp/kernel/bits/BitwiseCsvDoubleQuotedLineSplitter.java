@@ -8,35 +8,29 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 @SuppressWarnings("DuplicatedCode")
-final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseCsvLineSplitter {
-
-    private State state;
-
-    private boolean quoted;
+final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private final Bits.Finder quoFinder;
 
-    BitwiseDoubleQuotedCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted csvFormat) {
+    private State state;
+
+    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted csvFormat) {
         this(lines, csvFormat, false);
     }
 
-    BitwiseDoubleQuotedCsvLineSplitter(
+    BitwiseCsvDoubleQuotedLineSplitter(
         Consumer<SeparatedLine> lines,
         CsvFormat.DoubleQuoted format,
         boolean immutable
     ) {
         super(lines, format, immutable);
-        Objects.requireNonNull(format, "lineSplit");
-
         this.quoFinder = Bits.finder(format.quote(), format.fast());
-
-        this.state = State.STARTING_COLUMN;
     }
 
     @Override
-    public void accept(LineSegment segment) {
-        this.offset = this.currentStart = this.columnNo = 0;
-        this.quoted = false;
+    public SeparatedLine apply(LineSegment segment) {
+        this.offset = this.columnNo = 0;
+        this.currentStart = -1;
         this.state = State.STARTING_COLUMN;
 
         this.segment = Objects.requireNonNull(segment, "segment");
@@ -45,7 +39,7 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseCsvLineSpl
         long length = this.segment.length();
         if (length < ALIGNMENT) {
             findSeps(this.segment.bytesAt(0, length), 0);
-            addSep(length);
+            markSeparator(length);
         } else {
             processHead();
             long longCount = this.segment.alignedCount();
@@ -53,13 +47,13 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseCsvLineSpl
                 findSeps(this.segment.longNo(i), 0);
             }
             if (this.segment.isAlignedAtEnd()) {
-                addSep(length);
+                markSeparator(length);
             } else {
                 findSeps(this.segment.tail(true), 0);
-                addSep(length);
+                markSeparator(length);
             }
         }
-        emit();
+        return emit(asSeparatedLine());
     }
 
     private void processHead() {
@@ -79,60 +73,49 @@ final class BitwiseDoubleQuotedCsvLineSplitter extends AbstractBitwiseCsvLineSpl
         int nextQuo = quoFinder.next(bytes);
 
         while (true) {
-            if (nextSep == nextQuo) { // No match
+            int diff = nextSep - nextQuo;
+            if (diff == 0) {
                 offset += ALIGNMENT;
                 return;
             }
-            if (nextSep < nextQuo) { // Sep
+            if (diff < 0) {
                 handleSep(nextSep + shift);
                 nextSep = sepFinder.next();
-            } else { // Quo
+            } else {
                 handleQuo();
                 nextQuo = quoFinder.next();
             }
         }
     }
 
-    private void handleSep(long index) {
-        if (state == State.STARTING_COLUMN) {
-            markColumn(index);
-        } else if (state == State.QUOTING_QUOTE) {
-            markColumn(index);
-            state = State.STARTING_COLUMN;
+    private void handleSep(long nextSep) {
+        long index = offset + nextSep;
+        switch (state) {
+            case STARTING_COLUMN -> {
+                markSeparator(index);
+                currentStart = index;
+            }
+            case QUOTING_QUOTE -> {
+                markSeparator(index);
+                currentStart = index;
+                state = State.STARTING_COLUMN;
+            }
         }
     }
 
     private void handleQuo() {
-        if (state == State.STARTING_COLUMN) {
-            state = State.QUOTING_COLUMN;
-            quoted = true;
-        } else if (state == State.QUOTING_COLUMN) {
-            state = State.QUOTING_QUOTE;
-        } else if (state == State.QUOTING_QUOTE) {
-            state = State.QUOTING_COLUMN;
-        }
-    }
-
-    private void markColumn(long index) {
-        long end = offset + index;
-        addSep(end);
-        currentStart = end + 1;
-    }
-
-    private void addSep(long end) {
-        int quote = quoted ? 1 : 0;
-        this.startPositions[columnNo] = startOffset + currentStart + quote;
-        this.endPositions[columnNo] = startOffset + end - quote;
-        this.columnNo++;
-        this.quoted = false;
+        state = switch (state) {
+            case STARTING_COLUMN, QUOTING_QUOTE -> State.QUOTING_COLUMN;
+            case QUOTING_COLUMN -> State.QUOTING_QUOTE;
+        };
     }
 
     private enum State {
 
         STARTING_COLUMN,
 
-        QUOTING_COLUMN,
+        QUOTING_QUOTE,
 
-        QUOTING_QUOTE
+        QUOTING_COLUMN
     }
 }

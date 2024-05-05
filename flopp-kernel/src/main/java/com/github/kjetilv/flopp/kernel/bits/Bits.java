@@ -237,15 +237,15 @@ public final class Bits {
         long find = findInstances(bytes, mask);
         int count = 0;
         while (find != 0) {
-            int dist = dist(find);
-            find &= CLEARED[dist];
+            int trail = trailingBytes(find);
+            find &= CLEARED[trail];
             count++;
         }
         return count;
     }
 
-    private static int dist(long bytes) {
-        return Long.numberOfTrailingZeros(bytes) / ALIGNMENT;
+    private static int trailingBytes(long data) {
+        return Long.numberOfTrailingZeros(data) / ALIGNMENT;
     }
 
     private static boolean zero(int position, long bytes) {
@@ -301,9 +301,9 @@ public final class Bits {
             if (dists == 0L) {
                 return ALIGNMENT;
             }
-            int dist = dist(dists);
-            dists &= CLEARED[dist];
-            return dist;
+            int trail = trailingBytes(dists);
+            dists &= CLEARED[trail];
+            return trail;
         }
 
         @Override

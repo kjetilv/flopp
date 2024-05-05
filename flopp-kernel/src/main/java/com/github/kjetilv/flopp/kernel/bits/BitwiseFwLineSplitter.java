@@ -7,7 +7,6 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
@@ -20,15 +19,22 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     private LineSegment segment;
 
-    BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines) {
-        this(fwFormat, lines, false);
+    BitwiseFwLineSplitter(
+        FwFormat format,
+        Consumer<SeparatedLine> lines
+    ) {
+        this(format, lines, false);
     }
 
-    BitwiseFwLineSplitter(FwFormat fwFormat, Consumer<SeparatedLine> lines, boolean immutable) {
+    BitwiseFwLineSplitter(
+        FwFormat format,
+        Consumer<SeparatedLine> lines,
+        boolean immutable
+    ) {
         super(lines, immutable);
-        this.length = fwFormat.ranges().length;
-        this.start = Arrays.stream(fwFormat.ranges()).mapToLong(Range::startIndex).toArray();
-        this.end = Arrays.stream(fwFormat.ranges()).mapToLong(Range::endIndex).toArray();
+        this.length = format.ranges().length;
+        this.start = Arrays.stream(format.ranges()).mapToLong(Range::startIndex).toArray();
+        this.end = Arrays.stream(format.ranges()).mapToLong(Range::endIndex).toArray();
     }
 
     @Override
@@ -62,9 +68,9 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    public void accept(LineSegment segment) {
-        this.segment = Objects.requireNonNull(segment, "segment");
-        emit();
+    public SeparatedLine apply(LineSegment segment) {
+        this.segment = segment;
+        return emit(asSeparatedLine());
     }
 
     @Override

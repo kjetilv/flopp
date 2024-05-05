@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.Mediator;
+import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.MiddleMan;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 
 import java.lang.foreign.MemorySegment;
@@ -15,7 +15,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
     private final Partition partition;
 
-    private final Mediator mediator;
+    private final MiddleMan<BitwisePartitioned.Action> middleMan;
 
     private final BitwisePartitionSpliterator next;
 
@@ -26,16 +26,16 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     BitwisePartitionSpliterator(
         Partition partition,
         MemorySegment segment,
-        Mediator mediator,
+        MiddleMan<BitwisePartitioned.Action> middleMan,
         BitwisePartitionSpliterator next,
         boolean immutable
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = segment;
-        this.mediator = mediator == null
+        this.middleMan = middleMan == null
             ? action -> action
-            : mediator;
+            : middleMan;
         this.next = next;
         this.immutable = immutable;
     }
@@ -46,7 +46,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             Action delegate = immutable
                 ? new ImmutableForwarder(action)
                 : new MutableForwarder(action);
-            handler(mediator.mediate(delegate)).run();
+            handler(middleMan.intercept(delegate)).run();
             return false;
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed: " + action, e);

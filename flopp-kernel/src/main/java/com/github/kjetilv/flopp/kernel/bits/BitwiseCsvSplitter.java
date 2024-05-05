@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.*;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 final class BitwiseCsvSplitter implements PartitionedSplitter {
 
@@ -13,11 +14,7 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final boolean immutable;
 
-    BitwiseCsvSplitter(
-        PartitionStreamer streamer,
-        CsvFormat format,
-        boolean immutable
-    ) {
+    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format, boolean immutable) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
         this.immutable = immutable;
@@ -30,23 +27,27 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        Consumer<? super LineSegment> splitter = splitter(consumer);
-        streamer.lines().forEach(splitter);
+        streamer.lines().forEach(splitter(consumer));
     }
 
-    private Consumer<? super LineSegment> splitter(Consumer<SeparatedLine> consumer) {
+    @Override
+    public Stream<SeparatedLine> separatedLine() {
+        return streamer.lines().map(splitter(null));
+    }
+
+    private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {
         return switch (format) {
-            case CsvFormat.Escaped escaped -> new BitwiseEscapedCsvLineSplitter(
+            case CsvFormat.Escaped escaped -> new BitwiseCsvEscapedLineSplitter(
                 consumer,
                 escaped,
                 immutable
             );
-            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseDoubleQuotedCsvLineSplitter(
+            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseCsvDoubleQuotedLineSplitter(
                 consumer,
                 doubleQuoted,
                 immutable
             );
-            case CsvFormat.Simple simple -> new BitwiseSimpleCsvLineSplitter(
+            case CsvFormat.Simple simple -> new BitwiseCsvSimpleLineSplitter(
                 consumer,
                 simple,
                 immutable

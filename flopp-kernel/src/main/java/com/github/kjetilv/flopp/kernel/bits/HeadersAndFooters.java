@@ -9,18 +9,21 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-final class PartitionActionMediator implements BitwisePartitionHandler.Mediator {
+final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<BitwisePartitioned.Action> {
 
-    static BitwisePartitionHandler.Mediator create(Partition partition, Shape shape) {
+    static BitwisePartitionHandler.MiddleMan<BitwisePartitioned.Action> middleMan(
+        Partition partition,
+        Shape shape
+    ) {
         if (shape != null && shape.hasOverhead()) {
             if (partition.single() && shape.hasOverhead()) {
-                return new PartitionActionMediator(shape.header(), shape.footer());
+                return new HeadersAndFooters(shape.header(), shape.footer());
             }
             if (partition.first()) {
-                return new PartitionActionMediator(shape.header(), 0);
+                return new HeadersAndFooters(shape.header(), 0);
             }
             if (partition.last() && shape.footer() > 0) {
-                return new PartitionActionMediator(0, shape.footer());
+                return new HeadersAndFooters(0, shape.footer());
             }
         }
         return null;
@@ -30,13 +33,13 @@ final class PartitionActionMediator implements BitwisePartitionHandler.Mediator 
 
     private final int footer;
 
-    private PartitionActionMediator(int header, int footer) {
+    private HeadersAndFooters(int header, int footer) {
         this.header = Non.negative(header, "header");
         this.footer = Non.negative(footer, "footer");
     }
 
     @Override
-    public BitwisePartitioned.Action mediate(BitwisePartitioned.Action action) {
+    public BitwisePartitioned.Action intercept(BitwisePartitioned.Action action) {
         Objects.requireNonNull(action, "action");
         return header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
             : header > 0 ? new HeaderOnly(action, header)

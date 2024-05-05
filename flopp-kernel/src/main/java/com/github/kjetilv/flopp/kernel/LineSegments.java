@@ -36,14 +36,14 @@ public final class LineSegments {
         long hashCode = 0L;
         int headLen = segment.headLength();
         long alignedStart = segment.alignedStart();
-        long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
+        long endIndex = segment.endIndex();
+        long tailLen = endIndex % ALIGNMENT;
+        long longs = segment.fullLongCount() + (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         if (headLen > 0) {
             long data = segment.head(true);
             hashCode = data * 31L ^ (longs == 0 ? 1 : longs);
         }
         if (length > headLen) {
-            long endIndex = segment.endIndex();
-            long tailLen = endIndex % ALIGNMENT;
             for (int i = headLen == 0 ? 0 : 1; i < longs; i++) {
                 long data = segment.memorySegment().get(JAVA_LONG, alignedStart + i * ALIGNMENT);
                 hashCode += data * 31L ^ longs - i;

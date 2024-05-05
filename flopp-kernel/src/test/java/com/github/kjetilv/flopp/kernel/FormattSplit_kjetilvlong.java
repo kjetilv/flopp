@@ -62,8 +62,7 @@ public final class FormattSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            CsvFormat csvFormat = new CsvFormat.Escaped(';');
-            bitwisePartitioned.splitters().splitters(csvFormat)
+            bitwisePartitioned.splitters().splitters(CsvFormat.Escaped.DEFAULT)
                 .map(countFuture(reader, longAdder, executor))
                 .toList()
                 .forEach(CompletableFuture::join);

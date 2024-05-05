@@ -52,8 +52,7 @@ class BitwiseFwLineSplitterTest {
             try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Partitioning.single())) {
                 partititioned.streams().streamers()
                     .forEach(streamer ->
-                        streamer.lines()
-                            .forEach(splitter));
+                        streamer.lines().forEach(splitter));
             }
             if (lines.length > 0) {
                 assertThat(splits).containsExactly(lines);

@@ -71,7 +71,7 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
             List<Supplier<Map<String, Result>>> mapSuppliers =
                 bitwisePartitioned.splitters()
-                    .splitters(new CsvFormat.Escaped(';'))
+                    .splitters(new CsvFormat.Escaped(';', '\\'))
                     .map(splitsConsumer -> {
                         Supplier<Map<String, Result>> worker = () ->
                             toMap(path, splitsConsumer, callbacks);

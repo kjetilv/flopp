@@ -355,8 +355,8 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     @FunctionalInterface
-    public interface Mediator {
+    public interface MiddleMan<T> {
 
-        BitwisePartitioned.Action mediate(BitwisePartitioned.Action action);
+        T intercept(T action);
     }
 }

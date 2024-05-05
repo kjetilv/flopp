@@ -57,7 +57,7 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
                 airlines.add(line.column(1)), new CsvFormat.Escaped()
         );
@@ -82,7 +82,7 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
                 airlines.add(line.column(1)), new CsvFormat.Escaped()
         );
@@ -91,8 +91,7 @@ class BitwiseFileSplitterTest {
         ) {
             partititioned.streams().streamers()
                 .forEach(streamer ->
-                    streamer.lines()
-                        .forEach(splitter));
+                    streamer.lines().forEach(splitter));
         }
         System.out.println(airlines.size());
         System.out.println(airlines.stream().limit(10)
@@ -179,7 +178,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat.Escaped csvFormat = new CsvFormat.Escaped(',', '"', '\\');
+        CsvFormat.Escaped csvFormat = new CsvFormat.Escaped(',', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
         Instant now = Instant.now();
         try (
@@ -195,7 +194,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseEscapedCsvLineSplitter(lines, csvFormat)),
+                                        .forEach(new BitwiseCsvEscapedLineSplitter(lines, csvFormat)),
                                 executor
                             )))
                 .toList();

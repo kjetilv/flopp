@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.*;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 final class BitwiseFwSplitter implements PartitionedSplitter {
 
@@ -31,5 +32,10 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
         streamer.lines().forEach(new BitwiseFwLineSplitter(fwFormat, consumer, immutable));
+    }
+
+    @Override
+    public Stream<SeparatedLine> separatedLine() {
+        return streamer.lines().map(new BitwiseFwLineSplitter(fwFormat, null, immutable));
     }
 }

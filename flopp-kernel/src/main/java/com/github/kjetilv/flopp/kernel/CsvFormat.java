@@ -5,8 +5,6 @@ public sealed interface CsvFormat {
 
     char separator();
 
-    char quote();
-
     int columnCount();
 
     boolean fast();
@@ -22,11 +20,6 @@ public sealed interface CsvFormat {
     record Simple(char separator, int columnCount) implements CsvFormat {
 
         @Override
-        public char quote() {
-            return 0;
-        }
-
-        @Override
         public boolean fast() {
             return true;
         }
@@ -39,9 +32,9 @@ public sealed interface CsvFormat {
         @Override
         public String toString() {
             return getClass().getSimpleName() +
-                   "[separator:`" + separator + "`" +
-                   " columnCount:`" + columnCount +
-                   "`]";
+                   "[separator:" + separator +
+                   " columnCount:" + columnCount +
+                   "]";
         }
     }
 
@@ -61,19 +54,19 @@ public sealed interface CsvFormat {
         }
 
         public DoubleQuoted() {
-            this(DEFAULT_SEPARATOR);
+            this(DEFAULT_SEPARATOR, DEFAULT_QUOTE, DEFAULT_COLUMN_COUNT, false);
         }
 
         public DoubleQuoted(char separator) {
-            this(separator, DEFAULT_COLUMN_COUNT);
+            this(separator, DEFAULT_QUOTE, DEFAULT_COLUMN_COUNT, false);
+        }
+
+        public DoubleQuoted(int columnCount) {
+            this(DEFAULT_SEPARATOR, DEFAULT_QUOTE, columnCount, false);
         }
 
         public DoubleQuoted(char separator, char quote) {
             this(separator, quote, DEFAULT_COLUMN_COUNT, false);
-        }
-
-        public DoubleQuoted(int columnCount) {
-            this(DEFAULT_SEPARATOR, columnCount);
         }
 
         public DoubleQuoted(char separator, int columnCount) {
@@ -92,10 +85,11 @@ public sealed interface CsvFormat {
         @Override
         public String toString() {
             return getClass().getSimpleName() +
-                   "[separator:`" + separator + "`" +
-                   " quote:`" + quote + "`" +
-                   " columnCount:`" + columnCount + "`" +
-                   " fast:`" + fast + "`]";
+                   "[separator:" + separator +
+                   " quote:" + quote +
+                   " columnCount:" + columnCount +
+                   " fast:" + fast +
+                   "]";
         }
 
         public static final DoubleQuoted DEFAULT = new DoubleQuoted();
@@ -103,66 +97,68 @@ public sealed interface CsvFormat {
 
     record Escaped(
         char separator,
-        char quote,
         char escape,
         boolean fast,
         int columnCount
     ) implements CsvFormat {
 
+        public static final Escaped DEFAULT = new Escaped();
+
         public Escaped {
             Non.negativeOrZero(columnCount, "column count");
         }
 
+        public Escaped(boolean fast) {
+            this(DEFAULT_SEPARATOR, DEFAULT_ESC, fast);
+        }
+
         public Escaped() {
-            this(DEFAULT_SEPARATOR);
+            this(DEFAULT_SEPARATOR, DEFAULT_ESC, false, DEFAULT_COLUMN_COUNT);
         }
 
         public Escaped(char separator) {
-            this(separator, DEFAULT_COLUMN_COUNT);
+            this(separator, DEFAULT_ESC, false, DEFAULT_COLUMN_COUNT);
         }
 
         public Escaped(int columnCount) {
-            this(DEFAULT_SEPARATOR, columnCount);
+            this(DEFAULT_SEPARATOR, DEFAULT_ESC, false, columnCount);
         }
 
         public Escaped(char separator, int columnCount) {
-            this(separator, DEFAULT_QUOTE, DEFAULT_ESC, columnCount);
+            this(separator, DEFAULT_ESC, false, columnCount);
         }
 
-        public Escaped(char separator, char quote) {
-            this(separator, quote, DEFAULT_ESC);
+        public Escaped(char separator, char escape) {
+            this(separator, escape, false, DEFAULT_COLUMN_COUNT);
         }
 
-        public Escaped(char separator, char quote, char escape) {
-            this(separator, quote, escape, DEFAULT_COLUMN_COUNT);
+        public Escaped(char separator, char escape, int columnCount) {
+            this(separator, escape, false, columnCount);
         }
 
-        public Escaped(char separator, char quote, char escape, int columnCount) {
-            this(separator, quote, escape, false, columnCount);
+        public Escaped(char separator, char escape, boolean fast) {
+            this(separator, escape, fast, DEFAULT_COLUMN_COUNT);
         }
 
         public Escaped columns(int columnCount) {
-            return new Escaped(separator, quote, escape, fast, columnCount);
+            return new Escaped(separator, escape, fast, columnCount);
         }
 
         @Override
         public CsvFormat fast(boolean fast) {
-            return new Escaped(separator, quote, escape, fast, columnCount);
+            return new Escaped(separator, escape, fast, columnCount);
         }
 
         @Override
         public String toString() {
             return getClass().getSimpleName() +
-                   "[separator:`" + separator + "`" +
-                   " quote:`" + quote + "`" +
-                   " escape:`" + escape + "`" +
-                   " fast:`" + fast + "`" +
-                   " columnCount:`" + columnCount +
-                   "`]";
+                   "[separator:" + separator +
+                   " escape:" + escape +
+                   " fast:" + fast +
+                   " columnCount:" + columnCount +
+                   "]";
         }
 
         public static final char DEFAULT_ESC = '\\';
-
-        public static final Escaped DEFAULT = new Escaped();
     }
 }

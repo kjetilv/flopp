@@ -34,7 +34,11 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
 
     private long endIndex;
 
-    AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format, boolean immutable) {
+    AbstractBitwiseCsvLineSplitter(
+        Consumer<SeparatedLine> lines,
+        CsvFormat format,
+        boolean immutable
+    ) {
         super(lines, immutable);
         this.format = Objects.requireNonNull(format, "format");
 
@@ -117,5 +121,19 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
     @Override
     protected String substring() {
         return formatString();
+    }
+
+    protected void markSeparator(long length) {
+        long startPosition = startOffset + currentStart + 1;
+        long endPosition = startOffset + length;
+        try {
+            this.startPositions[columnNo] = startPosition;
+            this.endPositions[columnNo] = endPosition;
+            this.columnNo++;
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                this + " could not set column #" + (columnNo + 1) + ":" + startPosition + "-" + endPosition, e
+            );
+        }
     }
 }

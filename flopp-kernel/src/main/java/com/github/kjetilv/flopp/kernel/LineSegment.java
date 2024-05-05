@@ -12,7 +12,7 @@ public interface LineSegment extends Range {
     MemorySegment memorySegment();
 
     default LongStream longs() {
-        return longs(false);
+        return LineSegments.longs(this);
     }
 
     default LongStream longs(boolean align) {

@@ -3,22 +3,33 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-abstract class AbstractBitwiseLineSplitter implements Consumer<LineSegment>, SeparatedLine {
+abstract class AbstractBitwiseLineSplitter
+    implements Function<LineSegment, SeparatedLine>, Consumer<LineSegment>, SeparatedLine {
 
     private final Consumer<SeparatedLine> lines;
 
     private final boolean immutable;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines, boolean immutable) {
-        this.lines = Objects.requireNonNull(lines, "lines");
+        this.lines = lines == null ? _ -> {} : lines;
         this.immutable = immutable;
     }
 
-    protected final void emit() {
-        lines.accept(immutable ? immutableSeparatedLine() : this);
+    @Override
+    public void accept(LineSegment segment) {
+        apply(segment);
+    }
+
+    protected final SeparatedLine emit(SeparatedLine separatedLine) {
+        lines.accept(separatedLine);
+        return separatedLine;
+    }
+
+    protected SeparatedLine asSeparatedLine() {
+        return immutable ? immutableSeparatedLine() : this;
     }
 
     protected abstract LineSegment lineSegment();

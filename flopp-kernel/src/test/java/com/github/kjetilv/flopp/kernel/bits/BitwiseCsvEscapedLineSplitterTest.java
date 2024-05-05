@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseEscapedCsvLineSplitterTest {
+class BitwiseCsvEscapedLineSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -25,7 +25,7 @@ class BitwiseEscapedCsvLineSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), new CsvFormat.Escaped(';')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456");
@@ -42,7 +42,7 @@ class BitwiseEscapedCsvLineSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), new CsvFormat.Escaped(';')
         );
         splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
@@ -190,7 +190,7 @@ class BitwiseEscapedCsvLineSplitterTest {
     void trickyString1() {
         assertSplit(
             Partitioning.single(), "'c';'';", CSV_FORMAT,
-            "c", "", ""
+            "'c'", "''", ""
         );
     }
 
@@ -205,20 +205,22 @@ class BitwiseEscapedCsvLineSplitterTest {
     @Test
     void quoted() {
         assertSplit(
-            Partitioning.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;',';'\\;'", CSV_FORMAT,
-            "foo 1",
+            Partitioning.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;;234;',';'\\;'",
+            CSV_FORMAT,
+            "'foo 1'",
             "bar",
             "234",
-            "ab; cd;ef",
-            "it is \\'aight",
+            "'ab", " cd", "ef'",
+            "'it is \\'aight'",
+            "",
             "",
             "234",
-            ",",
-            "\\;"
+            "','",
+            "'\\;'"
         );
     }
 
-//    @Test
+    //    @Test
 //    void quotingQuotes() {
 //        assertSplit(
 //            Partitioning.single(),
@@ -235,21 +237,30 @@ class BitwiseEscapedCsvLineSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
-            "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;';;';'\\;'"));
+            "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;\\;';'\\;'"));
         assertThat(splits).containsExactly(
-            "foo 1", "bar", "234", "ab; cd;ef", "it is \\'aight", "", "234", ";;", "\\;");
+            "'foo 1'",
+            "bar",
+            "234",
+            "'ab\\; cd\\;ef'",
+            "'it is 'aight'",
+            "",
+            "234",
+            "'\\;\\;'",
+            "'\\;'"
+        );
     }
 
     @Test
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
-        String input = "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;234;';';'\\;'";
-        String[] expected = {"foo 1", "bar", "234", "ab; cd;ef", "it is \\'aight", "", "234", ";", "\\;"};
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
+        String[] expected = {"'foo 1'", "bar", "234", "'ab\\; cd\\;ef'", "'it is 'aight'", "", "234", "'\\;'", "'\\;'"};
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
@@ -304,10 +315,13 @@ class BitwiseEscapedCsvLineSplitterTest {
     void quotesFiles() {
         assertFileContents(
             """
-                foo;'123; ok'
-                'b; ar';42
+                foo;'123\\; ok'
+                'b\\; ar';42
                 """,
-            "foo", "123; ok", "b; ar", "42"
+            "foo",
+            "'123\\; ok'",
+            "'b\\; ar'",
+            "42"
 
         );
     }
@@ -317,23 +331,36 @@ class BitwiseEscapedCsvLineSplitterTest {
         assertFileContents(
             """
                 '';
-                'f;o;o';bar;zot
+                f\\;o\\;o';bar;zot
                 123123123;234234234;345345345
-                '1;2';3
+                '1\\;2';3
                 ;
                 """,
+            "''",
             "",
-            "",
-            "f;o;o",
+            "f\\;o\\;o'",
             "bar",
             "zot",
             "123123123",
             "234234234",
             "345345345",
-            "1;2",
+            "'1\\;2'",
             "3",
             "",
             ""
+        );
+    }
+
+    @Test
+    void trickyFile3() {
+        assertFileContents(
+            """
+                '';
+                f\\;o\\;o'
+                """,
+            "''",
+            "",
+            "f\\;o\\;o'"
         );
     }
 
@@ -394,7 +421,7 @@ class BitwiseEscapedCsvLineSplitterTest {
         return splits;
     }
 
-    public static final CsvFormat.Escaped CSV_FORMAT = new CsvFormat.Escaped(';', '\'');
+    private static final CsvFormat.Escaped CSV_FORMAT = new CsvFormat.Escaped(';', '\\', true);
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
@@ -402,15 +429,12 @@ class BitwiseEscapedCsvLineSplitterTest {
         try {
             path = Files.write(
                 Files.createTempFile(UUID.randomUUID().toString(), ".txt"),
-                List.of(
-                    contents
-                        .split("\n")
-                )
+                List.of(contents.split("\n"))
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseEscapedCsvLineSplitter splitter = new BitwiseEscapedCsvLineSplitter(
+        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
                 line.columns()
                     .forEach(splits::add), CSV_FORMAT
