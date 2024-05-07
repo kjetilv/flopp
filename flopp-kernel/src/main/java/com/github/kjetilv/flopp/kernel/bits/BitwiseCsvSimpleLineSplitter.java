@@ -38,7 +38,7 @@ final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter 
                 markSeparator(length);
             }
         }
-        return emit(asSeparatedLine());
+        return emit(sl());
     }
 
     private void processHead() {

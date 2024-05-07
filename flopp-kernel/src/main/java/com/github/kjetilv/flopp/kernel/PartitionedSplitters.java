@@ -6,31 +6,31 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public interface PartitionedSplitters {
 
-    default Stream<PartitionedSplitter> splitters(CsvFormat csvFormat) {
-        return splitters(csvFormat, false);
+    default Stream<PartitionedSplitter> splitters(CsvFormat format) {
+        return splitters(format, false);
     }
 
-    default Stream<PartitionedSplitter> splitters(CsvFormat csvFormat, boolean immutable) {
-        return splittersList(csvFormat, immutable).stream();
+    default Stream<PartitionedSplitter> splitters(CsvFormat format, boolean immutable) {
+        return splittersList(format, immutable).stream();
     }
 
-    default List<PartitionedSplitter> splittersList(CsvFormat csvFormat) {
-        return splittersList(csvFormat, false);
+    default List<PartitionedSplitter> splittersList(CsvFormat format) {
+        return splittersList(format, false);
     }
 
-    List<PartitionedSplitter> splittersList(CsvFormat csvFormat, boolean immutable);
+    List<PartitionedSplitter> splittersList(CsvFormat format, boolean immutable);
 
-    default Stream<PartitionedSplitter> splitters(FwFormat csvFormat) {
-        return splitters(csvFormat, false);
+    default Stream<PartitionedSplitter> splitters(FwFormat format) {
+        return splitters(format, false);
     }
 
-    default Stream<PartitionedSplitter> splitters(FwFormat fwFormat, boolean immutable) {
-        return splittersList(fwFormat, immutable).stream();
+    default Stream<PartitionedSplitter> splitters(FwFormat format, boolean immutable) {
+        return splittersList(format, immutable).stream();
     }
 
-    default List<PartitionedSplitter> splittersList(FwFormat fwFormat) {
-        return splittersList(fwFormat, false);
+    default List<PartitionedSplitter> splittersList(FwFormat format) {
+        return splittersList(format, false);
     }
 
-    List<PartitionedSplitter> splittersList(FwFormat fwFormat, boolean immutable);
+    List<PartitionedSplitter> splittersList(FwFormat format, boolean immutable);
 }

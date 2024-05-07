@@ -70,7 +70,7 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public SeparatedLine apply(LineSegment segment) {
         this.segment = segment;
-        return emit(asSeparatedLine());
+        return emit(sl());
     }
 
     @Override

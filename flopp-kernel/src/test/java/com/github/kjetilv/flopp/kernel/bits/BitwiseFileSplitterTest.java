@@ -178,7 +178,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat.Escaped csvFormat = new CsvFormat.Escaped(',', '\\');
+        CsvFormat.Escaped format = new CsvFormat.Escaped(',', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
         Instant now = Instant.now();
         try (
@@ -194,7 +194,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseCsvEscapedLineSplitter(lines, csvFormat)),
+                                        .forEach(new BitwiseCsvEscapedLineSplitter(lines, format)),
                                 executor
                             )))
                 .toList();

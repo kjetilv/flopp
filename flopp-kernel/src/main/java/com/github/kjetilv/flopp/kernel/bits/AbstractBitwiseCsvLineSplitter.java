@@ -10,7 +10,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 @SuppressWarnings("PackageVisibleField")
-abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment {
+abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
+    permits BitwiseCsvDoubleQuotedLineSplitter, BitwiseCsvEscapedLineSplitter, BitwiseCsvSimpleLineSplitter {
+
+    private final CsvFormat format;
+
+    private long startIndex;
+
+    private long endIndex;
 
     final long[] startPositions;
 
@@ -28,22 +35,10 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
 
     LineSegment segment;
 
-    private final CsvFormat format;
-
-    private long startIndex;
-
-    private long endIndex;
-
-    AbstractBitwiseCsvLineSplitter(
-        Consumer<SeparatedLine> lines,
-        CsvFormat format,
-        boolean immutable
-    ) {
+    AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format, boolean immutable) {
         super(lines, immutable);
         this.format = Objects.requireNonNull(format, "format");
-
         this.sepFinder = Bits.finder(format.separator(), true);
-
         this.startPositions = new long[format.columnCount()];
         this.endPositions = new long[format.columnCount()];
     }
@@ -59,12 +54,12 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
     }
 
     @Override
-    public MemorySegment memorySegment() {
+    public final MemorySegment memorySegment() {
         return segment.memorySegment();
     }
 
     @Override
-    public int columnCount() {
+    public final int columnCount() {
         return columnNo;
     }
 
@@ -79,12 +74,12 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
     }
 
     @Override
-    public long start(int column) {
+    public final long start(int column) {
         return startPositions[column];
     }
 
     @Override
-    public long end(int column) {
+    public final long end(int column) {
         return endPositions[column];
     }
 
@@ -95,35 +90,36 @@ abstract class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitte
         return this;
     }
 
-    public long underlyingSize() {
-        return segment.underlyingSize();
-    }
-
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return LineSegments.hashCode(this);
     }
 
-    protected String formatString() {
-        return "format=" + format.toString();
-    }
-
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         return obj instanceof LineSegment lineSegment && LineSegments.equals(this, lineSegment);
     }
 
     @Override
-    protected LineSegment lineSegment() {
+    final LineSegment lineSegment() {
         return segment;
     }
 
     @Override
-    protected String substring() {
+    public final long underlyingSize() {
+        return segment.underlyingSize();
+    }
+
+    @Override
+    String substring() {
         return formatString();
     }
 
-    protected void markSeparator(long length) {
+    final String formatString() {
+        return "format=" + format.toString();
+    }
+
+    final void markSeparator(long length) {
         long startPosition = startOffset + currentStart + 1;
         long endPosition = startOffset + length;
         try {

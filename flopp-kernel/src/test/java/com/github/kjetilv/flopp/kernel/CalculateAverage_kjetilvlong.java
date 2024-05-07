@@ -147,7 +147,7 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
         ).scaled(2);
-        CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
+        CsvFormat format = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
             Column.ofString("station", 1),
             Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
@@ -163,7 +163,7 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
+            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
@@ -201,7 +201,7 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
         ).scaled(2);
-        CsvFormat csvFormat = new CsvFormat.Simple(';', 2);
+        CsvFormat format = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
             Column.ofBinary("station", 1),
             Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
@@ -217,7 +217,7 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(csvFormat);
+            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
             List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers.map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {

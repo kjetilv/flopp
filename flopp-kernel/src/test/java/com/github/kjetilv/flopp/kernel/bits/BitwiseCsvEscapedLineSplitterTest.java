@@ -397,19 +397,19 @@ class BitwiseCsvEscapedLineSplitterTest {
     private void assertSplit(
         Partitioning partitioning,
         String input,
-        CsvFormat csvFormat,
+        CsvFormat format,
         String... expected
     ) {
-        assertThat(splits(partitioning, input, csvFormat))
+        assertThat(splits(partitioning, input, format))
             .containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input, CsvFormat csvFormat) {
+    private List<String> splits(Partitioning partitioning, String input, CsvFormat format) {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
                 partitioned.splitters()
-                    .splitters(csvFormat)
+                    .splitters(format)
                     .forEach(consumer ->
                         consumer.forEach(commaSeparatedLine ->
                             commaSeparatedLine.columns()

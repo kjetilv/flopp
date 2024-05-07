@@ -51,8 +51,8 @@ public final class Trolls {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        CsvFormat csvFormat = new CsvFormat.DoubleQuoted(',', '"');
-        Reader reader = Readers.create(path, csvFormat);
+        CsvFormat format = new CsvFormat.DoubleQuoted(',', '"');
+        Reader reader = Readers.create(path, format);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
@@ -86,7 +86,7 @@ public final class Trolls {
                         executor
                     );
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
-            partitionedSplitters.splitters(csvFormat)
+            partitionedSplitters.splitters(format)
                 .map(partitionFuture)
                 .toList()
                 .forEach(CompletableFuture::join);

@@ -23,7 +23,7 @@ public interface PartitionedStreams {
         return streamersList(false);
     }
 
-    List<? extends PartitionStreamer> streamersList(boolean copying);
+    List<? extends PartitionStreamer> streamersList(boolean immutable);
 
     List<LongSupplier> lineCountersList();
 }

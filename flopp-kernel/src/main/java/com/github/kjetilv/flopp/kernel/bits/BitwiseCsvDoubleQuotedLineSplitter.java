@@ -14,8 +14,8 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
 
     private State state;
 
-    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted csvFormat) {
-        this(lines, csvFormat, false);
+    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted format) {
+        this(lines, format, false);
     }
 
     BitwiseCsvDoubleQuotedLineSplitter(
@@ -53,7 +53,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
                 markSeparator(length);
             }
         }
-        return emit(asSeparatedLine());
+        return emit(sl());
     }
 
     private void processHead() {

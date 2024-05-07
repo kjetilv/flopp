@@ -6,8 +6,9 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-abstract class AbstractBitwiseLineSplitter
-    implements Function<LineSegment, SeparatedLine>, Consumer<LineSegment>, SeparatedLine {
+abstract sealed class AbstractBitwiseLineSplitter
+    implements Function<LineSegment, SeparatedLine>, Consumer<LineSegment>, SeparatedLine
+    permits AbstractBitwiseCsvLineSplitter, BitwiseFwLineSplitter {
 
     private final Consumer<SeparatedLine> lines;
 
@@ -19,20 +20,24 @@ abstract class AbstractBitwiseLineSplitter
     }
 
     @Override
-    public void accept(LineSegment segment) {
+    public final void accept(LineSegment segment) {
         apply(segment);
     }
 
-    protected final SeparatedLine emit(SeparatedLine separatedLine) {
+    final SeparatedLine emit(SeparatedLine separatedLine) {
         lines.accept(separatedLine);
         return separatedLine;
     }
 
-    protected SeparatedLine asSeparatedLine() {
+    final SeparatedLine sl() {
         return immutable ? immutableSeparatedLine() : this;
     }
 
-    protected abstract LineSegment lineSegment();
+    abstract LineSegment lineSegment();
+
+    String substring() {
+        return null;
+    }
 
     @Override
     public final String toString() {
@@ -41,9 +46,5 @@ abstract class AbstractBitwiseLineSplitter
         return getClass().getSimpleName() + "[" +
                (hasSub ? "" : sub + " ") + "`" + (lineSegment() == null ? "*" : lineSegment().asString()) + "`" +
                "]";
-    }
-
-    protected String substring() {
-        return null;
     }
 }

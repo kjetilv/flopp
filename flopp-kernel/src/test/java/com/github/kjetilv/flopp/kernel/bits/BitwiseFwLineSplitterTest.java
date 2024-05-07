@@ -27,7 +27,7 @@ class BitwiseFwLineSplitterTest {
         );
     }
 
-    private static void assertFileContents(String contents, FwFormat fwFormat, String... lines) {
+    private static void assertFileContents(String contents, FwFormat format, String... lines) {
         List<String> splits = new ArrayList<>();
         Path path;
         try {
@@ -42,7 +42,7 @@ class BitwiseFwLineSplitterTest {
             throw new RuntimeException(e);
         }
         BitwiseFwLineSplitter splitter = new BitwiseFwLineSplitter(
-            fwFormat,
+            format,
             line ->
                 line.columns()
                     .forEach(splits::add)

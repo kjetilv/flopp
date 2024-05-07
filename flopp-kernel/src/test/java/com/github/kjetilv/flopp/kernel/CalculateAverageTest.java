@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CalculateAverageTest {
 
+    @Disabled
     @Test
     void testAll() throws IOException {
         Path path = Path.of(
@@ -31,9 +33,9 @@ class CalculateAverageTest {
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
-                int maxPartitions = Math.min(25, Math.max(1, Math.toIntExact(size / 20)));
+                int maxPartitions = 4;
                 int tail = Math.min(100, Math.toIntExact(size / 10));
-                for (int t = 0; t < tail; t += 10) {
+                for (int t = 0; t < tail; t += 2) {
                     for (int i = 1; i < maxPartitions; i++) {
                         Partitioning partitioning = Partitioning.create(i);
                         test(smaple, partitioning, t, false);

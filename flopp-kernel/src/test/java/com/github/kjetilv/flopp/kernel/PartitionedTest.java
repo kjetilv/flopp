@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled
 class PartitionedTest {
 
     @Test
@@ -48,9 +47,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        int partitionCount = Runtime.getRuntime()
-            .availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = new Partitioning(4, 16);
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -169,8 +166,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        int partitionCount = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = new Partitioning(4, 16);
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {

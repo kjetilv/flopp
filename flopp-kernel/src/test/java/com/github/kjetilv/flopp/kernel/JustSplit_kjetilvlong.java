@@ -54,9 +54,9 @@ public final class JustSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            CsvFormat csvFormat = new CsvFormat.Escaped(';');
+            CsvFormat format = new CsvFormat.Escaped(';');
             List<Runnable> list1 =
-                bitwisePartitioned.splitters().splitters(csvFormat)
+                bitwisePartitioned.splitters().splitters(format)
                     .map(splitsConsumer ->
 //                        CompletableFuture.runAsync(
                         (Runnable)

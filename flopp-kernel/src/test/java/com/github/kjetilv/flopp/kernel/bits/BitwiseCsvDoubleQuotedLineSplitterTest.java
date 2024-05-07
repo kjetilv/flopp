@@ -75,6 +75,11 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     }
 
     @Test
+    void dodgyQuoteString2() {
+        assertSplit(Partitioning.single(), "f;''a'b';'a;", "f", "''a'b'", "'a;");
+    }
+
+    @Test
     void shorterStringUTF8() {
         assertSplit(Partitioning.single(), """
             a;b
@@ -377,16 +382,16 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     }
 
     private void assertSplit(
-        Partitioning partitioning, String input, CsvFormat csvFormat, String... expected
+        Partitioning partitioning, String input, CsvFormat format, String... expected
     ) {
-        assertThat(splits(partitioning, input, csvFormat)).containsExactly(expected);
+        assertThat(splits(partitioning, input, format)).containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input, CsvFormat csvFormat) {
+    private List<String> splits(Partitioning partitioning, String input, CsvFormat format) {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
-                partitioned.splitters().splitters(csvFormat)
+                partitioned.splitters().splitters(format)
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns()
                         .forEach(splits::add)));
             }

@@ -17,8 +17,8 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
 
     private long lastEscape;
 
-    BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped csvFormat) {
-        this(lines, csvFormat, false);
+    BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format) {
+        this(lines, format, false);
     }
 
     BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format, boolean immutable) {
@@ -52,7 +52,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
                 markSeparator(length);
             }
         }
-        return emit(asSeparatedLine());
+        return emit(sl());
     }
 
     @Override
