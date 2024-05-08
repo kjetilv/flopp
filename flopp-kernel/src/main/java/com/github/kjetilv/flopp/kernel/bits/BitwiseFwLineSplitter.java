@@ -59,7 +59,7 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    public SeparatedLine process() {
+    protected SeparatedLine process() {
         return emit(sl());
     }
 }
