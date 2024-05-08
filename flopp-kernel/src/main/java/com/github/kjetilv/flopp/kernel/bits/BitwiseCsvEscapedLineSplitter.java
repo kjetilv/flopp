@@ -9,8 +9,6 @@ import java.util.function.Consumer;
 @SuppressWarnings("DuplicatedCode")
 final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    private final Bits.Finder sepFinder;
-
     private final Bits.Finder escFinder;
 
     private boolean escaping;
@@ -23,12 +21,11 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
 
     BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format, boolean immutable) {
         super(lines, format, immutable);
-        this.sepFinder = Bits.finder(format.separator(), format.fast());
         this.escFinder = Bits.finder(format.escape(), format.fast());
     }
 
     @Override
-    public SeparatedLine apply(LineSegment segment) {
+    public SeparatedLine doApply(LineSegment segment) {
         this.segment = segment;
         this.offset = this.columnNo = 0;
         this.currentStart = -1;

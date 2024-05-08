@@ -33,8 +33,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
 
     int columnNo;
 
-    LineSegment segment;
-
     AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format, boolean immutable) {
         super(lines, immutable);
         this.format = Objects.requireNonNull(format, "format");
@@ -51,11 +49,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final long endIndex() {
         return endIndex;
-    }
-
-    @Override
-    public final MemorySegment memorySegment() {
-        return segment.memorySegment();
     }
 
     @Override
@@ -98,16 +91,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final boolean equals(Object obj) {
         return obj instanceof LineSegment lineSegment && LineSegments.equals(this, lineSegment);
-    }
-
-    @Override
-    final LineSegment lineSegment() {
-        return segment;
-    }
-
-    @Override
-    public final long underlyingSize() {
-        return segment.underlyingSize();
     }
 
     @Override

@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 @SuppressWarnings("DuplicatedCode")
@@ -28,28 +27,26 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
     }
 
     @Override
-    public SeparatedLine apply(LineSegment segment) {
+    public SeparatedLine doApply(LineSegment segment) {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.state = State.STARTING_COLUMN;
+        this.startOffset = segment.startIndex();
 
-        this.segment = Objects.requireNonNull(segment, "segment");
-        this.startOffset = this.segment.startIndex();
-
-        long length = this.segment.length();
+        long length = segment.length();
         if (length < ALIGNMENT) {
-            findSeps(this.segment.bytesAt(0, length), 0);
+            findSeps(segment.bytesAt(0, length), 0);
             markSeparator(length);
         } else {
             processHead();
-            long longCount = this.segment.alignedCount();
+            long longCount = segment.alignedCount();
             for (int i = 1; i < longCount; i++) {
-                findSeps(this.segment.longNo(i), 0);
+                findSeps(segment.longNo(i), 0);
             }
-            if (this.segment.isAlignedAtEnd()) {
+            if (segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(this.segment.tail(true), 0);
+                findSeps(segment.tail(true), 0);
                 markSeparator(length);
             }
         }
