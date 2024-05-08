@@ -35,7 +35,7 @@ abstract sealed class AbstractBitwiseLineSplitter
     public final SeparatedLine apply(LineSegment segment) {
         this.segment = Objects.requireNonNull(segment, "segment");
         underlyingSize = this.segment.underlyingSize();
-        return doApply(this.segment);
+        return process();
     }
 
     @Override
@@ -43,7 +43,7 @@ abstract sealed class AbstractBitwiseLineSplitter
         return segment.memorySegment();
     }
 
-    protected abstract SeparatedLine doApply(LineSegment segment);
+    protected abstract SeparatedLine process();
 
     final SeparatedLine emit(SeparatedLine separatedLine) {
         lines.accept(separatedLine);

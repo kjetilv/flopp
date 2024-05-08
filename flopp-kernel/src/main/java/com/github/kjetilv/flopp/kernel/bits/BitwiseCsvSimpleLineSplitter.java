@@ -1,10 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 @SuppressWarnings("DuplicatedCode")
@@ -15,7 +13,7 @@ final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter 
     }
 
     @Override
-    public SeparatedLine doApply(LineSegment segment) {
+    public SeparatedLine process() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.startOffset = this.segment.startIndex();
