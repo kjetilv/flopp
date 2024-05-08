@@ -26,7 +26,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
     }
 
     @Override
-    protected SeparatedLine process() {
+    protected SeparatedLine separate() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.state = State.STARTING_COLUMN;

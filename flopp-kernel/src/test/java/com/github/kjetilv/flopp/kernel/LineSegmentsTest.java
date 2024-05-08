@@ -13,7 +13,7 @@ class LineSegmentsTest {
     @Test
     void longs() {
         String string = "1234abcdabcd5678";
-        LongStream longs = LineSegments.of(string).longs();
+        LongStream longs = LineSegments.of(string).unalignedLongs();
         String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
         assertThat(str).isEqualTo(string);
     }

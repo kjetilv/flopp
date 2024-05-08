@@ -13,7 +13,7 @@ final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter 
     }
 
     @Override
-    protected SeparatedLine process() {
+    protected SeparatedLine separate() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.startOffset = this.segment.startIndex();

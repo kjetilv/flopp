@@ -11,8 +11,12 @@ public interface LineSegment extends Range {
 
     MemorySegment memorySegment();
 
-    default LongStream longs() {
-        return LineSegments.longs(this);
+    default LongStream unalignedLongs() {
+        return LineSegments.unalignedLongs(this);
+    }
+
+    default LongStream alignedLongs() {
+        return LineSegments.alignedLongs(this);
     }
 
     default LongStream longs(boolean align) {

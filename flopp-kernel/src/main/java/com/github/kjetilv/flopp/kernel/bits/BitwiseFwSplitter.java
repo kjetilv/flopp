@@ -14,11 +14,7 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
 
     private final boolean immutable;
 
-    BitwiseFwSplitter(
-        PartitionStreamer streamer,
-        FwFormat format,
-        boolean immutable
-    ) {
+    BitwiseFwSplitter(PartitionStreamer streamer, FwFormat format, boolean immutable) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
         this.immutable = immutable;

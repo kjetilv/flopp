@@ -55,7 +55,7 @@ public final class LineSegments {
         return (int) hashCode;
     }
 
-    public static LongStream longs(LineSegment segment) {
+    public static LongStream unalignedLongs(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return LongStream.empty();
@@ -88,9 +88,13 @@ public final class LineSegments {
         }, false);
     }
 
+    public static LongStream alignedLongs(LineSegment segment) {
+        return longs(segment, true);
+    }
+
     public static LongStream longs(LineSegment segment, boolean align) {
         if (!align) {
-            return longs(segment);
+            return unalignedLongs(segment);
         }
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
@@ -98,7 +102,7 @@ public final class LineSegments {
         }
         int headLen = segment.headLength();
         if (headLen == 0) {
-            return longs(segment);
+            return unalignedLongs(segment);
         }
         int tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
         int headShift = Math.toIntExact(headLen * ALIGNMENT);
