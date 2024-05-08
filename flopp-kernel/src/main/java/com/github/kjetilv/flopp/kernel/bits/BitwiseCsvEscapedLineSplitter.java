@@ -26,7 +26,6 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
 
     @Override
     public SeparatedLine doApply(LineSegment segment) {
-        this.segment = segment;
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.startOffset = this.segment.startIndex();
