@@ -11,11 +11,11 @@ import java.util.Optional;
 public final class Readers {
 
     public static Reader create(Column<?>... columns) {
-        return LazeeReader.create(List.of(columns));
+        return LazyReader.create(List.of(columns));
     }
 
     public static Reader create(Path file, CsvFormat format) {
-        return LazeeReader.create(firstLine(file), format);
+        return LazyReader.create(firstLine(file), format);
     }
 
     private Readers() {

@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-final class LazeeReader<T> implements Reader {
+final class LazyReader<T> implements Reader {
 
     @SuppressWarnings("unchecked")
     static Reader create(List<? extends Column<?>> columns) {
@@ -25,12 +25,12 @@ final class LazeeReader<T> implements Reader {
     }
 
     static <T> Reader readerFor(Map<String, Column<T>> columnMap) {
-        return new LazeeReader<>(columnMap);
+        return new LazyReader<>(columnMap);
     }
 
     private final Map<String, Column<T>> columnMap;
 
-    private LazeeReader(Map<String, Column<T>> columnMap) {
+    private LazyReader(Map<String, Column<T>> columnMap) {
         this.columnMap = Objects.requireNonNull(columnMap, "columnMap");
     }
 
