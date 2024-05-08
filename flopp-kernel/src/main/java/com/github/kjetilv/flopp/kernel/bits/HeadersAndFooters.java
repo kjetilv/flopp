@@ -40,10 +40,10 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
     @Override
     public BitwisePartitioned.Action intercept(BitwisePartitioned.Action action) {
-        Objects.requireNonNull(action, "action");
-        return header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
-            : header > 0 ? new HeaderOnly(action, header)
-                : new FooterOnly(action, footer);
+        return header == 0 && footer == 0 ? action
+            : header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
+                : header > 0 ? new HeaderOnly(action, header)
+                    : new FooterOnly(action, footer);
     }
 
     private static void cycle(
