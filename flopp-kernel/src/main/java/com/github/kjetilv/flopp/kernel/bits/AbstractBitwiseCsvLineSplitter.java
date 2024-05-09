@@ -110,6 +110,17 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
+    public long headStart() {
+        return startIndex % ALIGNMENT;
+    }
+
+    @Override
+    public long head(long head) {
+        long l = memorySegment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
+        return l >> head * ALIGNMENT;
+    }
+
+    @Override
     public boolean isAlignedAtStart() {
         return startIndex % ALIGNMENT == 0L;
     }

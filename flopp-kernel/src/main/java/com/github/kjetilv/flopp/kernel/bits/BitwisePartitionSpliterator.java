@@ -106,6 +106,11 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
+        public long headStart() {
+            return startIndex % ALIGNMENT;
+        }
+
+        @Override
         public boolean isAlignedAtStart() {
             return startIndex % ALIGNMENT == 0L;
         }
