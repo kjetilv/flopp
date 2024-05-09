@@ -110,6 +110,16 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
+    public boolean isAlignedAtStart() {
+        return startIndex % ALIGNMENT == 0L;
+    }
+
+    @Override
+    public boolean isAlignedAtEnd() {
+        return endIndex % ALIGNMENT == 0;
+    }
+
+    @Override
     public final LineSegment segment(int column) {
         startIndex = startPositions[column];
         endIndex = endPositions[column];
