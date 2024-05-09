@@ -38,11 +38,13 @@ public final class Bits {
 
     public static String hex(long mask, boolean dotted) {
         if (mask == 0) {
-            return "0x0";
+            return dotted
+                ? "0x00.00.00.00.00.00.00.00"
+                : "0x0000000000000000";
         }
         String hexString = String.format("%08X", mask);
-        String padded = zeroPad(hexString, 16);
-        return "0x" + (dotted ? dot(padded, 2) : hexString);
+        String paddedHexString = zeroPad(hexString, 16);
+        return "0x" + (dotted ? dot(paddedHexString, 2) : hexString);
     }
 
     public static String bin(long mask) {
@@ -93,8 +95,7 @@ public final class Bits {
     @SuppressWarnings("DuplicatedCode")
     public static void transferDataTo(long data, int offset, int length, byte[] target) {
         switch (length) {
-            case 1 ->
-                target[offset] = (byte) (data & 0xFF);
+            case 1 -> target[offset] = (byte) (data & 0xFF);
             case 2 -> {
                 target[offset] = (byte) (data & 0xFF);
                 target[offset + 1] = (byte) (data >> 8 & 0xFF);
@@ -134,8 +135,7 @@ public final class Bits {
                 target[offset + 5] = (byte) (data >> 40 & 0xFF);
                 target[offset + 6] = (byte) (data >> 48 & 0xFF);
             }
-            case 8 ->
-                transferDataTo(data, offset, target);
+            case 8 -> transferDataTo(data, offset, target);
         }
     }
 
@@ -213,14 +213,14 @@ public final class Bits {
         0xFF00000000000000L
     };
 
-    private static String dot(String s, int interval) {
-        int len = s.length();
+    private static String dot(String hexString, int interval) {
+        int len = hexString.length();
         if (len % interval == 0) {
             return IntStream.range(0, len / interval)
-                .mapToObj(i -> s.substring(i * interval, i * interval + interval))
+                .mapToObj(i -> hexString.substring(i * interval, i * interval + interval))
                 .collect(Collectors.joining("."));
         }
-        throw new IllegalArgumentException("Not an x" + interval + " string (" + len + "): " + s);
+        throw new IllegalArgumentException("Not an x" + interval + " string (" + len + "): " + hexString);
     }
 
     private static String zeroPad(String binaryString, int l) {

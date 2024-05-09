@@ -41,6 +41,38 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
+    public final int columnCount() {
+        return columnNo;
+    }
+
+    @Override
+    public final long[] start() {
+        return startPositions;
+    }
+
+    @Override
+    public final long[] end() {
+        return endPositions;
+    }
+
+    @Override
+    public final LineSegment segment(int column) {
+        startIndex = startPositions[column];
+        endIndex = endPositions[column];
+        return this;
+    }
+
+    @Override
+    public final long start(int column) {
+        return startPositions[column];
+    }
+
+    @Override
+    public final long end(int column) {
+        return endPositions[column];
+    }
+
+    @Override
     public final long startIndex() {
         return startIndex;
     }
@@ -48,6 +80,11 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final long endIndex() {
         return endIndex;
+    }
+
+    @Override
+    public long headStart() {
+        return startIndex % ALIGNMENT;
     }
 
     @Override
@@ -85,36 +122,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public final int columnCount() {
-        return columnNo;
-    }
-
-    @Override
-    public final long[] start() {
-        return startPositions;
-    }
-
-    @Override
-    public final long[] end() {
-        return endPositions;
-    }
-
-    @Override
-    public final long start(int column) {
-        return startPositions[column];
-    }
-
-    @Override
-    public final long end(int column) {
-        return endPositions[column];
-    }
-
-    @Override
-    public long headStart() {
-        return startIndex % ALIGNMENT;
-    }
-
-    @Override
     public long head(long head) {
         long l = memorySegment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
         return l >> head * ALIGNMENT;
@@ -128,13 +135,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public boolean isAlignedAtEnd() {
         return endIndex % ALIGNMENT == 0;
-    }
-
-    @Override
-    public final LineSegment segment(int column) {
-        startIndex = startPositions[column];
-        endIndex = endPositions[column];
-        return this;
     }
 
     @Override

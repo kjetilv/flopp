@@ -91,15 +91,13 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
-        public void line(long startIndex, long endIndex) {
-            this.startIndex = startIndex;
-            this.endIndex = endIndex;
-            action.accept(this);
+        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+            adopt(memorySegment);
+            line(startIndex, endIndex);
         }
 
         @Override
-        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
-            adopt(memorySegment);
+        public void line(long startIndex, long endIndex) {
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             action.accept(this);
@@ -118,12 +116,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public boolean isAlignedAtEnd() {
             return endIndex % ALIGNMENT == 0;
-        }
-
-        @Override
-        public void close() {
-            this.startIndex = 0;
-            this.endIndex = 0;
         }
 
         @Override
