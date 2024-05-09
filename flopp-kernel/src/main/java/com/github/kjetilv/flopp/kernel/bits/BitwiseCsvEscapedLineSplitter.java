@@ -24,7 +24,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
     }
 
     @Override
-    protected SeparatedLine separate() {
+    protected void separate() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.startOffset = this.segment.startIndex();
@@ -47,7 +47,6 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
                 markSeparator(length);
             }
         }
-        return emit(sl());
     }
 
     @Override
@@ -56,21 +55,21 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
     }
 
     private void findSeps(long bytes, long shift) {
-        int nextSep = sepFinder.next(bytes);
-        int nextEsc = escFinder.next(bytes);
+        int sep = sepFinder.next(bytes);
+        int esc = escFinder.next(bytes);
 
         while (true) {
-            int diff = nextSep - nextEsc;
+            int diff = sep - esc;
             if (diff == 0) {
                 offset += ALIGNMENT;
                 return;
             }
             if (diff < 0) {
-                handleSep(nextSep, shift);
-                nextSep = sepFinder.next();
+                handleSep(sep, shift);
+                sep = sepFinder.next();
             } else {
-                handleEscape(nextEsc + shift);
-                nextEsc = escFinder.next();
+                handleEsc(esc + shift);
+                esc = escFinder.next();
             }
         }
     }
@@ -99,7 +98,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
         }
     }
 
-    private void handleEscape(long index) {
+    private void handleEsc(long index) {
         if (escaping && offset + index == lastEscape + 1) {
             escaping = false;
         } else {
@@ -107,5 +106,4 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
             escaping = true;
         }
     }
-
 }

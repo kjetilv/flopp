@@ -92,9 +92,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public void line(long startIndex, long endIndex) {
-            if (endIndex < startIndex) {
-                throw new IllegalArgumentException(endIndex + " < " + startIndex);
-            }
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             action.accept(this);
@@ -103,9 +100,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
             adopt(memorySegment);
-            if (endIndex < startIndex) {
-                throw new IllegalArgumentException(endIndex + " < " + startIndex);
-            }
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             action.accept(this);
@@ -129,20 +123,25 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public long head(boolean truncate) {
-            long length = readLength();
-            if (underlyingSize() - startIndex < ALIGNMENT) {
-                return MemorySegments.readHead(segment, startIndex, length);
+            long head = startIndex % ALIGNMENT;
+            long headLength = head == 0L ? 0L : ALIGNMENT - head;
+            long nominalLength = endIndex - startIndex;
+            long readLength = headLength == 0
+                ? nominalLength
+                : Math.min(headLength, nominalLength);
+            if (underlyingSize - startIndex < ALIGNMENT) {
+                return MemorySegments.readHead(segment, startIndex, readLength);
             }
             long value = segment.get(JAVA_LONG_UNALIGNED, startIndex);
             return truncate
-                ? Bits.lowerBytes(value, Math.toIntExact(length))
+                ? Bits.lowerBytes(value, Math.toIntExact(readLength))
                 : value;
         }
 
         @Override
         public long tail(boolean truncate) {
             int tail = Math.toIntExact(endIndex % ALIGNMENT);
-            if (underlyingSize() - endIndex < ALIGNMENT) {
+            if (underlyingSize - endIndex < ALIGNMENT) {
                 return MemorySegments.readTail(segment, endIndex, tail);
             }
             long tailEnd = endIndex % ALIGNMENT;
@@ -176,12 +175,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public String toString() {
             return startIndex() + "+" + length() + ":" + LineSegments.asString(segment, startIndex, endIndex);
-        }
-
-        private long readLength() {
-            int headLength = headLength();
-            long length = endIndex - startIndex;
-            return headLength == 0 ? length : Math.min(headLength, length);
         }
     }
 

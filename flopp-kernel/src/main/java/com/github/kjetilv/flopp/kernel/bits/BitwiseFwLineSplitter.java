@@ -57,9 +57,4 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     public long end(int column) {
         return end[column];
     }
-
-    @Override
-    protected SeparatedLine separate() {
-        return emit(sl());
-    }
 }

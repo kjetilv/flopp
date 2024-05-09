@@ -26,7 +26,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
     }
 
     @Override
-    protected SeparatedLine separate() {
+    protected void separate() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
         this.state = State.STARTING_COLUMN;
@@ -49,7 +49,6 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
                 markSeparator(length);
             }
         }
-        return emit(sl());
     }
 
     private void processHead() {
@@ -65,21 +64,21 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
     }
 
     private void findSeps(long bytes, long shift) {
-        int nextSep = sepFinder.next(bytes);
-        int nextQuo = quoFinder.next(bytes);
+        int sep = sepFinder.next(bytes);
+        int quo = quoFinder.next(bytes);
 
         while (true) {
-            int diff = nextSep - nextQuo;
+            int diff = sep - quo;
             if (diff == 0) {
                 offset += ALIGNMENT;
                 return;
             }
             if (diff < 0) {
-                handleSep(nextSep + shift);
-                nextSep = sepFinder.next();
+                handleSep(sep + shift);
+                sep = sepFinder.next();
             } else {
                 handleQuo();
-                nextQuo = quoFinder.next();
+                quo = quoFinder.next();
             }
         }
     }

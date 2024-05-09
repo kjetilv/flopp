@@ -1,13 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.*;
 
-import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Consumer;
+
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
@@ -49,6 +48,40 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final long endIndex() {
         return endIndex;
+    }
+
+    @Override
+    public long head(boolean truncate) {
+        long head = startIndex % ALIGNMENT;
+        long headLength = head == 0L ? 0L : ALIGNMENT - head;
+        long nominalLength = endIndex - startIndex;
+        long readLength = headLength == 0
+            ? nominalLength
+            : Math.min(headLength, nominalLength);
+        if (this.underlyingSize() - startIndex < ALIGNMENT) {
+            return MemorySegments.readHead(memorySegment, startIndex, readLength);
+        }
+        long value = memorySegment.get(JAVA_LONG_UNALIGNED, startIndex);
+        return truncate
+            ? Bits.lowerBytes(value, Math.toIntExact(readLength))
+            : value;
+    }
+
+    @Override
+    public long tail(boolean truncate) {
+        int tail = Math.toIntExact(endIndex % ALIGNMENT);
+        if (underlyingSize - endIndex < ALIGNMENT) {
+            return MemorySegments.readTail(memorySegment, endIndex, tail);
+        }
+        long value = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - endIndex % ALIGNMENT);
+        return truncate
+            ? Bits.lowerBytes(value, tail)
+            : value;
+    }
+
+    @Override
+    public long longNo(int longNo) {
+        return memorySegment.get(JAVA_LONG, startIndex - startIndex() % ALIGNMENT + longNo * ALIGNMENT);
     }
 
     @Override
