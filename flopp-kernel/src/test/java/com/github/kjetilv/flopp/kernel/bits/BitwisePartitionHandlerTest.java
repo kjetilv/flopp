@@ -6,6 +6,7 @@ import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import org.junit.jupiter.api.Test;
 
+import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,9 +36,10 @@ class BitwisePartitionHandlerTest {
 
     private static void parsedOK(String str) {
         List<LineSegment> handled = new ArrayList<>();
+        MemorySegment memorySegment = MemorySegments.of(str);
         BitwisePartitionHandler handler = new BitwisePartitionHandler(
             new Partition(0, 1, 0, str.length()),
-            MemorySegments.of(str),
+            memorySegment,
             (segment, startIndex, endIndex) ->
                 handled.add(LineSegments.of(segment, startIndex, endIndex)),
             () -> null

@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.MiddleMan;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
@@ -10,6 +11,9 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
 final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
@@ -21,7 +25,9 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
     private final boolean immutable;
 
-    private final MemorySegment segment;
+    private MemorySegment segment;
+
+    private long underlyingSize;
 
     BitwisePartitionSpliterator(
         Partition partition,
@@ -32,12 +38,12 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.segment = segment;
         this.middleMan = middleMan == null
             ? action -> action
             : middleMan;
         this.next = next;
         this.immutable = immutable;
+        adopt(segment);
     }
 
     @Override
@@ -58,7 +64,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         return getClass().getSimpleName() + "[@" + partition + "]";
     }
 
-    BitwisePartitionHandler handler(Action action) {
+    private BitwisePartitionHandler handler(Action action) {
         return new BitwisePartitionHandler(
             partition,
             segment,
@@ -67,42 +73,41 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         );
     }
 
-    private static final class ImmutableForwarder implements Action {
-
-        private final Consumer<? super LineSegment> action;
-
-        ImmutableForwarder(Consumer<? super LineSegment> action) {
-            this.action = action;
-        }
-
-        @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
-            action.accept(LineSegments.of(segment, startIndex, endIndex));
-        }
+    private void adopt(MemorySegment segment) {
+        this.segment = segment;
+        this.underlyingSize = segment.byteSize();
     }
 
-    private static final class MutableForwarder implements Action, LineSegment {
+    private final class MutableForwarder implements Action, LineSegment {
 
         private final Consumer<? super LineSegment> action;
-
-        private MemorySegment memorySegment;
 
         private long startIndex;
 
         private long endIndex;
 
         MutableForwarder(Consumer<? super LineSegment> action) {
-            this.action = Objects.requireNonNull(action, "action");
+            this.action = action;
         }
 
         @Override
-        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+        public void line(long startIndex, long endIndex) {
             if (endIndex < startIndex) {
                 throw new IllegalArgumentException(endIndex + " < " + startIndex);
             }
             this.startIndex = startIndex;
             this.endIndex = endIndex;
-            this.memorySegment = Objects.requireNonNull(memorySegment, "memorySegment");
+            action.accept(this);
+        }
+
+        @Override
+        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+            adopt(memorySegment);
+            if (endIndex < startIndex) {
+                throw new IllegalArgumentException(endIndex + " < " + startIndex);
+            }
+            this.startIndex = startIndex;
+            this.endIndex = endIndex;
             action.accept(this);
         }
 
@@ -110,17 +115,52 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         public void close() {
             this.startIndex = 0;
             this.endIndex = 0;
-            this.memorySegment = null;
         }
 
         @Override
         public MemorySegment memorySegment() {
-            return memorySegment;
+            return segment;
         }
 
         @Override
         public long underlyingSize() {
-            return memorySegment.byteSize();
+            return underlyingSize;
+        }
+
+        @Override
+        public long head(boolean truncate) {
+            long length = readLength();
+            if (underlyingSize() - startIndex < ALIGNMENT) {
+                return MemorySegments.readHead(segment, startIndex, length);
+            }
+            long value = segment.get(JAVA_LONG_UNALIGNED, startIndex);
+            return truncate
+                ? Bits.lowerBytes(value, Math.toIntExact(length))
+                : value;
+        }
+
+        @Override
+        public long tail(boolean truncate) {
+            int tail = Math.toIntExact(endIndex % ALIGNMENT);
+            if (underlyingSize() - endIndex < ALIGNMENT) {
+                return MemorySegments.readTail(segment, endIndex, tail);
+            }
+            long tailEnd = endIndex % ALIGNMENT;
+            long value = segment.get(JAVA_LONG_UNALIGNED, endIndex - tailEnd);
+            return truncate
+                ? Bits.lowerBytes(value, tail)
+                : value;
+        }
+
+        @Override
+        public long head(long head) {
+            long l = segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
+            return l >> head * ALIGNMENT;
+        }
+
+        @Override
+        public long longNo(int longNo) {
+            return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
         }
 
         @Override
@@ -135,9 +175,32 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public String toString() {
-            return memorySegment == null
-                ? "CLOSED"
-                : LineSegments.asString(memorySegment, startIndex, endIndex);
+            return startIndex() + "+" + length() + ":" + LineSegments.asString(segment, startIndex, endIndex);
+        }
+
+        private long readLength() {
+            int headLength = headLength();
+            long length = endIndex - startIndex;
+            return headLength == 0 ? length : Math.min(headLength, length);
+        }
+    }
+
+    private final class ImmutableForwarder implements Action {
+
+        private final Consumer<? super LineSegment> action;
+
+        ImmutableForwarder(Consumer<? super LineSegment> action) {
+            this.action = action;
+        }
+
+        @Override
+        public void line(long startIndex, long endIndex) {
+            action.accept(LineSegments.of(segment, startIndex, endIndex));
+        }
+
+        @Override
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
+            action.accept(LineSegments.of(segment, startIndex, endIndex));
         }
     }
 }

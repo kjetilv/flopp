@@ -52,7 +52,7 @@ final class BitwiseCounter {
         private long lc;
 
         @Override
-        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+        public void line(MemorySegment segment, long startIndex, long endIndex) {
             lc++;
         }
     }

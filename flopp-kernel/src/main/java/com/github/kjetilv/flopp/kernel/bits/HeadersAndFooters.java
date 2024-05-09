@@ -60,6 +60,19 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         deq.offerFirst(() -> delegate.line(memorySegment, startIndex, endIndex));
     }
 
+    private static void cycle(
+        long startIndex,
+        long endIndex,
+        Deque<Runnable> deq,
+        BitwisePartitioned.Action delegate,
+        int footer
+    ) {
+        if (deq.size() == footer) {
+            Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
+        }
+        deq.offerFirst(() -> delegate.line(startIndex, endIndex));
+    }
+
     private static void verifyHeader(int headersLeft, int header) {
         if (headersLeft > 0) {
             throw new IllegalStateException(
@@ -86,6 +99,15 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = header;
             this.headersLeft = header;
+        }
+
+        @Override
+        public void line(long startIndex, long endIndex) {
+            if (headersLeft == 0) {
+                delegate.line(startIndex, endIndex);
+            } else {
+                headersLeft--;
+            }
         }
 
         @Override
@@ -130,6 +152,15 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         }
 
         @Override
+        public void line(long startIndex, long endIndex) {
+            if (headersLeft == 0) {
+                cycle(startIndex, endIndex, deque, delegate, footer);
+            } else {
+                headersLeft--;
+            }
+        }
+
+        @Override
         public void line(MemorySegment segment, long startIndex, long endIndex) {
             if (headersLeft == 0) {
                 cycle(segment, startIndex, endIndex, deque, delegate, footer);
@@ -168,6 +199,11 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         @Override
         public void line(MemorySegment segment, long startIndex, long endIndex) {
             cycle(segment, startIndex, endIndex, deque, delegate, footer);
+        }
+
+        @Override
+        public void line(long startIndex, long endIndex) {
+            cycle(startIndex, endIndex, deque, delegate, footer);
         }
 
         @Override

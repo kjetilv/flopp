@@ -104,6 +104,10 @@ final class BitwisePartitioned implements Partitioned<Path> {
     @FunctionalInterface
     public interface Action extends Closeable {
 
+        default void line(long startIndex, long endIndex) {
+            throw new IllegalStateException(this + " has no segment: " + startIndex + "-" + endIndex);
+        }
+
         void line(MemorySegment segment, long startIndex, long endIndex);
 
         @Override
