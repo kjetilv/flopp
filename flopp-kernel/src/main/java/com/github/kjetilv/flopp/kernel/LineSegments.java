@@ -204,7 +204,6 @@ public final class LineSegments {
             return "";
         }
         byte[] string = asBytes(segment);
-        MemorySegment.copy(segment.memorySegment(), JAVA_LONG, 0, new long[2], 0, 2);
         if (string == null || string.length == 0) {
             return "";
         }
