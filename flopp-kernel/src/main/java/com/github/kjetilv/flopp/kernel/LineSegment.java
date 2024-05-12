@@ -12,26 +12,26 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
 
-    default LongStream unalignedLongStream() {
-        return LineSegments.unalignedLongs(this);
-    }
-
-    default LongSupplier unalignedLongSupplier() {
-        return LineSegments.unalignedLongSupplier(this);
-    }
-
     default LongStream alignedLongStream() {
         return LineSegments.alignedLongs(this);
     }
 
-    default long alignedLongsCount() {
+    default LongSupplier alignedLongSupplier() {
+        return LineSegments.alignedLongSupplier(this);
+    }
+
+    default LongStream shiftedLongStream() {
+        return LineSegments.shiftedLongs(this);
+    }
+
+    default long shiftedLongsCount() {
         long length = length();
         long fullLongs = length / ALIGNMENT;
         long remainder = length % ALIGNMENT;
         return fullLongs + (remainder == 0 ? 0 : 1);
     }
 
-    default long unalignedLongsCount() {
+    default long alignedLongsCount() {
         int headLen = headLength();
         int tailLen = tailLength();
         long len = length();
@@ -41,16 +41,16 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         if (len < ALIGNMENT) {
             return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         }
-        long length = ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT;
+        long length = (endIndex() - tailLen - (startIndex() + headLen)) / ALIGNMENT;
         return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
     }
 
-    default LongStream longStream(boolean align) {
-        return LineSegments.longs(this, align);
+    default LongStream longStream(boolean shift) {
+        return LineSegments.longs(this, shift);
     }
 
-    default LongSupplier longSupplier(boolean align) {
-        return LineSegments.longSupplier(this, align);
+    default LongSupplier longSupplier(boolean shift) {
+        return LineSegments.longSupplier(this, shift);
     }
 
     @SuppressWarnings("unused")

@@ -14,7 +14,7 @@ class LineSegmentsTest {
     @Test
     void longs() {
         String string = "1234abcdabcd5678";
-        LongStream longs = LineSegments.of(string).unalignedLongStream();
+        LongStream longs = LineSegments.of(string).alignedLongStream();
         String str = streamed(longs);
         assertThat(str).isEqualTo(string);
     }
@@ -22,7 +22,7 @@ class LineSegmentsTest {
     @Test
     void longsSupplier() {
         String string = "1234abcdabcd5678";
-        LongSupplier longs = LineSegments.of(string).unalignedLongSupplier();
+        LongSupplier longs = LineSegments.of(string).alignedLongSupplier();
 
         String str = Bits.toString(longs.getAsLong()) + Bits.toString(longs.getAsLong());
         assertThat(str).isEqualTo(string);
@@ -45,7 +45,7 @@ class LineSegmentsTest {
         LongSupplier longSupplier = slice.longSupplier(true);
 
         String streamString = streamed(longStream);
-        String supplierString = supplied(longSupplier, slice.unalignedLongsCount() - 1);
+        String supplierString = supplied(longSupplier, slice.alignedLongsCount() - 1);
 
         String substring = string.substring(startIndex, endIndex);
 

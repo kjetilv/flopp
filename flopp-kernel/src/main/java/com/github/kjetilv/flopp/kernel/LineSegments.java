@@ -26,9 +26,9 @@ public final class LineSegments {
         if (segment1.length() != segment2.length()) {
             return false;
         }
-        LongSupplier longSupplier1 = segment1.unalignedLongSupplier();
-        LongSupplier longSupplier2 = segment2.unalignedLongSupplier();
-        for (long l = 0; l < segment1.unalignedLongsCount(); l++) {
+        LongSupplier longSupplier1 = segment1.alignedLongSupplier();
+        LongSupplier longSupplier2 = segment2.alignedLongSupplier();
+        for (long l = 0; l < segment1.alignedLongsCount(); l++) {
             if (longSupplier1.getAsLong() != longSupplier2.getAsLong()) {
                 return false;
             }
@@ -71,8 +71,8 @@ public final class LineSegments {
     public static int compare(LineSegment segment1, LineSegment segment2) {
         LongSupplier longSupplier1 = segment1.longSupplier(true);
         LongSupplier longSupplier2 = segment2.longSupplier(true);
-        long length1 = segment1.alignedLongsCount();
-        long length2 = segment2.alignedLongsCount();
+        long length1 = segment1.shiftedLongsCount();
+        long length2 = segment2.shiftedLongsCount();
         long length = Math.min(length1, length2);
         for (int i = 0; i < length; i++) {
             long l1 = longSupplier1.getAsLong();
@@ -89,17 +89,17 @@ public final class LineSegments {
                 : 0;
     }
 
-    public static LongSupplier unalignedLongSupplier(LineSegment segment) {
+    public static LongSupplier alignedLongSupplier(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return () -> 0x0L;
         }
-        return new LineSegmentUnalignedLongSupplier(segment, length);
+        return new LineSegmentAlignedLongSupplier(segment, length);
     }
 
-    public static LongSupplier longSupplier(LineSegment segment, boolean align) {
-        if (!align) {
-            return unalignedLongSupplier(segment);
+    public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
+        if (!shift) {
+            return alignedLongSupplier(segment);
         }
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
@@ -107,16 +107,16 @@ public final class LineSegments {
         }
         int headLen = segment.headLength();
         if (headLen == 0) {
-            return unalignedLongSupplier(segment);
+            return alignedLongSupplier(segment);
         }
-        return new LineSegmentAlignedLongSupplier(segment, length, headLen);
+        return new LineSegmentShiftedLongSupplier(segment, length, headLen);
     }
 
     public static LongStream longs(LineSegment segment, boolean align) {
-        return align ? alignedLongs(segment) : unalignedLongs(segment);
+        return align ? shiftedLongs(segment) : alignedLongs(segment);
     }
 
-    public static LongStream unalignedLongs(LineSegment segment) {
+    public static LongStream alignedLongs(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return LongStream.empty();
@@ -151,7 +151,7 @@ public final class LineSegments {
         }, false);
     }
 
-    public static LongStream alignedLongs(LineSegment segment) {
+    public static LongStream shiftedLongs(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return LongStream.empty();
@@ -161,7 +161,7 @@ public final class LineSegments {
         }
         int headLen = segment.headLength();
         if (headLen == 0) {
-            return unalignedLongs(segment);
+            return alignedLongs(segment);
         }
         int tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
         int headShift = Math.toIntExact(headLen * ALIGNMENT);
@@ -311,7 +311,7 @@ public final class LineSegments {
         return data >> shift;
     }
 
-    private static final class LineSegmentUnalignedLongSupplier implements LongSupplier {
+    private static final class LineSegmentAlignedLongSupplier implements LongSupplier {
 
         private final long alignedStart;
 
@@ -331,7 +331,7 @@ public final class LineSegments {
 
         private final long alignedEnd;
 
-        private LineSegmentUnalignedLongSupplier(LineSegment segment, int length) {
+        private LineSegmentAlignedLongSupplier(LineSegment segment, int length) {
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
             this.length = length;
@@ -371,7 +371,7 @@ public final class LineSegments {
         }
     }
 
-    private static final class LineSegmentAlignedLongSupplier implements LongSupplier {
+    private static final class LineSegmentShiftedLongSupplier implements LongSupplier {
 
         private final LineSegment segment;
 
@@ -385,8 +385,6 @@ public final class LineSegments {
 
         private final int tailShift;
 
-        private final long alignedStart;
-
         private final long alignedEnd;
 
         private long position;
@@ -395,7 +393,7 @@ public final class LineSegments {
 
         private final MemorySegment memorySegment;
 
-        private LineSegmentAlignedLongSupplier(LineSegment segment, int length, int headLen) {
+        private LineSegmentShiftedLongSupplier(LineSegment segment, int length, int headLen) {
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
             this.length = length;
@@ -405,11 +403,10 @@ public final class LineSegments {
             this.headShift = Math.toIntExact(headLen * ALIGNMENT);
             this.tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
 
-            this.alignedStart = segment.alignedStart();
             this.alignedEnd = segment.alignedEnd();
 
             this.data = segment.head(true);
-            this.position = this.alignedStart + (headLen > 0 ? ALIGNMENT : 0);
+            this.position = segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
         }
 
         @Override
