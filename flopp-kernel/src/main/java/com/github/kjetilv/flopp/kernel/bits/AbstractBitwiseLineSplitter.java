@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
@@ -57,7 +58,7 @@ abstract sealed class AbstractBitwiseLineSplitter
         String sub = substring();
         boolean hasSub = sub == null || sub.isBlank();
         return getClass().getSimpleName() + "[" +
-               (hasSub ? "" : sub + " ") + "`" + (segment == null ? "*" : segment.asString()) + "`" +
+               (hasSub ? "" : sub + " ") + " " + (segment == null ? "*" : LineSegments.toString((LineSegment) this)) +
                "]";
     }
 
