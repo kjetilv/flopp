@@ -7,7 +7,7 @@ import com.github.kjetilv.flopp.kernel.Non;
 public record Column<T>(String name, int colunmNo, Parser<T> parser) {
 
     public static Column<LineSegment> ofBinary(String name, int columnNo) {
-        return ofType(name, columnNo, lineSegment -> lineSegment);
+        return ofType(name, columnNo, LineSegment::immutable);
     }
 
     public static Column<String> ofString(String name, int columnNo) {

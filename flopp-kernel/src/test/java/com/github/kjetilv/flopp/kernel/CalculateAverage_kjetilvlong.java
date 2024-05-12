@@ -38,7 +38,7 @@ public final class CalculateAverage_kjetilvlong {
             Path path = Path.of(arg);
 //            go(path);
             go3(path);
-//            go4It(path);
+            go4It(path);
 //            go1(path);
         }
     }
@@ -226,7 +226,7 @@ public final class CalculateAverage_kjetilvlong {
                                 int dec = (Integer) columns.get("measurement");
                                 results.compute(
                                     station.immutable(),
-                                    (_, existing) ->
+                                    (key, existing) ->
                                         existing == null
                                             ? new Result(dec)
                                             : existing.collect(dec)
@@ -242,7 +242,7 @@ public final class CalculateAverage_kjetilvlong {
                 .toList();
             System.out.println(Duration.between(start, Instant.now()));
             Set<LineSegment> keys = keySet(maps);
-            SequencedMap<String, Result> map = combineMapsToStringKey(keys, maps);
+            Map<String, Result> map = combineMapsToStringKey(keys, maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
@@ -327,7 +327,7 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static <T> SequencedMap<T, Result> combineMaps(
+    private static <T extends Comparable<T>> SequencedMap<T, Result> combineMaps(
         Set<T> keys,
         List<Map<T, Result>> maps
     ) {
@@ -349,22 +349,23 @@ public final class CalculateAverage_kjetilvlong {
 
     private static SequencedMap<String, Result> combineMapsToStringKey(
         Set<LineSegment> keys,
-        List<Map<LineSegment, Result>> maps
+        List<Map<LineSegment, Result>> submaps
     ) {
-        SequencedMap<String, Result> treeMap = new TreeMap<>();
-        maps.forEach(map ->
+        SequencedMap<LineSegment, Result> map = new TreeMap<>();
+        submaps.forEach(submap ->
             keys.forEach(key -> {
-                String stringKey = key.asString();
-                Result base = treeMap.get(stringKey);
-                Result addendum = map.get(key);
+                Result base = map.get(key);
+                Result addendum = submap.get(key);
                 if (base == null) {
-                    treeMap.put(stringKey, addendum);
+                    map.put(key, addendum);
                 } else if (addendum != null) {
                     Result merged = base.merge(addendum);
-                    treeMap.put(stringKey, merged);
+                    map.put(key, merged);
                 }
             }));
-        return treeMap;
+        SequencedMap<String, Result> seqMap = new TreeMap<>();
+        map.forEach((segment, result) -> seqMap.put(segment.asString(), result));
+        return seqMap;
     }
 
     private static int semiIndex(LineSegment ls, long length) {

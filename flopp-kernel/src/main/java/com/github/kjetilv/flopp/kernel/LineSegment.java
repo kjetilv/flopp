@@ -3,24 +3,54 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
+import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
 import static java.lang.foreign.ValueLayout.*;
 
-public interface LineSegment extends Range {
+public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
 
-    default LongStream unalignedLongs() {
+    default LongStream unalignedLongStream() {
         return LineSegments.unalignedLongs(this);
     }
 
-    default LongStream alignedLongs() {
+    default LongSupplier unalignedLongSupplier() {
+        return LineSegments.unalignedLongSupplier(this);
+    }
+
+    default LongStream alignedLongStream() {
         return LineSegments.alignedLongs(this);
     }
 
-    default LongStream longs(boolean align) {
+    default long alignedLongsCount() {
+        long length = length();
+        long fullLongs = length / ALIGNMENT;
+        long remainder = length % ALIGNMENT;
+        return fullLongs + (remainder == 0 ? 0 : 1);
+    }
+
+    default long unalignedLongsCount() {
+        int headLen = headLength();
+        int tailLen = tailLength();
+        long len = length();
+        if (len == 0) {
+            return 0L;
+        }
+        if (len < ALIGNMENT) {
+            return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
+        }
+        long length = ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT;
+        return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
+    }
+
+    default LongStream longStream(boolean align) {
         return LineSegments.longs(this, align);
+    }
+
+    default LongSupplier longSupplier(boolean align) {
+        return LineSegments.longSupplier(this, align);
     }
 
     @SuppressWarnings("unused")
@@ -80,8 +110,11 @@ public interface LineSegment extends Range {
         return (alignedEnd() - alignedStart()) / ALIGNMENT;
     }
 
+    @SuppressWarnings("UnnecessaryParentheses")
     default long fullLongCount() {
-        return (alignedEnd() - firstAlignedStart()) / ALIGNMENT;
+        int headLen = headLength();
+        int tailLen = tailLength();
+        return ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT;
     }
 
     default long headStart() {
@@ -176,6 +209,11 @@ public interface LineSegment extends Range {
 
     default LineSegment slice(long startIndex, long endIndex) {
         return LineSegments.of(memorySegment(), startIndex, endIndex);
+    }
+
+    @Override
+    default int compareTo(LineSegment o) {
+        return LineSegments.compare(this, o);
     }
 
     long ALIGNMENT = LineSegments.ALIGNMENT;

@@ -45,7 +45,8 @@ final class LazyReader<T> implements Reader {
         return name ->
             valueMap.computeIfAbsent(name, _ -> {
                 Column<?> column = columnMap.get(name);
-                LineSegment segment = separatedLine.segment(column.colunmNo() - 1);
+                int columnIndex = column.colunmNo() - 1;
+                LineSegment segment = separatedLine.segment(columnIndex);
                 return column.parser().parse(segment);
             });
     }

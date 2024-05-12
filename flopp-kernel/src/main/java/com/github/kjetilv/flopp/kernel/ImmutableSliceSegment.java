@@ -30,6 +30,16 @@ record ImmutableSliceSegment(MemorySegment memorySegment, long length)
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return obj instanceof LineSegment other && LineSegments.equals(this, other);
+    }
+
+    @Override
+    public int hashCode() {
+        return LineSegments.hashCode(this);
+    }
+
+    @Override
     public String toString() {
         return LineSegments.toString(this);
     }

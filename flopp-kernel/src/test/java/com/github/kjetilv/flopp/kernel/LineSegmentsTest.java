@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 import org.junit.jupiter.api.Test;
 
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -13,13 +14,23 @@ class LineSegmentsTest {
     @Test
     void longs() {
         String string = "1234abcdabcd5678";
-        LongStream longs = LineSegments.of(string).unalignedLongs();
-        String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
+        LongStream longs = LineSegments.of(string).unalignedLongStream();
+        String str = streamed(longs);
         assertThat(str).isEqualTo(string);
     }
 
     @Test
-    void misalignedLongs() {
+    void longsSupplier() {
+        String string = "1234abcdabcd5678";
+        LongSupplier longs = LineSegments.of(string).unalignedLongSupplier();
+
+        String str = Bits.toString(longs.getAsLong()) + Bits.toString(longs.getAsLong());
+        assertThat(str).isEqualTo(string);
+        assertThat(longs.getAsLong()).isZero();
+    }
+
+    @Test
+    void misalignedLongStream() {
         assertLongs("___12345678abcdefghABCDEFGH__", 3, 27);
         assertLongs("___12345678abcdefgh__", 3, 19);
         assertLongs("___12345678__", 3, 11);
@@ -28,11 +39,36 @@ class LineSegmentsTest {
     }
 
     private static void assertLongs(String string, int startIndex, int endIndex) {
-        LongStream longs = LineSegments.of(string).slice(startIndex, endIndex).longs(true);
-        String str = longs.mapToObj(Bits::toString).collect(Collectors.joining());
+        LineSegment slice = LineSegments.of(string).slice(startIndex, endIndex);
+
+        LongStream longStream = slice.longStream(true);
+        LongSupplier longSupplier = slice.longSupplier(true);
+
+        String streamString = streamed(longStream);
+        String supplierString = supplied(longSupplier, slice.unalignedLongsCount() - 1);
+
         String substring = string.substring(startIndex, endIndex);
-        String pad = !substring.isEmpty() && substring.length() < 8 ? Bits.toString(0, 8 - substring.length()) : "";
-        assertThat(str).isEqualTo(substring + pad);
+
+        String pad = !substring.isEmpty() && substring.length() < 8
+            ? Bits.toString(0, 8 - substring.length())
+            : "";
+
+        assertThat(streamString).isEqualTo(substring + pad);
+        assertThat(supplierString).isEqualTo(streamString);
+    }
+
+    private static String streamed(LongStream longStream) {
+        return longStream.mapToObj(Bits::toString)
+            .collect(Collectors.joining());
+    }
+
+    private static String supplied(LongSupplier longSupplier, long length) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            String bits = Bits.toString(longSupplier.getAsLong());
+            sb.append(bits);
+        }
+        return sb.toString();
     }
 
     @Test

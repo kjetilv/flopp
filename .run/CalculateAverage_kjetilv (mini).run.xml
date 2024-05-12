@@ -5,6 +5,7 @@
     <module name="flopp.flopp-kernel.test" />
     <option name="PROGRAM_PARAMETERS" value="/home/kjetilv/Development/1brc/measurements.txt" />
     <target name="graalvm@mini:22" />
+    <option name="VM_PARAMETERS" value="-Xmx128m" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="onebrc.*" />
