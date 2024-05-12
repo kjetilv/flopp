@@ -66,18 +66,8 @@ final class BitwisePartitionHandler implements Runnable {
 
     @Override
     public String toString() {
-        String string = asString();
-        return getClass().getSimpleName() + "[" +
-               partition + (string == null || string.isBlank() ? " <>" : " `" + string + "`") +
-               "]";
-    }
-
-    public String asString() {
-        try {
-            return LineSegments.asString(segment, lineStart, offset);
-        } catch (Exception e) {
-            return "<FAILED TO PRINT: " + e + ">";
-        }
+        String segmentString = LineSegments.toString(LineSegments.of(segment, lineStart, offset));
+        return getClass().getSimpleName() + "[" + partition + " " + segmentString + "]";
     }
 
     private boolean processHead() {

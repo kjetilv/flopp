@@ -38,7 +38,7 @@ public final class CalculateAverage_kjetilvlong {
             Path path = Path.of(arg);
 //            go(path);
             go3(path);
-            go4It(path);
+//            go4It(path);
 //            go1(path);
         }
     }
@@ -171,7 +171,7 @@ public final class CalculateAverage_kjetilvlong {
                             reader.read(splitter, columns ->
                                 m.compute(
                                     (String) columns.get("station"),
-                                    (_, existing) -> {
+                                    (station, existing) -> {
                                         int dec = (Integer) columns.get("measurement");
                                         return existing == null ? new Result(dec) : existing.collect(dec);
                                     }
@@ -456,5 +456,5 @@ public final class CalculateAverage_kjetilvlong {
         private static double round(double value) {
             return Math.round(value) / 10.0;
         }
-    }
+}
 }

@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -55,6 +56,8 @@ class LineSegmentsTest {
 
         assertThat(streamString).isEqualTo(substring + pad);
         assertThat(supplierString).isEqualTo(streamString);
+//        String longBytes = new String(LineSegments.fromLongBytes(slice), StandardCharsets.UTF_8);
+//        assertThat(longBytes).isEqualTo(substring);
     }
 
     private static String streamed(LongStream longStream) {

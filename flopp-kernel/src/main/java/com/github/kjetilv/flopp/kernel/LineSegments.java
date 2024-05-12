@@ -11,8 +11,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
+import static java.lang.foreign.ValueLayout.*;
 import static java.util.Spliterator.IMMUTABLE;
 import static java.util.Spliterator.ORDERED;
 
@@ -208,6 +207,86 @@ public final class LineSegments {
             return "";
         }
         return new String(string, StandardCharsets.UTF_8);
+//        return new String(
+//            string,
+//            Math.toIntExact(segment.headStart()),
+//            Math.toIntExact(segment.length()),
+//            StandardCharsets.UTF_8
+//        );
+    }
+
+    public static byte[] simpleBytes(LineSegment segment) {
+        int length = Math.toIntExact(segment.length());
+        byte[] bytes = new byte[length];
+        MemorySegment.copy(
+            segment.memorySegment(),
+            JAVA_BYTE,
+            segment.startIndex(),
+            bytes,
+            0,
+            length
+        );
+        return bytes;
+    }
+
+    public static byte[] fromLongBytes(LineSegment segment) {
+        int length = Math.toIntExact(segment.length());
+        if (length == 0) {
+            return NO_BYTES;
+        }
+        long alignedStart = segment.alignedStart();
+        long alignedEnd = segment.alignedEnd();
+        int baseLength = Math.toIntExact(segment.alignedLongsCount());
+        int tailLength = segment.tailLength();
+        int longSlots = baseLength;
+        long[] data = new long[longSlots];
+        if (tailLength == 0 || segment.underlyingSize() - alignedEnd > 8) {
+            MemorySegment.copy(
+                segment.memorySegment(),
+                JAVA_LONG,
+                alignedStart,
+                data,
+                0,
+                longSlots
+            );
+        } else {
+            MemorySegment.copy(
+                segment.memorySegment(),
+                JAVA_LONG,
+                alignedStart,
+                data,
+                0,
+                longSlots - 1
+            );
+            data[longSlots] = segment.tail();
+        }
+        byte[] bytes = new byte[length];
+        int headStart = Math.toIntExact(segment.headStart());
+        int firstLong;
+        int headLen = ALIGNMENT_INT - headStart;
+        int position = 0;
+        if (headStart > 0) {
+            Bits.transferDataTo(
+                data[0] >> headStart * ALIGNMENT,
+                0,
+                Math.min(length, headLen),
+                bytes
+            );
+            firstLong = 1;
+            position = headLen;
+        } else {
+            firstLong = 0;
+        }
+        int longCount = longSlots - (tailLength > 0 ? 1 : 0);
+        for (int l = firstLong; l < longCount; l++) {
+            Bits.transferDataTo(data[l], position, bytes);
+            position += ALIGNMENT_INT;
+        }
+        int remainder = length - position;
+        if (remainder > 0) {
+            Bits.transferDataTo(data[longCount], position, remainder, bytes);
+        }
+        return bytes;
     }
 
     public static byte[] asBytes(LineSegment segment) {
@@ -290,6 +369,8 @@ public final class LineSegments {
 
     private LineSegments() {
     }
+
+    public static final byte[] NO_BYTES = new byte[0];
 
     static final long ALIGNMENT = 8L;
 

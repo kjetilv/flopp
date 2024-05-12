@@ -81,6 +81,32 @@ public final class Bits {
     }
 
     @SuppressWarnings("DuplicatedCode")
+    public static void transferDataTo(long[] data, int offset, byte[] target) {
+        int firstLong;
+        int longCount;
+        int headStart = offset % ALIGNMENT;
+        int headLen = ALIGNMENT - headStart;
+        int position = 0;
+        int length = target.length;
+        if (offset > 0) {
+            transferDataTo(data[0], 0, headLen, target);
+            firstLong = 1;
+            longCount = (length - headLen) / ALIGNMENT;
+            position = headLen;
+        } else {
+            firstLong = 0;
+            longCount = length / ALIGNMENT;
+        }
+        for (int l = firstLong; l < longCount; l++) {
+            transferDataTo(data[l], position, target);
+            position += ALIGNMENT;
+        }
+        int remainder = length - position;
+        if (remainder > 0) {
+            transferDataTo(data[longCount], position, remainder, target);
+        }
+    }
+
     public static void transferDataTo(long data, int offset, byte[] target) {
         target[offset] = (byte) (data & 0xFF);
         target[offset + 1] = (byte) (data >> 8 & 0xFF);
@@ -92,6 +118,12 @@ public final class Bits {
         target[offset + 7] = (byte) (data >> 56);
     }
 
+    /**
+     * @param data   Source long
+     * @param offset Start position in target array
+     * @param length How many bytes to move from long into array
+     * @param target Array
+     */
     @SuppressWarnings("DuplicatedCode")
     public static void transferDataTo(long data, int offset, int length, byte[] target) {
         switch (length) {
