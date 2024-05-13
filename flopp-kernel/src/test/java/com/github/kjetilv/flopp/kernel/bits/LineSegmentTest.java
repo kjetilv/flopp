@@ -44,16 +44,18 @@ class LineSegmentTest {
         assertThat(Bits.toString(ls.fullLongNo(0))).isEqualTo("foo bar ");
         assertThat(Bits.toString(ls.tail(), ls.tailLength())).isEqualTo("zot\n");
 
-        LineSegment slice = ls.slice(5L, 24L);
+        LineSegment slice1 = ls.slice(5L, 22L);
+        LineSegment slice2 = ls.slice(5L, 24L);
 
-        assertThat(slice.length()).isEqualTo(19L);
-        assertThat(slice.alignedEnd()).isEqualTo(24L);
-        assertThat(slice.alignedCount()).isEqualTo(3L);
-        assertThat(slice.fullLongCount()).isEqualTo(2L);
-        assertThat(slice.startIndex()).isEqualTo(5L);
-        assertThat(Bits.toString(slice.fullLongNo(0))).isEqualTo("zot\nfoo ");
+        assertThat(slice2.length()).isEqualTo(19L);
+        assertThat(slice2.alignedEnd()).isEqualTo(24L);
+        assertThat(slice2.alignedCount()).isEqualTo(3L);
+        assertThat(slice2.fullLongCount()).isEqualTo(2L);
+        assertThat(slice2.startIndex()).isEqualTo(5L);
+        assertThat(Bits.toString(slice2.fullLongNo(0))).isEqualTo("zot\nfoo ");
 
-        assertThat(Bits.toString(slice.head(), slice.headLength())).isEqualTo(slice.asString().substring(0, 3));
+        assertThat(Bits.toString(slice1.head(), slice1.headLength())).isEqualTo(slice1.asString().substring(0, 3));
+        assertThat(Bits.toString(slice2.head(), slice2.headLength())).isEqualTo(slice2.asString().substring(0, 3));
     }
 
     @Test
@@ -63,7 +65,10 @@ class LineSegmentTest {
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
+        assertSub(lineSegment, string, 9, 24);
         assertSub(lineSegment, string, 75, 80);
+        assertSub(lineSegment, string, 8, 16);
+        assertSub(lineSegment, string, 8, 24);
         assertSub(lineSegment, string, 0, 77);
         assertSub(lineSegment, string, 0, 1);
         assertSub(lineSegment, string, 26, 33);

@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
@@ -56,6 +57,22 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     @SuppressWarnings("unused")
     default LineSegment immutable() {
         return new ImmutableLineSegment(memorySegment(), startIndex(), endIndex());
+    }
+
+    @SuppressWarnings("unused")
+    default LineSegment copy() {
+        MemorySegment buffer =
+            MemorySegment.ofBuffer(ByteBuffer.allocateDirect(Math.toIntExact(length())));
+        MemorySegment.copy(
+            memorySegment(),
+            JAVA_BYTE,
+            startIndex(),
+            buffer,
+            JAVA_BYTE,
+            0,
+            length()
+        );
+        return new ImmutableLineSegment(buffer, 0, length());
     }
 
     @SuppressWarnings("unused")

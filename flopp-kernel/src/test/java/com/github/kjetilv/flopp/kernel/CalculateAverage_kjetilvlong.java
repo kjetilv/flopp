@@ -38,6 +38,10 @@ public final class CalculateAverage_kjetilvlong {
             Path path = Path.of(arg);
 //            go(path);
             go3(path);
+//            go3(path);
+//            go3(path);
+//            go3(path);
+//            go3(path);
 //            go4It(path);
 //            go1(path);
         }
@@ -145,7 +149,8 @@ public final class CalculateAverage_kjetilvlong {
         Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
-            shape.longestLine());
+            shape.longestLine())
+            .scaled(2);
         CsvFormat format = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
             Column.ofString("station", 1),
@@ -225,7 +230,7 @@ public final class CalculateAverage_kjetilvlong {
                                 LineSegment station = (LineSegment) columns.get("station");
                                 int dec = (Integer) columns.get("measurement");
                                 results.compute(
-                                    station.immutable(),
+                                    station.copy(),
                                     (key, existing) ->
                                         existing == null
                                             ? new Result(dec)

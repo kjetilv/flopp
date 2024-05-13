@@ -97,18 +97,15 @@ public final class LineSegments {
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
-        if (!shift) {
-            return alignedLongSupplier(segment);
-        }
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
             return () -> 0x0L;
         }
         int headLen = segment.headLength();
-        if (headLen == 0) {
-            return alignedLongSupplier(segment);
+        if (headLen > 0 && shift) {
+            return new LineSegmentShiftedLongSupplier(segment, length, headLen);
         }
-        return new LineSegmentShiftedLongSupplier(segment, length, headLen);
+        return alignedLongSupplier(segment);
     }
 
     public static LongStream longs(LineSegment segment, boolean align) {
@@ -123,31 +120,34 @@ public final class LineSegments {
         int headLen = segment.headLength();
         long alignedStart = segment.alignedStart();
         long alignedEnd = segment.alignedEnd();
-        return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
-            length / ALIGNMENT + 2,
-            IMMUTABLE | ORDERED
-        ) {
+        return StreamSupport.longStream(
+            new Spliterators.AbstractLongSpliterator(
+                length / ALIGNMENT + 2,
+                IMMUTABLE | ORDERED
+            ) {
 
-            @Override
-            public boolean tryAdvance(LongConsumer action) {
-                if (headLen > 0) {
-                    action.accept(segment.head(true));
-                }
-                if (length > headLen) {
-                    long endIndex = segment.endIndex();
-                    MemorySegment memorySegment = segment.memorySegment();
-                    long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
-                    for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
-                        action.accept(memorySegment.get(JAVA_LONG, pos));
+                @Override
+                public boolean tryAdvance(LongConsumer action) {
+                    if (headLen > 0) {
+                        action.accept(segment.head(true));
                     }
-                    int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
-                    if (tailLen > 0) {
-                        action.accept(readTail(segment, memorySegment, length, endIndex, tailLen, true));
+                    if (length > headLen) {
+                        long endIndex = segment.endIndex();
+                        MemorySegment memorySegment = segment.memorySegment();
+                        long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
+                        for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
+                            action.accept(memorySegment.get(JAVA_LONG, pos));
+                        }
+                        int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+                        if (tailLen > 0) {
+                            action.accept(readTail(segment, memorySegment, length, endIndex, tailLen, true));
+                        }
                     }
+                    return false;
                 }
-                return false;
-            }
-        }, false);
+            },
+            false
+        );
     }
 
     public static LongStream shiftedLongs(LineSegment segment) {
@@ -169,54 +169,47 @@ public final class LineSegments {
         long endIndex = segment.endIndex();
         long tailLen = endIndex % ALIGNMENT;
         MemorySegment memorySegment = segment.memorySegment();
-        return StreamSupport.longStream(new Spliterators.AbstractLongSpliterator(
-            length / ALIGNMENT + 2,
-            IMMUTABLE | ORDERED
-        ) {
+        return StreamSupport.longStream(
+            new Spliterators.AbstractLongSpliterator(
+                length / ALIGNMENT + 2,
+                IMMUTABLE | ORDERED
+            ) {
 
-            @Override
-            public boolean tryAdvance(LongConsumer action) {
-                long data = segment.head(true);
-                long position = alignedStart + ALIGNMENT;
-                while (position < alignedEnd) {
-                    try {
-                        long alignedData = memorySegment.get(JAVA_LONG, position);
+                @Override
+                public boolean tryAdvance(LongConsumer action) {
+                    long data = segment.head(true);
+                    long position = alignedStart + ALIGNMENT;
+                    while (position < alignedEnd) {
+                        try {
+                            long alignedData = memorySegment.get(JAVA_LONG, position);
+                            data |= alignedData << headShift;
+                            action.accept(data);
+                            data = alignedData >> tailShift;
+                        } finally {
+                            position += ALIGNMENT;
+                        }
+                    }
+                    if (tailLen > 0) {
+                        long alignedData = readTail(segment, memorySegment, length, endIndex, tailLen, true);
                         data |= alignedData << headShift;
                         action.accept(data);
-                        data = alignedData >> tailShift;
-                    } finally {
-                        position += ALIGNMENT;
                     }
+                    return false;
                 }
-                if (tailLen > 0) {
-                    long alignedData = readTail(segment, memorySegment, length, endIndex, tailLen, true);
-                    data |= alignedData << headShift;
-                    action.accept(data);
-                }
-                return false;
-            }
-        }, false);
+            },
+            false
+        );
     }
 
     public static String asString(LineSegment segment) {
-        if (segment.length() == 0) {
-            return "";
-        }
-        byte[] string = asBytes(segment);
-        if (string == null || string.length == 0) {
-            return "";
-        }
-        return new String(string, StandardCharsets.UTF_8);
-//        return new String(
-//            string,
-//            Math.toIntExact(segment.headStart()),
-//            Math.toIntExact(segment.length()),
-//            StandardCharsets.UTF_8
-//        );
+        return new String(fromLongBytes(segment), StandardCharsets.UTF_8);
     }
 
     public static byte[] simpleBytes(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
+        if (length == 0) {
+            return NO_BYTES;
+        }
         byte[] bytes = new byte[length];
         MemorySegment.copy(
             segment.memorySegment(),
@@ -230,61 +223,49 @@ public final class LineSegments {
     }
 
     public static byte[] fromLongBytes(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        MemorySegment memorySegment = segment.memorySegment();
+
+        int length = (int) (endIndex - startIndex);
         if (length == 0) {
             return NO_BYTES;
         }
-        long alignedStart = segment.alignedStart();
-        long alignedEnd = segment.alignedEnd();
-        int baseLength = Math.toIntExact(segment.alignedLongsCount());
-        int tailLength = segment.tailLength();
-        int longSlots = baseLength;
-        long[] data = new long[longSlots];
-        if (tailLength == 0 || segment.underlyingSize() - alignedEnd > 8) {
-            MemorySegment.copy(
-                segment.memorySegment(),
-                JAVA_LONG,
-                alignedStart,
-                data,
-                0,
-                longSlots
-            );
-        } else {
-            MemorySegment.copy(
-                segment.memorySegment(),
-                JAVA_LONG,
-                alignedStart,
-                data,
-                0,
-                longSlots - 1
-            );
-            data[longSlots] = segment.tail();
-        }
         byte[] bytes = new byte[length];
-        int headStart = Math.toIntExact(segment.headStart());
-        int firstLong;
-        int headLen = ALIGNMENT_INT - headStart;
-        int position = 0;
-        if (headStart > 0) {
+
+        long alignedStart = startIndex - startIndex % ALIGNMENT_INT;
+        long alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+
+        int headOffset = (int) (startIndex - alignedStart);
+        int tailLength = (int) (endIndex - alignedEnd);
+
+        int headLength = Math.min(length, headOffset > 0 ? ALIGNMENT_INT - headOffset : 0);
+
+        long head = segment.head();
+        Bits.transferDataTo(head, 0, headLength, bytes);
+
+        if (length == headLength) {
+            return bytes;
+        }
+
+        long tail = segment.tail();
+        Bits.transferDataTo(tail, length - tailLength, tailLength, bytes);
+
+        if (length == headLength + tailLength) {
+            return bytes;
+        }
+
+        int longsBetween = length - tailLength - headLength;
+        long headBump = alignedStart + (headOffset > 0 ? ALIGNMENT : 0);
+        for (int i = 0; i < longsBetween; i += ALIGNMENT_INT) {
             Bits.transferDataTo(
-                data[0] >> headStart * ALIGNMENT,
-                0,
-                Math.min(length, headLen),
+                memorySegment.get(
+                    JAVA_LONG,
+                    headBump + i
+                ),
+                headLength + i,
                 bytes
             );
-            firstLong = 1;
-            position = headLen;
-        } else {
-            firstLong = 0;
-        }
-        int longCount = longSlots - (tailLength > 0 ? 1 : 0);
-        for (int l = firstLong; l < longCount; l++) {
-            Bits.transferDataTo(data[l], position, bytes);
-            position += ALIGNMENT_INT;
-        }
-        int remainder = length - position;
-        if (remainder > 0) {
-            Bits.transferDataTo(data[longCount], position, remainder, bytes);
         }
         return bytes;
     }
@@ -292,7 +273,7 @@ public final class LineSegments {
     public static byte[] asBytes(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
         if (length == 0) {
-            return null;
+            return NO_BYTES;
         }
         byte[] string = new byte[length];
         int headLen = segment.headLength();
