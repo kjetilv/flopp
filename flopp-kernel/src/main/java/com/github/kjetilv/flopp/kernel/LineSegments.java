@@ -226,6 +226,7 @@ public final class LineSegments {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
         MemorySegment memorySegment = segment.memorySegment();
+        long underlyingSize = segment.underlyingSize();
 
         int length = (int) (endIndex - startIndex);
         if (length == 0) {
@@ -241,14 +242,18 @@ public final class LineSegments {
 
         int headLength = Math.min(length, headOffset > 0 ? ALIGNMENT_INT - headOffset : 0);
 
-        long head = segment.head();
+        long head = underlyingSize - startIndex < ALIGNMENT
+            ? MemorySegments.readHead(memorySegment, startIndex, headLength)
+            : segment.memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
         Bits.transferDataTo(head, 0, headLength, bytes);
 
         if (length == headLength) {
             return bytes;
         }
 
-        long tail = segment.tail();
+        long tail = underlyingSize - endIndex < ALIGNMENT
+            ? MemorySegments.readTail(memorySegment, endIndex, tailLength)
+            : memorySegment.get(JAVA_LONG_UNALIGNED, alignedEnd);
         Bits.transferDataTo(tail, length - tailLength, tailLength, bytes);
 
         if (length == headLength + tailLength) {
