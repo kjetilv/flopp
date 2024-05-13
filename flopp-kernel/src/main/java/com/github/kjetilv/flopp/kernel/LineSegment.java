@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
@@ -96,7 +97,11 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default String asString() {
-        return LineSegments.asString(this);
+        return new String(LineSegments.fromLongBytes(this), StandardCharsets.UTF_8);
+    }
+
+    default String asString(byte[] buffer) {
+        return new String(LineSegments.fromLongBytes(this, buffer), 0, (int)length(), StandardCharsets.UTF_8);
     }
 
     default String asString(int length) {

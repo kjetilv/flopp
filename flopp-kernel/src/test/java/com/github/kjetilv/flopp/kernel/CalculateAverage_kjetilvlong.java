@@ -148,23 +148,22 @@ public final class CalculateAverage_kjetilvlong {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
         Partitioning partitioning = Partitioning.create(
-            Runtime.getRuntime().availableProcessors(),
-            shape.longestLine())
+                Runtime.getRuntime().availableProcessors(),
+                shape.longestLine()
+            )
             .scaled(2);
         CsvFormat format = new CsvFormat.Simple(';', 2);
-        Reader reader = Readers.create(
-            Column.ofString("station", 1),
-            Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
-        );
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
-                chunks,
-                chunks,
-                0, TimeUnit.NANOSECONDS,
-                new LinkedBlockingQueue<>(chunks)
-            )
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
+                //new ForkJoinPool(Runtime.getRuntime().availableProcessors())
+//                new ThreadPoolExecutor(
+//                    chunks,
+//                    chunks,
+//                    0, TimeUnit.NANOSECONDS,
+//                    new LinkedBlockingQueue<>(chunks)
+//                )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
@@ -172,6 +171,10 @@ public final class CalculateAverage_kjetilvlong {
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
+                            Reader reader = Readers.create(
+                                Column.ofString("station", 1, new byte[128]),
+                                Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
+                            );
                             Map<String, Result> m = Maps.ofSize(512);
                             reader.read(splitter, columns ->
                                 m.compute(
@@ -401,20 +404,20 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static int parseValue(LineSegment segment) {
-        long value = 0;
-        long pos = 1;
+        int value = 0;
+        int pos = 1;
         long head = segment.head();
-        int intExact = Math.toIntExact(segment.length());
-        for (int i = intExact - 1; i >= 0; i--) {
-            int shift = i * 8;
+        long len = segment.length();
+        for (long i = len - 1; i >= 0; i--) {
+            long shift = i * 8;
             long b = head >> shift & 0xFF;
             if (b == '.') {
                 continue;
             }
             if (b == '-') {
-                return (int) value * -1;
+                return value * -1;
             }
-            long j = b - '0';
+            int j = (int)(b - '0');
             value += j * pos;
             pos *= 10;
         }
@@ -461,5 +464,5 @@ public final class CalculateAverage_kjetilvlong {
         private static double round(double value) {
             return Math.round(value) / 10.0;
         }
-}
+    }
 }

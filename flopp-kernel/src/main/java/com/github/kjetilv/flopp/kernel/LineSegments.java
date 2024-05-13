@@ -202,7 +202,43 @@ public final class LineSegments {
     }
 
     public static String asString(LineSegment segment) {
-        return new String(fromLongBytes(segment), StandardCharsets.UTF_8);
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        int length = (int) (endIndex - startIndex);
+
+        MemorySegment memorySegment = segment.memorySegment();
+        long underlyingSize = segment.underlyingSize();
+
+        return new String(
+            fromLongBytes(
+                memorySegment,
+                startIndex,
+                endIndex,
+                length,
+                new byte[length],
+                underlyingSize
+            ),
+            StandardCharsets.UTF_8
+        );
+    }
+
+    public static String asString(LineSegment segment, byte[] buffer) {
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        int length = (int) (endIndex - startIndex);
+
+        MemorySegment memorySegment = segment.memorySegment();
+        long underlyingSize = segment.underlyingSize();
+
+        byte[] bytes = fromLongBytes(
+            memorySegment,
+            startIndex,
+            endIndex,
+            length,
+            buffer,
+            underlyingSize
+        );
+        return new String(bytes, 0, length, StandardCharsets.UTF_8);
     }
 
     public static byte[] simpleBytes(LineSegment segment) {
@@ -222,57 +258,40 @@ public final class LineSegments {
         return bytes;
     }
 
+    public static byte[] fromLongBytes(LineSegment segment, byte[] buffer) {
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        int length = (int) (endIndex - startIndex);
+
+        MemorySegment memorySegment = segment.memorySegment();
+        long underlyingSize = memorySegment.byteSize();
+
+        return fromLongBytes(
+            memorySegment,
+            startIndex,
+            endIndex,
+            length,
+            buffer,
+            underlyingSize
+        );
+    }
+
     public static byte[] fromLongBytes(LineSegment segment) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
-        MemorySegment memorySegment = segment.memorySegment();
-        long underlyingSize = segment.underlyingSize();
-
         int length = (int) (endIndex - startIndex);
-        if (length == 0) {
-            return NO_BYTES;
-        }
-        byte[] bytes = new byte[length];
 
-        long alignedStart = startIndex - startIndex % ALIGNMENT_INT;
-        long alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+        MemorySegment memorySegment = segment.memorySegment();
+        long underlyingSize = memorySegment.byteSize();
 
-        int headOffset = (int) (startIndex - alignedStart);
-        int tailLength = (int) (endIndex - alignedEnd);
-
-        int headLength = Math.min(length, headOffset > 0 ? ALIGNMENT_INT - headOffset : 0);
-
-        long head = underlyingSize - startIndex < ALIGNMENT
-            ? MemorySegments.readHead(memorySegment, startIndex, headLength)
-            : segment.memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
-        Bits.transferDataTo(head, 0, headLength, bytes);
-
-        if (length == headLength) {
-            return bytes;
-        }
-
-        long tail = underlyingSize - endIndex < ALIGNMENT
-            ? MemorySegments.readTail(memorySegment, endIndex, tailLength)
-            : memorySegment.get(JAVA_LONG_UNALIGNED, alignedEnd);
-        Bits.transferDataTo(tail, length - tailLength, tailLength, bytes);
-
-        if (length == headLength + tailLength) {
-            return bytes;
-        }
-
-        int longsBetween = length - tailLength - headLength;
-        long headBump = alignedStart + (headOffset > 0 ? ALIGNMENT : 0);
-        for (int i = 0; i < longsBetween; i += ALIGNMENT_INT) {
-            Bits.transferDataTo(
-                memorySegment.get(
-                    JAVA_LONG,
-                    headBump + i
-                ),
-                headLength + i,
-                bytes
-            );
-        }
-        return bytes;
+        return fromLongBytes(
+            memorySegment,
+            startIndex,
+            endIndex,
+            length,
+            new byte[length],
+            underlyingSize
+        );
     }
 
     public static byte[] asBytes(LineSegment segment) {
@@ -284,7 +303,7 @@ public final class LineSegments {
         int headLen = segment.headLength();
         if (headLen > 0) {
             long data = segment.head(false);
-            Bits.transferDataTo(data, 0, Math.min(length, headLen), string);
+            Bits.transferLimitedDataTo(data, 0, Math.min(length, headLen), string);
         }
         if (length > headLen) {
             long alignedStart = segment.alignedStart();
@@ -303,7 +322,7 @@ public final class LineSegments {
             }
             if (tailLen > 0) {
                 long data = readTail(segment, memorySegment, length, endIndex, tailLen, false);
-                Bits.transferDataTo(data, transferOffset, tailLen, string);
+                Bits.transferLimitedDataTo(data, transferOffset, tailLen, string);
             }
         }
         return string;
@@ -361,6 +380,70 @@ public final class LineSegments {
     static final long ALIGNMENT = 8L;
 
     static final int ALIGNMENT_INT = 8;
+
+    private static byte[] fromLongBytes(
+        MemorySegment memorySegment,
+        long startIndex,
+        long endIndex,
+        int length,
+        byte[] target,
+        long underlyingSize
+    ) {
+        long alignedStart = startIndex - startIndex % ALIGNMENT_INT;
+        long alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+
+        int headOffset = (int) (startIndex - alignedStart);
+        int tailLength = (int) (endIndex - alignedEnd);
+
+        int headLength = Math.min(length, headOffset > 0 ? ALIGNMENT_INT - headOffset : 0);
+
+        if (underlyingSize - startIndex < ALIGNMENT_INT) { // Bumping against start
+            long head = MemorySegments.readHead(
+                memorySegment,
+                startIndex,
+                headLength
+            );
+            Bits.transferLimitedDataTo(head, 0, headLength, target);
+        } else {
+            long head = memorySegment.get(JAVA_LONG_UNALIGNED, startIndex);
+            if (length < ALIGNMENT) {
+                Bits.transferLimitedDataTo(head, 0, headLength, target);
+            } else {
+                Bits.transferDataTo(head, 0, target);
+            }
+        }
+
+        if (length == headLength) {
+            return target;
+        }
+
+        if (endIndex - ALIGNMENT_INT < 0) { // Bumping against end
+            long tail = MemorySegments.readTail(memorySegment, endIndex, tailLength);
+            Bits.transferLimitedDataTo(tail, length - tailLength, tailLength, target);
+        } else {
+            long tail = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT_INT);
+            if (length < ALIGNMENT) {
+                long adjustedTail = tail >> (ALIGNMENT_INT - tailLength) * ALIGNMENT_INT;
+                Bits.transferLimitedDataTo(adjustedTail, length - tailLength, tailLength, target);
+            } else {
+                Bits.transferDataTo(tail, length - ALIGNMENT_INT, target);
+            }
+        }
+
+        int longsBetween = length - tailLength - headLength;
+        long headBump = alignedStart + (headOffset > 0 ? ALIGNMENT_INT : 0);
+        for (int index = 0; index < longsBetween; index += ALIGNMENT_INT) {
+            Bits.transferDataTo(
+                memorySegment.get(
+                    JAVA_LONG,
+                    headBump + index
+                ),
+                headLength + index,
+                target
+            );
+        }
+        return target;
+    }
 
     private static long readTail(
         LineSegment segment,

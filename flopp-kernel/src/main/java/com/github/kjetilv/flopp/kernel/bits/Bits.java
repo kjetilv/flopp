@@ -81,7 +81,7 @@ public final class Bits {
     }
 
     @SuppressWarnings("DuplicatedCode")
-    public static void transferDataTo(long[] data, int offset, byte[] target) {
+    public static void transferMultipleDataTo(long[] data, int offset, byte[] target) {
         int firstLong;
         int longCount;
         int headStart = offset % ALIGNMENT;
@@ -89,7 +89,7 @@ public final class Bits {
         int position = 0;
         int length = target.length;
         if (offset > 0) {
-            transferDataTo(data[0], 0, headLen, target);
+            transferLimitedDataTo(data[0], 0, headLen, target);
             firstLong = 1;
             longCount = (length - headLen) / ALIGNMENT;
             position = headLen;
@@ -103,7 +103,7 @@ public final class Bits {
         }
         int remainder = length - position;
         if (remainder > 0) {
-            transferDataTo(data[longCount], position, remainder, target);
+            transferLimitedDataTo(data[longCount], position, remainder, target);
         }
     }
 
@@ -124,50 +124,9 @@ public final class Bits {
      * @param length How many bytes to move from long into array
      * @param target Array
      */
-    @SuppressWarnings("DuplicatedCode")
-    public static void transferDataTo(long data, int offset, int length, byte[] target) {
-        switch (length) {
-            case 1 -> target[offset] = (byte) (data & 0xFF);
-            case 2 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-            }
-            case 3 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-                target[offset + 2] = (byte) (data >> 16 & 0xFF);
-            }
-            case 4 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-                target[offset + 2] = (byte) (data >> 16 & 0xFF);
-                target[offset + 3] = (byte) (data >> 24 & 0xFF);
-            }
-            case 5 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-                target[offset + 2] = (byte) (data >> 16 & 0xFF);
-                target[offset + 3] = (byte) (data >> 24 & 0xFF);
-                target[offset + 4] = (byte) (data >> 32 & 0xFF);
-            }
-            case 6 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-                target[offset + 2] = (byte) (data >> 16 & 0xFF);
-                target[offset + 3] = (byte) (data >> 24 & 0xFF);
-                target[offset + 4] = (byte) (data >> 32 & 0xFF);
-                target[offset + 5] = (byte) (data >> 40 & 0xFF);
-            }
-            case 7 -> {
-                target[offset] = (byte) (data & 0xFF);
-                target[offset + 1] = (byte) (data >> 8 & 0xFF);
-                target[offset + 2] = (byte) (data >> 16 & 0xFF);
-                target[offset + 3] = (byte) (data >> 24 & 0xFF);
-                target[offset + 4] = (byte) (data >> 32 & 0xFF);
-                target[offset + 5] = (byte) (data >> 40 & 0xFF);
-                target[offset + 6] = (byte) (data >> 48 & 0xFF);
-            }
-            case 8 -> transferDataTo(data, offset, target);
+    public static void transferLimitedDataTo(long data, int offset, int length, byte[] target) {
+        for (int i = 0; i < length; i++) {
+            target[offset + i] = (byte) (data >> ALIGNMENT * i & 0xFF);
         }
     }
 

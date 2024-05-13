@@ -74,7 +74,7 @@ class BitsTest {
         long l = 0x0A320A330A340A35L;
         byte[] bytes = Bits.toBytes(l);
         byte[] alsoBytes = new byte[8];
-        Bits.transferDataTo(l, 0, 8, alsoBytes);
+        Bits.transferLimitedDataTo(l, 0, 8, alsoBytes);
         assertThat(alsoBytes).containsExactly(bytes);
     }
 }
