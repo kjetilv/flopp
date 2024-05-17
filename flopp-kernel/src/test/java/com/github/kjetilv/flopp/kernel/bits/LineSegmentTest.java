@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.MemorySegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -65,6 +64,8 @@ class LineSegmentTest {
         assertThat(LineSegments.asString(lineSegment))
             .describedAs("Should self-describe")
             .isEqualTo(string);
+//        assertSub(lineSegment, string, 1, 81);
+        assertSub(lineSegment, string, 8, 81);
         assertSub(lineSegment, string, 9, 24);
         assertSub(lineSegment, string, 75, 80);
         assertSub(lineSegment, string, 8, 16);

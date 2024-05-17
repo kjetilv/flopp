@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;

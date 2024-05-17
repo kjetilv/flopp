@@ -1,17 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.github.kjetilv.flopp.kernel.MemorySegments.of;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -28,7 +26,7 @@ final class BitwisePartitionHandler implements Runnable {
 
     private final long limit;
 
-    private final long physicalLimit;
+    private final long logicalLimit;
 
     private long lineStart;
 
@@ -40,13 +38,29 @@ final class BitwisePartitionHandler implements Runnable {
         BitwisePartitioned.Action action,
         Supplier<BitwisePartitionHandler> next
     ) {
+        this(
+            partition,
+            Objects.requireNonNull(segment, "segment"),
+            segment.byteSize(),
+            action,
+            next
+        );
+    }
+
+    BitwisePartitionHandler(
+        Partition partition,
+        MemorySegment segment,
+        long logicalSize,
+        BitwisePartitioned.Action action,
+        Supplier<BitwisePartitionHandler> next
+    ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = Objects.requireNonNull(segment, "segment");
         this.action = Objects.requireNonNull(action, "action");
         this.next = next;
 
         this.limit = this.partition.length();
-        this.physicalLimit = this.segment.byteSize();
+        this.logicalLimit = logicalSize;
     }
 
     @Override
@@ -124,8 +138,8 @@ final class BitwisePartitionHandler implements Runnable {
         if (tail > 0) {
             processTail(tail);
         }
-        if (lineStart < physicalLimit) {
-            emitAndAdvance(physicalLimit);
+        if (lineStart < logicalLimit) {
+            emitAndAdvance(logicalLimit);
         }
     }
 
@@ -142,8 +156,8 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private boolean processedOverflow() {
-        long tail = physicalLimit % ALIGNMENT;
-        long lastAligned = physicalLimit - tail;
+        long tail = logicalLimit % ALIGNMENT;
+        long lastAligned = logicalLimit - tail;
         while (offset < lastAligned) {
             long bytes = loadLong();
             long mask = mask(bytes);
@@ -167,13 +181,13 @@ final class BitwisePartitionHandler implements Runnable {
     private void processTail(long tail) {
         long mask = mask(loadTail(tail));
         if (mask == 0) { // Tail did not end in newline, send what we got
-            emitAndAdvance(physicalLimit);
+            emitAndAdvance(logicalLimit);
         } else {
             do { // Newlines spotted, ship lines
                 mask = shipNextLine(mask);
             } while (mask != 0);
-            if (lineStart < physicalLimit) { // Tail did not end in newline, send what we got
-                emitAndAdvance(physicalLimit);
+            if (lineStart < logicalLimit) { // Tail did not end in newline, send what we got
+                emitAndAdvance(logicalLimit);
             }
         }
     }
@@ -203,7 +217,7 @@ final class BitwisePartitionHandler implements Runnable {
     private Long initializeFrom(long bytes) {
         long mask = bytes;
         long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
-        if (partition.last() && start + 1 == physicalLimit) {
+        if (partition.last() && start + 1 == logicalLimit) {
             return null; // First linebreak was the last
         }
         mask &= CLEARED[Math.toIntExact(start - offset)];
@@ -249,7 +263,7 @@ final class BitwisePartitionHandler implements Runnable {
     private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
         long trailing = limit - lineStart;
         int length = Math.toIntExact(trailing + nextPrefix);
-        MemorySegment buffer = of(ByteBuffer.allocateDirect(length));
+        MemorySegment buffer = MemorySegments.ofLength(length);
         copy(this.segment, JAVA_BYTE, lineStart, buffer, JAVA_BYTE, 0, trailing);
         copy(next.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, trailing, nextPrefix);
         emitMerged(buffer, length, next.partition.last());
@@ -324,8 +338,8 @@ final class BitwisePartitionHandler implements Runnable {
             next = nextNext;
             collector.add(next);
             long lo = 0L;
-            long tail = next.physicalLimit % ALIGNMENT;
-            long lastOffset = next.physicalLimit - tail;
+            long tail = next.logicalLimit % ALIGNMENT;
+            long lastOffset = next.logicalLimit - tail;
             while (lo < lastOffset) {
                 long prebyte = next.segment.get(JAVA_LONG, lo);
                 long premask = mask(prebyte);

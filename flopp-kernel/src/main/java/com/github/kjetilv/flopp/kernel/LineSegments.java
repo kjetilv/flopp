@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
@@ -46,18 +47,18 @@ public final class LineSegments {
         long alignedStart = segment.alignedStart();
         long alignedEnd = segment.alignedEnd();
         long endIndex = segment.endIndex();
-        long tailLen = endIndex % ALIGNMENT;
+        long tailLen = endIndex % MemorySegments.ALIGNMENT;
         long longs = segment.fullLongCount() + (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         if (headLen > 0) {
             long data = segment.head(true);
             hashCode = data * 31L ^ (longs == 0 ? 1 : longs);
         }
-        if (length > ALIGNMENT) {
+        if (length > MemorySegments.ALIGNMENT) {
             MemorySegment memorySegment = segment.memorySegment();
-            long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
-            for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
+            long startPosition = alignedStart + (headLen == 0 ? 0 : MemorySegments.ALIGNMENT);
+            for (long pos = startPosition; pos < alignedEnd; pos += MemorySegments.ALIGNMENT) {
                 long data = memorySegment.get(JAVA_LONG, pos);
-                hashCode += (data * 31L) ^ (longs - (pos / ALIGNMENT));
+                hashCode += (data * 31L) ^ (longs - (pos / MemorySegments.ALIGNMENT));
             }
             if (tailLen > 0) {
                 hashCode += readTail(segment, memorySegment, length, endIndex, tailLen, false) * 31L;
@@ -68,8 +69,8 @@ public final class LineSegments {
 
     @SuppressWarnings("ConstantValue")
     public static int compare(LineSegment segment1, LineSegment segment2) {
-        LongSupplier longSupplier1 = segment1.longSupplier(true);
-        LongSupplier longSupplier2 = segment2.longSupplier(true);
+        LongSupplier longSupplier1 = longSupplier(segment1, true);
+        LongSupplier longSupplier2 = longSupplier(segment2, true);
         long length1 = segment1.shiftedLongsCount();
         long length2 = segment2.shiftedLongsCount();
         long length = Math.min(length1, length2);
@@ -122,7 +123,7 @@ public final class LineSegments {
         long alignedEnd = segment.alignedEnd();
         return StreamSupport.longStream(
             new Spliterators.AbstractLongSpliterator(
-                length / ALIGNMENT + 2,
+                length / MemorySegments.ALIGNMENT + 2,
                 IMMUTABLE | ORDERED
             ) {
 
@@ -134,11 +135,11 @@ public final class LineSegments {
                     if (length > headLen) {
                         long endIndex = segment.endIndex();
                         MemorySegment memorySegment = segment.memorySegment();
-                        long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
-                        for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
+                        long startPosition = alignedStart + (headLen == 0 ? 0 : MemorySegments.ALIGNMENT);
+                        for (long pos = startPosition; pos < alignedEnd; pos += MemorySegments.ALIGNMENT) {
                             action.accept(memorySegment.get(JAVA_LONG, pos));
                         }
-                        int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+                        int tailLen = Math.toIntExact(endIndex % MemorySegments.ALIGNMENT);
                         if (tailLen > 0) {
                             action.accept(readTail(segment, memorySegment, length, endIndex, tailLen, true));
                         }
@@ -155,30 +156,30 @@ public final class LineSegments {
         if (length == 0) {
             return LongStream.empty();
         }
-        if (length < ALIGNMENT) {
+        if (length < MemorySegments.ALIGNMENT) {
             return LongStream.of(segment.head(true));
         }
         int headLen = segment.headLength();
         if (headLen == 0) {
             return alignedLongs(segment);
         }
-        int tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
-        int headShift = Math.toIntExact(headLen * ALIGNMENT);
+        int tailShift = Math.toIntExact((MemorySegments.ALIGNMENT - headLen) * MemorySegments.ALIGNMENT);
+        int headShift = Math.toIntExact(headLen * MemorySegments.ALIGNMENT);
         long alignedStart = segment.alignedStart();
         long alignedEnd = segment.alignedEnd();
         long endIndex = segment.endIndex();
-        long tailLen = endIndex % ALIGNMENT;
+        long tailLen = endIndex % MemorySegments.ALIGNMENT;
         MemorySegment memorySegment = segment.memorySegment();
         return StreamSupport.longStream(
             new Spliterators.AbstractLongSpliterator(
-                length / ALIGNMENT + 2,
+                length / MemorySegments.ALIGNMENT + 2,
                 IMMUTABLE | ORDERED
             ) {
 
                 @Override
                 public boolean tryAdvance(LongConsumer action) {
                     long data = segment.head(true);
-                    long position = alignedStart + ALIGNMENT;
+                    long position = alignedStart + MemorySegments.ALIGNMENT;
                     while (position < alignedEnd) {
                         try {
                             long alignedData = memorySegment.get(JAVA_LONG, position);
@@ -186,7 +187,7 @@ public final class LineSegments {
                             action.accept(data);
                             data = alignedData >> tailShift;
                         } finally {
-                            position += ALIGNMENT;
+                            position += MemorySegments.ALIGNMENT;
                         }
                     }
                     if (tailLen > 0) {
@@ -202,43 +203,54 @@ public final class LineSegments {
     }
 
     public static String asString(LineSegment segment) {
+        return asString(segment, (Charset) null);
+    }
+
+    public static String asString(LineSegment segment, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
-        int length = (int) (endIndex - startIndex);
-
         MemorySegment memorySegment = segment.memorySegment();
-        long underlyingSize = segment.underlyingSize();
-
-        return new String(
-            fromLongBytes(
-                memorySegment,
-                startIndex,
-                endIndex,
-                length,
-                new byte[length],
-                underlyingSize
-            ),
-            StandardCharsets.UTF_8
+        return MemorySegments.fromEdgeLong(
+            memorySegment,
+            startIndex,
+            endIndex,
+            null,
+            charset
         );
     }
 
     public static String asString(LineSegment segment, byte[] buffer) {
+        return asString(segment, buffer, null);
+    }
+
+    public static String asString(LineSegment segment, byte[] buffer, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
-        int length = (int) (endIndex - startIndex);
-
         MemorySegment memorySegment = segment.memorySegment();
-        long underlyingSize = segment.underlyingSize();
-
-        byte[] bytes = fromLongBytes(
+        return MemorySegments.fromEdgeLong(
             memorySegment,
             startIndex,
             endIndex,
-            length,
             buffer,
-            underlyingSize
+            charset
         );
-        return new String(bytes, 0, length, StandardCharsets.UTF_8);
+    }
+
+    public static String asBoundedString(LineSegment segment, byte[] buffer) {
+        return asBoundedString(segment, buffer, null);
+    }
+
+    public static String asBoundedString(LineSegment segment, byte[] buffer, Charset charset) {
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        MemorySegment memorySegment = segment.memorySegment();
+        return MemorySegments.fromLongsWithinBounds(
+            memorySegment,
+            startIndex,
+            endIndex,
+            buffer,
+            charset
+        );
     }
 
     public static byte[] simpleBytes(LineSegment segment) {
@@ -258,39 +270,22 @@ public final class LineSegments {
         return bytes;
     }
 
-    public static byte[] fromLongBytes(LineSegment segment, byte[] buffer) {
-        long startIndex = segment.startIndex();
-        long endIndex = segment.endIndex();
-        int length = (int) (endIndex - startIndex);
-
-        MemorySegment memorySegment = segment.memorySegment();
-        long underlyingSize = memorySegment.byteSize();
-
-        return fromLongBytes(
-            memorySegment,
-            startIndex,
-            endIndex,
-            length,
-            buffer,
-            underlyingSize
-        );
+    public static String fromLongBytes(LineSegment segment) {
+        return fromLongBytes(segment, null);
     }
 
-    public static byte[] fromLongBytes(LineSegment segment) {
+    public static String fromLongBytes(LineSegment segment, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
-        int length = (int) (endIndex - startIndex);
 
         MemorySegment memorySegment = segment.memorySegment();
-        long underlyingSize = memorySegment.byteSize();
 
-        return fromLongBytes(
+        return MemorySegments.fromEdgeLong(
             memorySegment,
             startIndex,
             endIndex,
-            length,
-            new byte[length],
-            underlyingSize
+            null,
+            charset
         );
     }
 
@@ -307,18 +302,18 @@ public final class LineSegments {
         }
         if (length > headLen) {
             long alignedStart = segment.alignedStart();
-            long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
+            long longs = (segment.alignedEnd() - alignedStart) / MemorySegments.ALIGNMENT;
             int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
-            int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+            int tailLen = Math.toIntExact(endIndex % MemorySegments.ALIGNMENT);
             MemorySegment memorySegment = segment.memorySegment();
             int transferOffset = headLen;
-            long position = alignedStart + firstLong * ALIGNMENT;
+            long position = alignedStart + firstLong * MemorySegments.ALIGNMENT;
             for (int i = firstLong; i < longs; i++) {
                 long data = memorySegment.get(JAVA_LONG, position);
                 Bits.transferDataTo(data, transferOffset, string);
-                transferOffset += ALIGNMENT_INT;
-                position += ALIGNMENT;
+                transferOffset += MemorySegments.ALIGNMENT_INT;
+                position += MemorySegments.ALIGNMENT;
             }
             if (tailLen > 0) {
                 long data = readTail(segment, memorySegment, length, endIndex, tailLen, false);
@@ -357,7 +352,7 @@ public final class LineSegments {
     }
 
     public static LineSegment of(long l) {
-        return of(l, Math.toIntExact(ALIGNMENT));
+        return of(l, Math.toIntExact(MemorySegments.ALIGNMENT));
     }
 
     public static LineSegment of(long l, int len) {
@@ -377,74 +372,6 @@ public final class LineSegments {
 
     public static final byte[] NO_BYTES = new byte[0];
 
-    static final long ALIGNMENT = 8L;
-
-    static final int ALIGNMENT_INT = 8;
-
-    private static byte[] fromLongBytes(
-        MemorySegment memorySegment,
-        long startIndex,
-        long endIndex,
-        int length,
-        byte[] target,
-        long underlyingSize
-    ) {
-        long alignedStart = startIndex - startIndex % ALIGNMENT_INT;
-        long alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
-
-        int headOffset = (int) (startIndex - alignedStart);
-        int tailLength = (int) (endIndex - alignedEnd);
-
-        int headLength = Math.min(length, headOffset > 0 ? ALIGNMENT_INT - headOffset : 0);
-
-        if (underlyingSize - startIndex < ALIGNMENT_INT) { // Bumping against start
-            long head = MemorySegments.readHead(
-                memorySegment,
-                startIndex,
-                headLength
-            );
-            Bits.transferLimitedDataTo(head, 0, headLength, target);
-        } else {
-            long head = memorySegment.get(JAVA_LONG_UNALIGNED, startIndex);
-            if (length < ALIGNMENT) {
-                Bits.transferLimitedDataTo(head, 0, headLength, target);
-            } else {
-                Bits.transferDataTo(head, 0, target);
-            }
-        }
-
-        if (length == headLength) {
-            return target;
-        }
-
-        if (endIndex - ALIGNMENT_INT < 0) { // Bumping against end
-            long tail = MemorySegments.readTail(memorySegment, endIndex, tailLength);
-            Bits.transferLimitedDataTo(tail, length - tailLength, tailLength, target);
-        } else {
-            long tail = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT_INT);
-            if (length < ALIGNMENT) {
-                long adjustedTail = tail >> (ALIGNMENT_INT - tailLength) * ALIGNMENT_INT;
-                Bits.transferLimitedDataTo(adjustedTail, length - tailLength, tailLength, target);
-            } else {
-                Bits.transferDataTo(tail, length - ALIGNMENT_INT, target);
-            }
-        }
-
-        int longsBetween = length - tailLength - headLength;
-        long headBump = alignedStart + (headOffset > 0 ? ALIGNMENT_INT : 0);
-        for (int index = 0; index < longsBetween; index += ALIGNMENT_INT) {
-            Bits.transferDataTo(
-                memorySegment.get(
-                    JAVA_LONG,
-                    headBump + index
-                ),
-                headLength + index,
-                target
-            );
-        }
-        return target;
-    }
-
     private static long readTail(
         LineSegment segment,
         MemorySegment memorySegment,
@@ -453,11 +380,11 @@ public final class LineSegments {
         long tailLen,
         boolean truncate
     ) {
-        if (length < ALIGNMENT) {
+        if (length < MemorySegments.ALIGNMENT) {
             return segment.tail(truncate);
         }
-        long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
-        long shift = ALIGNMENT * (ALIGNMENT - tailLen);
+        long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - MemorySegments.ALIGNMENT);
+        long shift = MemorySegments.ALIGNMENT * (MemorySegments.ALIGNMENT - tailLen);
         return data >> shift;
     }
 
@@ -489,7 +416,7 @@ public final class LineSegments {
             this.alignedEnd = this.segment.alignedEnd();
             this.headLen = this.segment.headLength();
             this.endIndex = this.segment.endIndex();
-            this.tailLen = Math.toIntExact(this.endIndex % ALIGNMENT);
+            this.tailLen = Math.toIntExact(this.endIndex % MemorySegments.ALIGNMENT);
 
             this.position = this.alignedStart;
         }
@@ -500,21 +427,21 @@ public final class LineSegments {
                 try {
                     return segment.head(true);
                 } finally {
-                    position += ALIGNMENT;
+                    position += MemorySegments.ALIGNMENT;
                 }
             }
             if (position < alignedEnd) {
                 try {
                     return memorySegment.get(JAVA_LONG, position);
                 } finally {
-                    position += ALIGNMENT;
+                    position += MemorySegments.ALIGNMENT;
                 }
             }
             if (position == alignedEnd && tailLen > 0) {
                 try {
                     return readTail(segment, memorySegment, length, endIndex, tailLen, true);
                 } finally {
-                    position += ALIGNMENT;
+                    position += MemorySegments.ALIGNMENT;
                 }
             }
             return 0x0L;
@@ -548,20 +475,20 @@ public final class LineSegments {
             this.memorySegment = segment.memorySegment();
             this.length = length;
             this.endIndex = segment.endIndex();
-            this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+            this.tailLen = Math.toIntExact(endIndex % MemorySegments.ALIGNMENT);
 
-            this.headShift = Math.toIntExact(headLen * ALIGNMENT);
-            this.tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
+            this.headShift = Math.toIntExact(headLen * MemorySegments.ALIGNMENT);
+            this.tailShift = Math.toIntExact((MemorySegments.ALIGNMENT - headLen) * MemorySegments.ALIGNMENT);
 
             this.alignedEnd = segment.alignedEnd();
 
             this.data = segment.head(true);
-            this.position = segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
+            this.position = segment.alignedStart() + (headLen > 0 ? MemorySegments.ALIGNMENT : 0);
         }
 
         @Override
         public long getAsLong() {
-            if (length < ALIGNMENT) {
+            if (length < MemorySegments.ALIGNMENT) {
                 return data;
             }
             if (position < alignedEnd) {
@@ -571,7 +498,7 @@ public final class LineSegments {
                     return data;
                 } finally {
                     data = alignedData >> tailShift;
-                    position += ALIGNMENT;
+                    position += MemorySegments.ALIGNMENT;
                 }
             }
             if (position == this.alignedEnd && tailLen > 0) {
@@ -580,7 +507,7 @@ public final class LineSegments {
                     data |= alignedData << headShift;
                     return data;
                 } finally {
-                    position += ALIGNMENT;
+                    position += MemorySegments.ALIGNMENT;
                 }
             }
             return 0x0L;

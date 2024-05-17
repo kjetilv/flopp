@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.MiddleMan;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
@@ -14,6 +13,7 @@ import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
@@ -27,17 +27,21 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
     private MemorySegment segment;
 
+    private final long logicalSize;
+
     private long underlyingSize;
 
     BitwisePartitionSpliterator(
         Partition partition,
         MemorySegment segment,
+        long logicalSize,
         MiddleMan<BitwisePartitioned.Action> middleMan,
         BitwisePartitionSpliterator next,
         boolean immutable
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.logicalSize = logicalSize;
         this.middleMan = middleMan == null
             ? action -> action
             : middleMan;
@@ -68,6 +72,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         return new BitwisePartitionHandler(
             partition,
             segment,
+            logicalSize,
             action,
             next == null ? null : () -> next.handler(action)
         );
@@ -101,6 +106,16 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             this.startIndex = startIndex;
             this.endIndex = endIndex;
             action.accept(this);
+        }
+
+        @Override
+        public String asString() {
+            return asString(null);
+        }
+
+        @Override
+        public String asString(byte[] buffer) {
+            return MemorySegments.fromLongsWithinBounds(segment, startIndex, endIndex, buffer, UTF_8);
         }
 
         @Override

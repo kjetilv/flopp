@@ -1,30 +1,19 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
 import static java.lang.foreign.ValueLayout.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
-
-    default LongStream alignedLongStream() {
-        return LineSegments.alignedLongs(this);
-    }
-
-    default LongSupplier alignedLongSupplier() {
-        return LineSegments.alignedLongSupplier(this);
-    }
-
-    default LongStream shiftedLongStream() {
-        return LineSegments.shiftedLongs(this);
-    }
 
     default long shiftedLongsCount() {
         long length = length();
@@ -45,6 +34,18 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         }
         long length = (endIndex() - tailLen - (startIndex() + headLen)) / ALIGNMENT;
         return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
+    }
+
+    default LongStream alignedLongStream() {
+        return LineSegments.alignedLongs(this);
+    }
+
+    default LongSupplier alignedLongSupplier() {
+        return LineSegments.alignedLongSupplier(this);
+    }
+
+    default LongStream shiftedLongStream() {
+        return LineSegments.shiftedLongs(this);
     }
 
     default LongStream longStream(boolean shift) {
@@ -97,22 +98,17 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default String asString() {
-        return new String(LineSegments.fromLongBytes(this), StandardCharsets.UTF_8);
+        return LineSegments.asString(this);
     }
 
     default String asString(byte[] buffer) {
-        return new String(LineSegments.fromLongBytes(this, buffer), 0, (int)length(), StandardCharsets.UTF_8);
+        return LineSegments.asString(this, buffer);
     }
 
     default String asString(int length) {
         return LineSegments.asString(this, length);
     }
 
-    /**
-     * The aligned start of this segment. May be ahead of/less-than {@link #startIndex() start index}.
-     *
-     * @return Aligned start
-     */
     default long alignedStart() {
         return startIndex() - headStart();
     }
@@ -238,5 +234,5 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.compare(this, o);
     }
 
-    long ALIGNMENT = LineSegments.ALIGNMENT;
+    long ALIGNMENT = MemorySegments.ALIGNMENT;
 }

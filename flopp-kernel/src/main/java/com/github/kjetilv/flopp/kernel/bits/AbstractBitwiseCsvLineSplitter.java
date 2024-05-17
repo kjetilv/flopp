@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
@@ -85,6 +86,22 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public long headStart() {
         return startIndex % ALIGNMENT;
+    }
+
+    @Override
+    public String asString() {
+        return asString(null);
+    }
+
+    @Override
+    public String asString(byte[] buffer) {
+        return MemorySegments.fromLongsWithinBounds(
+            memorySegment,
+            startIndex,
+            endIndex,
+            buffer,
+            UTF_8
+        );
     }
 
     @Override
