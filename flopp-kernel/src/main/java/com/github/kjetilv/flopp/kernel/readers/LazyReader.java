@@ -51,11 +51,8 @@ final class LazyReader<T> implements Reader {
             });
     }
 
-    private static List<Column<String>> discoverColumns(
-        String header,
-        CsvFormat format
-    ) {
-        String[] headers = header.split(Character.toString(format.separator()));
+    private static List<Column<String>> discoverColumns(String header, CsvFormat format) {
+        String[] headers = format.split(header);
         return IntStream.range(0, headers.length)
             .mapToObj(i ->
                 Column.ofString(headers[i], i + 1))

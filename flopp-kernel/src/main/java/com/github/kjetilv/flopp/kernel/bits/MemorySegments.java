@@ -119,7 +119,7 @@ public final class MemorySegments {
                 : target;
             long data = bytesAt(memorySegment, 0, length);
             Bits.transferLimitedDataTo(data, 0, length, bytes);
-            return new String(bytes, 0, length, charset);
+            return new String(bytes, 0, length, charset == null ? UTF_8 : charset);
         }
         int tailLength = (int) endIndex % ALIGNMENT_INT;
         if (tailLength > 0) {

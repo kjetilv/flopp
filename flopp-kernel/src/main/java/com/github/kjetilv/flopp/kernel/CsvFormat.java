@@ -17,6 +17,14 @@ public sealed interface CsvFormat {
 
     int DEFAULT_COLUMN_COUNT = 128;
 
+    default String[] split(String header) {
+        return header.split(separatorString());
+    }
+
+    default String separatorString() {
+        return Character.toString(separator());
+    }
+
     record Simple(char separator, int columnCount) implements CsvFormat {
 
         @Override
