@@ -1,18 +1,16 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-final class LazyReader<T> implements Reader {
+final class LazyReader<T> implements Reader, Reader.Columns {
 
     @SuppressWarnings("unchecked")
     static Reader create(List<? extends Column<?>> columns) {
@@ -28,10 +26,16 @@ final class LazyReader<T> implements Reader {
         return new LazyReader<>(columnMap);
     }
 
-    private final Map<String, Column<T>> columnMap;
+    private final String[] columnKeys;
+
+    private final Column<?>[] columns;
+
+    private final Map<String, Object> valueMap;
 
     private LazyReader(Map<String, Column<T>> columnMap) {
-        this.columnMap = Objects.requireNonNull(columnMap, "columnMap");
+        this.columnKeys = columnMap.keySet().toArray(String[]::new);
+        this.columns = columnMap.values().toArray(Column[]::new);
+        this.valueMap = Maps.ofSize(columns.length);
     }
 
     @Override
@@ -40,15 +44,16 @@ final class LazyReader<T> implements Reader {
             values.accept(columns(separatedLine)));
     }
 
+    @Override
+    public Object get(String name) {
+        return valueMap.get(name);
+    }
+
     private Columns columns(SeparatedLine separatedLine) {
-        Map<String, Object> valueMap = Maps.ofSize(columnMap.size());
-        return name ->
-            valueMap.computeIfAbsent(name, _ -> {
-                Column<?> column = columnMap.get(name);
-                int columnIndex = column.colunmNo() - 1;
-                LineSegment segment = separatedLine.segment(columnIndex);
-                return column.parser().parse(segment);
-            });
+        for (int i = 0; i < columns.length; i++) {
+            valueMap.put(columnKeys[i], parse(separatedLine, columns[i]));
+        }
+        return this;
     }
 
     private static List<Column<String>> discoverColumns(String header, CsvFormat format) {
@@ -57,6 +62,10 @@ final class LazyReader<T> implements Reader {
             .mapToObj(i ->
                 Column.ofString(headers[i], i + 1))
             .toList();
+    }
+
+    private static <T> T parse(SeparatedLine separatedLine, Column<T> column) {
+        return column.parser().parse(separatedLine.segment(column.colunmNo() - 1));
     }
 
     private static <T> Map<String, Column<T>> columnMap(List<Column<T>> columns) {
