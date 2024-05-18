@@ -32,10 +32,13 @@ final class LazyReader<T> implements Reader, Reader.Columns {
 
     private final Map<String, Object> valueMap;
 
+    private final int length;
+
     private LazyReader(Map<String, Column<T>> columnMap) {
         this.columnKeys = columnMap.keySet().toArray(String[]::new);
         this.columns = columnMap.values().toArray(Column[]::new);
-        this.valueMap = Maps.ofSize(columns.length);
+        this.length = this.columns.length;
+        this.valueMap = Maps.ofSize(this.length);
     }
 
     @Override
@@ -50,7 +53,7 @@ final class LazyReader<T> implements Reader, Reader.Columns {
     }
 
     private Columns columns(SeparatedLine separatedLine) {
-        for (int i = 0; i < columns.length; i++) {
+        for (int i = 0; i < length; i++) {
             valueMap.put(columnKeys[i], parse(separatedLine, columns[i]));
         }
         return this;

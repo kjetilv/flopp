@@ -322,7 +322,8 @@ public final class CalculateAverage_kjetilvlong {
                     splitIndex,
                     ls
                 );
-                String key = ls.asString(splitIndex);
+                String key = ls.
+                    asString(splitIndex);
                 m.compute(
                     key,
                     (_, existing) ->

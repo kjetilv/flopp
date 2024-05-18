@@ -41,4 +41,24 @@ tasks.register<Task>("native-image")
                 project.runCommand(command = it)
             }
         }
+        doLast {
+            val command = Native.image(
+                listOf(
+                    "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar"
+                ).map(
+                    projectDir.toPath()::resolve
+                ).map(
+                    Path::toString
+                ),
+                "com.github.kjetilv.flopp.kernel.CalculateAverage_kjetilvlong",
+                "ca",
+                javaToolchains
+            )
+            command.also {
+                project.logger.lifecycle("Running command: ")
+                project.logger.lifecycle("  ${it.joinToString(" ")}")
+            }.also {
+                project.runCommand(command = it)
+            }
+        }
     }

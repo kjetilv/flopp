@@ -100,7 +100,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
             startIndex,
             endIndex,
             buffer,
-            UTF_8
+            null
         );
     }
 

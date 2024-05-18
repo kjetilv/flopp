@@ -5,11 +5,11 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
 import static java.lang.foreign.ValueLayout.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public interface LineSegment extends Range, Comparable<LineSegment> {
 
@@ -103,6 +103,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default String asString(byte[] buffer) {
         return LineSegments.asString(this, buffer);
+    }
+
+    default String asString(byte[] buffer, Charset charset) {
+        return LineSegments.asString(this, buffer, charset);
     }
 
     default String asString(int length) {
