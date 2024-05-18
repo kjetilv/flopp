@@ -1,5 +1,8 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

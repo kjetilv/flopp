@@ -13,8 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;

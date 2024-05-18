@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="CalculateAverage_kjetilv (mini)" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="graalvm-21" />
-    <option name="MAIN_CLASS_NAME" value="com.github.kjetilv.flopp.kernel.CalculateAverage_kjetilvlong" />
+    <option name="MAIN_CLASS_NAME" value="com.github.kjetilv.flopp.ca.CalculateAverage_kjetilvlong" />
     <module name="flopp.flopp-kernel.test" />
     <option name="PROGRAM_PARAMETERS" value="/home/kjetilv/Development/1brc/measurements.txt" />
     <target name="graalvm@mini:22" />

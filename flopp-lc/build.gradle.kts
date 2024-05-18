@@ -46,7 +46,8 @@ tasks.register<Task>("native-image")
         doLast {
             val command = Native.image(
                 listOf(
-                    "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar"
+                    "../flopp-kernel/build/libs/flopp-kernel-${project.version}.jar",
+                    "build/libs/flopp-lc-${project.version}.jar"
                 ).map(
                     projectDir.toPath()::resolve
                 ).map(
