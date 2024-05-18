@@ -1,5 +1,6 @@
 import com.github.kjetilv.flopp.bld.Native
 import com.github.kjetilv.flopp.bld.Native.runCommand
+import org.gradle.jvm.toolchain.JvmVendorSpec.GRAAL_VM
 import java.nio.file.Path
 
 dependencies {
@@ -14,6 +15,7 @@ dependencies {
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(22))
+        vendor.set(GRAAL_VM)
     }
 }
 
