@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
-@SuppressWarnings({"unused", "StringTemplateMigration"})
+@SuppressWarnings("unused")
 public record Shape(long size, Charset charset, Decor decor, long longestLine) {
 
     public static Shape decor(int header, int footer) {

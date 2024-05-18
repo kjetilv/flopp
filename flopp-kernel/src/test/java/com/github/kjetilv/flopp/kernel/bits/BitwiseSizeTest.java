@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Disabled
-@SuppressWarnings({"SameParameterValue", "StringTemplateMigration"})
+@SuppressWarnings("SameParameterValue")
 public class BitwiseSizeTest {
 
     private ExecutorService readerExec;

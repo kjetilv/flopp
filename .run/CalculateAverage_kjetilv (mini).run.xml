@@ -2,7 +2,7 @@
   <configuration default="false" name="CalculateAverage_kjetilv (mini)" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="graalvm-21" />
     <option name="MAIN_CLASS_NAME" value="com.github.kjetilv.flopp.ca.CalculateAverage_kjetilvlong" />
-    <module name="flopp.flopp-kernel.test" />
+    <module name="flopp.flopp-lc.main" />
     <option name="PROGRAM_PARAMETERS" value="/home/kjetilv/Development/1brc/measurements.txt" />
     <target name="graalvm@mini:22" />
     <option name="VM_PARAMETERS" value="-XX:+UseG1GC -Xmx4G -Xms4G" />

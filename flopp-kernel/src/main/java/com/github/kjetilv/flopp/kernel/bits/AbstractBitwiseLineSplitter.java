@@ -24,7 +24,7 @@ abstract sealed class AbstractBitwiseLineSplitter
     MemorySegment memorySegment;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines, boolean immutable) {
-        this.lines = lines == null ? _ -> {} : lines;
+        this.lines = lines == null ? NONE : lines;
         this.immutable = immutable;
     }
 
@@ -68,4 +68,6 @@ abstract sealed class AbstractBitwiseLineSplitter
     String substring() {
         return null;
     }
+
+    private static final Consumer<SeparatedLine> NONE = _ -> {};
 }

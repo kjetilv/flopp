@@ -35,8 +35,15 @@ final class LazyReader<T> implements Reader, Reader.Columns {
     private final int length;
 
     private LazyReader(Map<String, Column<T>> columnMap) {
-        this.columnKeys = columnMap.keySet().toArray(String[]::new);
-        this.columns = columnMap.values().toArray(Column[]::new);
+        this(
+            columnMap.keySet().toArray(String[]::new),
+            columnMap.values().toArray(Column[]::new)
+        );
+    }
+
+    private LazyReader(String[] columnKeys, Column<?>[] columns) {
+        this.columnKeys = columnKeys;
+        this.columns = columns;
         this.length = this.columns.length;
         this.valueMap = Maps.ofSize(this.length);
     }
@@ -44,7 +51,13 @@ final class LazyReader<T> implements Reader, Reader.Columns {
     @Override
     public void read(PartitionedSplitter splitter, Consumer<Columns> values) {
         splitter.forEach(separatedLine ->
-            values.accept(columns(separatedLine)));
+            values.accept(
+                columns(separatedLine)));
+    }
+
+    @Override
+    public Reader copy() {
+        return new LazyReader<>(columnKeys, columns);
     }
 
     @Override

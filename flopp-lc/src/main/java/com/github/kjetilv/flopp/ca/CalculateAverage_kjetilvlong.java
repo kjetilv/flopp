@@ -43,6 +43,7 @@ public final class CalculateAverage_kjetilvlong {
 //            go3(path);
 //            go3(path);
 //            go3(path);
+//            go3(path);
 //            go4It(path);
 //            go1(path);
         }
@@ -152,12 +153,13 @@ public final class CalculateAverage_kjetilvlong {
                 Runtime.getRuntime().availableProcessors(),
                 shape.longestLine()
             )
-            .scaled(2);
+            .scaled(10);
         CsvFormat format = new CsvFormat.Simple(';', 2);
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
+            ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors())
+                //Executors.newVirtualThreadPerTaskExecutor()
                 //new ForkJoinPool(Runtime.getRuntime().availableProcessors())
 //                new ThreadPoolExecutor(
 //                    chunks,
@@ -182,7 +184,9 @@ public final class CalculateAverage_kjetilvlong {
                                     (String) columns.get("station"),
                                     (station, existing) -> {
                                         int dec = (Integer) columns.get("measurement");
-                                        return existing == null ? new Result(dec) : existing.collect(dec);
+                                        return existing == null
+                                            ? new Result(dec)
+                                            : existing.collect(dec);
                                     }
                                 ));
                             return m;
@@ -423,7 +427,7 @@ public final class CalculateAverage_kjetilvlong {
             value += j * pos;
             pos *= 10;
         }
-        return (int) value;
+        return value;
     }
 
     public static final class Result {
