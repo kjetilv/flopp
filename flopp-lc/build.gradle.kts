@@ -53,7 +53,7 @@ tasks.register<Task>("native-image")
                 ).map(
                     Path::toString
                 ),
-                "com.github.kjetilv.flopp.kernel.CalculateAverage_kjetilvlong",
+                "com.github.kjetilv.flopp.ca.CalculateAverage_kjetilvlong",
                 "ca",
                 javaToolchains
             )
