@@ -53,6 +53,7 @@ object Native {
          --gc=$gc
          -H:Optimize=3
          -H:+ReportExceptionStackTraces
+         -H:+ForeignAPISupport
          -o $toBinary
          -march=native
         """.trimIndent()
