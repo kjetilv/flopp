@@ -1,3 +1,5 @@
+import org.gradle.jvm.toolchain.JvmVendorSpec.GRAAL_VM
+
 plugins {
     java
     `maven-publish`
@@ -18,6 +20,7 @@ subprojects {
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(22))
+            vendor.set(GRAAL_VM)
         }
         withSourcesJar()
         modularity.inferModulePath
