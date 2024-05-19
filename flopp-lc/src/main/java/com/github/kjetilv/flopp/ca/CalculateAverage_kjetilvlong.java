@@ -38,12 +38,12 @@ public final class CalculateAverage_kjetilvlong {
         for (String arg : args) {
             Path path = Path.of(arg);
 //            go(path);
+//            go3(path);
+//            go3(path);
+//            go3(path);
+//            go3(path);
+//            go3(path);
             go3(path);
-//            go3(path);
-//            go3(path);
-//            go3(path);
-//            go3(path);
-//            go3(path);
 //            go4It(path);
 //            go1(path);
         }

@@ -151,7 +151,9 @@ public final class Bits {
      * @return Finder for cycling through the occurrences in a long
      */
     public static Finder finder(char c, boolean fast) {
-        return fast ? new SwarFinder(c) : new CyclingFinder(c);
+        return fast
+            ? new SwarFinder(c)
+            : new CyclingFinder(c);
     }
 
     public static Finder cyclingFinder(char c) {
@@ -357,7 +359,7 @@ public final class Bits {
                     offset++;
                 }
             }
-            return offset;
+            return ALIGNMENT;
         }
 
         @Override

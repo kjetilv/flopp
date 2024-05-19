@@ -99,11 +99,6 @@ public final class MemorySegments {
         return resizedCopy;
     }
 
-    private static int alignedSize(long size) {
-        int alignedSize = Math.toIntExact(size + ALIGNMENT_INT - size % ALIGNMENT);
-        return alignedSize;
-    }
-
     public static String fromEdgeLong(
         MemorySegment memorySegment,
         long startIndex,
@@ -114,46 +109,44 @@ public final class MemorySegments {
         long underlyingSize = memorySegment.byteSize();
         int length = (int) (endIndex - startIndex);
         if (underlyingSize < ALIGNMENT_INT) {
-            byte[] bytes = target == null
-                ? new byte[length]
-                : target;
+            byte[] bytes = target == null ? new byte[length] : target;
             long data = bytesAt(memorySegment, 0, length);
             Bits.transferLimitedDataTo(data, 0, length, bytes);
             return new String(bytes, 0, length, charset == null ? UTF_8 : charset);
         }
         int tailLength = (int) endIndex % ALIGNMENT_INT;
-        if (tailLength > 0) {
-            int tailStart = (int) (endIndex - tailLength);
-            if (tailStart + ALIGNMENT > underlyingSize) {
-
-                int headOffset = (int) startIndex % ALIGNMENT_INT;
-
-                long alignedStart = startIndex - headOffset;
-                int size = (int) (tailStart - alignedStart);
-
-                byte[] bytes = target == null
-                    ? new byte[(headOffset > 0 ? 0 : ALIGNMENT_INT) + size + ALIGNMENT_INT]
-                    : target;
-
-                for (int index = 0; index < size; index += ALIGNMENT_INT) {
-                    long body = memorySegment.get(JAVA_LONG, alignedStart + index);
-                    Bits.transferDataTo(body, index, bytes);
-                }
-
-                long tailLong = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
-                long adjustedTail = tailLong >> ALIGNMENT * (ALIGNMENT - tailLength);
-                Bits.transferLimitedDataTo(adjustedTail, size, tailLength, bytes);
-
-                return new String(
-                    bytes,
-                    headOffset,
-                    length,
-                    charset == null ? UTF_8 : charset
-                );
-            }
+        if (tailLength == 0) {
             return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
         }
-        return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
+        int tailStart = (int) (endIndex - tailLength);
+        if (tailStart + ALIGNMENT <= underlyingSize) {
+            return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
+        }
+
+        int headOffset = (int) startIndex % ALIGNMENT_INT;
+
+        long alignedStart = startIndex - headOffset;
+        int size = (int) (tailStart - alignedStart);
+
+        byte[] bytes = target == null
+            ? new byte[(headOffset > 0 ? 0 : ALIGNMENT_INT) + size + ALIGNMENT_INT]
+            : target;
+
+        for (int index = 0; index < size; index += ALIGNMENT_INT) {
+            long body = memorySegment.get(JAVA_LONG, alignedStart + index);
+            Bits.transferDataTo(body, index, bytes);
+        }
+
+        long tailLong = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
+        long adjustedTail = tailLong >> ALIGNMENT * (ALIGNMENT - tailLength);
+        Bits.transferLimitedDataTo(adjustedTail, size, tailLength, bytes);
+
+        return new String(
+            bytes,
+            headOffset,
+            length,
+            charset == null ? UTF_8 : charset
+        );
 
     }
 
@@ -188,6 +181,10 @@ public final class MemorySegments {
     public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
 
     public static final int ALIGNMENT_INT = Math.toIntExact(ALIGNMENT);
+
+    private static int alignedSize(long size) {
+        return Math.toIntExact(size + ALIGNMENT_INT - size % ALIGNMENT);
+    }
 
     private static ByteBuffer byteBuffer(byte[] bytes) {
         ByteBuffer bb = ByteBuffer.allocateDirect(Math.max(ALIGNMENT_INT, bytes.length));
