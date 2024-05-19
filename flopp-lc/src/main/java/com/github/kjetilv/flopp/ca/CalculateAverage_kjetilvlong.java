@@ -149,24 +149,25 @@ public final class CalculateAverage_kjetilvlong {
     private static void go3(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
-        Partitioning partitioning = Partitioning.create(100, shape.longestLine());
+        Partitioning partitioning = Partitioning.create(1000, shape.longestLine());
         CsvFormat format = new CsvFormat.Simple(';', 2);
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors())
+            ExecutorService executor =
+                Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors())
                 //Executors.newVirtualThreadPerTaskExecutor()
                 //new ForkJoinPool(Runtime.getRuntime().availableProcessors())
 //                new ThreadPoolExecutor(
-//                    chunks,
-//                    chunks,
-//                    0, TimeUnit.NANOSECONDS,
-//                    new LinkedBlockingQueue<>(chunks)
-//                )
+//                    Runtime.getRuntime().availableProcessors(),
+//                    Runtime.getRuntime().availableProcessors(),
+//                    0, TimeUnit.SECONDS,
+//                    new LinkedBlockingQueue<>(chunks));
         ) {
             System.out.println(Duration.between(start, Instant.now()));
             Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
             List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
+                .parallel()
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
