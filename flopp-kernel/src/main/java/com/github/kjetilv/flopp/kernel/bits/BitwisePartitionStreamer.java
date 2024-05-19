@@ -1,9 +1,13 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -17,20 +21,21 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         Partition partition,
         Shape shape,
         MemorySegmentSource memorySegmentSource,
-        BitwisePartitionStreamer next,
+        Supplier<BitwisePartitionStreamer> next,
         boolean immutable
     ) {
-        this.partition = Objects.requireNonNull(partition, "partition");
+        this.partition = partition;
         MemorySegment memorySegment = memorySegmentSource.get(partition);
         long logicalSize = memorySegment.byteSize();
+        MemorySegment safeSegment = partition.last()
+            ? MemorySegments.alignmentPadded(memorySegment)
+            : memorySegment;
         this.spliterator = new BitwisePartitionSpliterator(
             partition,
-            partition.last()
-                ? MemorySegments.alignmentPadded(memorySegment)
-                : memorySegment,
+            safeSegment,
             logicalSize,
             HeadersAndFooters.middleMan(partition, shape),
-            next == null ? null : next.spliterator,
+            next == null ? null : () -> next.get().spliterator,
             immutable
         );
     }

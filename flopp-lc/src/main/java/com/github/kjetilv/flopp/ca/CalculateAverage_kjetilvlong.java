@@ -126,10 +126,7 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            List<? extends PartitionStreamer> partitionStreamers =
-                bitwisePartitioned.streams().streamersList();
-            List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
-                .stream()
+            List<CompletableFuture<Map<String, Result>>> list = bitwisePartitioned.streams().streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines)
                         .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
@@ -149,15 +146,15 @@ public final class CalculateAverage_kjetilvlong {
     private static void go3(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
-        Partitioning partitioning = Partitioning.create(1000, shape.longestLine());
+        Partitioning partitioning = Partitioning.create(100, shape.longestLine());
         CsvFormat format = new CsvFormat.Simple(';', 2);
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor =
-                Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors())
-                //Executors.newVirtualThreadPerTaskExecutor()
-                //new ForkJoinPool(Runtime.getRuntime().availableProcessors())
+                Executors.newWorkStealingPool()
+//                Executors.newVirtualThreadPerTaskExecutor()
+//                new ForkJoinPool(Runtime.getRuntime().availableProcessors())
 //                new ThreadPoolExecutor(
 //                    Runtime.getRuntime().availableProcessors(),
 //                    Runtime.getRuntime().availableProcessors(),
@@ -165,9 +162,8 @@ public final class CalculateAverage_kjetilvlong {
 //                    new LinkedBlockingQueue<>(chunks));
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
-            List<CompletableFuture<Map<String, Result>>> list = partitionStreamers
-                .parallel()
+            List<CompletableFuture<Map<String, Result>>> list = bitwisePartitioned.splitters()
+                .splitters(format)
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {

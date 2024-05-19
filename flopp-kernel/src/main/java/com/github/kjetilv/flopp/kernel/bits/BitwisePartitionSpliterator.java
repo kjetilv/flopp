@@ -10,6 +10,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
@@ -21,7 +22,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
     private final MiddleMan<BitwisePartitioned.Action> middleMan;
 
-    private final BitwisePartitionSpliterator next;
+    private final Supplier<BitwisePartitionSpliterator> next;
 
     private final boolean immutable;
 
@@ -36,7 +37,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         MemorySegment segment,
         long logicalSize,
         MiddleMan<BitwisePartitioned.Action> middleMan,
-        BitwisePartitionSpliterator next,
+        Supplier<BitwisePartitionSpliterator> next,
         boolean immutable
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
@@ -74,7 +75,9 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             segment,
             logicalSize,
             action,
-            next == null ? null : () -> next.handler(action)
+            next == null
+                ? null
+                : () -> next.get().handler(action)
         );
     }
 

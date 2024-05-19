@@ -14,10 +14,10 @@ public final class Maps {
     private static final int MAX_POWER = 1 << Integer.SIZE - 2;
 
     public static <K, V> Map<K, V> ofSize(int size) {
-        return new HashMap<>(capacity(size));
+        return new HashMap<>(mapCapacity(size));
     }
 
-    private static int capacity(int size) {
+    public static int mapCapacity(int size) {
         if (Non.negative(size, "size") < 3) {
             return size + 1;
         }

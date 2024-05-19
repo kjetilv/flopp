@@ -15,11 +15,6 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
     }
 
     @Override
-    public List<PartitionedSplitter> splittersList(CsvFormat format, boolean immutable) {
-        return splitters(format, immutable).toList();
-    }
-
-    @Override
     public Stream<PartitionedSplitter> splitters(FwFormat format, boolean immutable) {
         return streams.streamers(immutable)
             .map(streamer ->
@@ -31,10 +26,5 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
         return streams.streamers(immutable)
             .map(streamer ->
                 new BitwiseCsvSplitter(streamer, format, immutable));
-    }
-
-    @Override
-    public List<PartitionedSplitter> splittersList(FwFormat format, boolean immutable) {
-        return splitters(format, immutable).toList();
     }
 }

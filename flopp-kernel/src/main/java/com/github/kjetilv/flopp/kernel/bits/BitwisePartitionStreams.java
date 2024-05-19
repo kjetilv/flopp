@@ -1,12 +1,16 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.util.Maps;
 
-import java.util.LinkedList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 final class BitwisePartitionStreams implements PartitionedStreams {
 
@@ -18,52 +22,62 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     BitwisePartitionStreams(Shape shape, List<Partition> partitions, MemorySegmentSource source) {
         this.shape = Objects.requireNonNull(shape, "shape");
-        this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions");
+        this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions")
+            .stream()
+            .sorted(Comparator.naturalOrder())
+            .toList();
         this.source = Objects.requireNonNull(source, "memorySegmentSource");
     }
 
     @Override
-    public List<? extends PartitionStreamer> streamersList(boolean immutable) {
-        return windup(
-            new LinkedList<>(partitions),
-            (partition, streamer) -> new BitwisePartitionStreamer(
-                partition,
-                shape,
-                source,
-                streamer,
-                immutable
-            ),
-            new LinkedList<BitwisePartitionStreamer>()
-        );
+    public Stream<LongSupplier> lineCounters() {
+        int count = partitions.size();
+        Map<Integer, BitwiseCounter> map =
+            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        return IntStream.range(0, count).mapToObj(index ->
+                counterFor(map, index)
+            )
+            .map(counter ->
+                counter::count);
     }
 
     @Override
-    public List<LongSupplier> lineCountersList() {
-        return windup(
-            new LinkedList<>(partitions),
-            (partition, counter) ->
-                new BitwiseCounter(partition, source, counter),
-            new LinkedList<BitwiseCounter>()
-        ).stream()
-            .map(BitwisePartitionStreams::counter)
-            .toList();
+    public Stream<? extends PartitionStreamer> streamers(boolean immutable) {
+        int count = partitions.size();
+        Map<Integer, BitwisePartitionStreamer> map =
+            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        return IntStream.range(0, count).mapToObj(index ->
+            streamerFor(immutable, map, index)
+        ).parallel();
     }
 
-    private static LongSupplier counter(BitwiseCounter counter) {
-        return counter::count;
-    }
-
-    private static <T> List<T> windup(
-        List<Partition> partitions,
-        BiFunction<Partition, T, T> function,
-        List<T> target
+    private BitwisePartitionStreamer streamerFor(
+        boolean immutable,
+        Map<Integer, BitwisePartitionStreamer> map,
+        int index
     ) {
-        Partition head = partitions.removeFirst();
-        if (!partitions.isEmpty()) {
-            windup(partitions, function, target);
-        }
-        T nextT = target.isEmpty() ? null : target.getFirst();
-        target.addFirst(function.apply(head, nextT));
-        return target;
+        return map.computeIfAbsent(index, _ ->
+            new BitwisePartitionStreamer(
+                partitions.get(index),
+                shape,
+                source,
+                index + 1 < partitions.size()
+                    ? () -> streamerFor(immutable, map, index)
+                    : null,
+                immutable
+            ));
+    }
+
+    private BitwiseCounter counterFor(
+        Map<Integer, BitwiseCounter> map,
+        int index
+    ) {
+        return map.computeIfAbsent(index, _ -> new BitwiseCounter(
+            partitions.get(index),
+            source,
+            index + 1 < partitions.size()
+                ? () -> counterFor(map, index)
+                : null
+        ));
     }
 }

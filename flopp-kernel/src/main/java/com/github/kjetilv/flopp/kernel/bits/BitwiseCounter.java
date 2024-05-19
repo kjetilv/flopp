@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 final class BitwiseCounter {
 
@@ -11,12 +12,12 @@ final class BitwiseCounter {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    private final BitwiseCounter next;
+    private final Supplier<BitwiseCounter> next;
 
     BitwiseCounter(
         Partition partition,
         MemorySegmentSource memorySegmentSource,
-        BitwiseCounter next
+        Supplier<BitwiseCounter> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
@@ -43,7 +44,7 @@ final class BitwiseCounter {
             partition,
             memorySegmentSource.get(partition),
             action,
-            next == null ? null : () -> next.handler(action)
+            next == null ? null : () -> next.get().handler(action)
         );
     }
 
