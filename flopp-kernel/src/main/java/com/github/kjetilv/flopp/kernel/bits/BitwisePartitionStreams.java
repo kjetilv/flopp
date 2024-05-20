@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -48,8 +49,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
             new ConcurrentHashMap<>(Maps.mapCapacity(count));
         return IntStream.range(0, count)
             .mapToObj(index ->
-                streamerFor(immutable, map, index))
-            .parallel();
+                streamerFor(immutable, map, index));
     }
 
     private BitwisePartitionStreamer streamerFor(
@@ -62,11 +62,18 @@ final class BitwisePartitionStreams implements PartitionedStreams {
                 partitions.get(index),
                 shape,
                 source,
-                index + 1 < partitions.size()
-                    ? () -> streamerFor(immutable, map, index)
-                    : null,
+                nextSupplier(index, map, immutable),
                 immutable
             ));
+    }
+
+    private Supplier<BitwisePartitionStreamer> nextSupplier(
+        int index, Map<Integer, BitwisePartitionStreamer> map, boolean immutable
+    ) {
+        int nextIndex = index + 1;
+        return nextIndex < partitions.size()
+            ? () -> streamerFor(immutable, map, nextIndex)
+            : null;
     }
 
     private BitwiseCounter counterFor(

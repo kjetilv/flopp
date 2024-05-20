@@ -163,6 +163,7 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
             List<CompletableFuture<Map<String, Result>>> list = bitwisePartitioned.splitters()
                 .splitters(format)
+                .parallel()
                 .map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {

@@ -118,7 +118,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public String asString(byte[] buffer) {
-            return MemorySegments.fromLongsWithinBounds(segment, startIndex, endIndex, buffer, UTF_8);
+            return MemorySegments.fromLongsWithinBounds(segment, startIndex, endIndex, buffer, null);
         }
 
         @Override

@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.of;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ofLength;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.readTail;
 import static java.lang.foreign.MemorySegment.copy;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -205,7 +206,7 @@ final class BitwisePartitionHandler implements Runnable {
             offset += ALIGNMENT;
         }
         if (tail > 0) {
-            long tailBytes = MemorySegments.readTail(segment, limit, Math.toIntExact(tail));
+            long tailBytes = readTail(segment, limit, Math.toIntExact(tail));
             long mask = mask(tailBytes);
             if (mask != 0) {
                 return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
@@ -241,7 +242,7 @@ final class BitwisePartitionHandler implements Runnable {
     }
 
     private long loadTail(long count) {
-        return MemorySegments.readTail(segment, limit, Math.toIntExact(count));
+        return readTail(segment, limit, Math.toIntExact(count));
     }
 
     private void emitAndAdvance(long endIndex) {
@@ -263,7 +264,7 @@ final class BitwisePartitionHandler implements Runnable {
     private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
         long trailing = limit - lineStart;
         int length = Math.toIntExact(trailing + nextPrefix);
-        MemorySegment buffer = MemorySegments.ofLength(length);
+        MemorySegment buffer = ofLength(length);
         copy(this.segment, JAVA_BYTE, lineStart, buffer, JAVA_BYTE, 0, trailing);
         copy(next.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, trailing, nextPrefix);
         emitMerged(buffer, length, next.partition.last());
@@ -283,7 +284,7 @@ final class BitwisePartitionHandler implements Runnable {
             mediarySize += collector.get(i).limit;
         }
         int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
-        MemorySegment buffer = of(new byte[length]);
+        MemorySegment buffer = ofLength(length);
         copy(segment, lineStart, buffer, 0, trail);
         long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
@@ -293,7 +294,8 @@ final class BitwisePartitionHandler implements Runnable {
         }
         MemorySegment lastSegment = collector.getLast().segment;
         copy(lastSegment, JAVA_BYTE, 0, buffer, JAVA_BYTE, accumulatedSize, lastLineOffset);
-        emitMerged(buffer, length, lastLineOffset == lastSegment.byteSize());
+        boolean last = lastLineOffset == lastSegment.byteSize();
+        emitMerged(buffer, length, last);
     }
 
     private void emitMerged(MemorySegment buffer, int length, boolean last) {
@@ -349,7 +351,7 @@ final class BitwisePartitionHandler implements Runnable {
                 lo += ALIGNMENT;
             }
             if (tail > 0) {
-                long prebyte = MemorySegments.readTail(next.segment, next.limit, Math.toIntExact(tail));
+                long prebyte = readTail(next.segment, next.limit, Math.toIntExact(tail));
                 long premask = mask(prebyte);
                 if (premask != 0) {
                     return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
