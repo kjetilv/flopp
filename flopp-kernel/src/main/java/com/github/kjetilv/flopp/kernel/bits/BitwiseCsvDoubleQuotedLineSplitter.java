@@ -12,15 +12,8 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
 
     private State state;
 
-    BitwiseCsvDoubleQuotedLineSplitter(
-        Consumer<SeparatedLine> lines,
-        CsvFormat.DoubleQuoted format
-    ) {
-        this(
-            lines,
-            format,
-            false
-        );
+    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted format) {
+        this(lines, format, false);
     }
 
     BitwiseCsvDoubleQuotedLineSplitter(

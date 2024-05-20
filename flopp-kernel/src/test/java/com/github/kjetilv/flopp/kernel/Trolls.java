@@ -52,7 +52,6 @@ public final class Trolls {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
         CsvFormat format = new CsvFormat.DoubleQuoted(',', '"');
-        Reader reader = Readers.create(path, format);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
@@ -82,7 +81,7 @@ public final class Trolls {
             Function<PartitionedSplitter, CompletableFuture<Void>> partitionFuture = splitter ->
                     CompletableFuture.runAsync(
                         () ->
-                            reader.read(splitter, entryHandler),
+                            Readers.create(path, format).read(splitter, entryHandler),
                         executor
                     );
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();

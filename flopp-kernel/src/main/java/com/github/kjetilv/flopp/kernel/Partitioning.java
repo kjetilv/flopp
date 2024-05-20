@@ -47,26 +47,22 @@ public record Partitioning(int count, long tail) {
     }
 
     public List<Partition> of(long total) {
+        Non.negativeOrZero(total, "total");
         long reasonablesize = tail + count;
         if (total < reasonablesize) {
             throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ", total size is " + total);
         }
-        return partitions(total);
-    }
-
-    private List<Partition> partitions(long total) {
-        Non.negativeOrZero(total, "total");
         if (count > total) {
             throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
         }
-        if (total > count) {
-            long[] sizes = partitionSizes(total);
-            return partitions(sizes);
-        }
-        return singlePartition(total);
+        return total > count
+            ? partitions(partitionSizes(count, total, tail))
+            : singlePartition(total);
     }
 
-    private long[] partitionSizes(long total) {
+    public static final long ALIGNMENT = 0x08L;
+
+    private static long[] partitionSizes(int count, long total, long tail) {
         if (count == 1) {
             return new long[] {total};
         }
@@ -74,35 +70,34 @@ public record Partitioning(int count, long tail) {
             throw new IllegalArgumentException(
                 "Too many partitions for " + total + " bytes with alignment " + Partitioning.ALIGNMENT + ": " + count);
         }
-        if (tail > 0) {
-            return alignedSizesWithTail(total);
-        }
-        return alignedSizes(total);
+        return tail > 0
+            ? alignedSizesWithTail(count, total, tail)
+            : alignedSizes(count, total);
     }
 
-    private long[] alignedSizesWithTail(long total) {
+    private static long[] alignedSizesWithTail(int count, long total, long tail) {
         long headTotal = total - tail;
         long alignedHeadSlices = headTotal / ALIGNMENT;
         long headOvershoot = headTotal % ALIGNMENT;
         long overshootTail = tail + headOvershoot;
-        long[] headSizes = sizeDistribution(alignedHeadSlices);
+        long[] headSizes = sizeDistribution(alignedHeadSlices, count);
         long[] sizes = new long[headSizes.length + 1];
         System.arraycopy(headSizes, 0, sizes, 0, headSizes.length);
         sizes[sizes.length - 1] = overshootTail;
         return sizes;
     }
 
-    private long[] alignedSizes(long total) {
+    private static long[] alignedSizes(int count, long total) {
         long overshoot = total % ALIGNMENT;
         long alignedSlices = total / ALIGNMENT;
-        long[] sizes = sizeDistribution(alignedSlices);
+        long[] sizes = sizeDistribution(alignedSlices, count);
         if (overshoot != 0) {
             sizes[sizes.length - 1] += overshoot;
         }
         return sizes;
     }
 
-    private long[] sizeDistribution(long alignedSlices) {
+    private static long[] sizeDistribution(long alignedSlices, int count) {
         long remainders = intSized(alignedSlices % count);
         long baseCount = intSized(alignedSlices / count);
         int sizeCount = Math.toIntExact(count);
@@ -116,8 +111,6 @@ public record Partitioning(int count, long tail) {
         }
         return sizes;
     }
-
-    public static final long ALIGNMENT = 0x08L;
 
     private static List<Partition> partitions(long[] sizes) {
         long offset = 0;

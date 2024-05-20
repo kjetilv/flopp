@@ -146,13 +146,12 @@ public final class CalculateAverage_kjetilvlong {
     private static void go3(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path).longestLine(128);
-        Partitioning partitioning = Partitioning.create(100, shape.longestLine());
+        Partitioning partitioning = Partitioning.create(128, shape.longestLine());
         CsvFormat format = new CsvFormat.Simple(';', 2);
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor =
-                Executors.newWorkStealingPool()
+            ExecutorService executor = Executors.newWorkStealingPool()
 //                Executors.newVirtualThreadPerTaskExecutor()
 //                new ForkJoinPool(Runtime.getRuntime().availableProcessors())
 //                new ThreadPoolExecutor(

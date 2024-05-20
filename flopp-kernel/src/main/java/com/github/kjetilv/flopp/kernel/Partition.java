@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import java.util.List;
+
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
@@ -31,6 +33,13 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     public Partition at(long offset, long count) {
         return new Partition(partitionNo, partitionCount, offset, count);
+    }
+
+    public List<Partition> smash(int fragments) {
+        if (last()) {
+            return List.of(this);
+        }
+        return Partitioning.create(fragments).of(length);
     }
 
     public boolean first() {

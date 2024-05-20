@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.Charset;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -16,7 +17,11 @@ public interface SeparatedLine {
     long[] end();
 
     default Stream<String> columns() {
-        return IntStream.range(0, columnCount()).mapToObj(toColumn());
+        return columns(null);
+    }
+
+    default Stream<String> columns(Charset charset) {
+        return IntStream.range(0, columnCount()).mapToObj(toColumn(charset));
     }
 
     @SuppressWarnings("unused")
@@ -56,11 +61,11 @@ public interface SeparatedLine {
             toSegment(column, start, end);
     }
 
-    private IntFunction<String> toColumn() {
+    private IntFunction<String> toColumn(Charset charset) {
         long[] start = start();
         long[] end = end();
         return column ->
-            toSegment(column, start, end).asString();
+            LineSegments.asString(toSegment(column, start, end), charset);
     }
 
     private long[] copy(long[] ls) {
