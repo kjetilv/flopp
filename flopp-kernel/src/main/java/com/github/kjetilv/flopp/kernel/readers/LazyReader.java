@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Maps;
@@ -37,15 +36,8 @@ final class LazyReader<T> implements Reader, Reader.Columns {
     private final int length;
 
     private LazyReader(Map<String, Column<T>> columnMap) {
-        this(
-            columnMap.keySet().toArray(String[]::new),
-            columnMap.values().toArray(Column[]::new)
-        );
-    }
-
-    private LazyReader(String[] columnKeys, Column<?>[] columns) {
-        this.columnKeys = columnKeys;
-        this.columns = columns;
+        this.columnKeys = columnMap.keySet().toArray(String[]::new);
+        this.columns = columnMap.values().toArray(Column[]::new);
         this.length = this.columns.length;
         this.valueMap = Maps.ofSize(this.length);
     }
@@ -55,11 +47,6 @@ final class LazyReader<T> implements Reader, Reader.Columns {
         splitter.forEach(separatedLine ->
             values.accept(
                 columns(separatedLine)));
-    }
-
-    @Override
-    public Reader copy() {
-        return new LazyReader<>(columnKeys, columns);
     }
 
     @Override
@@ -75,12 +62,8 @@ final class LazyReader<T> implements Reader, Reader.Columns {
     }
 
     private Supplier<Object> parse(SeparatedLine separatedLine, int index) {
-        return () -> {
-            Column<?> column = columns[index];
-            Column.Parser<?> parser = column.parser();
-            LineSegment segment = separatedLine.segment(column.colunmNo() - 1);
-            return parser.parse(segment);
-        };
+        return () ->
+            columns[index].parser().parse(separatedLine, index);
     }
 
     private static List<Column<String>> discoverColumns(String header, CsvFormat format) {

@@ -7,6 +7,10 @@ public sealed interface CsvFormat {
 
     int columnCount();
 
+    default int maxColumnWidth() {
+        return DEFAULT_MAX_COLUMN_WIDTH;
+    }
+
     boolean fast();
 
     CsvFormat fast(boolean fast);
@@ -24,6 +28,8 @@ public sealed interface CsvFormat {
     default String separatorString() {
         return Character.toString(separator());
     }
+
+    int DEFAULT_MAX_COLUMN_WIDTH = 8192;
 
     record Simple(char separator, int columnCount) implements CsvFormat {
 

@@ -33,6 +33,10 @@ public interface SeparatedLine {
         return segment(column).asString();
     }
 
+    default String column(int column, Charset charset) {
+        return segment(column).asString(charset);
+    }
+
     default long start(int column) {
         return start()[column];
     }

@@ -5,8 +5,11 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
@@ -14,16 +17,6 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
     permits BitwiseCsvDoubleQuotedLineSplitter, BitwiseCsvEscapedLineSplitter, BitwiseCsvSimpleLineSplitter {
-
-    private final CsvFormat format;
-
-    private long startIndex;
-
-    private long endIndex;
-
-    private final long[] startPositions;
-
-    private final long[] endPositions;
 
     final Bits.Finder sepFinder;
 
@@ -35,12 +28,25 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
 
     int columnNo;
 
+    private final CsvFormat format;
+
+    private long startIndex;
+
+    private long endIndex;
+
+    private final long[] startPositions;
+
+    private final long[] endPositions;
+
+    private final byte[] columnBuffer;
+
     AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format, boolean immutable) {
         super(lines, immutable);
         this.format = Objects.requireNonNull(format, "format");
         this.sepFinder = Bits.finder(format.separator(), true);
         this.startPositions = new long[format.columnCount()];
         this.endPositions = new long[format.columnCount()];
+        this.columnBuffer = new byte[format.maxColumnWidth()];
     }
 
     @Override
@@ -58,12 +64,21 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
         return endPositions;
     }
 
-    @Override
-    public final LineSegment segment(int column) {
-        startIndex = startPositions[column];
-        endIndex = endPositions[column];
-        return this;
-    }
+//    @Override
+//    public String column(int column, Charset charset) {
+//        return MemorySegments.fromLongsWithinBounds(
+//            memorySegment,
+//            startPositions[column],
+//            endPositions[column],
+//            columnBuffer,
+//            charset
+//        );
+//    }
+
+//    @Override
+//    public Stream<String> columns(Charset charset) {
+//        return IntStream.range(0, columnCount()).mapToObj(i -> column(i, charset));
+//    }
 
     @Override
     public final long start(int column) {
@@ -73,6 +88,13 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final long end(int column) {
         return endPositions[column];
+    }
+
+    @Override
+    public final LineSegment segment(int column) {
+        startIndex = startPositions[column];
+        endIndex = endPositions[column];
+        return this;
     }
 
     @Override
@@ -86,13 +108,8 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public long headStart() {
-        return startIndex % ALIGNMENT;
-    }
-
-    @Override
     public String asString() {
-        return asString(null);
+        return asString(null, null);
     }
 
     @Override
@@ -104,6 +121,21 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
             buffer,
             null
         );
+    }
+
+    @Override
+    public long headStart() {
+        return startIndex % ALIGNMENT;
+    }
+
+    @Override
+    public boolean isAlignedAtStart() {
+        return startIndex % ALIGNMENT == 0L;
+    }
+
+    @Override
+    public boolean isAlignedAtEnd() {
+        return endIndex % ALIGNMENT == 0;
     }
 
     @Override
@@ -124,6 +156,17 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
+    public long head(long head) {
+        long l = memorySegment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
+        return l >> head * ALIGNMENT;
+    }
+
+    @Override
+    public long longNo(int longNo) {
+        return memorySegment.get(JAVA_LONG, startIndex - startIndex() % ALIGNMENT + longNo * ALIGNMENT);
+    }
+
+    @Override
     public long tail(boolean truncate) {
         int tail = Math.toIntExact(endIndex % ALIGNMENT);
         if (underlyingSize - endIndex < ALIGNMENT) {
@@ -133,27 +176,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
         return truncate
             ? Bits.lowerBytes(value, tail)
             : value;
-    }
-
-    @Override
-    public long longNo(int longNo) {
-        return memorySegment.get(JAVA_LONG, startIndex - startIndex() % ALIGNMENT + longNo * ALIGNMENT);
-    }
-
-    @Override
-    public long head(long head) {
-        long l = memorySegment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
-        return l >> head * ALIGNMENT;
-    }
-
-    @Override
-    public boolean isAlignedAtStart() {
-        return startIndex % ALIGNMENT == 0L;
-    }
-
-    @Override
-    public boolean isAlignedAtEnd() {
-        return endIndex % ALIGNMENT == 0;
     }
 
     @Override

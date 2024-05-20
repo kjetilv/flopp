@@ -101,6 +101,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.asString(this);
     }
 
+    default String asString(Charset charset) {
+        return LineSegments.asString(this, null, charset);
+    }
+
     default String asString(byte[] buffer) {
         return LineSegments.asString(this, buffer);
     }

@@ -9,10 +9,6 @@ public interface Reader {
 
     void read(PartitionedSplitter splitter, Consumer<Columns> values);
 
-    default Reader copy() {
-        throw new UnsupportedOperationException();
-    }
-
     interface Columns {
 
         Object get(String name);

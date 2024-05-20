@@ -113,7 +113,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public String asString() {
-            return asString(null);
+            return asString(null,null);
         }
 
         @Override

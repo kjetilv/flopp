@@ -169,7 +169,7 @@ public final class CalculateAverage_kjetilvlong {
                     CompletableFuture.supplyAsync(
                         () -> {
                             Reader reader = Readers.create(
-                                Column.ofString("station", 1, new byte[128]),
+                                Column.ofBoundedString("station", 1, new byte[128]),
                                 Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
                             );
                             Map<String, Result> m = Maps.ofSize(512);
