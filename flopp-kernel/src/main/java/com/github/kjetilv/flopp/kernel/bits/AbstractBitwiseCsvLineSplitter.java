@@ -1,13 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
@@ -19,9 +21,9 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
 
     private long endIndex;
 
-    final long[] startPositions;
+    private final long[] startPositions;
 
-    final long[] endPositions;
+    private final long[] endPositions;
 
     final Bits.Finder sepFinder;
 

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -45,7 +46,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public Stream<? extends PartitionStreamer> streamers(boolean immutable) {
         int count = partitions.size();
-        Map<Integer, BitwisePartitionStreamer> map =
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map =
             new ConcurrentHashMap<>(Maps.mapCapacity(count));
         return IntStream.range(0, count)
             .mapToObj(index ->
@@ -54,7 +55,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private BitwisePartitionStreamer streamerFor(
         boolean immutable,
-        Map<Integer, BitwisePartitionStreamer> map,
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map,
         int index
     ) {
         return map.computeIfAbsent(index, _ ->
@@ -62,13 +63,15 @@ final class BitwisePartitionStreams implements PartitionedStreams {
                 partitions.get(index),
                 shape,
                 source,
-                nextSupplier(index, map, immutable),
+                nextLookup(index, map, immutable),
                 immutable
             ));
     }
 
-    private Supplier<BitwisePartitionStreamer> nextSupplier(
-        int index, Map<Integer, BitwisePartitionStreamer> map, boolean immutable
+    private Supplier<BitwisePartitionStreamer> nextLookup(
+        int index,
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map,
+        boolean immutable
     ) {
         int nextIndex = index + 1;
         return nextIndex < partitions.size()

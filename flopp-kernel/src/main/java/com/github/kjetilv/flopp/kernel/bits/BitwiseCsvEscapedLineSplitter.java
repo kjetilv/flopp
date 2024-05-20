@@ -12,7 +12,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
 
     private boolean escaping;
 
-    private long lastEscape;
+    private long nextEscape;
 
     BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format) {
         this(lines, format, false);
@@ -89,7 +89,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
     private void handleSep(long index, long shift) {
         long adjusted = index + shift;
         long position = offset + adjusted;
-        boolean effective = !(escaping && position == lastEscape + 1);
+        boolean effective = !(escaping && position == nextEscape);
         if (effective) {
             markSeparator(position);
             currentStart = position;
@@ -99,10 +99,10 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
     }
 
     private void handleEsc(long index) {
-        if (escaping && offset + index == lastEscape + 1) {
+        if (escaping && offset + index == nextEscape) {
             escaping = false;
         } else {
-            lastEscape = offset + index;
+            nextEscape = offset + index + 1;
             escaping = true;
         }
     }
