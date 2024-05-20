@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Maps;
@@ -8,6 +9,7 @@ import com.github.kjetilv.flopp.kernel.util.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 final class LazyReader<T> implements Reader, Reader.Columns {
@@ -30,7 +32,7 @@ final class LazyReader<T> implements Reader, Reader.Columns {
 
     private final Column<?>[] columns;
 
-    private final Map<String, Object> valueMap;
+    private final Map<String, Supplier<Object>> valueMap;
 
     private final int length;
 
@@ -62,14 +64,23 @@ final class LazyReader<T> implements Reader, Reader.Columns {
 
     @Override
     public Object get(String name) {
-        return valueMap.get(name);
+        return valueMap.get(name).get();
     }
 
     private Columns columns(SeparatedLine separatedLine) {
         for (int i = 0; i < length; i++) {
-            valueMap.put(columnKeys[i], parse(separatedLine, columns[i]));
+            valueMap.put(columnKeys[i], parse(separatedLine, i));
         }
         return this;
+    }
+
+    private Supplier<Object> parse(SeparatedLine separatedLine, int index) {
+        return () -> {
+            Column<?> column = columns[index];
+            Column.Parser<?> parser = column.parser();
+            LineSegment segment = separatedLine.segment(column.colunmNo() - 1);
+            return parser.parse(segment);
+        };
     }
 
     private static List<Column<String>> discoverColumns(String header, CsvFormat format) {
@@ -78,10 +89,6 @@ final class LazyReader<T> implements Reader, Reader.Columns {
             .mapToObj(i ->
                 Column.ofString(headers[i], i + 1))
             .toList();
-    }
-
-    private static <T> T parse(SeparatedLine separatedLine, Column<T> column) {
-        return column.parser().parse(separatedLine.segment(column.colunmNo() - 1));
     }
 
     private static <T> Map<String, Column<T>> columnMap(List<Column<T>> columns) {

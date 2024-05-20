@@ -10,7 +10,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
 
     private final Bits.Finder quoFinder;
 
-    private State state;
+    private int state;
 
     BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted format) {
         this(lines, format, false);
@@ -29,7 +29,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
     protected void separate() {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
-        this.state = State.STARTING_COLUMN;
+        this.state = STARTING_COLUMN;
         this.startOffset = segment.startIndex();
 
         long length = segment.length();
@@ -93,24 +93,23 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
             case QUOTING_QUOTE -> {
                 markSeparator(index);
                 currentStart = index;
-                state = State.STARTING_COLUMN;
+                state = STARTING_COLUMN;
             }
         }
     }
 
     private void handleQuo() {
         state = switch (state) {
-            case STARTING_COLUMN, QUOTING_QUOTE -> State.QUOTING_COLUMN;
-            case QUOTING_COLUMN -> State.QUOTING_QUOTE;
+            case STARTING_COLUMN, QUOTING_QUOTE -> QUOTING_COLUMN;
+            case QUOTING_COLUMN -> QUOTING_QUOTE;
+            default ->
+                throw new IllegalStateException("Wrong state: " + state);
         };
     }
 
-    private enum State {
+    private static final int STARTING_COLUMN = 1;
 
-        STARTING_COLUMN,
+    private static final int QUOTING_QUOTE = 2;
 
-        QUOTING_QUOTE,
-
-        QUOTING_COLUMN
-    }
+    private static final int QUOTING_COLUMN = 4;
 }

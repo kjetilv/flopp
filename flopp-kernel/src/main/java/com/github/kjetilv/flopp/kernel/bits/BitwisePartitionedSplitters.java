@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 

@@ -6,7 +6,6 @@ import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
-import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;

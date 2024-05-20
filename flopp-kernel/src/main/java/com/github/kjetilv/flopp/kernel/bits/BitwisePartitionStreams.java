@@ -34,9 +34,9 @@ final class BitwisePartitionStreams implements PartitionedStreams {
         int count = partitions.size();
         Map<Integer, BitwiseCounter> map =
             new ConcurrentHashMap<>(Maps.mapCapacity(count));
-        return IntStream.range(0, count).mapToObj(index ->
-                counterFor(map, index)
-            )
+        return IntStream.range(0, count)
+            .mapToObj(index ->
+                counterFor(map, index))
             .map(counter ->
                 counter::count);
     }
@@ -46,9 +46,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
         int count = partitions.size();
         Map<Integer, BitwisePartitionStreamer> map =
             new ConcurrentHashMap<>(Maps.mapCapacity(count));
-        return IntStream.range(0, count).mapToObj(index ->
-            streamerFor(immutable, map, index)
-        ).parallel();
+        return IntStream.range(0, count)
+            .mapToObj(index ->
+                streamerFor(immutable, map, index))
+            .parallel();
     }
 
     private BitwisePartitionStreamer streamerFor(
