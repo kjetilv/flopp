@@ -64,21 +64,22 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
         return endPositions;
     }
 
-//    @Override
-//    public String column(int column, Charset charset) {
-//        return MemorySegments.fromLongsWithinBounds(
-//            memorySegment,
-//            startPositions[column],
-//            endPositions[column],
-//            columnBuffer,
-//            charset
-//        );
-//    }
+    @Override
+    public String column(int column, Charset charset) {
+        return MemorySegments.fromLongsWithinBounds(
+            memorySegment,
+            startPositions[column],
+            endPositions[column],
+            columnBuffer,
+            charset
+        );
+    }
 
-//    @Override
-//    public Stream<String> columns(Charset charset) {
-//        return IntStream.range(0, columnCount()).mapToObj(i -> column(i, charset));
-//    }
+    @Override
+    public Stream<String> columns(Charset charset) {
+        return IntStream.range(0, columnCount()).mapToObj(i ->
+            column(i, charset));
+    }
 
     @Override
     public final long start(int column) {

@@ -256,11 +256,7 @@ public final class LineSegments {
     }
 
     public static LineSegment of(byte[] bytes) {
-        return of(MemorySegments.of(bytes));
-    }
-
-    public static LineSegment of(MemorySegment memorySegment) {
-        return new ImmutableSliceSegment(memorySegment);
+        return of(MemorySegments.of(bytes), 0, bytes.length);
     }
 
     public static LineSegment of(MemorySegment memorySegment, long start, long end) {
@@ -268,15 +264,13 @@ public final class LineSegments {
     }
 
     public static LineSegment of(long l) {
-        return of(l, Math.toIntExact(ALIGNMENT));
+        return of(Bits.toBytes(l));
     }
 
-    public static LineSegment of(long l, int len) {
-        return of(new String(Bits.toBytes(l), 0, len));
-    }
-
-    public static String toString(LineSegment ls) {
-        return ls.getClass().getSimpleName() + "[" + ls.startIndex() + "-" + ls.endIndex() + "]";
+    public static String toString(LineSegment lineSegment) {
+        return lineSegment.getClass().getSimpleName() + "[" +
+               lineSegment.startIndex() + "-" + lineSegment.endIndex() +
+               "]";
     }
 
     public static String asString(MemorySegment segment, long start, long end) {

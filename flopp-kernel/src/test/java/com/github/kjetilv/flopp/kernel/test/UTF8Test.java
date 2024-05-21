@@ -150,7 +150,7 @@ public class UTF8Test {
 
     @Test
     void mystery() {
-        Path path = path("smaples/measurements-complex-utf8.txt");
+        Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(

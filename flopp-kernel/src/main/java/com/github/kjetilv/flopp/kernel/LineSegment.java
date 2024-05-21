@@ -15,6 +15,13 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
 
+    default LineSegment aligned() {
+        if (underlyingSize() % ALIGNMENT == 0) {
+            return this;
+        }
+        throw new IllegalStateException(LineSegments.asString(this) + " is not aligned: " + memorySegment());
+    }
+
     default long shiftedLongsCount() {
         long length = length();
         long fullLongs = length / ALIGNMENT;

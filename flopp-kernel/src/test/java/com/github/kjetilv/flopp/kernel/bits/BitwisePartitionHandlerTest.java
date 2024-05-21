@@ -39,6 +39,7 @@ class BitwisePartitionHandlerTest {
         BitwisePartitionHandler handler = new BitwisePartitionHandler(
             new Partition(0, 1, 0, str.length()),
             memorySegment,
+            str.length(),
             (segment, startIndex, endIndex) ->
                 handled.add(LineSegments.of(segment, startIndex, endIndex)),
             () -> null

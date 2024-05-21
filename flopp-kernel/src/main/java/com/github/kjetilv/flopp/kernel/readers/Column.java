@@ -53,7 +53,7 @@ public record Column<T>(String name, int colunmNo, Parser<T> parser) {
     }
 
     private static Parser<String> toBoundedString(byte[] buffer, Charset charset) {
-        return new Parser<String>() {
+        return new Parser<>() {
 
             @Override
             public String parse(SeparatedLine line, int column) {

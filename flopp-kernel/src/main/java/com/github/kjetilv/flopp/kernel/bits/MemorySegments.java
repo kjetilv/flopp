@@ -187,8 +187,11 @@ public final class MemorySegments {
     }
 
     private static ByteBuffer byteBuffer(byte[] bytes) {
-        ByteBuffer bb = ByteBuffer.allocateDirect(Math.max(ALIGNMENT_INT, bytes.length));
+        int length = bytes.length;
+        int alignedSize = alignedSize(length);
+        ByteBuffer bb = ByteBuffer.allocateDirect(Math.max(ALIGNMENT_INT, alignedSize));
         bb.put(bytes);
+        bb.put(new byte[alignedSize - length]);
         bb.flip();
         return bb;
     }

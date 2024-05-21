@@ -45,7 +45,8 @@ class BitwiseCsvEscapedLineSplitterTest {
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), new CsvFormat.Escaped(';')
         );
-        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
+        LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456");
+        splitter.accept(segment);
         assertThat(splits).containsExactly(
             "foo123",
             "bar",
