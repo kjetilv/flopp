@@ -26,7 +26,10 @@ public interface SeparatedLine {
 
     @SuppressWarnings("unused")
     default Stream<LineSegment> segments() {
-        return IntStream.range(0, columnCount()).mapToObj(toSegment());
+        long[] start = start();
+        long[] end = end();
+        return IntStream.range(0, columnCount()).mapToObj(column ->
+            toSegment(column, start, end));
     }
 
     default String column(int column) {
@@ -56,13 +59,6 @@ public interface SeparatedLine {
             copy(start()),
             copy(end())
         );
-    }
-
-    private IntFunction<LineSegment> toSegment() {
-        long[] start = start();
-        long[] end = end();
-        return column ->
-            toSegment(column, start, end);
     }
 
     private IntFunction<String> toColumn(Charset charset) {

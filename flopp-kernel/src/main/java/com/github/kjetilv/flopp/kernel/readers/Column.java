@@ -6,7 +6,7 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.nio.charset.Charset;
 
-public record Column(String name, int colunmNo, Parser parser) {
+public record Column(String name, int colunmNo, Parse parse) {
 
     public static Column ofString(String name, int columnNo) {
         return ofType(name, columnNo, TO_STRING);
@@ -17,50 +17,50 @@ public record Column(String name, int colunmNo, Parser parser) {
             line.segment(column).asString(buffer));
     }
 
-    public static Column ofType(String name, int columnNo, Parser.Obj parser) {
+    public static Column ofType(String name, int columnNo, Parse.Obj parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofInt(String name, int columnNo, Parser.I parser) {
+    public static Column ofInt(String name, int columnNo, Parse.I parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofLong(String name, int columnNo, Parser.L parser) {
+    public static Column ofLong(String name, int columnNo, Parse.L parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofBoolean(String name, int columnNo, Parser.Bo parser) {
+    public static Column ofBoolean(String name, int columnNo, Parse.Bo parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofChar(String name, int columnNo, Parser.C parser) {
+    public static Column ofChar(String name, int columnNo, Parse.C parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofByte(String name, int columnNo, Parser.By parser) {
+    public static Column ofByte(String name, int columnNo, Parse.By parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofShort(String name, int columnNo, Parser.S parser) {
+    public static Column ofShort(String name, int columnNo, Parse.S parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofFloat(String name, int columnNo, Parser.F parser) {
+    public static Column ofFloat(String name, int columnNo, Parse.F parser) {
         return new Column(name, columnNo, parser);
     }
 
-    public static Column ofDouble(String name, int columnNo, Parser.D parser) {
+    public static Column ofDouble(String name, int columnNo, Parse.D parser) {
         return new Column(name, columnNo, parser);
     }
 
-    private static final Parser.Obj TO_STRING = (separatedLine, column) ->
+    private static final Parse.Obj TO_STRING = (separatedLine, column) ->
         separatedLine.segment(column).asString();
 
-    private static Parser.Obj toString(byte[] buffer, Charset charset) {
+    private static Parse.Obj toString(byte[] buffer, Charset charset) {
         return (separatedLine, column) -> separatedLine.segment(column).asString(buffer, charset);
     }
 
-    private static Parser.Obj toBoundedString(byte[] buffer, Charset charset) {
+    private static Parse.Obj toBoundedString(byte[] buffer, Charset charset) {
         return (line, column) -> {
             LineSegment lineSegment = line.segment(column);
             return MemorySegments.fromLongsWithinBounds(
@@ -73,49 +73,49 @@ public record Column(String name, int colunmNo, Parser parser) {
         };
     }
 
-    public sealed interface Parser {
+    public sealed interface Parse {
 
-        non-sealed interface Obj extends Parser {
+        non-sealed interface Obj extends Parse {
 
             Object parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface Bo extends Parser {
+        non-sealed interface Bo extends Parse {
 
             boolean parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface I extends Parser {
+        non-sealed interface I extends Parse {
 
             int parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface L extends Parser {
+        non-sealed interface L extends Parse {
 
             long parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface By extends Parser {
+        non-sealed interface By extends Parse {
 
             byte parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface S extends Parser {
+        non-sealed interface S extends Parse {
 
             short parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface C extends Parser {
+        non-sealed interface C extends Parse {
 
             char parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface D extends Parser {
+        non-sealed interface D extends Parse {
 
             double parse(SeparatedLine line, int column);
         }
 
-        non-sealed interface F extends Parser {
+        non-sealed interface F extends Parse {
 
             float parse(SeparatedLine line, int column);
         }

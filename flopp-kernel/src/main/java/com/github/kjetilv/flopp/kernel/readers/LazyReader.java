@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import static com.github.kjetilv.flopp.kernel.readers.Column.Parser.*;
+import static com.github.kjetilv.flopp.kernel.readers.Column.Parse.*;
 
 final class LazyReader implements Reader, Reader.Columns {
 
@@ -80,7 +80,7 @@ final class LazyReader implements Reader, Reader.Columns {
             .stream().mapToInt(Column::colunmNo).sorted().toArray();
 
         for (int i : columnNos) {
-            switch (columns[i].parser()) {
+            switch (columns[i].parse()) {
                 case Obj obj -> objs[i] = obj;
                 case Bo boo -> bos[i] = boo;
                 case By by -> bys[i] = by;

@@ -62,12 +62,13 @@ abstract sealed class AbstractBitwiseLineSplitter
                "]";
     }
 
-    protected void separate() {
-    }
-
     String substring() {
         return null;
     }
 
-    private static final Consumer<SeparatedLine> NONE = _ -> {};
+    protected void separate() {
+    }
+
+    private static final Consumer<SeparatedLine> NONE = _ -> {
+    };
 }
