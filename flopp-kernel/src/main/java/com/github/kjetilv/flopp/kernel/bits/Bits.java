@@ -108,14 +108,15 @@ public final class Bits {
     }
 
     public static void transferDataTo(long data, int offset, byte[] target) {
-        target[offset] = (byte) (data & 0xFF);
-        target[offset + 1] = (byte) (data >> 8 & 0xFF);
-        target[offset + 2] = (byte) (data >> 16 & 0xFF);
-        target[offset + 3] = (byte) (data >> 24 & 0xFF);
-        target[offset + 4] = (byte) (data >> 32 & 0xFF);
-        target[offset + 5] = (byte) (data >> 40 & 0xFF);
-        target[offset + 6] = (byte) (data >> 48 & 0xFF);
-        target[offset + 7] = (byte) (data >> 56);
+        int i = offset;
+        target[i++] = (byte) (data & 0xFF);
+        target[i++] = (byte) (data >> 8 & 0xFF);
+        target[i++] = (byte) (data >> 16 & 0xFF);
+        target[i++] = (byte) (data >> 24 & 0xFF);
+        target[i++] = (byte) (data >> 32 & 0xFF);
+        target[i++] = (byte) (data >> 40 & 0xFF);
+        target[i++] = (byte) (data >> 48 & 0xFF);
+        target[i] = (byte) (data >> 56);
     }
 
     /**
@@ -167,11 +168,15 @@ public final class Bits {
     private Bits() {
     }
 
+    private static final long ONES = 0x0101010101010101L;
+
     public static final long EIGHTIES = 0x8080808080808080L;
 
     public static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
 
     private static final int ALIGNMENT = 8;
+
+    private static final int ALIGNMENT_POWER = 3;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -238,7 +243,7 @@ public final class Bits {
     }
 
     private static int trailingBytes(long data) {
-        return Long.numberOfTrailingZeros(data) / ALIGNMENT;
+        return Long.numberOfTrailingZeros(data) >> ALIGNMENT_POWER;
     }
 
     private static boolean zero(int position, long bytes) {
@@ -247,7 +252,7 @@ public final class Bits {
 
     private static long findInstances(long bytes, long mask) {
         long masked = bytes ^ mask;
-        long underflown = masked - 0x0101010101010101L;
+        long underflown = masked - ONES;
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & EIGHTIES;
     }
@@ -269,7 +274,7 @@ public final class Bits {
 
         private SwarFinder(char c) {
             this.c = c;
-            this.mask = 0x0101010101010101L * this.c;
+            this.mask = ONES * this.c;
         }
 
         /**
@@ -325,7 +330,7 @@ public final class Bits {
 
         private CyclingFinder(char c) {
             this.c = c;
-            this.mask = 0x0101010101010101L * this.c;
+            this.mask = ONES * this.c;
         }
 
         /**
@@ -391,7 +396,7 @@ public final class Bits {
 
         private SimpleCounter(char c) {
             this.c = c;
-            this.mask = 0x0101010101010101L * this.c;
+            this.mask = ONES * this.c;
         }
 
         @Override

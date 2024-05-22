@@ -1,85 +1,112 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.nio.charset.Charset;
 
-public record Column<T>(String name, int colunmNo, Parser<T> parser) {
+public record Column(String name, int colunmNo, Parser parser) {
 
-    public static Column<LineSegment> ofBinary(String name, int columnNo) {
-        return ofType(name, columnNo, LineSegment::copy);
+    public static Column ofBinary(String name, int columnNo) {
+        return ofType(name, columnNo, toBoundedString(null));
     }
 
-    public static Column<String> ofString(String name, int columnNo) {
+    public static Column ofString(String name, int columnNo) {
         return ofType(name, columnNo, TO_STRING);
     }
 
-    public static Column<String> ofString(String name, int columnNo, byte[] buffer) {
-        return ofType(name, columnNo, toString(buffer, null));
+    public static Column ofString(String name, int columnNo, byte[] buffer) {
+        return ofType(name, columnNo, (line, column) ->
+            line.segment(column).asString(buffer));
     }
 
-    public static Column<String> ofBoundedString(String name, int columnNo, byte[] buffer) {
-        return ofType(name, columnNo, toBoundedString(buffer, null));
+    public static Column ofBoundedString(String name, int columnNo, byte[] buffer) {
+        return ofType(name, columnNo, (line, column) ->
+            line.segment(column).asString(buffer));
     }
 
-    public static <T> Column<T> ofType(String name, int columnNo, Parser<T> parser) {
-        return new Column<>(name, columnNo, parser);
+    public static Column ofType(String name, int columnNo, Parser.Obj parser) {
+        return new Column(name, columnNo, parser);
     }
 
-    public Column {
-        Non.negativeOrZero(colunmNo, "Columns are 1-indexed, first column is 1");
+    public static Column ofInt(String name, int columnNo, Parser.Ing parser) {
+        return new Column(name, columnNo, parser);
     }
 
-    public Object parse(LineSegment lineSegment) {
-        return parser.parse(lineSegment);
-    }
+    private static final Parser.Obj TO_STRING = (separatedLine, column) ->
+        separatedLine.segment(column).asString();
 
-    private static final Parser<String> TO_STRING = LineSegments::asString;
-
-    private static Parser<String> toString(byte[] buffer) {
+    private static Parser toString(byte[] buffer) {
         return toString(buffer, null);
     }
 
-    private static Parser<String> toString(byte[] buffer, Charset charset) {
-        return lineSegment -> lineSegment.asString(buffer, charset);
+    private static Parser.Obj toString(byte[] buffer, Charset charset) {
+        return (separatedLine, column) -> separatedLine.segment(column).asString(buffer, charset);
     }
 
-    private static Parser<String> toBoundedString(byte[] buffer) {
+    private static Parser.Obj toBoundedString(byte[] buffer) {
         return toBoundedString(buffer, null);
     }
 
-    private static Parser<String> toBoundedString(byte[] buffer, Charset charset) {
-        return new Parser<>() {
-
-            @Override
-            public String parse(SeparatedLine line, int column) {
-                return line.column(column, charset);
-            }
-
-            @Override
-            public String parse(LineSegment lineSegment) {
-                return MemorySegments.fromLongsWithinBounds(
-                    lineSegment.memorySegment(),
-                    lineSegment.startIndex(),
-                    lineSegment.endIndex(),
-                    buffer,
-                    charset
-                );
-            }
+    private static Parser.Obj toBoundedString(byte[] buffer, Charset charset) {
+        return (line, column) -> {
+            LineSegment lineSegment = line.segment(column);
+            return MemorySegments.fromLongsWithinBounds(
+                lineSegment.memorySegment(),
+                lineSegment.startIndex(),
+                lineSegment.endIndex(),
+                buffer,
+                charset
+            );
         };
     }
 
-    @FunctionalInterface
-    public interface Parser<T> {
+    public sealed interface Parser {
 
-        default T parse(SeparatedLine line, int column) {
-            return parse(line.segment(column));
+        non-sealed interface Obj extends Parser {
+
+            Object parse(SeparatedLine line, int column);
         }
 
-        T parse(LineSegment lineSegment);
+        non-sealed interface Boo extends Parser {
+
+            boolean parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Ing extends Parser {
+
+            int parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Lon extends Parser {
+
+            long parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Byt extends Parser {
+
+            byte parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Sho extends Parser {
+
+            short parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Cha extends Parser {
+
+            char parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Dou extends Parser {
+
+            double parse(SeparatedLine line, int column);
+        }
+
+        non-sealed interface Flo extends Parser {
+
+            float parse(SeparatedLine line, int column);
+        }
     }
 }

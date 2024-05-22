@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public final class Readers {
 
-    public static Reader create(Column<?>... columns) {
+    public static Reader create(Column... columns) {
         return LazyReader.create(List.of(columns));
     }
 

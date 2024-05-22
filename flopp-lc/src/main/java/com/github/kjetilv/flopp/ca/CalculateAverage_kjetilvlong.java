@@ -41,9 +41,9 @@ public final class CalculateAverage_kjetilvlong {
 //            go3(path);
 //            go3(path);
 //            go3(path);
-//            go3(path);
-//            go3(path);
             go3(path);
+//            go3(path);
+//            go3(path);
 //            go4It(path);
 //            go1(path);
         }
@@ -169,15 +169,15 @@ public final class CalculateAverage_kjetilvlong {
                     CompletableFuture.supplyAsync(
                         () -> {
                             Reader reader = Readers.create(
-                                Column.ofBoundedString("station", 1, new byte[128]),
-                                Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
+                                Column.ofString("station", 0, new byte[128]),
+                                Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
                             );
                             Map<String, Result> m = Maps.ofSize(512);
                             reader.read(splitter, columns ->
                                 m.compute(
                                     (String) columns.get("station"),
                                     (station, existing) -> {
-                                        int dec = (Integer) columns.get("measurement");
+                                        int dec = columns.getInt("measurement");
                                         return existing == null
                                             ? new Result(dec)
                                             : existing.collect(dec);
@@ -291,7 +291,7 @@ public final class CalculateAverage_kjetilvlong {
     private static void parse(SeparatedLine separatedLine, Map<String, Result> m) {
         try {
             String station = separatedLine.column(0);
-            int measure = parseValue(separatedLine.segment(1));
+            int measure = parseValue(separatedLine, 1);
             m.compute(
                 station,
                 (_, existing) ->
@@ -403,10 +403,11 @@ public final class CalculateAverage_kjetilvlong {
         return value;
     }
 
-    private static int parseValue(LineSegment segment) {
+    private static int parseValue(SeparatedLine separatedLine, int column) {
+        LineSegment segment = separatedLine.segment(column);
         int value = 0;
         int pos = 1;
-        long head = segment.head();
+        long head = segment.head(false);
         long len = segment.length();
         for (long i = len - 1; i >= 0; i--) {
             long shift = i * 8;

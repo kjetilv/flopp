@@ -71,7 +71,8 @@ public final class FormattSplit_kjetilvlong {
         return longAdder;
     }
 
-    private static int parseValue(LineSegment segment) {
+    private static int parseValue(SeparatedLine separatedLine, int column) {
+        LineSegment segment = separatedLine.segment(column);
         long value = 0;
         long pos = 1;
         long head = segment.head();
