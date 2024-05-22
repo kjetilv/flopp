@@ -21,54 +21,54 @@ public interface Reader {
             return get(column(name).colunmNo());
         }
 
-        Object get(int columnNo);
+        Object get(int col);
 
         default int getInt(String name) {
             return getInt(columnNo(name));
         }
 
-        int getInt(int columnNo);
+        int getInt(int col);
 
         default long getLong(String name) {
             return getLong(columnNo(name));
         }
 
-        long getLong(int columnNo);
+        long getLong(int col);
 
         default boolean getBoolean(String name) {
             return getBoolean(columnNo(name));
         }
 
-        boolean getBoolean(int columnNo);
+        boolean getBoolean(int col);
 
         default short getShort(String name) {
             return getShort(columnNo(name));
         }
 
-        short getShort(int columnNo);
+        short getShort(int col);
 
         default byte getByte(String name) {
             return getByte(columnNo(name));
         }
 
-        byte getByte(int columnNo);
+        byte getByte(int col);
 
         default char getChar(String name) {
             return getChar(columnNo(name));
         }
 
-        char getChar(int columnNo);
+        char getChar(int col);
 
         default float getFloat(String name) {
             return getFloat(columnNo(name));
         }
 
-        float getFloat(int columnNo);
+        float getFloat(int col);
 
         default double getDouble(String name) {
             return getDouble(columnNo(name));
         }
 
-        double getDouble(int columnNo);
+        double getDouble(int col);
     }
 }

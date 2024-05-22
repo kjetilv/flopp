@@ -209,8 +209,8 @@ public final class CalculateAverage_kjetilvlong {
         ).scaled(2);
         CsvFormat format = new CsvFormat.Simple(';', 2);
         Reader reader = Readers.create(
-            Column.ofBinary("station", 1),
-            Column.ofType("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
+            Column.ofString("station", 1),
+            Column.ofInt("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
         );
         int chunks = partitioning.of(shape.size()).size();
         try (
