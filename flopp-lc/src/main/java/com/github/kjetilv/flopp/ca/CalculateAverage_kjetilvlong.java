@@ -290,10 +290,10 @@ public final class CalculateAverage_kjetilvlong {
 
     private static void parse(SeparatedLine separatedLine, Map<String, Result> m) {
         try {
-            String station = separatedLine.column(0);
-            int measure = parseValue(separatedLine, 1);
+            String segment = separatedLine.segment(0).asString();
+            int measure = parseValue(separatedLine.segment(1));
             m.compute(
-                station,
+                segment,
                 (_, existing) ->
                     existing == null
                         ? new Result(measure)
@@ -403,8 +403,7 @@ public final class CalculateAverage_kjetilvlong {
         return value;
     }
 
-    private static int parseValue(SeparatedLine separatedLine, int column) {
-        LineSegment segment = separatedLine.segment(column);
+    private static int parseValue(LineSegment segment) {
         int value = 0;
         int pos = 1;
         long head = segment.head(false);

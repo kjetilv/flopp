@@ -71,15 +71,14 @@ public final class FormattSplit_kjetilvlong {
         return longAdder;
     }
 
-    private static int parseValue(SeparatedLine separatedLine, int column) {
-        LineSegment segment = separatedLine.segment(column);
+    private static int parseValue(LineSegment segment) {
         long value = 0;
         long pos = 1;
         long head = segment.head();
         int intExact = Math.toIntExact(segment.length());
         for (int i = intExact - 1; i >= 0; i--) {
             int shift = i * 8;
-            long b = (head >> shift) & 0xFF;
+            long b = head >> shift & 0xFF;
             if (b == '.') {
                 continue;
             }
