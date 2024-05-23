@@ -2,11 +2,11 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
-import java.util.OptionalInt;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@SuppressWarnings("unused")
 public interface SeparatedLine {
 
     MemorySegment memorySegment();
@@ -74,10 +74,10 @@ public interface SeparatedLine {
     default int maxWidth() {
         long[] start = start();
         long[] end = end();
-        OptionalInt max = IntStream.range(0, columnCount() - 1)
-            .map(i -> (int) (end[i + 1] - start[i]))
-            .max();
-        return max.isPresent() ? max.getAsInt() : 0;
+        return IntStream.range(1, columnCount())
+            .map(i -> (int) (end[i] - start[i - 1]))
+            .max()
+            .orElse(0);
     }
 
     private IntFunction<String> toColumn(Charset charset) {
