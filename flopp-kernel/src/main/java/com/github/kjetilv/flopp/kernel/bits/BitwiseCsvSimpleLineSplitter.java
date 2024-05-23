@@ -8,8 +8,8 @@ import java.util.function.Consumer;
 @SuppressWarnings("DuplicatedCode")
 final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    BitwiseCsvSimpleLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format, boolean immutable) {
-        super(lines, format, immutable);
+    BitwiseCsvSimpleLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
+        super(lines, format);
     }
 
     @Override

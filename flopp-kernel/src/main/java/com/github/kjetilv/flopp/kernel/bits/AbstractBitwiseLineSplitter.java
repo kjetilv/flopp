@@ -14,17 +14,14 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     private final Consumer<SeparatedLine> lines;
 
-    private final boolean immutable;
-
     LineSegment segment;
 
     long underlyingSize;
 
     MemorySegment memorySegment;
 
-    AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines, boolean immutable) {
+    AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
         this.lines = lines == null ? NONE : lines;
-        this.immutable = immutable;
     }
 
     @Override
@@ -38,9 +35,8 @@ abstract sealed class AbstractBitwiseLineSplitter
         this.memorySegment = segment.memorySegment();
         this.underlyingSize = memorySegment.byteSize();
         separate();
-        SeparatedLine separatedLine = immutable ? immutableSeparatedLine() : this;
-        lines.accept(separatedLine);
-        return separatedLine;
+        lines.accept(this);
+        return this;
     }
 
     @Override

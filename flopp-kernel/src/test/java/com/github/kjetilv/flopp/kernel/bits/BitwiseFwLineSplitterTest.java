@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.FwFormat;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Range;
+import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

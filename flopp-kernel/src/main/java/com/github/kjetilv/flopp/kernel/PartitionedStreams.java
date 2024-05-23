@@ -8,9 +8,5 @@ public interface PartitionedStreams {
 
     Stream<LongSupplier> lineCounters();
 
-    default Stream<? extends PartitionStreamer> streamers() {
-        return streamers(false);
-    }
-
-    Stream<? extends PartitionStreamer> streamers(boolean immutable);
+    Stream<? extends PartitionStreamer> streamers();
 }

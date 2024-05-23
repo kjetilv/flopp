@@ -12,23 +12,8 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
 
     private int state;
 
-    BitwiseCsvDoubleQuotedLineSplitter(
-        Consumer<SeparatedLine> lines,
-        CsvFormat.DoubleQuoted format
-    ) {
-        this(
-            lines,
-            format,
-            false
-        );
-    }
-
-    BitwiseCsvDoubleQuotedLineSplitter(
-        Consumer<SeparatedLine> lines,
-        CsvFormat.DoubleQuoted format,
-        boolean immutable
-    ) {
-        super(lines, format, immutable);
+    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted format) {
+        super(lines, format);
         this.quoFinder = Bits.finder(format.quote(), format.fast());
     }
 

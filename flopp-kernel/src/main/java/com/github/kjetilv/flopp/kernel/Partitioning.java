@@ -46,7 +46,7 @@ public record Partitioning(int count, long tail) {
         return new Partitioning(count, tail);
     }
 
-    public List<Partition> of(long total) {
+    public Partitions of(long total) {
         Non.negativeOrZero(total, "total");
         long reasonablesize = tail + count;
         if (total < reasonablesize) {
@@ -55,9 +55,10 @@ public record Partitioning(int count, long tail) {
         if (count > total) {
             throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
         }
-        return total > count
+        List<Partition> partitions = total > count
             ? partitions(partitionSizes(count, total, tail))
             : singlePartition(total);
+        return new Partitions(this, total, partitions);
     }
 
     public static final long ALIGNMENT = 0x08L;

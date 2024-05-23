@@ -40,8 +40,8 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
 
     private final byte[] columnBuffer;
 
-    AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format, boolean immutable) {
-        super(lines, immutable);
+    AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
+        super(lines);
         this.format = Objects.requireNonNull(format, "format");
         this.sepFinder = Bits.finder(format.separator(), true);
         this.startPositions = new long[format.columnCount()];

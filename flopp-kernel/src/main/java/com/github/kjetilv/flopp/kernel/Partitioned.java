@@ -11,7 +11,7 @@ public interface Partitioned<P> extends Closeable {
 
     P partitioned();
 
-    List<Partition> partitions();
+    Partitions partitions();
 
     PartitionedProcessor<LineSegment> processor(Path target);
 
@@ -20,6 +20,14 @@ public interface Partitioned<P> extends Closeable {
     PartitionedConsumer consumer();
 
     PartitionedSplitters splitters();
+
+    default Stream<PartitionedSplitter> splitters(CsvFormat format) {
+        return splitters().splitters(format);
+    }
+
+    default Stream<PartitionedSplitter> splitters(FwFormat format) {
+        return splitters().splitters(format);
+    }
 
     PartitionedStreams streams();
 

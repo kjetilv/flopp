@@ -209,7 +209,7 @@ public class UTF8Test {
         StringBuilder sb = new StringBuilder();
         Partitioning partitioning = Partitioning.create(partitionCount);
         Shape shape = Shape.of(tmp).longestLine(longestLine);
-        List<Partition> partitions = partitioning.of(shape.size());
+        Partitions partitions = partitioning.of(shape.size());
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
         ) {

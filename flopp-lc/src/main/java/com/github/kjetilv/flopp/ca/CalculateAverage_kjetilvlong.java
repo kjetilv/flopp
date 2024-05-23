@@ -75,9 +75,10 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
+            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
+            CsvFormat format = new CsvFormat.Escaped(';', '\\');
             List<Supplier<Map<String, Result>>> mapSuppliers =
-                bitwisePartitioned.splitters()
-                    .splitters(new CsvFormat.Escaped(';', '\\'))
+                partitionedSplitters.splitters(format)
                     .map(splitsConsumer -> {
                         Supplier<Map<String, Result>> worker = () ->
                             toMap(path, splitsConsumer, callbacks);
@@ -89,7 +90,7 @@ public final class CalculateAverage_kjetilvlong {
             List<Map<String, Result>> maps = mapSuppliers.stream()
                 .map(Supplier::get)
                 .toList();
-            SequencedMap<String, Result> combinedMaps = combineMaps(keySet(maps), maps);
+            Map<String, Result> combinedMaps = combineMaps(maps);
             System.out.println(combinedMaps);
             System.out.println(Duration.between(start, Instant.now()));
             return combinedMaps;
@@ -126,7 +127,8 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            List<CompletableFuture<Map<String, Result>>> list = bitwisePartitioned.streams().streamers()
+            PartitionedStreams partitionedStreams = bitwisePartitioned.streams();
+            List<CompletableFuture<Map<String, Result>>> list = partitionedStreams.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines)
                         .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
@@ -135,8 +137,7 @@ public final class CalculateAverage_kjetilvlong {
                 .map(CompletableFuture::join)
                 .toList();
             System.out.println(Duration.between(start, Instant.now()));
-            Set<String> keys = keySet(maps);
-            Map<String, Result> map = combineMaps(keys, maps);
+            Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
@@ -152,51 +153,65 @@ public final class CalculateAverage_kjetilvlong {
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor =
-                // Executors.newWorkStealingPool()
+//                 Executors.newWorkStealingPool()
 //                Executors.newVirtualThreadPerTaskExecutor()
-                new ForkJoinPool(Runtime.getRuntime().availableProcessors())
+                new ForkJoinPool(
+                    Runtime.getRuntime().availableProcessors(),
+                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+                    (t, e) ->
+                        e.printStackTrace(System.err),
+                    true
+                )
 //                new ThreadPoolExecutor(
 //                    Runtime.getRuntime().availableProcessors(),
 //                    Runtime.getRuntime().availableProcessors(),
 //                    0, TimeUnit.SECONDS,
 //                    new LinkedBlockingQueue<>(chunks));
         ) {
-            System.out.println(Duration.between(start, Instant.now()));
-            List<CompletableFuture<Map<String, Result>>> list = bitwisePartitioned.splitters()
-                .splitters(format)
-                .parallel()
+            List<Map<String, Result>> maps = bitwisePartitioned.splitters(format).parallel()
                 .map(splitter ->
-                    CompletableFuture.supplyAsync(
-                        () -> {
-                            Reader reader = Readers.create(
-                                Column.ofString("station", 0, new byte[128]),
-                                Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
-                            );
-                            Map<String, Result> m = Maps.ofSize(512);
-                            reader.read(splitter, columns ->
-                                m.compute(
-                                    (String) columns.get("station"),
-                                    (station, existing) -> {
-                                        int dec = columns.getInt("measurement");
-                                        return existing == null
-                                            ? new Result(dec)
-                                            : existing.collect(dec);
-                                    }
-                                ));
-                            return m;
-                        },
-                        executor
-                    ))
-                .toList();
-            List<Map<String, Result>> maps = list.stream()
+                    CompletableFuture.supplyAsync(() -> map(splitter), executor))
+                .toList()
+                .stream()
                 .map(CompletableFuture::join)
                 .toList();
-            System.out.println(Duration.between(start, Instant.now()));
-            Set<String> keys = keySet(maps);
-            Map<String, Result> map = combineMaps(keys, maps);
+            Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
         }
+    }
+
+    private static Map<String, Result> combineMaps(List<Map<String, Result>> maps) {
+        Set<String> keys = maps.stream()
+            .map(Map::keySet).flatMap(Collection::stream)
+            .collect(Collectors.toSet());
+        Map<String, Result> treeMap = new TreeMap<>(maps.getFirst());
+        maps.stream().skip(1)
+            .forEach(map ->
+                keys.forEach(key ->
+                    treeMap.put(
+                        key,
+                        treeMap.computeIfAbsent(key, _ -> new Result(0)).merge(map.get(key))
+                    )));
+        return treeMap;
+    }
+
+    private static Map<String, Result> map(PartitionedSplitter splitter) {
+        Map<String, Result> m = Maps.ofSize(512);
+        Readers.create(
+            Column.ofString("station", 0, new byte[128]),
+            Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
+        ).read(splitter, columns ->
+            m.compute(
+                (String) columns.get("station"),
+                (_, existing) -> {
+                    int dec = columns.getInt("measurement");
+                    return existing == null
+                        ? new Result(dec)
+                        : existing.collect(dec);
+                }
+            ));
+        return m;
     }
 
     @SuppressWarnings("unused")
@@ -223,7 +238,8 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             System.out.println(Duration.between(start, Instant.now()));
-            Stream<PartitionedSplitter> partitionStreamers = bitwisePartitioned.splitters().splitters(format);
+            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
+            Stream<PartitionedSplitter> partitionStreamers = partitionedSplitters.splitters(format);
             List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers.map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
@@ -335,26 +351,6 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static <T extends Comparable<T>> SequencedMap<T, Result> combineMaps(
-        Set<T> keys,
-        List<Map<T, Result>> maps
-    ) {
-        SequencedMap<T, Result> treeMap = new TreeMap<>(maps.getFirst());
-        maps.stream().skip(1)
-            .forEach(map ->
-                keys.forEach(key -> {
-                    Result base = treeMap.get(key);
-                    Result addendum = map.get(key);
-                    if (base == null) {
-                        treeMap.put(key, addendum);
-                    } else if (addendum != null) {
-                        Result merged = base.merge(addendum);
-                        treeMap.put(key, merged);
-                    }
-                }));
-        return treeMap;
-    }
-
     private static SequencedMap<String, Result> combineMapsToStringKey(
         Set<LineSegment> keys,
         List<Map<LineSegment, Result>> submaps
@@ -417,7 +413,7 @@ public final class CalculateAverage_kjetilvlong {
             if (b == '-') {
                 return value * -1;
             }
-            int j = (int)(b - '0');
+            int j = (int) (b - '0');
             value += j * pos;
             pos *= 10;
         }
@@ -446,6 +442,9 @@ public final class CalculateAverage_kjetilvlong {
         }
 
         public Result merge(Result coll) {
+            if (coll == null) {
+                return this;
+            }
             min = Math.min(min, coll.min);
             max = Math.max(max, coll.max);
             sum += coll.sum;

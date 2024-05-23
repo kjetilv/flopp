@@ -14,11 +14,7 @@ final class BitwiseCounter {
 
     private final Supplier<BitwiseCounter> next;
 
-    BitwiseCounter(
-        Partition partition,
-        MemorySegmentSource memorySegmentSource,
-        Supplier<BitwiseCounter> next
-    ) {
+    BitwiseCounter(Partition partition, MemorySegmentSource memorySegmentSource, Supplier<BitwiseCounter> next) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.memorySegmentSource = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource");
         this.next = next;

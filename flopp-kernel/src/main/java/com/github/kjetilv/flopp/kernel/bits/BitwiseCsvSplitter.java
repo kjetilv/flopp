@@ -12,12 +12,9 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final CsvFormat format;
 
-    private final boolean immutable;
-
-    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format, boolean immutable) {
+    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
-        this.immutable = immutable;
     }
 
     @Override
@@ -37,21 +34,12 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {
         return switch (format) {
-            case CsvFormat.Escaped escaped -> new BitwiseCsvEscapedLineSplitter(
-                consumer,
-                escaped,
-                immutable
-            );
-            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseCsvDoubleQuotedLineSplitter(
-                consumer,
-                doubleQuoted,
-                immutable
-            );
-            case CsvFormat.Simple simple -> new BitwiseCsvSimpleLineSplitter(
-                consumer,
-                simple,
-                immutable
-            );
+            case CsvFormat.Escaped escaped ->
+                new BitwiseCsvEscapedLineSplitter(consumer, escaped);
+            case CsvFormat.DoubleQuoted doubleQuoted ->
+                new BitwiseCsvDoubleQuotedLineSplitter(consumer, doubleQuoted);
+            case CsvFormat.Simple simple ->
+                new BitwiseCsvSimpleLineSplitter(consumer, simple);
         };
     }
 }

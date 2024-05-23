@@ -39,13 +39,7 @@ final class BitwisePartitionHandler implements Runnable {
         BitwisePartitioned.Action action,
         Supplier<BitwisePartitionHandler> next
     ) {
-        this(
-            partition,
-            Objects.requireNonNull(segment, "segment"),
-            segment.byteSize(),
-            action,
-            next
-        );
+        this(partition, segment, segment.byteSize(), action, next);
     }
 
     BitwisePartitionHandler(

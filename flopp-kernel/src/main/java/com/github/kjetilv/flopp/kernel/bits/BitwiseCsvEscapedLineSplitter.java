@@ -15,11 +15,7 @@ final class BitwiseCsvEscapedLineSplitter extends AbstractBitwiseCsvLineSplitter
     private long nextEscape;
 
     BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format) {
-        this(lines, format, false);
-    }
-
-    BitwiseCsvEscapedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Escaped format, boolean immutable) {
-        super(lines, format, immutable);
+        super(lines, format);
         this.escFinder = Bits.finder(format.escape(), format.fast());
     }
 

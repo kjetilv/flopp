@@ -6,7 +6,6 @@ import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 final class BitwisePartitioned implements Partitioned<Path> {
@@ -15,7 +14,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private final Shape shape;
 
-    private final List<Partition> partitions;
+    private final Partitions partitions;
 
     private final MemorySegmentSource memorySegmentSource;
 
@@ -32,7 +31,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public List<Partition> partitions() {
+    public Partitions partitions() {
         return partitions;
     }
 

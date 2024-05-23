@@ -91,7 +91,8 @@ class BitwiseFileSplitterTest {
         ) {
             partititioned.streams().streamers()
                 .forEach(streamer ->
-                    streamer.lines().forEach(splitter));
+                    streamer.lines()
+                        .forEach(splitter));
         }
         System.out.println(airlines.size());
         System.out.println(airlines.stream().limit(10)
@@ -188,15 +189,17 @@ class BitwiseFileSplitterTest {
             List<Partitioned<Path>> partitioneds = list.filter(endsWith(".csv"))
                 .map(BitwiseFileSplitterTest::partitioned)
                 .toList();
-            List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
-                    partititioned.streams().streamers()
+            List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned -> {
+                    PartitionedStreams partitionedStreams = partititioned.streams();
+                    return partitionedStreams.streamers()
                         .map(partitionStreamer ->
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
                                         .forEach(new BitwiseCsvEscapedLineSplitter(lines, format)),
                                 executor
-                            )))
+                            ));
+                })
                 .toList();
             futures.forEach(CompletableFuture::join);
             partitioneds.forEach(Partitioned::close);

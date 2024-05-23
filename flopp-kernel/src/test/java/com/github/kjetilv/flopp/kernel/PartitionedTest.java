@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -51,7 +50,8 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            pf1.streams().streamers()
+            PartitionedStreams partitionedStreams = pf1.streams();
+            partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(LineSegment::asString)
@@ -115,7 +115,8 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            pf1.streams().streamers()
+            PartitionedStreams partitionedStreams = pf1.streams();
+            partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(LineSegment::asString)
@@ -128,7 +129,8 @@ class PartitionedTest {
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
-            pf2.streams().streamers()
+            PartitionedStreams partitionedStreams = pf2.streams();
+            partitionedStreams.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
@@ -170,7 +172,8 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            pf1.streams().streamers()
+            PartitionedStreams partitionedStreams = pf1.streams();
+            partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(LineSegment::asString)
@@ -184,7 +187,8 @@ class PartitionedTest {
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
-            pf2.streams().streamers()
+            PartitionedStreams partitionedStreams = pf2.streams();
+            partitionedStreams.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->

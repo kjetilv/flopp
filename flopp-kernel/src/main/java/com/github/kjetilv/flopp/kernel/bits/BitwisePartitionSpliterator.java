@@ -14,7 +14,6 @@ import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
@@ -23,8 +22,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     private final MiddleMan<BitwisePartitioned.Action> middleMan;
 
     private final Supplier<BitwisePartitionSpliterator> next;
-
-    private final boolean immutable;
 
     private MemorySegment segment;
 
@@ -37,8 +34,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         MemorySegment segment,
         long logicalSize,
         MiddleMan<BitwisePartitioned.Action> middleMan,
-        Supplier<BitwisePartitionSpliterator> next,
-        boolean immutable
+        Supplier<BitwisePartitionSpliterator> next
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
@@ -47,16 +43,13 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             ? action -> action
             : middleMan;
         this.next = next;
-        this.immutable = immutable;
         adopt(segment);
     }
 
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
-            Action delegate = immutable
-                ? new ImmutableForwarder(action)
-                : new MutableForwarder(action);
+            Action delegate = new MutableForwarder(action);
             handler(middleMan.intercept(delegate)).run();
             return false;
         } catch (Exception e) {
@@ -200,25 +193,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public String toString() {
             return startIndex() + "+" + length() + ":" + LineSegments.asString(segment, startIndex, endIndex);
-        }
-    }
-
-    private final class ImmutableForwarder implements Action {
-
-        private final Consumer<? super LineSegment> action;
-
-        ImmutableForwarder(Consumer<? super LineSegment> action) {
-            this.action = action;
-        }
-
-        @Override
-        public void line(long startIndex, long endIndex) {
-            action.accept(LineSegments.of(segment, startIndex, endIndex));
-        }
-
-        @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
-            action.accept(LineSegments.of(segment, startIndex, endIndex));
         }
     }
 }

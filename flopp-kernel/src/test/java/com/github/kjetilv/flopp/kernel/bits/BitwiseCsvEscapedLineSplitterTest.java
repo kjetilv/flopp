@@ -278,8 +278,8 @@ class BitwiseCsvEscapedLineSplitterTest {
                 abc234;foo;456;dfgfgh;1234
                 foo;bar;zot
                 foo;bar
-                                
-                                
+                
+                
                 zot;
                 moreStuff;1;2;3;4;5;6
                 """,

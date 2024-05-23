@@ -12,12 +12,9 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
 
     private final FwFormat format;
 
-    private final boolean immutable;
-
-    BitwiseFwSplitter(PartitionStreamer streamer, FwFormat format, boolean immutable) {
+    BitwiseFwSplitter(PartitionStreamer streamer, FwFormat format) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
-        this.immutable = immutable;
     }
 
     @Override
@@ -27,11 +24,11 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines().forEach(new BitwiseFwLineSplitter(format, consumer, immutable));
+        streamer.lines().forEach(new BitwiseFwLineSplitter(format, consumer));
     }
 
     @Override
     public Stream<SeparatedLine> separatedLine() {
-        return streamer.lines().map(new BitwiseFwLineSplitter(format, null, immutable));
+        return streamer.lines().map(new BitwiseFwLineSplitter(format, null));
     }
 }

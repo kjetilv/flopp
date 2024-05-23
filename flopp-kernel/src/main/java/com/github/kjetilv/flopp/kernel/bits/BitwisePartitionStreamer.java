@@ -20,8 +20,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         Partition partition,
         Shape shape,
         MemorySegmentSource memorySegmentSource,
-        Supplier<BitwisePartitionStreamer> next,
-        boolean immutable
+        Supplier<BitwisePartitionStreamer> next
     ) {
         this.partition = partition;
         MemorySegment memorySegment = memorySegmentSource.get(partition);
@@ -34,8 +33,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
             safeSegment,
             logicalSize,
             HeadersAndFooters.middleMan(partition, shape),
-            next == null ? null : () -> next.get().spliterator,
-            immutable
+            next == null ? null : () -> next.get().spliterator
         );
     }
 

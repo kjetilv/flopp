@@ -1,10 +1,11 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
+import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,16 +19,13 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final Shape shape;
 
-    private final List<Partition> partitions;
+    private final Partitions partitions;
 
     private final MemorySegmentSource source;
 
-    BitwisePartitionStreams(Shape shape, List<Partition> partitions, MemorySegmentSource source) {
+    BitwisePartitionStreams(Shape shape, Partitions partitions, MemorySegmentSource source) {
         this.shape = Objects.requireNonNull(shape, "shape");
-        this.partitions = Non.empty(Objects.requireNonNull(partitions, "partitions"), "partitions")
-            .stream()
-            .sorted(Comparator.naturalOrder())
-            .toList();
+        this.partitions = partitions;
         this.source = Objects.requireNonNull(source, "memorySegmentSource");
     }
 
@@ -44,45 +42,36 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     }
 
     @Override
-    public Stream<? extends PartitionStreamer> streamers(boolean immutable) {
+    public Stream<? extends PartitionStreamer> streamers() {
         int count = partitions.size();
         ConcurrentMap<Integer, BitwisePartitionStreamer> map =
             new ConcurrentHashMap<>(Maps.mapCapacity(count));
         return IntStream.range(0, count)
             .mapToObj(index ->
-                streamerFor(immutable, map, index));
+                streamerFor(index, map));
     }
 
-    private BitwisePartitionStreamer streamerFor(
-        boolean immutable,
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map,
-        int index
-    ) {
+    private BitwisePartitionStreamer streamerFor(int index, ConcurrentMap<Integer, BitwisePartitionStreamer> map) {
         return map.computeIfAbsent(index, _ ->
             new BitwisePartitionStreamer(
                 partitions.get(index),
                 shape,
                 source,
-                nextLookup(index, map, immutable),
-                immutable
+                nextLookup(index, map)
             ));
     }
 
     private Supplier<BitwisePartitionStreamer> nextLookup(
         int index,
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map,
-        boolean immutable
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map
     ) {
         int nextIndex = index + 1;
         return nextIndex < partitions.size()
-            ? () -> streamerFor(immutable, map, nextIndex)
+            ? () -> streamerFor(nextIndex, map)
             : null;
     }
 
-    private BitwiseCounter counterFor(
-        Map<Integer, BitwiseCounter> map,
-        int index
-    ) {
+    private BitwiseCounter counterFor(Map<Integer, BitwiseCounter> map, int index) {
         return map.computeIfAbsent(index, _ -> new BitwiseCounter(
             partitions.get(index),
             source,

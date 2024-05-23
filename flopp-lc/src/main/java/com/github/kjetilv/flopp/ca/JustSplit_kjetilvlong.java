@@ -15,10 +15,7 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;
@@ -59,8 +56,9 @@ public final class JustSplit_kjetilvlong {
             )
         ) {
             CsvFormat format = new CsvFormat.Escaped(';');
+            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
             List<Runnable> list1 =
-                bitwisePartitioned.splitters().splitters(format)
+                partitionedSplitters.splitters(format)
                     .map(splitsConsumer ->
 //                        CompletableFuture.runAsync(
                         (Runnable)

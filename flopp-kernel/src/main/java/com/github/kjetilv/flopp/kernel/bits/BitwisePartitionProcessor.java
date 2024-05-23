@@ -22,13 +22,13 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
 
     private final Transfers<Path> transfers;
 
-    private final List<Partition> partitions;
+    private final Partitions partitions;
 
     private final Charset charset;
 
     BitwisePartitionProcessor(
         PartitionedMapper partitionedMapper,
-        List<Partition> partitions,
+        Partitions partitions,
         Charset charset,
         LinesWriterFactory<Path> linesWriterFactory,
         TempTargets<Path> tempTargets,

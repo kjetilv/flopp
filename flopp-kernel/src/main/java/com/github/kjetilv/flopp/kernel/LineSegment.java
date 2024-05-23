@@ -11,6 +11,7 @@ import java.util.stream.LongStream;
 
 import static java.lang.foreign.ValueLayout.*;
 
+@SuppressWarnings("unused")
 public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
