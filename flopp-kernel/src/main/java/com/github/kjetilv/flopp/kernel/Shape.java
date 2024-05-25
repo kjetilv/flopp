@@ -8,64 +8,56 @@ import java.util.Objects;
 import java.util.function.LongSupplier;
 
 @SuppressWarnings("unused")
-public record Shape(long size, Charset charset, Decor decor, long longestLine) {
-
-    public static Shape decor(int header, int footer) {
-        return new Shape(-1, null, new Decor(header, footer), 0);
-    }
-
-    public static Shape size(long size) {
-        return new Shape(size);
-    }
+public record Shape(long size, long longestLine, Charset charset, Decor decor) {
 
     public static Shape of(Path file) {
-        try {
-            if (Files.isRegularFile(file)) {
-                return size(Files.size(file));
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Bad file:" + file, e);
+        return of(file, null);
+    }
+
+    public static Shape of(Path file, Charset charset) {
+        if (Files.isRegularFile(file)) {
+            return size(sizeOf(file), charset);
         }
         throw new IllegalArgumentException("Not a file: " + file);
     }
 
-    public Shape(long size) {
-        this(size, null, null, 0);
+    public static Shape size(long size, Charset charset) {
+        return new Shape(size, charset);
     }
 
-    public Shape(long size, Charset charset, Decor decor, long longestLine) {
+    public static Shape decor(int header, int footer, Charset charset) {
+        return new Shape(-1, 0, charset, new Decor(header, footer));
+    }
+
+    public Shape(long size, Charset charset) {
+        this(size, 0, charset, null);
+    }
+
+    public Shape(long size, Decor decor) {
+        this(size, 0, null, decor);
+    }
+
+    public Shape(long size, Charset charset, Decor decor) {
+        this(size, 0, charset, decor);
+    }
+
+    public Shape(long size, long longestLine, Charset charset, Decor decor) {
         this.size = Math.max(-1, size);
-        this.charset = charset == null ? StandardCharsets.UTF_8 : charset;
+        this.charset = charset == null ? Charset.defaultCharset() : charset;
         this.decor = decor == null ? new Decor() : decor;
         this.longestLine = longestLine;
     }
 
-    public Shape(long size, Charset charset) {
-        this(size, charset, null, 0);
-    }
-
-    public Shape(long size, Decor decor) {
-        this(size, null, decor, 0);
-    }
-
-    public Shape(long size, Charset charset, Decor decor) {
-        this(size, charset, decor, 0);
-    }
-
     public Shape headerFooter(int header, int footer) {
-        return new Shape(size, charset, new Decor(header, footer), longestLine);
+        return new Shape(size, longestLine, charset, new Decor(header, footer));
     }
 
     public Shape header(int header) {
-        return new Shape(size, charset, new Decor(header), longestLine);
-    }
-
-    public Shape utf8() {
-        return charset(StandardCharsets.UTF_8);
+        return new Shape(size, longestLine, charset, new Decor(header));
     }
 
     public Shape charset(Charset charset) {
-        return new Shape(size, Objects.requireNonNull(charset, "charset"), decor, longestLine);
+        return new Shape(size, longestLine, Objects.requireNonNull(charset, "charset"), decor);
     }
 
     public Shape iso8859_1() {
@@ -74,7 +66,7 @@ public record Shape(long size, Charset charset, Decor decor, long longestLine) {
 
     public Shape sized(LongSupplier sizeSupplier) {
         return this.size < 0
-            ? new Shape(sizeSupplier.getAsLong(), charset(), decor(), longestLine)
+            ? new Shape(sizeSupplier.getAsLong(), longestLine, charset(), decor())
             : this;
     }
 
@@ -91,7 +83,7 @@ public record Shape(long size, Charset charset, Decor decor, long longestLine) {
     }
 
     public Shape longestLine(int longestLine) {
-        return new Shape(size, charset, decor, longestLine);
+        return new Shape(size, longestLine, charset, decor);
     }
 
     public boolean hasOverhead() {
@@ -116,5 +108,15 @@ public record Shape(long size, Charset charset, Decor decor, long longestLine) {
         public int size() {
             return header + footer;
         }
+    }
+
+    private static long sizeOf(Path file) {
+        long size;
+        try {
+            size = Files.size(file);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Bad file:" + file, e);
+        }
+        return size;
     }
 }

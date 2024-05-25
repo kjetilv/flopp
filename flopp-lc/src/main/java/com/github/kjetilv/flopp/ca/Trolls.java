@@ -20,6 +20,7 @@ import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -28,6 +29,8 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class Trolls {
 
     public static void main(String[] args) {
@@ -35,7 +38,7 @@ public final class Trolls {
             for (String arg : args) {
                 Instant start = Instant.now();
                 Path path = Path.of(arg);
-                Shape shape = Shape.of(path).header(1).longestLine(1024);
+                Shape shape = Shape.of(path, UTF_8).header(1).longestLine(1024);
 
                 Partitioning partitioning = Partitioning.create(
                     Runtime.getRuntime().availableProcessors(),

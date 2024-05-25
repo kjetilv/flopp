@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 public interface PartitionedMapper {
 
     <T> Stream<CompletableFuture<PartitionResult<T>>> map(
-        BiFunction<Partition, Stream<LineSegment>, T> processor, ExecutorService executorService
+        BiFunction<Partition, Stream<LineSegment>, T> processor,
+        ExecutorService executorService
     );
 }

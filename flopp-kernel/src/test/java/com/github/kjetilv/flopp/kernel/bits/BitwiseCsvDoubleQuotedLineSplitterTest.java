@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,7 +28,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
             adder(splits),
             new CsvFormat.DoubleQuoted(';', '"')
         );
-        LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456");
+        LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
         assertThat(splits).containsExactly("foo123", "bar", "234", "abcdef", "3456");
     }
@@ -40,10 +40,10 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
             adder(splits),
             new CsvFormat.DoubleQuoted(';', '"')
         );
-        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
+        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
         assertThat(splits).containsExactly("foo123", "bar", "234", "abcdef", "3456");
         splits.clear();
-        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
+        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
         assertThat(splits).containsExactly("foo123", "bar", "234", "abcdef", "3456");
     }
 
@@ -113,7 +113,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
                 partitioned.splitters().splitters(new CsvFormat.DoubleQuoted(',', '"'))
-                    .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns()
+                    .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits1::add)));
             }
         } catch (Exception e) {
@@ -222,7 +222,8 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(adder(splits), DQ_FORMAT);
-        splitter.accept(LineSegments.of("'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';;';'\\;'"));
+        splitter.accept(LineSegments.of("'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';;';'\\;'",
+            UTF_8));
         assertThat(splits).containsExactly(
             "'foo 1'",
             "bar",
@@ -241,7 +242,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';';'\\;'";
         BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(adder(splits), DQ_FORMAT);
-        splitter.accept(LineSegments.of(input, StandardCharsets.UTF_8));
+        splitter.accept(LineSegments.of(input, UTF_8));
         assertThat(splits).containsExactly(
             "'foo 1'",
             "bar",
@@ -391,7 +392,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
                 partitioned.splitters().splitters(format)
-                    .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns()
+                    .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits::add)));
             }
         } catch (Exception e) {
@@ -413,7 +414,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(line -> line.columns()
+        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(line -> line.columns(UTF_8)
             .forEach(splits::add), DQ_FORMAT);
 
         try {
@@ -435,7 +436,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     }
 
     private static Consumer<SeparatedLine> adder(List<String> splits) {
-        return line -> line.columns()
+        return line -> line.columns(UTF_8)
             .forEach(splits::add);
     }
 }

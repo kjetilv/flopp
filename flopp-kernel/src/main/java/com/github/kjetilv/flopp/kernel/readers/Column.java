@@ -13,9 +13,9 @@ public record Column(String name, int colunmNo, Parse parse) {
         return ofType(name, columnNo, TO_STRING);
     }
 
-    public static Column ofString(String name, int columnNo, byte[] buffer) {
+    public static Column ofString(String name, int columnNo, byte[] buffer, Charset charset) {
         return ofType(name, columnNo, segment ->
-            segment.asString(buffer));
+            segment.asString(buffer, charset));
     }
 
     public static Column ofType(String name, int columnNo, Parse.Obj parser) {
@@ -54,7 +54,7 @@ public record Column(String name, int colunmNo, Parse parse) {
         return new Column(name, columnNo, parser);
     }
 
-    private static final Parse.Obj TO_STRING = LineSegment::asString;
+    private static final Parse.Obj TO_STRING = lineSegment -> lineSegment.asString(Charset.defaultCharset());
 
     private static Parse.Obj toString(byte[] buffer, Charset charset) {
         return segment -> segment.asString(buffer, charset);

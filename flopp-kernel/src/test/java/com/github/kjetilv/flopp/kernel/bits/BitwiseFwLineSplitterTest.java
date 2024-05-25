@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BitwiseFwLineSplitterTest {
@@ -41,7 +43,7 @@ class BitwiseFwLineSplitterTest {
         BitwiseFwLineSplitter splitter = new BitwiseFwLineSplitter(
             format,
             line ->
-                line.columns()
+                line.columns(UTF_8)
                     .forEach(splits::add)
         );
 

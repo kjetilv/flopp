@@ -18,6 +18,7 @@ package com.github.kjetilv.flopp.ca;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,12 +26,14 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class JustSplit_kjetilvlong {
     public static void main(String[] args) {
         for (String arg : args) {
             Instant start = Instant.now();
             Path path = Path.of(arg);
-            Shape shape = Shape.of(path).longestLine(128);
+            Shape shape = Shape.of(path, UTF_8).longestLine(128);
 
             Partitioning partitioning = Partitioning.create(
                 Runtime.getRuntime().availableProcessors(),

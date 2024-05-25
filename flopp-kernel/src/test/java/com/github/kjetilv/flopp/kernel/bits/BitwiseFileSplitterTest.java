@@ -24,6 +24,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Disabled
 class BitwiseFileSplitterTest {
 
@@ -59,14 +61,14 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
-                airlines.add(line.column(1)), new CsvFormat.Escaped()
+                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escaped()
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
             Path path = list.findFirst().orElseThrow();
             try (Stream<String> lines = Files.lines(path)) {
                 lines.skip(1)
-                    .map(LineSegments::of)
+                    .map(string -> LineSegments.of(string, UTF_8))
                     .forEach(splitter);
             }
         }
@@ -84,10 +86,10 @@ class BitwiseFileSplitterTest {
         Path path = PATH;
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
-                airlines.add(line.column(1)), new CsvFormat.Escaped()
+                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escaped()
         );
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path).header(2))
+            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
         ) {
             partititioned.streams().streamers()
                 .forEach(streamer ->
@@ -180,7 +182,7 @@ class BitwiseFileSplitterTest {
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
         CsvFormat.Escaped format = new CsvFormat.Escaped(',', '\\');
-        Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1));
+        Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1, UTF_8));
         Instant now = Instant.now();
         try (
             Stream<Path> list = Files.list(PATH);
@@ -219,7 +221,7 @@ class BitwiseFileSplitterTest {
         return Bitwise.partititioned(
             file,
             Partitioning.create().scaled(2),
-            Shape.of(file).longestLine(1024).header(2)
+            Shape.of(file, UTF_8).longestLine(1024).header(2)
         );
     }
 

@@ -14,6 +14,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class Lc {
 
     public static void main(String[] args) {
@@ -47,7 +49,7 @@ public final class Lc {
     }
 
     private static Count count(Path path) {
-        Shape shape = Shape.of(path).longestLine(100);
+        Shape shape = Shape.of(path, UTF_8).longestLine(100);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning partitioning = Partitioning
             .create(cpus, 128)

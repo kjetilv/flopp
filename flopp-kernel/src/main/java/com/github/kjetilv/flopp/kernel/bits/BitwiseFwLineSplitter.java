@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.FwFormat;
 import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
@@ -25,6 +26,11 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public int columnCount() {
         return length;
+    }
+
+    @Override
+    public String column(int column, Charset charset) {
+        return "";
     }
 
     @Override

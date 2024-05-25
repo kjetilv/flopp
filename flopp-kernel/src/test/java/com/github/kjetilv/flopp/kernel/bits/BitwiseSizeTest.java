@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.toLowerCase;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,7 +103,7 @@ public class BitwiseSizeTest {
         System.out.printf("Test: %s%n", tempDirectory.toUri());
 
         path = FileBuilder.file(tempDirectory, pathBase, linesCount, columnCount, new Shape.Decor(header, footer));
-        shape = Shape.size(Files.size(path)).headerFooter(header, footer).longestLine(256);
+        shape = Shape.size(Files.size(path), UTF_8).headerFooter(header, footer).longestLine(256);
         partitions = Runtime.getRuntime().availableProcessors();
     }
 
@@ -256,7 +258,8 @@ public class BitwiseSizeTest {
         }
     };
 
-    private static final Function<LineSegment, String> TOS = LineSegment::asString;
+    private static final Function<LineSegment, String> TOS =
+        lineSegment -> lineSegment.asString(StandardCharsets.UTF_8);
 
     public static final Function<LineSegment, String> OP = TOS.andThen(OPS);
 

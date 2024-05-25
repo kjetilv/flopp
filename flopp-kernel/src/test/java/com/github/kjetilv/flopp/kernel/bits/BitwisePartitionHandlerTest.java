@@ -6,9 +6,11 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BitwisePartitionHandlerTest {
@@ -35,7 +37,7 @@ class BitwisePartitionHandlerTest {
 
     private static void parsedOK(String str) {
         List<LineSegment> handled = new ArrayList<>();
-        MemorySegment memorySegment = MemorySegments.of(str);
+        MemorySegment memorySegment = MemorySegments.of(str, UTF_8);
         BitwisePartitionHandler handler = new BitwisePartitionHandler(
             new Partition(0, 1, 0, str.length()),
             memorySegment,
@@ -46,6 +48,6 @@ class BitwisePartitionHandlerTest {
         );
         handler.run();
         assertThat(handled).singleElement().satisfies(lineSegment ->
-            assertThat(lineSegment.asString()).isEqualTo(str));
+            assertThat(lineSegment.asString(UTF_8)).isEqualTo(str));
     }
 }

@@ -1,12 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.MiddleMan;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -92,12 +92,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
-        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
-            adopt(memorySegment);
-            line(startIndex, endIndex);
-        }
-
-        @Override
         public void line(long startIndex, long endIndex) {
             this.startIndex = startIndex;
             this.endIndex = endIndex;
@@ -105,13 +99,29 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
-        public String asString() {
-            return asString(null,null);
+        public void line(MemorySegment memorySegment, long startIndex, long endIndex) {
+            adopt(memorySegment);
+            line(startIndex, endIndex);
         }
 
         @Override
-        public String asString(byte[] buffer) {
-            return MemorySegments.fromLongsWithinBounds(segment, startIndex, endIndex, buffer, null);
+        public MemorySegment memorySegment() {
+            return segment;
+        }
+
+        @Override
+        public long underlyingSize() {
+            return underlyingSize;
+        }
+
+        @Override
+        public String asString(Charset charset) {
+            return asString(null, charset);
+        }
+
+        @Override
+        public String asString(byte[] buffer, Charset charset) {
+            return MemorySegments.fromLongsWithinBounds(segment, startIndex, endIndex, buffer, charset);
         }
 
         @Override
@@ -127,16 +137,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public boolean isAlignedAtEnd() {
             return endIndex % ALIGNMENT == 0;
-        }
-
-        @Override
-        public MemorySegment memorySegment() {
-            return segment;
-        }
-
-        @Override
-        public long underlyingSize() {
-            return underlyingSize;
         }
 
         @Override
@@ -157,6 +157,17 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
+        public long head(long head) {
+            long l = segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
+            return l >> head * ALIGNMENT;
+        }
+
+        @Override
+        public long longNo(int longNo) {
+            return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
+        }
+
+        @Override
         public long tail(boolean truncate) {
             int tail = Math.toIntExact(endIndex % ALIGNMENT);
             if (underlyingSize - endIndex < ALIGNMENT) {
@@ -167,17 +178,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             return truncate
                 ? Bits.lowerBytes(value, tail)
                 : value;
-        }
-
-        @Override
-        public long head(long head) {
-            long l = segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT);
-            return l >> head * ALIGNMENT;
-        }
-
-        @Override
-        public long longNo(int longNo) {
-            return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
         }
 
         @Override
@@ -192,7 +192,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public String toString() {
-            return startIndex() + "+" + length() + ":" + LineSegments.asString(segment, startIndex, endIndex);
+            return startIndex() + "+" + length() + ":" + segment;
         }
     }
 }

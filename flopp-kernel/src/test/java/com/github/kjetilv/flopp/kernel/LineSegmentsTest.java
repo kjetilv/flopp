@@ -4,10 +4,12 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LineSegmentsTest {
@@ -15,7 +17,7 @@ class LineSegmentsTest {
     @Test
     void longs() {
         String string = "1234abcdabcd5678";
-        LongStream longs = LineSegments.of(string).alignedLongStream();
+        LongStream longs = LineSegments.of(string, UTF_8).alignedLongStream();
         String str = streamed(longs);
         assertThat(str).isEqualTo(string);
     }
@@ -23,9 +25,9 @@ class LineSegmentsTest {
     @Test
     void longsSupplier() {
         String string = "1234abcdabcd5678";
-        LongSupplier longs = LineSegments.of(string).alignedLongSupplier();
+        LongSupplier longs = LineSegments.of(string, UTF_8).alignedLongSupplier();
 
-        String str = Bits.toString(longs.getAsLong()) + Bits.toString(longs.getAsLong());
+        String str = Bits.toString(longs.getAsLong(), UTF_8) + Bits.toString(longs.getAsLong(), UTF_8);
         assertThat(str).isEqualTo(string);
         assertThat(longs.getAsLong()).isZero();
     }
@@ -40,7 +42,7 @@ class LineSegmentsTest {
     }
 
     private static void assertLongs(String string, int startIndex, int endIndex) {
-        LineSegment slice = LineSegments.of(string).slice(startIndex, endIndex);
+        LineSegment slice = LineSegments.of(string, UTF_8).slice(startIndex, endIndex);
 
         LongStream longStream = slice.longStream(true);
         LongSupplier longSupplier = slice.longSupplier(true);
@@ -51,7 +53,7 @@ class LineSegmentsTest {
         String substring = string.substring(startIndex, endIndex);
 
         String pad = !substring.isEmpty() && substring.length() < 8
-            ? Bits.toString(0, 8 - substring.length())
+            ? Bits.toString(0, 8 - substring.length(), UTF_8)
             : "";
 
         assertThat(streamString).isEqualTo(substring + pad);
@@ -61,14 +63,14 @@ class LineSegmentsTest {
     }
 
     private static String streamed(LongStream longStream) {
-        return longStream.mapToObj(Bits::toString)
+        return longStream.mapToObj(l -> Bits.toString(l, UTF_8))
             .collect(Collectors.joining());
     }
 
     private static String supplied(LongSupplier longSupplier, long length) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            String bits = Bits.toString(longSupplier.getAsLong());
+            String bits = Bits.toString(longSupplier.getAsLong(), UTF_8);
             sb.append(bits);
         }
         return sb.toString();
@@ -99,16 +101,16 @@ class LineSegmentsTest {
     }
 
     private static void assertTail(String string) {
-        LineSegment lineSegment = LineSegments.of(string);
+        LineSegment lineSegment = LineSegments.of(string, UTF_8);
         int tail = string.length() - 8;
         long l = MemorySegments.readTail(lineSegment.memorySegment(), lineSegment.length(), tail);
-        assertThat(Bits.toString(l, tail)).isEqualTo(string.substring(8));
+        assertThat(Bits.toString(l, tail, UTF_8)).isEqualTo(string.substring(8));
     }
 
     private static void assertHead(String string) {
-        LineSegment lineSegment = LineSegments.of(string);
+        LineSegment lineSegment = LineSegments.of(string, UTF_8);
         int head = string.length() - 8;
         long l = MemorySegments.readHead(lineSegment.memorySegment(), 0, head);
-        assertThat(Bits.toString(l, head)).isEqualTo(string.substring(0, head));
+        assertThat(Bits.toString(l, head, UTF_8)).isEqualTo(string.substring(0, head));
     }
 }

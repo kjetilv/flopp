@@ -5,7 +5,6 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
@@ -14,7 +13,7 @@ import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.*;
 
-@SuppressWarnings("DuplicatedCode")
+@SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
 
     public static boolean equals(LineSegment seg1, LineSegment seg2) {
@@ -133,10 +132,6 @@ public final class LineSegments {
             : StreamSupport.longStream(new LineSegmentShiftedLongSpliterator(segment, length, headLen), false);
     }
 
-    public static String asString(LineSegment segment) {
-        return asString(segment, (Charset) null);
-    }
-
     public static String asString(LineSegment segment, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
@@ -150,10 +145,6 @@ public final class LineSegments {
         );
     }
 
-    public static String asString(LineSegment segment, byte[] buffer) {
-        return asString(segment, buffer, null);
-    }
-
     public static String asString(LineSegment segment, byte[] buffer, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
@@ -165,10 +156,6 @@ public final class LineSegments {
             buffer,
             charset
         );
-    }
-
-    public static String asBoundedString(LineSegment segment, byte[] buffer) {
-        return asBoundedString(segment, buffer, null);
     }
 
     public static String asBoundedString(LineSegment segment, byte[] buffer, Charset charset) {
@@ -201,8 +188,8 @@ public final class LineSegments {
         return bytes;
     }
 
-    public static String fromLongBytes(LineSegment segment) {
-        return asString(segment, (Charset) null);
+    public static String fromLongBytes(LineSegment segment, Charset charset) {
+        return asString(segment, charset);
     }
 
     public static byte[] asBytes(LineSegment segment) {
@@ -239,20 +226,16 @@ public final class LineSegments {
         return string;
     }
 
-    public static String asString(LineSegment segment, int len) {
+    public static String asString(LineSegment segment, int len, Charset charset) {
         byte[] bytes = new byte[len];
         for (int i = 0; i < len; i++) {
             bytes[i] = segment.byteAt(i);
         }
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    public static LineSegment of(String string) {
-        return of(string, null);
+        return new String(bytes, charset);
     }
 
     public static LineSegment of(String string, Charset charset) {
-        return of(string.getBytes(charset == null ? StandardCharsets.UTF_8 : charset));
+        return of(string.getBytes(charset));
     }
 
     public static LineSegment of(byte[] bytes) {
@@ -273,8 +256,8 @@ public final class LineSegments {
                "]";
     }
 
-    public static String asString(MemorySegment segment, long start, long end) {
-        return of(segment, start, end).asString();
+    public static String asString(MemorySegment segment, long start, long end, Charset charset) {
+        return of(segment, start, end).asString(charset);
     }
 
     private LineSegments() {

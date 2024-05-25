@@ -23,7 +23,11 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final MemorySegmentSource source;
 
-    BitwisePartitionStreams(Shape shape, Partitions partitions, MemorySegmentSource source) {
+    BitwisePartitionStreams(
+        Shape shape,
+        Partitions partitions,
+        MemorySegmentSource source
+    ) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = partitions;
         this.source = Objects.requireNonNull(source, "memorySegmentSource");
@@ -51,7 +55,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
                 streamerFor(index, map));
     }
 
-    private BitwisePartitionStreamer streamerFor(int index, ConcurrentMap<Integer, BitwisePartitionStreamer> map) {
+    private BitwisePartitionStreamer streamerFor(
+        int index,
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map
+    ) {
         return map.computeIfAbsent(index, _ ->
             new BitwisePartitionStreamer(
                 partitions.get(index),
@@ -71,7 +78,10 @@ final class BitwisePartitionStreams implements PartitionedStreams {
             : null;
     }
 
-    private BitwiseCounter counterFor(Map<Integer, BitwiseCounter> map, int index) {
+    private BitwiseCounter counterFor(
+        Map<Integer, BitwiseCounter> map,
+        int index
+    ) {
         return map.computeIfAbsent(index, _ -> new BitwiseCounter(
             partitions.get(index),
             source,

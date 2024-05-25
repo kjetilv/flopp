@@ -45,7 +45,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
     @Override
     public void process(Function<LineSegment, String> processor, ExecutorService executorService) {
         ResultCollector<Path> collector =
-            new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
+            new ResultCollector<>(partitions.size(), path -> Shape.of(path, charset).size());
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () -> {
                 BiFunction<Partition, Stream<LineSegment>, Path> processing =

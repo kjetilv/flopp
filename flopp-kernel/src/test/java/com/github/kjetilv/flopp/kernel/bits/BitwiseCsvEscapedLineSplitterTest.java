@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,7 +29,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), new CsvFormat.Escaped(';')
         );
-        LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456");
+        LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
         assertThat(splits).containsExactly(
             "foo123",
@@ -45,7 +46,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             adder(splits), new CsvFormat.Escaped(';')
         );
-        LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456");
+        LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
         assertThat(splits).containsExactly(
             "foo123",
@@ -55,7 +56,7 @@ class BitwiseCsvEscapedLineSplitterTest {
             "3456"
         );
         splits.clear();
-        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456"));
+        splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
         assertThat(splits).containsExactly(
             "foo123",
             "bar",
@@ -242,7 +243,7 @@ class BitwiseCsvEscapedLineSplitterTest {
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
-            "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;\\;';'\\;'"));
+            "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;\\;';'\\;'", UTF_8));
         assertThat(splits).containsExactly(
             "'foo 1'",
             "bar",
@@ -265,7 +266,7 @@ class BitwiseCsvEscapedLineSplitterTest {
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
-            input, StandardCharsets.UTF_8));
+            input, UTF_8));
         assertThat(splits).containsExactly(
             expected);
     }
@@ -413,7 +414,7 @@ class BitwiseCsvEscapedLineSplitterTest {
                     .splitters(format)
                     .forEach(consumer ->
                         consumer.forEach(commaSeparatedLine ->
-                            commaSeparatedLine.columns()
+                            commaSeparatedLine.columns(UTF_8)
                                 .forEach(splits::add)));
             }
         } catch (Exception e) {
@@ -437,7 +438,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         }
         BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
             line ->
-                line.columns()
+                line.columns(UTF_8)
                     .forEach(splits::add), CSV_FORMAT
         );
 
@@ -464,7 +465,7 @@ class BitwiseCsvEscapedLineSplitterTest {
 
     private static Consumer<SeparatedLine> adder(List<String> splits) {
         return line ->
-            line.columns()
+            line.columns(UTF_8)
                 .forEach(splits::add);
     }
 }

@@ -17,10 +17,6 @@ public interface SeparatedLine {
 
     long[] end();
 
-    default Stream<String> columns() {
-        return columns(null);
-    }
-
     default Stream<String> columns(Charset charset) {
         return columns(null, charset);
     }
@@ -40,10 +36,6 @@ public interface SeparatedLine {
         return IntStream.range(0, columnCount())
             .mapToObj(column ->
                 toSegment(column, start, end));
-    }
-
-    default String column(int column) {
-        return segment(column).asString();
     }
 
     default String column(int column, Charset charset) {

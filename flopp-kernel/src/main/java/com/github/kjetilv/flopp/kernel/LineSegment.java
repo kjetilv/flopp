@@ -20,7 +20,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         if (underlyingSize() % ALIGNMENT == 0) {
             return this;
         }
-        throw new IllegalStateException(LineSegments.asString(this) + " is not aligned: " + memorySegment());
+        throw new IllegalStateException(this + " is not aligned: " + memorySegment());
     }
 
     default long shiftedLongsCount() {
@@ -105,24 +105,16 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return startIndex() == startIndex && endIndex() == endIndex;
     }
 
-    default String asString() {
-        return LineSegments.asString(this);
-    }
-
     default String asString(Charset charset) {
-        return LineSegments.asString(this, null, charset);
-    }
-
-    default String asString(byte[] buffer) {
-        return LineSegments.asString(this, buffer);
+        return asString(null, charset);
     }
 
     default String asString(byte[] buffer, Charset charset) {
         return LineSegments.asString(this, buffer, charset);
     }
 
-    default String asString(int length) {
-        return LineSegments.asString(this, length);
+    default String asString(int length, Charset charset) {
+        return LineSegments.asString(this, length, charset);
     }
 
     default long alignedStart() {

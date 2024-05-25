@@ -32,6 +32,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) {
@@ -59,7 +61,7 @@ public final class CalculateAverage_kjetilvlong {
 
     public static Map<String, Result> go(Path path, boolean slow, Consumer<SeparatedLine> callbacks) {
         Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(128);
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
@@ -109,44 +111,9 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     @SuppressWarnings("unused")
-    private static void go1(Path path) {
-        Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(128);
-        Partitioning partitioning = Partitioning.create(
-            Runtime.getRuntime().availableProcessors(),
-            shape.longestLine()
-        ).scaled(2);
-        int chunks = partitioning.of(shape.size()).size();
-        try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
-                chunks,
-                chunks,
-                0, TimeUnit.NANOSECONDS,
-                new LinkedBlockingQueue<>(chunks)
-            )
-        ) {
-            System.out.println(Duration.between(start, Instant.now()));
-            PartitionedStreams partitionedStreams = bitwisePartitioned.streams();
-            List<CompletableFuture<Map<String, Result>>> list = partitionedStreams.streamers()
-                .map(streamer ->
-                    CompletableFuture.supplyAsync(streamer::lines)
-                        .thenApplyAsync(CalculateAverage_kjetilvlong::toMap, executor))
-                .toList();
-            List<Map<String, Result>> maps = list.stream()
-                .map(CompletableFuture::join)
-                .toList();
-            System.out.println(Duration.between(start, Instant.now()));
-            Map<String, Result> map = combineMaps(maps);
-            System.out.println(map);
-            System.out.println(Duration.between(start, Instant.now()));
-        }
-    }
-
-    @SuppressWarnings("unused")
     private static void go3(Path path) {
         Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(128);
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
         Partitioning partitioning = Partitioning.create(500, shape.longestLine());
         CsvFormat format = new CsvFormat.Simple(';', 2);
         int chunks = partitioning.of(shape.size()).size();
@@ -199,7 +166,7 @@ public final class CalculateAverage_kjetilvlong {
     private static Map<String, Result> map(PartitionedSplitter splitter) {
         Map<String, Result> m = Maps.ofSize(512);
         Readers.create(
-            Column.ofString("station", 0, new byte[128]),
+            Column.ofString("station", 0, new byte[128], UTF_8),
             Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
         ).read(splitter, columns ->
             m.compute(
@@ -217,7 +184,7 @@ public final class CalculateAverage_kjetilvlong {
     @SuppressWarnings("unused")
     private static void go4It(Path path) {
         Instant start = Instant.now();
-        Shape shape = Shape.of(path).longestLine(128);
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
         Partitioning partitioning = Partitioning.create(
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
@@ -271,20 +238,6 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-//    private static void go2(Path path) {
-//        Instant start = Instant.now();
-//        Shape shape = Shape.of(path).longestLine(64);
-//        Map<String, Result> go = go(
-//            path,
-//            Partitioning.create(
-//                Runtime.getRuntime().availableProcessors(),
-//                shape.longestLine()
-//            ).scaled(2), shape
-//        );
-//        System.out.println(go);
-//        System.out.println(Duration.between(start, Instant.now()));
-//    }
-
     private static Map<String, Result> toMap(
         Path path,
         PartitionedSplitter splitsConsumer,
@@ -306,7 +259,7 @@ public final class CalculateAverage_kjetilvlong {
 
     private static void parse(SeparatedLine separatedLine, Map<String, Result> m) {
         try {
-            String segment = separatedLine.segment(0).asString();
+            String segment = separatedLine.segment(0).asString(UTF_8);
             int measure = parseValue(separatedLine.segment(1));
             m.compute(
                 segment,
@@ -326,31 +279,6 @@ public final class CalculateAverage_kjetilvlong {
             .collect(Collectors.toSet());
     }
 
-    private static Map<String, Result> toMap(Stream<LineSegment> lines) {
-        try (lines) {
-            Map<String, Result> m = new HashMap<>(1024, 1.0f);
-            lines.forEach(ls -> {
-                long length = ls.length(); //segment.length();
-                int splitIndex = semiIndex(ls, length);
-                int value = parseValue(
-                    Math.toIntExact(length),
-                    splitIndex,
-                    ls
-                );
-                String key = ls.
-                    asString(splitIndex);
-                m.compute(
-                    key,
-                    (_, existing) ->
-                        existing == null
-                            ? new Result(value)
-                            : existing.collect(value)
-                );
-            });
-            return m;
-        }
-    }
-
     private static SequencedMap<String, Result> combineMapsToStringKey(
         Set<LineSegment> keys,
         List<Map<LineSegment, Result>> submaps
@@ -368,7 +296,7 @@ public final class CalculateAverage_kjetilvlong {
                 }
             }));
         SequencedMap<String, Result> seqMap = new TreeMap<>();
-        map.forEach((segment, result) -> seqMap.put(segment.asString(), result));
+        map.forEach((segment, result) -> seqMap.put(segment.asString(UTF_8), result));
         return seqMap;
     }
 
@@ -378,7 +306,7 @@ public final class CalculateAverage_kjetilvlong {
                 return i;
             }
         }
-        throw new IllegalStateException("No split in " + ls.asString());
+        throw new IllegalStateException("No split in " + ls.asString(UTF_8));
     }
 
     private static int parseValue(int length, int splitIndex, LineSegment ls) {

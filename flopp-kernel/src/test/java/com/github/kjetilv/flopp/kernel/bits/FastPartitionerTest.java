@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FastPartitionerTest {
@@ -73,7 +74,7 @@ public class FastPartitionerTest {
             new Shape.Decor(1, 1)
         );
 
-        Shape shape = Shape.size(Files.size(file)).headerFooter(1, 1).longestLine(128);
+        Shape shape = Shape.size(Files.size(file), UTF_8).headerFooter(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(
@@ -102,7 +103,7 @@ public class FastPartitionerTest {
             new Shape.Decor(1, 1)
         );
 
-        Shape shape = Shape.size(Files.size(file)).longestLine(32).headerFooter(1, 1);
+        Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(32).headerFooter(1, 1);
         LongAdder cont;
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(
@@ -142,7 +143,7 @@ public class FastPartitionerTest {
         }
 
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
-        Shape shape = Shape.size(Files.size(file)).longestLine(longestLine).headerFooter(1, 1);
+        Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(longestLine).headerFooter(1, 1);
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {

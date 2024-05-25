@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BitwiseSpliteratorTest {
@@ -47,7 +50,7 @@ public class BitwiseSpliteratorTest {
         String csq = content.collect(Collectors.joining("\n")) + "\n";
         Path file = Files.writeString(dir.resolve(UUID.randomUUID() + ".bin"), csq);
 
-        Shape shape = Shape.of(file).longestLine(10);
+        Shape shape = Shape.of(file, UTF_8).longestLine(10);
         Partitioning partitioning = Partitioning.create(3, 8);
 
         List<String> expected;

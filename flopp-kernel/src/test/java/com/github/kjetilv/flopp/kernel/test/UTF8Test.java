@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UTF8Test {
@@ -65,7 +65,7 @@ public class UTF8Test {
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 partitioning,
-                Shape.of(path).longestLine(20)
+                Shape.of(path, UTF_8).longestLine(20)
             )
         ) {
             sb = new StringBuilder();
@@ -113,7 +113,7 @@ public class UTF8Test {
             Partitioned<Path> partititioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(3, 112),
-                Shape.of(path).longestLine(110)
+                Shape.of(path, UTF_8).longestLine(110)
             )
         ) {
             sb = new StringBuilder();
@@ -139,13 +139,12 @@ public class UTF8Test {
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(2, 20),
-                Shape.of(path).longestLine(512)
+                Shape.of(path, UTF_8).longestLine(512)
             )
         ) {
             sb = new StringBuilder();
             extract(bitwisePartitioned.streams(), sb);
         }
-
     }
 
     @Test
@@ -156,7 +155,7 @@ public class UTF8Test {
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(2, 0),
-                Shape.of(path).longestLine(30)
+                Shape.of(path, UTF_8).longestLine(30)
             )
         ) {
             sb = new StringBuilder();
@@ -172,7 +171,7 @@ public class UTF8Test {
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
                 path,
                 Partitioning.create(3, 40),
-                Shape.of(path).longestLine(40)
+                Shape.of(path, UTF_8).longestLine(40)
             )
         ) {
             sb = new StringBuilder();
@@ -199,7 +198,7 @@ public class UTF8Test {
         }
         String trimmedContent;
         try (
-            Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)
+            Stream<String> lines = Files.lines(path, UTF_8)
         ) {
             trimmedContent = lines.collect(Collectors.joining("\n"));
             Files.write(tmp, (trimmedContent.trim() + "\n").getBytes());
@@ -208,7 +207,7 @@ public class UTF8Test {
         }
         StringBuilder sb = new StringBuilder();
         Partitioning partitioning = Partitioning.create(partitionCount);
-        Shape shape = Shape.of(tmp).longestLine(longestLine);
+        Shape shape = Shape.of(tmp, UTF_8).longestLine(longestLine);
         Partitions partitions = partitioning.of(shape.size());
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
@@ -217,13 +216,13 @@ public class UTF8Test {
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .forEach(line -> {
-                                String string = line.asString();
+                                String string = line.asString(UTF_8);
 //                                System.out.println(string);
                                 sb.append(string).append("\n");
                             }
                         ));
         }
-        assertThat(tmp).content(StandardCharsets.UTF_8)
+        assertThat(tmp).content(UTF_8)
             .describedAs("Failed with " + partitionCount + " partitions: " + partitions)
             .isEqualTo(sb.toString());
     }
@@ -250,7 +249,7 @@ public class UTF8Test {
         List<String> strings = streams.streamers()
             .flatMap(partitionStreamer ->
                 partitionStreamer.lines()
-                    .map(LineSegment::asString)
+                    .map(lineSegment -> lineSegment.asString(UTF_8))
                     .map(line ->
                         LN.matcher(line).replaceAll("🦊")))
             .toList();

@@ -6,6 +6,7 @@ import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -109,18 +110,18 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public String asString() {
-        return asString(null, null);
+    public String asString(Charset utf8) {
+        return asString(null, utf8);
     }
 
     @Override
-    public String asString(byte[] buffer) {
+    public String asString(byte[] buffer, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
             memorySegment,
             startIndex,
             endIndex,
             buffer,
-            null
+            charset
         );
     }
 

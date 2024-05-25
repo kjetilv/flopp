@@ -5,13 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import static java.lang.foreign.ValueLayout.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class MemorySegments {
-
-    public static MemorySegment of(String string) {
-        return of(string, null);
-    }
 
     public static MemorySegment of(ByteBuffer byteBuffer) {
         return MemorySegment.ofBuffer(byteBuffer);
@@ -22,7 +17,7 @@ public final class MemorySegments {
     }
 
     public static MemorySegment of(String string, Charset charset) {
-        return of(string.getBytes(charset == null ? UTF_8 : charset));
+        return of(string.getBytes(charset));
     }
 
     public static MemorySegment of(byte[] bytes) {
@@ -112,7 +107,7 @@ public final class MemorySegments {
             byte[] bytes = target == null ? new byte[length] : target;
             long data = bytesAt(memorySegment, 0, length);
             Bits.transferLimitedDataTo(data, 0, length, bytes);
-            return new String(bytes, 0, length, charset == null ? UTF_8 : charset);
+            return new String(bytes, 0, length, charset);
         }
         int tailLength = (int) endIndex % ALIGNMENT_INT;
         if (tailLength == 0) {
@@ -140,14 +135,7 @@ public final class MemorySegments {
         long tailLong = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
         long adjustedTail = tailLong >> ALIGNMENT * (ALIGNMENT - tailLength);
         Bits.transferLimitedDataTo(adjustedTail, size, tailLength, bytes);
-
-        return new String(
-            bytes,
-            headOffset,
-            length,
-            charset == null ? UTF_8 : charset
-        );
-
+        return new String(bytes, headOffset, length, charset);
     }
 
     public static String fromLongsWithinBounds(
@@ -172,7 +160,7 @@ public final class MemorySegments {
             long data = segment.get(JAVA_LONG, alignedStart + index);
             Bits.transferDataTo(data, index, bytes);
         }
-        return new String(bytes, headOffset, length, charset == null ? UTF_8 : charset);
+        return new String(bytes, headOffset, length, charset);
     }
 
     private MemorySegments() {

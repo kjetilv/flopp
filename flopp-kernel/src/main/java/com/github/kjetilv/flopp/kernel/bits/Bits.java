@@ -4,28 +4,17 @@ import java.nio.charset.Charset;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 @SuppressWarnings("unused")
 public final class Bits {
-
-    public static String toString(long l) {
-        return toString(l, -1, null);
-    }
 
     public static String toString(long l, Charset charset) {
         return toString(l, -1, charset);
     }
 
-    public static String toString(long l, int len) {
-        return toString(l, len, null);
-    }
-
     public static String toString(long l, int len, Charset charset) {
-        Charset cs = charset == null ? UTF_8 : charset;
         return len < 0
-            ? new String(toBytes(l), cs)
-            : new String(toBytes(l), 0, len, cs);
+            ? new String(toBytes(l), charset)
+            : new String(toBytes(l), 0, len, charset);
     }
 
     public static String hex(long mask) {

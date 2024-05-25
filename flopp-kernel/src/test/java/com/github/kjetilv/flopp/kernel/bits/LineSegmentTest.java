@@ -10,6 +10,7 @@ import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -32,16 +33,16 @@ class LineSegmentTest {
                 foo bar zot
                 foo bar zot
                 foo bar zot
-                """);
+                """, UTF_8);
         assertThat(ls.length()).isEqualTo(36L);
         assertThat(ls.isAlignedAtEnd()).isFalse();
         assertThat(ls.alignedEnd()).isEqualTo(32L);
         assertThat(ls.alignedCount()).isEqualTo(4L);
         assertThat(ls.fullLongCount()).isEqualTo(4L);
         assertThat(ls.startIndex()).isEqualTo(0L);
-        assertThat(Bits.toString(ls.longNo(0))).isEqualTo("foo bar ");
-        assertThat(Bits.toString(ls.fullLongNo(0))).isEqualTo("foo bar ");
-        assertThat(Bits.toString(ls.tail(), ls.tailLength())).isEqualTo("zot\n");
+        assertThat(Bits.toString(ls.longNo(0), UTF_8)).isEqualTo("foo bar ");
+        assertThat(Bits.toString(ls.fullLongNo(0), UTF_8)).isEqualTo("foo bar ");
+        assertThat(Bits.toString(ls.tail(), ls.tailLength(), UTF_8)).isEqualTo("zot\n");
 
         LineSegment slice1 = ls.slice(5L, 22L);
         LineSegment slice2 = ls.slice(5L, 24L);
@@ -51,17 +52,20 @@ class LineSegmentTest {
         assertThat(slice2.alignedCount()).isEqualTo(3L);
         assertThat(slice2.fullLongCount()).isEqualTo(2L);
         assertThat(slice2.startIndex()).isEqualTo(5L);
-        assertThat(Bits.toString(slice2.fullLongNo(0))).isEqualTo("zot\nfoo ");
 
-        assertThat(Bits.toString(slice1.head(), slice1.headLength())).isEqualTo(slice1.asString().substring(0, 3));
-        assertThat(Bits.toString(slice2.head(), slice2.headLength())).isEqualTo(slice2.asString().substring(0, 3));
+        assertThat(Bits.toString(slice2.fullLongNo(0), UTF_8))
+            .isEqualTo("zot\nfoo ");
+        assertThat(Bits.toString(slice1.head(), slice1.headLength(), UTF_8))
+            .isEqualTo(slice1.asString(UTF_8).substring(0, 3));
+        assertThat(Bits.toString(slice2.head(), slice2.headLength(), UTF_8))
+            .isEqualTo(slice2.asString(UTF_8).substring(0, 3));
     }
 
     @Test
     void asString() {
         String string = "foo bar zot is the string and you will like it, or else find something elser to 00";
-        LineSegment lineSegment = LineSegments.of(string);
-        assertThat(LineSegments.asString(lineSegment))
+        LineSegment lineSegment = LineSegments.of(string, UTF_8);
+        assertThat(LineSegments.asString(lineSegment, UTF_8))
             .describedAs("Should self-describe")
             .isEqualTo(string);
 //        assertSub(lineSegment, string, 1, 81);
@@ -94,8 +98,8 @@ class LineSegmentTest {
     @Test
     void hashCoode() {
         String string = "foo bar zot is the string and you will like it, or else find something elser to 00";
-        LineSegment lineSegment = LineSegments.of(string);
-        assertThat(LineSegments.asString(lineSegment))
+        LineSegment lineSegment = LineSegments.of(string, UTF_8);
+        assertThat(LineSegments.asString(lineSegment, UTF_8))
             .describedAs("Should self-describe")
             .isEqualTo(string);
         for (int i = 0; i < string.length(); i++) {
@@ -159,7 +163,7 @@ class LineSegmentTest {
 
     private static void assertSub(LineSegment lineSegment, String string, int beginIndex, int endIndex) {
         try {
-            assertThat(LineSegments.asString(lineSegment.slice(beginIndex, endIndex)))
+            assertThat(LineSegments.asString(lineSegment.slice(beginIndex, endIndex), UTF_8))
                 .describedAs("Should sub-scribe too: " + beginIndex + "-" + endIndex)
                 .isEqualTo(string.substring(beginIndex, endIndex));
         } catch (Exception e) {
