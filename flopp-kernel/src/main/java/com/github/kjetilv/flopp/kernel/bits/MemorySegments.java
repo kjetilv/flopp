@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -161,6 +163,13 @@ public final class MemorySegments {
             Bits.transferDataTo(data, index, bytes);
         }
         return new String(bytes, headOffset, length, charset);
+    }
+
+    public static long readLength(long startIndex, long endIndex) {
+        long head = startIndex % ALIGNMENT;
+        return head == 0L
+            ? 0L
+            : Math.min(ALIGNMENT - head, endIndex - startIndex);
     }
 
     private MemorySegments() {

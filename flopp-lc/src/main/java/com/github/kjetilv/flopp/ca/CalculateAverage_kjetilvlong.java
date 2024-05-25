@@ -115,7 +115,7 @@ public final class CalculateAverage_kjetilvlong {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         Partitioning partitioning = Partitioning.create(500, shape.longestLine());
-        CsvFormat format = new CsvFormat.Simple(';', 2);
+        CsvFormat format = new CsvFormat.Simple(2, ';');
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -189,7 +189,7 @@ public final class CalculateAverage_kjetilvlong {
             Runtime.getRuntime().availableProcessors(),
             shape.longestLine()
         ).scaled(2);
-        CsvFormat format = new CsvFormat.Simple(';', 2);
+        CsvFormat format = new CsvFormat.Simple(2, ';');
         Reader reader = Readers.create(
             Column.ofString("station", 1),
             Column.ofInt("measurement", 2, CalculateAverage_kjetilvlong::parseValue)

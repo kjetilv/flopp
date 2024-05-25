@@ -257,7 +257,7 @@ public final class LineSegments {
     }
 
     public static String asString(MemorySegment segment, long start, long end, Charset charset) {
-        return of(segment, start, end).asString(charset);
+        return asString(of(segment, start, end), null, charset);
     }
 
     private LineSegments() {

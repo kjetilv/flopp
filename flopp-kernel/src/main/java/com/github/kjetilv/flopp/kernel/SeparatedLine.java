@@ -26,7 +26,7 @@ public interface SeparatedLine {
         long[] end = end();
         return IntStream.range(0, columnCount())
             .mapToObj(column ->
-                LineSegments.asString(toSegment(column, start, end), buffer, charset));
+                toSegment(column, start, end).asString(buffer, charset));
     }
 
     @SuppressWarnings("unused")
@@ -76,7 +76,7 @@ public interface SeparatedLine {
         long[] start = start();
         long[] end = end();
         return column ->
-            LineSegments.asString(toSegment(column, start, end), charset);
+            toSegment(column, start, end).asString(charset);
     }
 
     private long[] copy(long[] ls) {

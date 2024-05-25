@@ -7,7 +7,6 @@ import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.LongSupplier;
@@ -23,21 +22,16 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private final MemorySegmentSource source;
 
-    BitwisePartitionStreams(
-        Shape shape,
-        Partitions partitions,
-        MemorySegmentSource source
-    ) {
-        this.shape = Objects.requireNonNull(shape, "shape");
+    BitwisePartitionStreams(Shape shape, Partitions partitions, MemorySegmentSource source) {
+        this.shape = shape;
         this.partitions = partitions;
-        this.source = Objects.requireNonNull(source, "memorySegmentSource");
+        this.source = source;
     }
 
     @Override
     public Stream<LongSupplier> lineCounters() {
         int count = partitions.size();
-        Map<Integer, BitwiseCounter> map =
-            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        Map<Integer, BitwiseCounter> map = new ConcurrentHashMap<>(Maps.mapCapacity(count));
         return IntStream.range(0, count)
             .mapToObj(index ->
                 counterFor(map, index))
@@ -48,8 +42,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public Stream<? extends PartitionStreamer> streamers() {
         int count = partitions.size();
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map =
-            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map = new ConcurrentHashMap<>(Maps.mapCapacity(count));
         return IntStream.range(0, count)
             .mapToObj(index ->
                 streamerFor(index, map));
@@ -82,12 +75,13 @@ final class BitwisePartitionStreams implements PartitionedStreams {
         Map<Integer, BitwiseCounter> map,
         int index
     ) {
-        return map.computeIfAbsent(index, _ -> new BitwiseCounter(
-            partitions.get(index),
-            source,
-            index + 1 < partitions.size()
-                ? () -> counterFor(map, index)
-                : null
-        ));
+        return map.computeIfAbsent(index, _ ->
+            new BitwiseCounter(
+                partitions.get(index),
+                source,
+                index + 1 < partitions.size()
+                    ? () -> counterFor(map, index)
+                    : null
+            ));
     }
 }

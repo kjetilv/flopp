@@ -148,7 +148,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default boolean isAlignedAtStart() {
-        return headStart() == 0L;
+        return startIndex() % ALIGNMENT == 0L;
     }
 
     default boolean isAlignedAtEnd() {
@@ -171,19 +171,15 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default long head(boolean truncate) {
         long startIndex = startIndex();
+        long endIndex = endIndex();
+        long len = MemorySegments.readLength(startIndex, endIndex);
         if (underlyingSize() - startIndex < ALIGNMENT) {
-            return MemorySegments.readHead(memorySegment(), startIndex, readLength());
+            return MemorySegments.readHead(memorySegment(), startIndex, len);
         }
         long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
         return truncate
-            ? Bits.lowerBytes(value, Math.toIntExact(readLength()))
+            ? Bits.lowerBytes(value, Math.toIntExact(len))
             : value;
-    }
-
-    default long readLength() {
-        int headLength = headLength();
-        long length = length();
-        return headLength == 0 ? length : Math.min(headLength, length);
     }
 
     default long head(long head) {

@@ -125,6 +125,11 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
 
         @Override
+        public long length() {
+            return endIndex - startIndex;
+        }
+
+        @Override
         public long headStart() {
             return startIndex % ALIGNMENT;
         }
@@ -141,12 +146,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
         @Override
         public long head(boolean truncate) {
-            long head = startIndex % ALIGNMENT;
-            long headLength = head == 0L ? 0L : ALIGNMENT - head;
-            long nominalLength = endIndex - startIndex;
-            long readLength = headLength == 0
-                ? nominalLength
-                : Math.min(headLength, nominalLength);
+            long readLength = MemorySegments.readLength(startIndex, endIndex);
             if (underlyingSize - startIndex < ALIGNMENT) {
                 return MemorySegments.readHead(segment, startIndex, readLength);
             }
@@ -165,6 +165,11 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         @Override
         public long longNo(int longNo) {
             return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
+        }
+
+        @Override
+        public long bytesAt(long offset, long count) {
+            return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
         }
 
         @Override
