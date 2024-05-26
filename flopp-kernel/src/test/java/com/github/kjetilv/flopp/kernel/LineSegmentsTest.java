@@ -4,9 +4,8 @@ import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
-import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -18,7 +17,7 @@ class LineSegmentsTest {
     void longs() {
         String string = "1234abcdabcd5678";
         LongStream longs = LineSegments.of(string, UTF_8).alignedLongStream();
-        String str = streamed(longs);
+        String str = streamed(longs, 0, string.length());
         assertThat(str).isEqualTo(string);
     }
 
@@ -34,46 +33,22 @@ class LineSegmentsTest {
 
     @Test
     void misalignedLongStream() {
-        assertLongs("___12345678abcdefghABCDEFGH__", 3, 27);
         assertLongs("___12345678abcdefgh__", 3, 19);
+        assertLongs("___12345678abcdefgh\\_/\\_///ABCDEFGH__----", 8, 9);
         assertLongs("___12345678__", 3, 11);
         assertLongs("_sdf__", 1, 4);
         assertLongs("_____", 3, 3);
+
+        stressTest("___12345678abcdefgh\\_/\\_///ABCDEFGH__----");
     }
 
-    private static void assertLongs(String string, int startIndex, int endIndex) {
-        LineSegment slice = LineSegments.of(string, UTF_8).slice(startIndex, endIndex);
-
-        LongStream longStream = slice.longStream(true);
-        LongSupplier longSupplier = slice.longSupplier(true);
-
-        String streamString = streamed(longStream);
-        String supplierString = supplied(longSupplier, slice.alignedLongsCount() - 1);
-
-        String substring = string.substring(startIndex, endIndex);
-
-        String pad = !substring.isEmpty() && substring.length() < 8
-            ? Bits.toString(0, 8 - substring.length(), UTF_8)
-            : "";
-
-        assertThat(streamString).isEqualTo(substring + pad);
-        assertThat(supplierString).isEqualTo(streamString);
-//        String longBytes = new String(LineSegments.fromLongBytes(slice), StandardCharsets.UTF_8);
-//        assertThat(longBytes).isEqualTo(substring);
-    }
-
-    private static String streamed(LongStream longStream) {
-        return longStream.mapToObj(l -> Bits.toString(l, UTF_8))
-            .collect(Collectors.joining());
-    }
-
-    private static String supplied(LongSupplier longSupplier, long length) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            String bits = Bits.toString(longSupplier.getAsLong(), UTF_8);
-            sb.append(bits);
-        }
-        return sb.toString();
+    @Test
+    void charStream() {
+        assertLongs("xNgaoundéré;37.8", 1, 13, 10);
+        assertLongs("xNgaoundéré;37.8", 1, 11, 9);
+        assertLongs("xNgaoundéré;37.8", 2, 11, 8);
+        assertLongs("xNgaoundéré;37.8", 2, 10, 7);
+        assertLongs("xNgaoundéré;37.8", 2, 8, 6);
     }
 
     @Test
@@ -98,6 +73,89 @@ class LineSegmentsTest {
         assertHead("12345foobarzt");
         assertHead("123456foobarzt");
         assertHead("1234567foobarzt");
+    }
+
+    private static void stressTest(String abc) {
+        for (int s = 0; s < abc.length(); s++) {
+            for (int e = s; e < abc.length(); e++) {
+                assertLongs(abc, s, e);
+            }
+            for (int i = 0; i < s; i++) {
+                assertLongs(abc, i, s);
+            }
+            for (int e = s; e < abc.length(); e++) {
+                assertLongs(abc.substring(s, e), 0, e - s);
+            }
+        }
+    }
+
+    private static void assertLongs(String string, int startIndex, int endIndex) {
+        assertLongs(string, startIndex, endIndex, endIndex - startIndex);
+    }
+
+    private static void assertLongs(String string, int startIndex, int endIndex, int stringLength) {
+        LineSegment slice = LineSegments.of(string, UTF_8).slice(startIndex, endIndex);
+
+        String shiftedStreamString;
+        String alignedStreamString;
+        String shiftSupplierString;
+        String alignSupplierString;
+
+        String substring = string.substring(startIndex, startIndex + stringLength);
+
+        try {
+            int alignedShift = startIndex % 8;
+
+            LongStream shiftedLongStream = slice.longStream(true);
+            int len = endIndex - startIndex;
+            shiftedStreamString = streamed(shiftedLongStream, 0, len);
+
+            LongStream alignedLongStream = slice.longStream(false);
+            alignedStreamString = streamed(alignedLongStream, alignedShift, alignedShift + len);
+
+            LongSupplier shiftedLongSupplier = slice.longSupplier(true);
+            long shiftedLongsCount = slice.shiftedLongsCount();
+            shiftSupplierString = supplied(shiftedLongSupplier, 0, len, shiftedLongsCount);
+
+            LongSupplier alignedLongSupplier = slice.longSupplier(false);
+            long alignedLongsCount = slice.alignedLongsCount();
+            alignSupplierString = supplied(alignedLongSupplier, alignedShift, len, alignedLongsCount);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed in " + startIndex + ", " + endIndex, e);
+        }
+
+        assertThat(shiftedStreamString)
+            .describedAs("Shifted stream produced different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(substring);
+        assertThat(alignedStreamString)
+            .describedAs("Aligned stream produced different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(substring);
+        assertThat(shiftSupplierString)
+            .describedAs("Shifted supplier produced different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(shiftedStreamString);
+        assertThat(alignSupplierString)
+            .describedAs("Aligned supplier produced different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(shiftedStreamString);
+    }
+
+    private static String streamed(LongStream longStream, int start, int end) {
+        byte[] bytes = new byte[64];
+        AtomicInteger i = new AtomicInteger();
+        longStream
+            .forEach(data ->
+                Bits.transferDataTo(data, i.getAndAdd(8), bytes));
+        return new String(bytes, start, end - start, UTF_8);
+    }
+
+    private static String supplied(LongSupplier longSupplier, int start, int end, long count) {
+        byte[] bytes = new byte[64];
+        AtomicInteger ai = new AtomicInteger();
+        for (int i = 0; i < count; i++) {
+            long data = longSupplier.getAsLong();
+            Bits.transferDataTo(data, ai.getAndAdd(8), bytes);
+        }
+        return new String(bytes, start, end, UTF_8);
     }
 
     private static void assertTail(String string) {

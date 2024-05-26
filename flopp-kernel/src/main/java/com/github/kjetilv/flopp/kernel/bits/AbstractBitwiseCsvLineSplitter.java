@@ -148,10 +148,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
         if (this.underlyingSize() - startIndex < ALIGNMENT) {
             return MemorySegments.readHead(memorySegment, startIndex, readLength);
         }
-        long value = memorySegment.get(JAVA_LONG_UNALIGNED, startIndex);
-        return truncate
-            ? Bits.lowerBytes(value, Math.toIntExact(readLength))
-            : value;
+        return memorySegment.get(JAVA_LONG_UNALIGNED, startIndex);
     }
 
     @Override

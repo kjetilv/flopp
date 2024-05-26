@@ -145,6 +145,7 @@ public final class CalculateAverage_kjetilvlong {
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
+            System.out.println(map.keySet().stream().mapToInt(String::length).sum() / map.size());
         }
     }
 

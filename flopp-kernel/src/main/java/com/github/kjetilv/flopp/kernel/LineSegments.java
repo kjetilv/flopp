@@ -88,10 +88,9 @@ public final class LineSegments {
 
     public static LongSupplier alignedLongSupplier(LineSegment segment) {
         int length = Math.toIntExact(segment.length());
-        if (length == 0) {
-            return () -> 0x0L;
-        }
-        return new LineSegmentAlignedLongSupplier(segment, length);
+        return length == 0
+            ? () -> 0x0L
+            : new LineSegmentAlignedLongSupplier(segment, length);
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
@@ -105,10 +104,8 @@ public final class LineSegments {
             : alignedLongSupplier(segment);
     }
 
-    public static LongStream longs(LineSegment segment, boolean align) {
-        return align
-            ? shiftedLongs(segment)
-            : alignedLongs(segment);
+    public static LongStream longs(LineSegment segment, boolean shift) {
+        return shift ? shiftedLongs(segment) : alignedLongs(segment);
     }
 
     public static LongStream alignedLongs(LineSegment segment) {
@@ -123,13 +120,17 @@ public final class LineSegments {
         if (length == 0) {
             return LongStream.empty();
         }
-        if (length < ALIGNMENT) {
-            return LongStream.of(segment.head(true));
-        }
         int headLen = segment.headLength();
+        if (ALIGNMENT - headLen + length < ALIGNMENT) {
+            long data = segment.head(true);
+            return LongStream.of(data);
+        }
         return headLen == 0
             ? alignedLongs(segment)
-            : StreamSupport.longStream(new LineSegmentShiftedLongSpliterator(segment, length, headLen), false);
+            : StreamSupport.longStream(
+                new LineSegmentShiftedLongSpliterator(segment, length, headLen),
+                false
+            );
     }
 
     public static String asString(LineSegment segment, Charset charset) {
@@ -242,6 +243,10 @@ public final class LineSegments {
         return of(MemorySegments.of(bytes), 0, bytes.length);
     }
 
+    public static LineSegment of(long[] ls, int length) {
+        return of(MemorySegment.ofArray(ls), 0, length);
+    }
+
     public static LineSegment of(MemorySegment memorySegment, long start, long end) {
         return new ImmutableLineSegment(memorySegment, start, end);
     }
@@ -260,11 +265,6 @@ public final class LineSegments {
         return asString(of(segment, start, end), null, charset);
     }
 
-    private LineSegments() {
-    }
-
-    public static final byte[] NO_BYTES = new byte[0];
-
     static long readTail(
         LineSegment segment,
         MemorySegment memorySegment,
@@ -280,4 +280,9 @@ public final class LineSegments {
         long shift = ALIGNMENT * (ALIGNMENT - tailLen);
         return data >> shift;
     }
+
+    private LineSegments() {
+    }
+
+    public static final byte[] NO_BYTES = new byte[0];
 }

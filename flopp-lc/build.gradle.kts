@@ -6,7 +6,9 @@ import java.nio.file.Path
 dependencies {
     implementation(project(":flopp-kernel"))
 
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.5.2")
+    implementation("net.openhft:chronicle-map:3.25ea6")
+
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.2")
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.assertj:assertj-core:3.25.3")

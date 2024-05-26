@@ -5,11 +5,14 @@ import java.util.Objects;
 import java.util.function.LongSupplier;
 
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class LineSegmentShiftedLongSupplier implements LongSupplier {
 
     private final LineSegment segment;
+
+    private final int headLen;
 
     private final int length;
 
@@ -29,30 +32,41 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
 
     private final MemorySegment memorySegment;
 
+    private final long headStart;
+
     LineSegmentShiftedLongSupplier(LineSegment segment, int length, int headLen) {
         this.segment = Objects.requireNonNull(segment, "segment");
+        this.headStart = this.segment.headStart();
         this.memorySegment = this.segment.memorySegment();
-        this.length = length;
         this.endIndex = this.segment.endIndex();
 
-        this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+        this.length = length;
+
+        this.headLen = headLen;
         this.headShift = Math.toIntExact(headLen * ALIGNMENT);
+
+        this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
         this.tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
 
         this.alignedEnd = this.segment.alignedEnd();
-        this.data = this.segment.head(true);
         this.position = this.segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
+
+        this.data = this.segment.head(true);
     }
 
     @Override
     public long getAsLong() {
-        if (length < ALIGNMENT) {
+        if (headStart + length < ALIGNMENT) {
+            return data;
+        }
+        if (position == endIndex) {
             return data;
         }
         if (position < alignedEnd) {
             long alignedData = memorySegment.get(JAVA_LONG, position);
             try {
-                data |= alignedData << headShift;
+                long shifted = alignedData << headShift;
+                data |= shifted;
                 return data;
             } finally {
                 data = alignedData >> tailShift;
@@ -60,12 +74,24 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
             }
         }
         if (position == this.alignedEnd && tailLen > 0) {
+            long alignedData =
+                LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
             try {
-                long alignedData = LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
-                data |= alignedData << headShift;
+                long shifted = alignedData << headShift;
+                data |= shifted;
                 return data;
             } finally {
-                position += ALIGNMENT;
+                position += ALIGNMENT_INT;
+            }
+        }
+        int headStart = ALIGNMENT_INT - headLen;
+        if (tailLen > headStart) {
+            int restTail = tailLen - headStart;
+            if (restTail > 0) {
+                long alignedData =
+                    LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+                long remainingData = alignedData >> headStart * ALIGNMENT;
+                return remainingData;
             }
         }
         return 0x0L;
