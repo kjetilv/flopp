@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
