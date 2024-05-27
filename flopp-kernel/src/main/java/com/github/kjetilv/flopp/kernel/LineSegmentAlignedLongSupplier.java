@@ -44,7 +44,7 @@ final class LineSegmentAlignedLongSupplier implements LongSupplier {
     public long getAsLong() {
         if (position == alignedStart && headLen > 0) {
             try {
-                long data = segment.head(true);
+                long data = segment.head();
                 long shifted = data << ALIGNMENT * (ALIGNMENT - headLen);
                 return shifted;
             } finally {

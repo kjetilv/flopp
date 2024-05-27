@@ -26,7 +26,7 @@ public final class MemorySegments {
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         if (count < ALIGNMENT) {
-            return readHead(memorySegment, offset, count);
+            return readHead(memorySegment, offset, (int) count);
         }
         long bytes = 0;
         for (long i = count - 1; i >= 0; i--) {
@@ -36,8 +36,8 @@ public final class MemorySegments {
         return bytes;
     }
 
-    public static long readHead(MemorySegment memorySegment, long offset, long length) {
-        return switch (Math.toIntExact(length)) {
+    public static long readHead(MemorySegment memorySegment, long offset, int length) {
+        return switch (length) {
             case 0 -> 0L;
             case 1 -> memorySegment.get(JAVA_BYTE, offset);
             case 2 -> memorySegment.get(JAVA_SHORT_UNALIGNED, offset);

@@ -32,7 +32,7 @@ final class LineSegmentAlignedLongSpliterator extends Spliterators.AbstractLongS
     @Override
     public boolean tryAdvance(LongConsumer action) {
         if (headLen > 0) {
-            long data = segment.head(true);
+            long data = segment.head();
             long shifted = data << ALIGNMENT * (ALIGNMENT - headLen);
             action.accept(shifted);
         }

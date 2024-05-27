@@ -111,7 +111,7 @@ public final class CalculateAverage_kjetilvcm {
     private static int parseValue(LineSegment segment) {
         int value = 0;
         int pos = 1;
-        long head = segment.head(false);
+        long head = segment.head();
         long len = segment.length();
         for (long i = len - 1; i >= 0; i--) {
             long shift = i * 8;

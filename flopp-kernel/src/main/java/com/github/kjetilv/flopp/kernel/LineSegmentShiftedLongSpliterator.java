@@ -47,7 +47,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
 
     @Override
     public boolean tryAdvance(LongConsumer action) {
-        long data = segment.head(true);
+        long data = segment.head();
         long position = alignedStart + ALIGNMENT;
         if (position >= endIndex) {
             action.accept(data);

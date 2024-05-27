@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
@@ -128,31 +127,31 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
      */
     default long alignedEnd() {
         long endIndex = endIndex();
-        long tailEnd = endIndex % ALIGNMENT;
+        long tailEnd = endIndex % ALIGNMENT_INT;
         return endIndex - tailEnd;
     }
 
     default long alignedCount() {
-        return (alignedEnd() - alignedStart()) / ALIGNMENT;
+        return (alignedEnd() - alignedStart()) / ALIGNMENT_INT;
     }
 
     @SuppressWarnings("UnnecessaryParentheses")
     default long fullLongCount() {
         int headLen = headLength();
         int tailLen = tailLength();
-        return ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT;
+        return ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT_INT;
     }
 
     default long headStart() {
-        return startIndex() % ALIGNMENT;
+        return startIndex() % ALIGNMENT_INT;
     }
 
     default boolean isAlignedAtStart() {
-        return startIndex() % ALIGNMENT == 0L;
+        return startIndex() % ALIGNMENT_INT == 0L;
     }
 
     default boolean isAlignedAtEnd() {
-        return endIndex() % ALIGNMENT == 0;
+        return endIndex() % ALIGNMENT_INT == 0;
     }
 
     default long firstAlignedStart() {
@@ -160,30 +159,27 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default int headLength() {
-        long head = startIndex() % ALIGNMENT;
-        long padding = head == 0L ? 0L : ALIGNMENT - head;
+        long head = startIndex() % ALIGNMENT_INT;
+        long padding = head == 0L ? 0L : ALIGNMENT_INT - head;
         return Math.toIntExact(padding);
     }
 
     default long head() {
-        return head(false);
-    }
-
-    default long head(boolean truncate) {
         long startIndex = startIndex();
         long endIndex = endIndex();
         long length = endIndex - startIndex;
-        long headOffset = startIndex % ALIGNMENT;
-        int len = (int) Math.min(ALIGNMENT - headOffset, length);
-        if (underlyingSize() - startIndex < ALIGNMENT) {
+        long headOffset = startIndex % ALIGNMENT_INT;
+        long headLength = ALIGNMENT - headOffset;
+        int len = (int) Math.min(headLength, length);
+        if (underlyingSize() - startIndex < ALIGNMENT_INT) {
             return MemorySegments.readHead(memorySegment(), startIndex, len);
         }
-        return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
+        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * ALIGNMENT;
     }
 
     default long head(long head) {
         long l = memorySegment().get(JAVA_LONG, alignedStart());
-        return l >> head * ALIGNMENT;
+        return l >> head * ALIGNMENT_INT;
     }
 
     default long longNo(int longNo) {
@@ -207,17 +203,16 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         MemorySegment ms = memorySegment();
         int tail = tailLength();
         long endIndex = endIndex();
-        if (underlyingSize() - endIndex < ALIGNMENT) {
+        if (underlyingSize() - endIndex < ALIGNMENT_INT) {
             return MemorySegments.readTail(ms, endIndex, tail);
         }
-        long value = ms.get(JAVA_LONG_UNALIGNED, alignedEnd());
-        return truncate
-            ? Bits.lowerBytes(value, tail)
-            : value;
+        long value = ms.get(JAVA_LONG, alignedEnd());
+        int shift = ALIGNMENT_INT * (ALIGNMENT_INT- tail);
+        return value << shift >> shift;
     }
 
     default int tailLength() {
-        return Math.toIntExact(endIndex() % ALIGNMENT);
+        return Math.toIntExact(endIndex() % ALIGNMENT_INT);
     }
 
     default byte byteAt(long i) {
@@ -238,4 +233,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     long ALIGNMENT = MemorySegments.ALIGNMENT;
+
+    int ALIGNMENT_INT = MemorySegments.ALIGNMENT_INT;
 }

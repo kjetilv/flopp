@@ -47,15 +47,15 @@ public final class LineSegments {
         long tailLen = endIndex % ALIGNMENT;
         long longs = segment.fullLongCount() + (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         if (headLen > 0) {
-            long data = segment.head(true);
+            long data = segment.head();
             hashCode = data * 31L ^ (longs == 0 ? 1 : longs);
         }
         if (length > ALIGNMENT) {
             MemorySegment memorySegment = segment.memorySegment();
-            long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
-            for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
+            long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT_INT);
+            for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT_INT) {
                 long data = memorySegment.get(JAVA_LONG, pos);
-                hashCode += (data * 31L) ^ (longs - (pos / ALIGNMENT));
+                hashCode += (data * 31L) ^ (longs - (pos / ALIGNMENT_INT));
             }
             if (tailLen > 0) {
                 hashCode += readTail(segment, memorySegment, length, endIndex, tailLen, false) * 31L;
@@ -121,8 +121,8 @@ public final class LineSegments {
             return LongStream.empty();
         }
         int headLen = segment.headLength();
-        if (ALIGNMENT - headLen + length < ALIGNMENT) {
-            long data = segment.head(true);
+        if (ALIGNMENT - headLen + length < ALIGNMENT_INT) {
+            long data = segment.head();
             return LongStream.of(data);
         }
         return headLen == 0
@@ -206,7 +206,7 @@ public final class LineSegments {
         }
         if (length > headLen) {
             long alignedStart = segment.alignedStart();
-            long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT;
+            long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT_INT;
             int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
             int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
@@ -273,11 +273,11 @@ public final class LineSegments {
         long tailLen,
         boolean truncate
     ) {
-        if (length < ALIGNMENT) {
+        if (length < ALIGNMENT_INT) {
             return segment.tail(truncate);
         }
-        long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT);
-        long shift = ALIGNMENT * (ALIGNMENT - tailLen);
+        long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT_INT);
+        long shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);
         return data >> shift;
     }
 

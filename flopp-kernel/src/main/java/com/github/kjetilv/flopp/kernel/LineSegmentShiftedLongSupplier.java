@@ -51,7 +51,7 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
         this.alignedEnd = this.segment.alignedEnd();
         this.position = this.segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
 
-        this.data = this.segment.head(true);
+        this.data = this.segment.head();
     }
 
     @Override
