@@ -16,7 +16,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     MemorySegment memorySegment();
 
     default LineSegment aligned() {
-        if (underlyingSize() % ALIGNMENT == 0) {
+        if (underlyingSize() % ALIGNMENT_INT == 0) {
             return this;
         }
         throw new IllegalStateException(this + " is not aligned: " + memorySegment());
@@ -24,8 +24,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default long shiftedLongsCount() {
         long length = length();
-        long fullLongs = length / ALIGNMENT;
-        long remainder = length % ALIGNMENT;
+        long fullLongs = length / ALIGNMENT_INT;
+        long remainder = length % ALIGNMENT_INT;
         return fullLongs + (remainder == 0 ? 0 : 1);
     }
 
@@ -36,10 +36,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         if (len == 0) {
             return 0L;
         }
-        if (len < ALIGNMENT) {
+        if (len < ALIGNMENT_INT) {
             return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         }
-        long length = (endIndex() - tailLen - (startIndex() + headLen)) / ALIGNMENT;
+        long length = (endIndex() - tailLen - (startIndex() + headLen)) / ALIGNMENT_INT;
         return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
     }
 
@@ -169,12 +169,12 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         long endIndex = endIndex();
         long length = endIndex - startIndex;
         long headOffset = startIndex % ALIGNMENT_INT;
-        long headLength = ALIGNMENT - headOffset;
+        long headLength = ALIGNMENT_INT - headOffset;
         int len = (int) Math.min(headLength, length);
         if (underlyingSize() - startIndex < ALIGNMENT_INT) {
             return MemorySegments.readHead(memorySegment(), startIndex, len);
         }
-        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * ALIGNMENT;
+        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * ALIGNMENT_INT;
     }
 
     default long head(long head) {
@@ -190,16 +190,11 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return memorySegment().get(JAVA_LONG, firstAlignedStart() + longNo * ALIGNMENT);
     }
 
-    @SuppressWarnings("unused")
-    default long longAt(int longIndex) {
+    default long unalignedLongAt(int longIndex) {
         return memorySegment().get(JAVA_LONG_UNALIGNED, alignedStart() + longIndex);
     }
 
     default long tail() {
-        return tail(false);
-    }
-
-    default long tail(boolean truncate) {
         MemorySegment ms = memorySegment();
         int tail = tailLength();
         long endIndex = endIndex();
@@ -207,7 +202,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
             return MemorySegments.readTail(ms, endIndex, tail);
         }
         long value = ms.get(JAVA_LONG, alignedEnd());
-        int shift = ALIGNMENT_INT * (ALIGNMENT_INT- tail);
+        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tail);
         return value << shift >> shift;
     }
 

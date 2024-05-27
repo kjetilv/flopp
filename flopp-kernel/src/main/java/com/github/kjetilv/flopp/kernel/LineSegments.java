@@ -274,7 +274,7 @@ public final class LineSegments {
         boolean truncate
     ) {
         if (length < ALIGNMENT_INT) {
-            return segment.tail(truncate);
+            return segment.tail();
         }
         long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT_INT);
         long shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);

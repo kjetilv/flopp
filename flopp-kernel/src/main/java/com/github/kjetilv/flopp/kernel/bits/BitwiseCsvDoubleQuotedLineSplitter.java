@@ -37,7 +37,7 @@ final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSpl
             if (segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(segment.tail(true), 0);
+                findSeps(segment.tail(), 0);
                 markSeparator(length);
             }
         }

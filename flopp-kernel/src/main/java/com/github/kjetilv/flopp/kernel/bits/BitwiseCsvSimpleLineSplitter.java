@@ -31,7 +31,7 @@ final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter 
             if (this.segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(this.segment.tail(true), 0);
+                findSeps(this.segment.tail(), 0);
                 markSeparator(length);
             }
         }

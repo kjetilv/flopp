@@ -159,20 +159,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
         }
 
-        /**
-         * @param truncate Always true here
-         */
-        @Override
-        public long tail(boolean truncate) {
-            int tail = Math.toIntExact(endIndex % ALIGNMENT);
-            if (underlyingSize - endIndex < ALIGNMENT) {
-                return MemorySegments.readTail(segment, endIndex, tail);
-            }
-            long tailEnd = endIndex % ALIGNMENT;
-            long value = segment.get(JAVA_LONG_UNALIGNED, endIndex - tailEnd);
-            return Bits.lowerBytes(value, tail);
-        }
-
         @Override
         public long startIndex() {
             return startIndex;
