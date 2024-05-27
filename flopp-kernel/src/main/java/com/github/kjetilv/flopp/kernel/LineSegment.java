@@ -190,8 +190,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return memorySegment().get(JAVA_LONG, firstAlignedStart() + longNo * ALIGNMENT);
     }
 
-    default long unalignedLongAt(int longIndex) {
-        return memorySegment().get(JAVA_LONG_UNALIGNED, alignedStart() + longIndex);
+    default long unalignedLongNo(int longNo) {
+        return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex() + longNo * ALIGNMENT);
     }
 
     default long tail() {
