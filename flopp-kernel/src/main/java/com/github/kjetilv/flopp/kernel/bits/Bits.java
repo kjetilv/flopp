@@ -52,10 +52,6 @@ public final class Bits {
         return dotted ? dot(padded, 8) : padded;
     }
 
-    public static long lowerBytes(long data, int bytes) {
-        return data & PICK_LOWER[bytes];
-    }
-
     public static byte[] toBytes(long data) {
         return new byte[] {
             (byte) (data & 0xFF),
@@ -176,17 +172,6 @@ public final class Bits {
         0xFFFF000000000000L,
         0xFF00000000000000L,
         0x0000000000000000L
-    };
-
-    private static final long[] PICK_LOWER = {
-        0x0000000000000000L,
-        0x00000000000000FFL,
-        0x000000000000FFFFL,
-        0x0000000000FFFFFFL,
-        0x00000000FFFFFFFFL,
-        0x000000FFFFFFFFFFL,
-        0x0000FFFFFFFFFFFFL,
-        0x00FFFFFFFFFFFFFFL,
     };
 
     private static final long[] CHECK = {
