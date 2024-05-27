@@ -163,12 +163,6 @@ public final class MemorySegments {
         return new String(bytes, headOffset, length, charset);
     }
 
-    public static long readLength(long startIndex, long endIndex) {
-        long head = startIndex % ALIGNMENT;
-        long length = endIndex - startIndex;
-        return head == ALIGNMENT ? length : Math.min(ALIGNMENT - head, length);
-    }
-
     private MemorySegments() {
     }
 

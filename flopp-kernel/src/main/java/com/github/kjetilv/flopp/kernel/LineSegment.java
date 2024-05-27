@@ -172,14 +172,13 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default long head(boolean truncate) {
         long startIndex = startIndex();
         long endIndex = endIndex();
-        long len = MemorySegments.readLength(startIndex, endIndex);
+        long length = endIndex - startIndex;
+        long headOffset = startIndex % ALIGNMENT;
+        int len = (int) Math.min(ALIGNMENT - headOffset, length);
         if (underlyingSize() - startIndex < ALIGNMENT) {
             return MemorySegments.readHead(memorySegment(), startIndex, len);
         }
-        long value = memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
-        return truncate
-            ? Bits.lowerBytes(value, Math.toIntExact(len))
-            : value;
+        return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex);
     }
 
     default long head(long head) {

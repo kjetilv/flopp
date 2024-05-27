@@ -201,7 +201,7 @@ public final class LineSegments {
         byte[] string = new byte[length];
         int headLen = segment.headLength();
         if (headLen > 0) {
-            long data = segment.head(false);
+            long data = segment.head();
             Bits.transferLimitedDataTo(data, 0, Math.min(length, headLen), string);
         }
         if (length > headLen) {
