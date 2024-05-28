@@ -62,8 +62,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
             position += ALIGNMENT;
         }
         if (position == this.alignedEnd && tailLen > 0) {
-            long alignedData =
-                LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+            long alignedData = segment.tail();
             long shifted = alignedData << headShift;
             data |= shifted;
             action.accept(data);

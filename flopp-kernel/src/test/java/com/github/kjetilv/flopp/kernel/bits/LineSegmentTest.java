@@ -117,7 +117,7 @@ class LineSegmentTest {
         String line = IntStream.range(0, 10).mapToObj(
                 _ -> IntStream.range(0, 10).mapToObj(String::valueOf)
                     .collect(Collectors.joining()))
-            .collect(Collectors.joining());
+            .collect(Collectors.joining("\n"));
         byte[] contents = (line + '\n').getBytes();
         Path path = Files.write(
             dir.resolve(Path.of(UUID.randomUUID() + ".txt")),
@@ -137,7 +137,7 @@ class LineSegmentTest {
             assertThat(lineSegment.alignedCount()).isEqualTo(5);
             assertThat(lineSegment.fullLongCount()).isEqualTo(4);
 
-            long firstAsBytes = MemorySegments.bytesAt(lineSegment.memorySegment(), lineSegment.startIndex(), 3);
+            long firstAsBytes = lineSegment.bytesAt(0, 3);
 
             String bytedSubstring = Bits.toString(firstAsBytes, 3, UTF_8);
             String wantedSubstring = line.substring(13, 16);

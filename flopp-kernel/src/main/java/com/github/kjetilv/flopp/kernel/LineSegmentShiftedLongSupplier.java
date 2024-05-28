@@ -74,8 +74,7 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
             }
         }
         if (position == this.alignedEnd && tailLen > 0) {
-            long alignedData =
-                LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+            long alignedData = segment.tail();
             try {
                 long shifted = alignedData << headShift;
                 data |= shifted;
@@ -88,8 +87,7 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
         if (tailLen > headStart) {
             int restTail = tailLen - headStart;
             if (restTail > 0) {
-                long alignedData =
-                    LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+                long alignedData = segment.tail();
                 long remainingData = alignedData >> headStart * ALIGNMENT;
                 return remainingData;
             }

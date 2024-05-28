@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled
 @SuppressWarnings("SameParameterValue")
 public class BitwiseSizeTest {
 

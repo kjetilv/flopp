@@ -46,7 +46,7 @@ final class LineSegmentAlignedLongSpliterator extends Spliterators.AbstractLongS
             }
             int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
             if (tailLen > 0) {
-                long data = LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+                long data = segment.tail();
                 action.accept(data);
             }
         }

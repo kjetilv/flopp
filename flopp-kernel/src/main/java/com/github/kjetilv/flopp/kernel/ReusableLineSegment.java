@@ -5,7 +5,6 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_LONG_UNALIGNED;
 
 public final class ReusableLineSegment implements LineSegment {

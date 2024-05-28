@@ -61,7 +61,7 @@ final class LineSegmentAlignedLongSupplier implements LongSupplier {
         }
         if (position == alignedEnd && tailLen > 0) {
             try {
-                long data = LineSegments.readTail(segment, memorySegment, length, endIndex, tailLen, true);
+                long data = segment.tail();
                 return data;
             } finally {
                 position += ALIGNMENT;

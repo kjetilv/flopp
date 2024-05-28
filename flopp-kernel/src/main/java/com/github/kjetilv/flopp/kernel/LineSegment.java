@@ -164,22 +164,27 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return Math.toIntExact(padding);
     }
 
+    default long head(long head) {
+        long l = memorySegment().get(JAVA_LONG, alignedStart());
+        return l >> head * ALIGNMENT_INT;
+    }
+
     default long head() {
         long startIndex = startIndex();
         long endIndex = endIndex();
         long length = endIndex - startIndex;
         long headOffset = startIndex % ALIGNMENT_INT;
-        long headLength = ALIGNMENT_INT - headOffset;
-        int len = (int) Math.min(headLength, length);
-        if (underlyingSize() - startIndex < ALIGNMENT_INT) {
-            return MemorySegments.readHead(memorySegment(), startIndex, len);
-        }
         return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * ALIGNMENT_INT;
     }
 
-    default long head(long head) {
-        long l = memorySegment().get(JAVA_LONG, alignedStart());
-        return l >> head * ALIGNMENT_INT;
+    default int tailLength() {
+        return Math.toIntExact(endIndex() % ALIGNMENT_INT);
+    }
+
+    default long tail() {
+        MemorySegment ms = memorySegment();
+        long endIndex = endIndex();
+        return MemorySegments.tail(ms, endIndex);
     }
 
     default long longNo(int longNo) {
@@ -192,22 +197,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default long unalignedLongNo(int longNo) {
         return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex() + longNo * ALIGNMENT);
-    }
-
-    default long tail() {
-        MemorySegment ms = memorySegment();
-        int tail = tailLength();
-        long endIndex = endIndex();
-        if (underlyingSize() - endIndex < ALIGNMENT_INT) {
-            return MemorySegments.readTail(ms, endIndex, tail);
-        }
-        long value = ms.get(JAVA_LONG, alignedEnd());
-        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tail);
-        return value << shift >> shift;
-    }
-
-    default int tailLength() {
-        return Math.toIntExact(endIndex() % ALIGNMENT_INT);
     }
 
     default byte byteAt(long i) {

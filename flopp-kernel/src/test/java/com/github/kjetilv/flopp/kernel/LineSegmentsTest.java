@@ -161,14 +161,14 @@ class LineSegmentsTest {
     private static void assertTail(String string) {
         LineSegment lineSegment = LineSegments.of(string, UTF_8);
         int tail = string.length() - 8;
-        long l = MemorySegments.readTail(lineSegment.memorySegment(), lineSegment.length(), tail);
+        long l = lineSegment.tail();
         assertThat(Bits.toString(l, tail, UTF_8)).isEqualTo(string.substring(8));
     }
 
     private static void assertHead(String string) {
         LineSegment lineSegment = LineSegments.of(string, UTF_8);
         int head = string.length() - 8;
-        long l = MemorySegments.readHead(lineSegment.memorySegment(), 0, head);
+        long l = lineSegment.head();
         assertThat(Bits.toString(l, head, UTF_8)).isEqualTo(string.substring(0, head));
     }
 }

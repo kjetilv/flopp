@@ -58,7 +58,7 @@ public final class LineSegments {
                 hashCode += (data * 31L) ^ (longs - (pos / ALIGNMENT_INT));
             }
             if (tailLen > 0) {
-                hashCode += readTail(segment, memorySegment, length, endIndex, tailLen, false) * 31L;
+                hashCode += segment.tail() * 31L;
             }
         }
         return (int) hashCode;
@@ -220,7 +220,7 @@ public final class LineSegments {
                 position += ALIGNMENT;
             }
             if (tailLen > 0) {
-                long data = readTail(segment, memorySegment, length, endIndex, tailLen, false);
+                long data = segment.tail();
                 Bits.transferLimitedDataTo(data, transferOffset, tailLen, string);
             }
         }
@@ -263,22 +263,6 @@ public final class LineSegments {
 
     public static String asString(MemorySegment segment, long start, long end, Charset charset) {
         return asString(of(segment, start, end), null, charset);
-    }
-
-    static long readTail(
-        LineSegment segment,
-        MemorySegment memorySegment,
-        int length,
-        long endIndex,
-        long tailLen,
-        boolean truncate
-    ) {
-        if (length < ALIGNMENT_INT) {
-            return segment.tail();
-        }
-        long data = memorySegment.get(JAVA_LONG_UNALIGNED, endIndex - ALIGNMENT_INT);
-        long shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);
-        return data >> shift;
     }
 
     private LineSegments() {
