@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = new Partitioning(4, 16);
+        Partitioning partitioning = Partitioning.create(4, 16);
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -56,7 +55,7 @@ class PartitionedTest {
             partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
-                        .map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        .map(lineSegment -> lineSegment.asString(UTF_8))
                         .forEach(syncLines::add));
         }
         assertContents(syncLines);
@@ -74,7 +73,7 @@ class PartitionedTest {
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
-                        partitionedLineStream.map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
                             .forEach(asyncLines::add)))
                 .forEach(CompletableFuture::join);
         }
@@ -112,7 +111,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = new Partitioning(partitionCount, 16);
+        Partitioning partitioning = Partitioning.create(partitionCount, 16);
 
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
@@ -121,7 +120,7 @@ class PartitionedTest {
             partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
-                        .map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        .map(lineSegment -> lineSegment.asString(UTF_8))
                         .forEach(syncLines::add));
         }
         assertContents(syncLines);
@@ -137,7 +136,7 @@ class PartitionedTest {
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
-                        partitionedLineStream.map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
                             .forEach(asyncLines::add)))
                 .forEach(CompletableFuture::join);
         }
@@ -170,7 +169,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = new Partitioning(4, 16);
+        Partitioning partitioning = Partitioning.create(4, 16);
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -178,7 +177,7 @@ class PartitionedTest {
             partitionedStreams.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
-                        .map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        .map(lineSegment -> lineSegment.asString(UTF_8))
                         .forEach(syncLines::add)
                 );
         }
@@ -195,7 +194,7 @@ class PartitionedTest {
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
-                        partitionedLineStream.map(lineSegment -> lineSegment.asString(StandardCharsets.UTF_8))
+                        partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
                             .forEach(asyncLines::add)))
                 .forEach(CompletableFuture::join);
         }

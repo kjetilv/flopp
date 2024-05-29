@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -114,28 +115,44 @@ public final class CalculateAverage_kjetilvlong {
     private static void go3(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
-        Partitioning partitioning = Partitioning.create(500, shape.longestLine());
+        int cpus = Runtime.getRuntime().availableProcessors();
+        Partitioning partitioning = Partitioning.create(
+            cpus * 5,
+            shape.longestLine()
+        )
+//            .fragment(
+//            new TrailFragmentation(
+//                cpus * 25,
+//                1.0d,
+//                0.01d,
+//                0.1d
+//            )
+//        );
+        ;
         CsvFormat format = new CsvFormat.Simple(2, ';');
         int chunks = partitioning.of(shape.size()).size();
+        AtomicInteger threads = new AtomicInteger();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor =
 //                 Executors.newWorkStealingPool()
 //                Executors.newVirtualThreadPerTaskExecutor()
-                new ForkJoinPool(
+//                new ForkJoinPool(
+//                    cpus,
+//                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+//                    (t, e) ->
+//                        e.printStackTrace(System.err),
+//                    true
+//                )
+                new ThreadPoolExecutor(
                     Runtime.getRuntime().availableProcessors(),
-                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-                    (t, e) ->
-                        e.printStackTrace(System.err),
-                    true
+                    Runtime.getRuntime().availableProcessors(),
+                    0, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(chunks),
+                    r -> new Thread(r, "r" + threads.getAndIncrement())
                 )
-//                new ThreadPoolExecutor(
-//                    Runtime.getRuntime().availableProcessors(),
-//                    Runtime.getRuntime().availableProcessors(),
-//                    0, TimeUnit.SECONDS,
-//                    new LinkedBlockingQueue<>(chunks));
         ) {
-            List<Map<String, Result>> maps = bitwisePartitioned.splitters(format).parallel()
+            List<Map<String, Result>> maps = bitwisePartitioned.splitters(format)
                 .map(splitter ->
                     CompletableFuture.supplyAsync(() -> map(splitter), executor))
                 .toList()
@@ -145,7 +162,8 @@ public final class CalculateAverage_kjetilvlong {
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
-            System.out.println(map.keySet().stream().mapToInt(String::length).sum() / map.size());
+            System.out.println(map.keySet()
+                                   .stream().mapToInt(String::length).sum() / map.size());
         }
     }
 

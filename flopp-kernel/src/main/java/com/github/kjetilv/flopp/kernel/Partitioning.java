@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public record Partitioning(int count, long tail) {
+public record Partitioning(int count, long tail, TrailFragmentation fragmentation) {
 
     public static Partitioning create() {
-        return new Partitioning(Runtime.getRuntime().availableProcessors(), 0);
+        return new Partitioning(Runtime.getRuntime().availableProcessors(), 0, null);
     }
 
     public static Partitioning create(int count) {
@@ -19,7 +20,8 @@ public record Partitioning(int count, long tail) {
     public static Partitioning create(int count, long tail) {
         return new Partitioning(
             Non.negativeOrZero(count, "count"),
-            Non.negative(tail, "tail")
+            Non.negative(tail, "tail"),
+            null
         );
     }
 
@@ -38,15 +40,42 @@ public record Partitioning(int count, long tail) {
     public Partitioning scaled(double scale) {
         return new Partitioning(
             Math.toIntExact(Math.round(count * scale)),
-            tail
+            tail,
+            null
         );
     }
 
     public Partitioning tail(long tail) {
-        return new Partitioning(count, tail);
+        return new Partitioning(count, tail, fragmentation);
+    }
+
+    public Partitioning fragment(TrailFragmentation trailFragmentation) {
+        return new Partitioning(count, tail, trailFragmentation);
     }
 
     public Partitions of(long total) {
+        checkSize(total);
+        if (fragmentation == null) {
+            List<Partition> partitions = total > count
+                ? partitions(partitionSizes(count, total, tail))
+                : singlePartition(total);
+            return new Partitions(total, partitions, tail);
+        }
+        if (total > count) {
+            TrailFragmentation.Result result = fragmentation.create(total, count, tail);
+            long mainTotal = total - result.partitions().total();
+
+            long[] sizes = partitionSizes(count, mainTotal, tail);
+            List<Partition> partitions = partitions(sizes);
+
+            Partitions mainPart = new Partitions(mainTotal, partitions, tail);
+            return mainPart.insertAtEnd(result.partitions());
+        }
+        List<Partition> partitions = singlePartition(total);
+        return new Partitions(total, partitions, tail);
+    }
+
+    private void checkSize(long total) {
         Non.negativeOrZero(total, "total");
         long reasonablesize = tail + count;
         if (total < reasonablesize) {
@@ -55,21 +84,18 @@ public record Partitioning(int count, long tail) {
         if (count > total) {
             throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
         }
-        List<Partition> partitions = total > count
-            ? partitions(partitionSizes(count, total, tail))
-            : singlePartition(total);
-        return new Partitions(this, total, partitions);
     }
 
-    public static final long ALIGNMENT = 0x08L;
+    public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
 
     private static long[] partitionSizes(int count, long total, long tail) {
         if (count == 1) {
             return new long[] {total};
         }
-        if (total / count < Partitioning.ALIGNMENT * 2L) {
+        if (total / count < ALIGNMENT * 2L) {
             throw new IllegalArgumentException(
-                "Too many partitions for " + total + " bytes with alignment " + Partitioning.ALIGNMENT + ": " + count);
+                "Too many partitions for " + total + " bytes with alignment " + ALIGNMENT + ": " + count
+            );
         }
         return tail > 0
             ? alignedSizesWithTail(count, total, tail)

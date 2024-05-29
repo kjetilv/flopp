@@ -141,7 +141,7 @@ public class BitwiseSizeTest {
     ) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        Partitioning partitioning = new Partitioning(partitions, bufferSize);
+        Partitioning partitioning = Partitioning.create(partitions, bufferSize);
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> partitioned = partititioned.processor(tmp)
@@ -154,7 +154,7 @@ public class BitwiseSizeTest {
     private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
-        Partitioning partitioning = new Partitioning(partitions, 8192);
+        Partitioning partitioning = Partitioning.create(partitions, 8192);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
@@ -258,7 +258,7 @@ public class BitwiseSizeTest {
     };
 
     private static final Function<LineSegment, String> TOS =
-        lineSegment -> lineSegment.asString(StandardCharsets.UTF_8);
+        lineSegment -> lineSegment.asString(UTF_8);
 
     public static final Function<LineSegment, String> OP = TOS.andThen(OPS);
 

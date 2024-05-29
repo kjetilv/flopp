@@ -8,33 +8,49 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PartitionsTest {
 
     @Test
-    public void testShortTail() {
+    void testShortTail() {
         Partitions partitions = Partitioning.create(3, 80).of(2000);
         assertSizes(partitions, 640L, 640L, 640L, 80L);
     }
 
     @Test
-    public void testShortTailAligned() {
+    void testShortTailAligned() {
         Partitions partitions = Partitioning.create(3, 80).of(1996);
         assertSizes(partitions, 632L, 640L, 640L, 84L);
     }
 
     @Test
-    public void test692() {
+    void test692() {
         Partitions partitions = Partitioning.create(6).of(104);
         assertSizes(partitions, 16L, 16L, 16L, 16L, 16L, 24L);
     }
 
     @Test
-    public void testLongAligned() {
+    void testLongAligned() {
         Partitions partitions = Partitioning.create(3).of(65);
         assertSizes(partitions, 16L, 24L, 25L);
     }
 
     @Test
-    public void testLongAlignedShort() {
+    void testLongAlignedShort() {
         Partitions partitions = Partitioning.create(3).of(52);
         assertSizes(partitions, 16L, 16L, 20L);
+    }
+
+    @Test
+    void fragment() {
+        int cpus = Runtime.getRuntime().availableProcessors();
+        Partitions partitions = Partitioning.create(
+                cpus,
+                250
+            ).fragment(new TrailFragmentation(
+                cpus * 3,
+                1.0d,
+                0.01d,
+                0.1d
+            ))
+            .of(1_000_000_000);
+        System.out.println(partitions);
     }
 
     private static void assertSizes(Partitions partitions, Long... expectedSizes) {

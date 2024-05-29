@@ -34,10 +34,14 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     @Override
     public MemorySegment get(Partition partition) {
+        long length = partition.length(shape);
+        if (length < 0) {
+            throw new IllegalStateException("Invalid length " + length + ": " + partition);
+        }
         try {
-            return channel.map(READ_ONLY, partition.offset(), partition.length(shape), arena);
-        } catch (IOException e) {
-            throw new IllegalStateException(this + " could not open " + partition, e);
+            return channel.map(READ_ONLY, partition.offset(), length, arena);
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " could not open length " + length + ": " + partition, e);
         }
     }
 
