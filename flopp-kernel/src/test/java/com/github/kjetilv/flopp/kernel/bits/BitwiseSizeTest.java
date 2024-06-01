@@ -90,7 +90,7 @@ public class BitwiseSizeTest {
         ioQueueSize = 10;
         readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10, r -> {
             Thread thread = new Thread(r);
-            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace(System.err));
+            thread.setUncaughtExceptionHandler((_, e) -> e.printStackTrace(System.err));
             return thread;
         });
 

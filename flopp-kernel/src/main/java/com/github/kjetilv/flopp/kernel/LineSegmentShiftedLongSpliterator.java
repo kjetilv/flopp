@@ -11,8 +11,6 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliterator {
 
-    private final int length;
-
     private final LineSegment segment;
 
     private final long alignedStart;
@@ -38,7 +36,6 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
         this.alignedStart = this.segment.alignedStart();
         this.alignedEnd = this.segment.alignedEnd();
         this.endIndex = this.segment.endIndex();
-        this.length = length;
         this.headLen = headLen;
         this.headShift = this.headLen * ALIGNMENT_INT;
         this.tailLen = (int)(this.endIndex % ALIGNMENT);

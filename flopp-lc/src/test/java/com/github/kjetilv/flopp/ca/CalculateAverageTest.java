@@ -108,7 +108,7 @@ class CalculateAverageTest {
         Partitioning partitioning,
         int tail
     ) {
-        test(smaple, partitioning, tail);
+        test(Path.of(smaple), partitioning, tail);
     }
 
     private static void test(
