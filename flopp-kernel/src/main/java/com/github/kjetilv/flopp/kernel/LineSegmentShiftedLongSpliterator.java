@@ -41,7 +41,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
         this.length = length;
         this.headLen = headLen;
         this.headShift = this.headLen * ALIGNMENT_INT;
-        this.tailLen = Math.toIntExact(this.endIndex % ALIGNMENT);
+        this.tailLen = (int)(this.endIndex % ALIGNMENT);
         this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
     }
 

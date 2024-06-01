@@ -35,7 +35,7 @@ public final class LineSegments {
 
     @SuppressWarnings("UnnecessaryParentheses")
     public static int hashCode(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int)(segment.length());
         if (length == 0L) {
             return 0;
         }
@@ -87,14 +87,14 @@ public final class LineSegments {
     }
 
     public static LongSupplier alignedLongSupplier(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         return length == 0
             ? () -> 0x0L
             : new LineSegmentAlignedLongSupplier(segment, length);
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         if (length == 0) {
             return () -> 0x0L;
         }
@@ -109,14 +109,14 @@ public final class LineSegments {
     }
 
     public static LongStream alignedLongs(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         return length == 0
             ? LongStream.empty()
             : StreamSupport.longStream(new LineSegmentAlignedLongSpliterator(segment, length), false);
     }
 
     public static LongStream shiftedLongs(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         if (length == 0) {
             return LongStream.empty();
         }
@@ -173,7 +173,7 @@ public final class LineSegments {
     }
 
     public static byte[] simpleBytes(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         if (length == 0) {
             return NO_BYTES;
         }
@@ -194,7 +194,7 @@ public final class LineSegments {
     }
 
     public static byte[] asBytes(LineSegment segment) {
-        int length = Math.toIntExact(segment.length());
+        int length = (int) segment.length();
         if (length == 0) {
             return NO_BYTES;
         }
@@ -209,7 +209,7 @@ public final class LineSegments {
             long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT_INT;
             int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
-            int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+            int tailLen = (int)(endIndex % ALIGNMENT);
             MemorySegment memorySegment = segment.memorySegment();
             int transferOffset = headLen;
             long position = alignedStart + firstLong * ALIGNMENT;

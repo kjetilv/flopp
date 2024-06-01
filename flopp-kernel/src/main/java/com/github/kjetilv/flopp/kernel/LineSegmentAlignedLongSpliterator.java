@@ -44,7 +44,7 @@ final class LineSegmentAlignedLongSpliterator extends Spliterators.AbstractLongS
                 long data = memorySegment.get(JAVA_LONG, pos);
                 action.accept(data);
             }
-            int tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+            int tailLen = (int)(endIndex % ALIGNMENT);
             if (tailLen > 0) {
                 long data = segment.tail();
                 action.accept(data);

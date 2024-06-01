@@ -214,7 +214,7 @@ final class BitwisePartitionHandler implements Runnable {
         if (partition.last() && start + 1 == logicalLimit) {
             return null; // First linebreak was the last
         }
-        mask &= CLEARED[Math.toIntExact(start - offset)];
+        mask &= CLEARED[(int)(start - offset)];
         if (mask == 0) { // We cleared the current mask
             offset += ALIGNMENT;
         }
@@ -256,7 +256,7 @@ final class BitwisePartitionHandler implements Runnable {
 
     private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
         long trailing = limit - lineStart;
-        int length = Math.toIntExact(trailing + nextPrefix);
+        int length = (int)(trailing + nextPrefix);
         MemorySegment buffer = ofLength(length);
         copy(this.segment, JAVA_BYTE, lineStart, buffer, JAVA_BYTE, 0, trailing);
         copy(next.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, trailing, nextPrefix);
@@ -276,7 +276,7 @@ final class BitwisePartitionHandler implements Runnable {
         for (int i = 0; i < mediaries; i++) {
             mediarySize += collector.get(i).limit;
         }
-        int length = Math.toIntExact(trail + mediarySize + lastLineOffset);
+        int length = (int)(trail + mediarySize + lastLineOffset);
         MemorySegment buffer = ofLength(length);
         copy(segment, lineStart, buffer, 0, trail);
         long accumulatedSize = trail;
@@ -296,7 +296,7 @@ final class BitwisePartitionHandler implements Runnable {
         action.line(buffer, 0, length - (trim ? 1 : 0));
     }
 
-    private static final int ALIGNMENT = Math.toIntExact(JAVA_LONG.byteSize());
+    private static final int ALIGNMENT = (int)(JAVA_LONG.byteSize());
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,

@@ -44,7 +44,7 @@ public final class MemorySegments {
 
     public static MemorySegment alignmentPadded(MemorySegment segment) {
         long size = segment.byteSize();
-        int tail = Math.toIntExact(size % ALIGNMENT_INT);
+        int tail = (int)(size % ALIGNMENT_INT);
         if (tail == 0) {
             return segment;
         }
@@ -136,10 +136,10 @@ public final class MemorySegments {
 
     public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
 
-    public static final int ALIGNMENT_INT = Math.toIntExact(ALIGNMENT);
+    public static final int ALIGNMENT_INT = (int) ALIGNMENT;
 
     private static int alignedSize(long size) {
-        return Math.toIntExact(size + ALIGNMENT_INT - size % ALIGNMENT);
+        return (int)(size + ALIGNMENT_INT - size % ALIGNMENT);
     }
 
     private static ByteBuffer byteBuffer(byte[] bytes) {

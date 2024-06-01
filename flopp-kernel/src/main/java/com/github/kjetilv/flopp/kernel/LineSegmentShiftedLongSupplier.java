@@ -43,10 +43,10 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
         this.length = length;
 
         this.headLen = headLen;
-        this.headShift = Math.toIntExact(headLen * ALIGNMENT);
+        this.headShift = (int)(headLen * ALIGNMENT);
 
-        this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
-        this.tailShift = Math.toIntExact((ALIGNMENT - headLen) * ALIGNMENT);
+        this.tailLen = (int)(endIndex % ALIGNMENT);
+        this.tailShift = (int)((ALIGNMENT - headLen) * ALIGNMENT);
 
         this.alignedEnd = this.segment.alignedEnd();
         this.position = this.segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
