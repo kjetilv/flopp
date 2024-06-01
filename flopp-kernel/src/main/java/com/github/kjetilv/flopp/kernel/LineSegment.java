@@ -86,10 +86,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     @SuppressWarnings("unused")
     default LineSegment immutableSlice() {
-        return immutableSLice(endIndex());
+        return immutableSlice(endIndex());
     }
 
-    default LineSegment immutableSLice(long length) {
+    default LineSegment immutableSlice(long length) {
         return new ImmutableSliceSegment(
             memorySegment().asSlice(startIndex(), length),
             length
@@ -187,7 +187,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return MemorySegments.tail(ms, endIndex);
     }
 
-    default long longNo(int longNo) {
+    default long longNo(long longNo) {
         return memorySegment().get(JAVA_LONG, alignedStart() + longNo * ALIGNMENT);
     }
 

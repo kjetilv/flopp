@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.*;
 
 import java.io.Closeable;
-import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -103,11 +102,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     @FunctionalInterface
     public interface Action extends Closeable {
 
-        default void line(long startIndex, long endIndex) {
-            throw new IllegalStateException(this + " has no segment: " + startIndex + "-" + endIndex);
-        }
-
-        void line(MemorySegment segment, long startIndex, long endIndex);
+        void line(LineSegment lineSegment);
 
         @Override
         default void close() {

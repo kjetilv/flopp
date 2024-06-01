@@ -1,10 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 
-import java.lang.foreign.MemorySegment;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
@@ -47,9 +47,7 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
     }
 
     private static void cycle(
-        MemorySegment memorySegment,
-        long startIndex,
-        long endIndex,
+        LineSegment lineSegment,
         Deque<Runnable> deq,
         BitwisePartitioned.Action delegate,
         int footer
@@ -57,20 +55,8 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         if (deq.size() == footer) {
             Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
         }
-        deq.offerFirst(() -> delegate.line(memorySegment, startIndex, endIndex));
-    }
-
-    private static void cycle(
-        long startIndex,
-        long endIndex,
-        Deque<Runnable> deq,
-        BitwisePartitioned.Action delegate,
-        int footer
-    ) {
-        if (deq.size() == footer) {
-            Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
-        }
-        deq.offerFirst(() -> delegate.line(startIndex, endIndex));
+        LineSegment immutable = lineSegment.immutable();
+        deq.offerFirst(() -> delegate.line(immutable));
     }
 
     private static void verifyHeader(int headersLeft, int header) {
@@ -102,18 +88,9 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         }
 
         @Override
-        public void line(long startIndex, long endIndex) {
+        public void line(LineSegment lineSegment) {
             if (headersLeft == 0) {
-                delegate.line(startIndex, endIndex);
-            } else {
-                headersLeft--;
-            }
-        }
-
-        @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
-            if (headersLeft == 0) {
-                delegate.line(segment, startIndex, endIndex);
+                delegate.line(lineSegment);
             } else {
                 headersLeft--;
             }
@@ -152,18 +129,9 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         }
 
         @Override
-        public void line(long startIndex, long endIndex) {
+        public void line(LineSegment lineSegment) {
             if (headersLeft == 0) {
-                cycle(startIndex, endIndex, deque, delegate, footer);
-            } else {
-                headersLeft--;
-            }
-        }
-
-        @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
-            if (headersLeft == 0) {
-                cycle(segment, startIndex, endIndex, deque, delegate, footer);
+                cycle(lineSegment, deque, delegate, footer);
             } else {
                 headersLeft--;
             }
@@ -197,13 +165,8 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         }
 
         @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
-            cycle(segment, startIndex, endIndex, deque, delegate, footer);
-        }
-
-        @Override
-        public void line(long startIndex, long endIndex) {
-            cycle(startIndex, endIndex, deque, delegate, footer);
+        public void line(LineSegment lineSegment) {
+            cycle(lineSegment, deque, delegate, footer);
         }
 
         @Override

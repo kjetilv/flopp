@@ -50,14 +50,14 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
             () -> {
                 BiFunction<Partition, Stream<LineSegment>, Path> processing =
                     (partition, lines) -> {
-                        Path tempTaget = tempTargets.temp(partition);
-                        try (LinesWriter linesWriter = linesWriterFactory.create(tempTaget, charset)) {
+                        Path tempTarget = tempTargets.temp(partition);
+                        try (LinesWriter linesWriter = linesWriterFactory.create(tempTarget, charset)) {
                             lines.forEach(line ->
                                 linesWriter.accept(processor.apply(line)));
                         } catch (Exception e) {
-                            throw new RuntimeException("Failed to write " + tempTaget, e);
+                            throw new RuntimeException("Failed to write " + tempTarget, e);
                         }
-                        return tempTaget;
+                        return tempTarget;
                     };
                 futures(
                     processing,

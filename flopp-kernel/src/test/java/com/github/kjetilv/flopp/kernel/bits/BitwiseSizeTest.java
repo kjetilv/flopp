@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -89,7 +88,11 @@ public class BitwiseSizeTest {
         linesCount = 1_000_000;
         columnCount = 10;
         ioQueueSize = 10;
-        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
+        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10, r -> {
+            Thread thread = new Thread(r);
+            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace(System.err));
+            return thread;
+        });
 
         int header = 3;
         int footer = 2;
@@ -244,7 +247,7 @@ public class BitwiseSizeTest {
 //            Optional<BigInteger> bigInteger = tail
 //                .flatMap(ta ->
 //                    total.map(to -> to.subtract(ta)));
-            if (split.length > 0) {
+            if (split.length > 1) {
                 return new BigDecimal(split[1]).toPlainString();
             }
             return "0";

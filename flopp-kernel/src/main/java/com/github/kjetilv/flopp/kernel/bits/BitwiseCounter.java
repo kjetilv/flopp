@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -36,11 +37,15 @@ final class BitwiseCounter {
     }
 
     private BitwisePartitionHandler handler(BitwisePartitioned.Action action) {
+        MemorySegment segment = memorySegmentSource.get(partition);
         return new BitwisePartitionHandler(
             partition,
-            memorySegmentSource.get(partition),
+            segment,
+            segment.byteSize(),
             action,
-            next == null ? null : () -> next.get().handler(action)
+            next == null
+                ? null
+                : () -> next.get().handler(action)
         );
     }
 
@@ -49,7 +54,7 @@ final class BitwiseCounter {
         private long lc;
 
         @Override
-        public void line(MemorySegment segment, long startIndex, long endIndex) {
+        public void line(LineSegment lineSegment) {
             lc++;
         }
     }

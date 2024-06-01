@@ -1,12 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +40,7 @@ class BitwisePartitionHandlerTest {
             new Partition(0, 1, 0, str.length()),
             memorySegment,
             str.length(),
-            (segment, startIndex, endIndex) ->
-                handled.add(LineSegments.of(segment, startIndex, endIndex)),
+            e -> handled.add(e.immutable()),
             () -> null
         );
         handler.run();
