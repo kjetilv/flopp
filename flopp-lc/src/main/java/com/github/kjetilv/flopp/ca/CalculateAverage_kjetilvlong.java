@@ -28,8 +28,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,95 +38,21 @@ public final class CalculateAverage_kjetilvlong {
     public static void main(String[] args) {
         for (String arg : args) {
             Path path = Path.of(arg);
-//            go(path);
 //            go3(path);
 //            go3(path);
 //            go3(path);
             go3(path);
 //            go3(path);
 //            go3(path);
-//            go4It(path);
-//            go1(path);
         }
-    }
-
-    public static Map<String, Result> go(Path path) {
-        return go(path, false);
-    }
-
-    public static Map<String, Result> go(Path path, boolean slow) {
-        return go(path, slow, null);
-    }
-
-    public static Map<String, Result> go(Path path, boolean slow, Consumer<SeparatedLine> callbacks) {
-        Instant start = Instant.now();
-        Shape shape = Shape.of(path, UTF_8).longestLine(128);
-        Partitioning partitioning = Partitioning.create(
-            Runtime.getRuntime().availableProcessors(),
-            shape.longestLine()
-        );
-        int chunks = partitioning.of(shape.size()).size();
-        try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = slow ? null : new ThreadPoolExecutor(
-                chunks,
-                chunks,
-                0, TimeUnit.NANOSECONDS,
-                new LinkedBlockingQueue<>(chunks)
-            )
-        ) {
-            System.out.println(Duration.between(start, Instant.now()));
-            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
-            CsvFormat format = new CsvFormat.Escaped(';', '\\');
-            List<Supplier<Map<String, Result>>> mapSuppliers =
-                partitionedSplitters.splitters(format)
-                    .map(splitsConsumer -> {
-                        Supplier<Map<String, Result>> worker = () ->
-                            toMap(path, splitsConsumer, callbacks);
-                        return slow
-                            ? worker
-                            : joiner(future(worker, executor));
-                    })
-                    .toList();
-            List<Map<String, Result>> maps = mapSuppliers.stream()
-                .map(Supplier::get)
-                .toList();
-            Map<String, Result> combinedMaps = combineMaps(maps);
-            System.out.println(combinedMaps);
-            System.out.println(Duration.between(start, Instant.now()));
-            return combinedMaps;
-        }
-    }
-
-    private CalculateAverage_kjetilvlong() {
-    }
-
-    private static <T> CompletableFuture<T> future(Supplier<T> mapSupplier, ExecutorService executor) {
-        return CompletableFuture.supplyAsync(mapSupplier, executor);
-    }
-
-    private static <T> Supplier<T> joiner(CompletableFuture<T> future) {
-        return future::join;
     }
 
     @SuppressWarnings("unused")
-    private static void go3(Path path) {
+    static Map<String, Result> go3(Path path) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = Partitioning.create(
-            cpus * 5,
-            shape.longestLine()
-        )
-//            .fragment(
-//            new TrailFragmentation(
-//                cpus * 25,
-//                1.0d,
-//                0.01d,
-//                0.1d
-//            )
-//        );
-        ;
+        Partitioning partitioning = partitioning(cpus, shape);
         CsvFormat format = new CsvFormat.Simple(2, ';');
         int chunks = partitioning.of(shape.size()).size();
         AtomicInteger threads = new AtomicInteger();
@@ -137,25 +61,32 @@ public final class CalculateAverage_kjetilvlong {
             ExecutorService executor =
 //                 Executors.newWorkStealingPool()
 //                Executors.newVirtualThreadPerTaskExecutor()
-//                new ForkJoinPool(
-//                    cpus,
-//                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-//                    (t, e) ->
-//                        e.printStackTrace(System.err),
-//                    true
-//                )
-                new ThreadPoolExecutor(
-                    Runtime.getRuntime().availableProcessors(),
-                    Runtime.getRuntime().availableProcessors(),
-                    0, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(chunks),
-                    r -> new Thread(r, "r" + threads.getAndIncrement())
+                new ForkJoinPool(
+                    cpus,
+                    pool -> {
+                        ForkJoinWorkerThread thread =
+                            ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                        thread.setName("t" + threads.getAndIncrement());
+                        return thread;
+                    },
+                    (t, e) ->
+                        e.printStackTrace(System.err),
+                    true
                 )
+//                new ThreadPoolExecutor(
+//                    Runtime.getRuntime().availableProcessors(),
+//                    Runtime.getRuntime().availableProcessors(),
+//                    0, TimeUnit.SECONDS,
+//                    new LinkedBlockingQueue<>(chunks),
+//                    r -> new Thread(r, "r" + threads.getAndIncrement())
+//                )
         ) {
-            List<Map<String, Result>> maps = bitwisePartitioned.splitters(format)
-                .map(splitter ->
-                    CompletableFuture.supplyAsync(() -> map(splitter), executor))
-                .toList()
+            List<CompletableFuture<Map<String, Result>>> futures =
+                bitwisePartitioned.splitters(format, executor)
+                    .map(splitterFuture ->
+                        splitterFuture.thenApply(CalculateAverage_kjetilvlong::map))
+                    .toList();
+            List<Map<String, Result>> maps = futures
                 .stream()
                 .map(CompletableFuture::join)
                 .toList();
@@ -165,6 +96,32 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(map.keySet()
                                    .stream().mapToInt(String::length).sum() / map.size());
         }
+        return null;
+    }
+
+    private CalculateAverage_kjetilvlong() {
+    }
+
+    private static Partitioning partitioning(int cpus, Shape shape) {
+        if (shape.size() < 1_000_000) {
+            return Partitioning.create(cpus, shape.longestLine());
+        }
+        TrailFragmentation trailFragmentation = new TrailFragmentation(
+            cpus * 5,
+            1d,
+            0.0005d,
+            0.1d
+        );
+        if (shape.size() < 100_000_000) {
+            return Partitioning.create(
+                cpus * 10,
+                shape.longestLine()
+            ).fragment(trailFragmentation);
+        }
+        return Partitioning.create(
+            cpus * 200,
+            shape.longestLine()
+        ).fragment(trailFragmentation);
     }
 
     private static Map<String, Result> combineMaps(List<Map<String, Result>> maps) {
@@ -257,41 +214,6 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    private static Map<String, Result> toMap(
-        Path path,
-        PartitionedSplitter splitsConsumer,
-        Consumer<SeparatedLine> callbacks
-    ) {
-        Map<String, Result> m = new HashMap<>(1024, 1.0f);
-        try {
-            splitsConsumer.forEach(csvLine -> {
-                if (callbacks != null) {
-                    callbacks.accept(csvLine);
-                }
-                parse(csvLine, m);
-            });
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed with " + path, e);
-        }
-        return m;
-    }
-
-    private static void parse(SeparatedLine separatedLine, Map<String, Result> m) {
-        try {
-            String segment = separatedLine.segment(0).asString(UTF_8);
-            int measure = parseValue(separatedLine.segment(1));
-            m.compute(
-                segment,
-                (_, existing) ->
-                    existing == null
-                        ? new Result(measure)
-                        : existing.collect(measure)
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static <T> Set<T> keySet(List<Map<T, Result>> maps) {
         return maps.stream()
             .map(Map::keySet).flatMap(Collection::stream)
@@ -319,37 +241,10 @@ public final class CalculateAverage_kjetilvlong {
         return seqMap;
     }
 
-    private static int semiIndex(LineSegment ls, long length) {
-        for (int i = Math.toIntExact(length - 3); i >= 0; i--) {
-            if (ls.byteAt(i) == ';') {
-                return i;
-            }
-        }
-        throw new IllegalStateException("No split in " + ls.asString(UTF_8));
-    }
-
-    private static int parseValue(int length, int splitIndex, LineSegment ls) {
-        int value = 0;
-        int boundary = splitIndex + 1;
-        int pos = 1;
-        for (int i = length - 1; i >= boundary; i--) {
-            byte b = ls.byteAt(i);
-            if (b == '.') {
-                continue;
-            }
-            if (b == '-') {
-                return value * -1;
-            }
-            value += (b - '0') * pos;
-            pos *= 10;
-        }
-        return value;
-    }
-
     private static int parseValue(LineSegment segment) {
         int value = 0;
         int pos = 1;
-        long head = segment.unalignedLongNo(0);
+        long head = segment.bytesAt(0, 5);
         long len = segment.length();
         for (long i = len - 1; i >= 0; i--) {
             long shift = i * 8;

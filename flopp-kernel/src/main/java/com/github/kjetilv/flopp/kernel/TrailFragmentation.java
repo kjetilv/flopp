@@ -24,13 +24,26 @@ public record TrailFragmentation(
         long approxTrailSize = Math.round(trailPercentage / 100 * total);
         long approxMainSize = (total - approxTrailSize) / count;
 
-        long minSize = Math.max(
-            tail * 2,
-            Math.round(partitionMinPercentage / 100 * approxMainSize)
-        );
+        long percentageMinSize = Math.round(partitionMinPercentage / 100 * approxMainSize);
+        long tailAdjustedSize = Math.min(tail * 5, approxMainSize / 10);
+        long minSize = tail > 0
+            ? tailAdjustedSize
+            : percentageMinSize;
 
+        List<Partition> list = partitions(approxTrailSize, minSize);
+        Partitions partitions = new Partitions(
+            list.stream().mapToLong(Partition::length).sum(),
+            list,
+            0L
+        );
+        long trailStart = total - partitions.total();
+
+        return new Result(trailStart, partitions);
+    }
+
+    private List<Partition> partitions(long trailSize, long minSize) {
         int blocksCount = (trailCount + 1) * trailCount;
-        long blockTotal = approxTrailSize - trailCount * minSize;
+        long blockTotal = trailSize - trailCount * minSize;
         long blockSize = blockTotal / blocksCount;
 
         List<Partition> list = new ArrayList<>();
@@ -48,14 +61,7 @@ public record TrailFragmentation(
                 size
             ));
         }
-        Partitions partitions = new Partitions(
-            list.stream().mapToLong(Partition::length).sum(),
-            list,
-            0L
-        );
-        long trailStart = total - partitions.total();
-
-        return new Result(trailStart, partitions);
+        return list;
     }
 
     private static final int ALIGNMENT = 16;

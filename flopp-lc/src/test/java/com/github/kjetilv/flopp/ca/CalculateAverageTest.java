@@ -1,19 +1,16 @@
 package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -43,7 +40,7 @@ class CalculateAverageTest {
                 for (int t = 0; t < tail; t += 2) {
                     for (int i = 1; i < maxPartitions; i++) {
                         Partitioning partitioning = Partitioning.create(i);
-                        test(smaple, partitioning, t, false);
+                        test(smaple, partitioning, t);
                     }
                 }
             });
@@ -101,11 +98,7 @@ class CalculateAverageTest {
         test(
             "measurements-20.txt",
             Partitioning.create(23),
-            0,
-            true,
-            null
-//            commaSeparatedLine ->
-//                System.out.println(commaSeparatedLine.columns().collect(Collectors.joining(": ")))
+            0
         );
     }
 
@@ -113,46 +106,19 @@ class CalculateAverageTest {
     private static void test(
         String smaple,
         Partitioning partitioning,
-        int tail,
-        boolean slow
+        int tail
     ) {
-        test(smaple, partitioning, tail, slow, null);
-    }
-
-    private static void test(
-        String smaple,
-        Partitioning partitioning,
-        int tail,
-        boolean slow,
-        Consumer<SeparatedLine> callbacks
-    ) {
-        String path = Objects.requireNonNull(
-            Thread.currentThread().getContextClassLoader().getResource("smaples/" + smaple), "resource"
-        ).getFile();
-        test(Path.of(path), partitioning, tail, slow, callbacks);
+        test(smaple, partitioning, tail);
     }
 
     private static void test(
         Path smaple,
         Partitioning partitioning,
-        int tail,
-        boolean slow
-    ) {
-        test(smaple, partitioning, tail, slow, null);
-    }
-
-    private static void test(
-        Path smaple,
-        Partitioning partitioning,
-        int tail,
-        boolean slow,
-        Consumer<SeparatedLine> callbacks
+        int tail
     ) {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
-        Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
-            smaple,
-            slow,
-            callbacks
+        Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go3(
+            smaple
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).content()

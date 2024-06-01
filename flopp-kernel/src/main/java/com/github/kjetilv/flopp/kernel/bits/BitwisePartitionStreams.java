@@ -1,14 +1,13 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
-import com.github.kjetilv.flopp.kernel.Partitions;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -49,17 +48,28 @@ final class BitwisePartitionStreams implements PartitionedStreams {
                 streamerFor(index, map));
     }
 
+    @Override
+    public Stream<? extends CompletableFuture<PartitionStreamer>> streamers(ExecutorService executorService) {
+        int count = partitions.size();
+        ConcurrentMap<Integer, BitwisePartitionStreamer> map =
+            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        return IntStream.range(0, count)
+            .mapToObj(index ->
+                CompletableFuture.supplyAsync(
+                    () ->
+                        streamerFor(index, map),
+                    executorService
+                ));
+    }
+
     private BitwisePartitionStreamer streamerFor(
         int index,
         ConcurrentMap<Integer, BitwisePartitionStreamer> map
     ) {
-        return map.computeIfAbsent(index, _ ->
-            new BitwisePartitionStreamer(
-                partitions.get(index),
-                shape,
-                source,
-                nextLookup(index, map)
-            ));
+        return map.computeIfAbsent(index, _ -> {
+            Partition partition = partitions.get(index);
+            return new BitwisePartitionStreamer(partition, shape, source, nextLookup(index, map));
+        });
     }
 
     private Supplier<BitwisePartitionStreamer> nextLookup(

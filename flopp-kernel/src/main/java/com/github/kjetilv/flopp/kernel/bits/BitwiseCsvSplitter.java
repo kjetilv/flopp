@@ -24,22 +24,21 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines().forEach(splitter(consumer));
+        streamer.lines()
+            .forEach(splitter(consumer));
     }
 
     @Override
     public Stream<SeparatedLine> separatedLine() {
-        return streamer.lines().map(splitter(null));
+        return streamer.lines()
+            .map(splitter(null));
     }
 
     private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {
         return switch (format) {
-            case CsvFormat.Escaped escaped ->
-                new BitwiseCsvEscapedLineSplitter(consumer, escaped);
-            case CsvFormat.DoubleQuoted doubleQuoted ->
-                new BitwiseCsvDoubleQuotedLineSplitter(consumer, doubleQuoted);
-            case CsvFormat.Simple simple ->
-                new BitwiseCsvSimpleLineSplitter(consumer, simple);
+            case CsvFormat.Escaped escaped -> new BitwiseCsvEscapedLineSplitter(consumer, escaped);
+            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseCsvDoubleQuotedLineSplitter(consumer, doubleQuoted);
+            case CsvFormat.Simple simple -> new BitwiseCsvSimpleLineSplitter(consumer, simple);
         };
     }
 }
