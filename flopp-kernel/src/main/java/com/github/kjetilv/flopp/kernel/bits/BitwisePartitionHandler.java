@@ -59,7 +59,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         try (action) {
             if (processHead()) {
                 if (partition.last()) {
-                    processTail();
+                    processTailBody();
                 } else {
                     processBody();
                 }
@@ -112,7 +112,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             offset += ALIGNMENT;
         }
         if (tail > 0) {
-            long bytes = loadTail(tail);
+            long bytes = loadTail();
             long mask = mask(bytes);
             if (mask != 0) {
                 return initializeFrom(mask);
@@ -122,12 +122,12 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return null; // No newline found in the whole partition
     }
 
-    private void processTail() {
+    private void processTailBody() {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         processMain(lastOffset);
         if (tail > 0) {
-            processTail(tail);
+            processTail();
         }
         if (startIndex < logicalLimit) {
             emitAndAdvance(logicalLimit);
@@ -160,7 +160,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             }
         }
         if (tail > 0) {
-            long mask = mask(loadTail(tail));
+            long mask = mask(loadTail());
             if (mask != 0) { // Tail did not end in newline, send what we got
                 shipNextLine(mask);
                 return true;
@@ -169,8 +169,8 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return false;
     }
 
-    private void processTail(long tail) {
-        long mask = mask(loadTail(tail));
+    private void processTail() {
+        long mask = mask(loadTail());
         if (mask == 0) { // Tail did not end in newline, send what we got
             emitAndAdvance(logicalLimit);
         } else {
@@ -231,7 +231,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return segment.get(JAVA_LONG, offset);
     }
 
-    private long loadTail(long count) {
+    private long loadTail() {
         return MemorySegments.tail(segment, limit);
     }
 
