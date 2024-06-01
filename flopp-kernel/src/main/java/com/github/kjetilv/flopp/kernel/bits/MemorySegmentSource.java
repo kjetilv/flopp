@@ -8,8 +8,10 @@ import java.lang.foreign.MemorySegment;
 @FunctionalInterface
 interface MemorySegmentSource extends Closeable {
 
-    MemorySegment get(Partition partition);
+    Sourced get(Partition partition);
 
     @Override
     default void close() {}
+
+    record Sourced(long offset, MemorySegment segment) {}
 }

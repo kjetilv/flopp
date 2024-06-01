@@ -21,17 +21,21 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
 
     private final MemorySegment segment;
 
+    private final long offset;
+
     private final long logicalSize;
 
     BitwisePartitionSpliterator(
         Partition partition,
         MemorySegment segment,
+        long offset,
         long logicalSize,
-        MiddleMan<BitwisePartitioned.Action> middleMan,
+        MiddleMan<Action> middleMan,
         Supplier<BitwisePartitionSpliterator> next
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.offset = offset;
         this.logicalSize = logicalSize;
         this.middleMan = middleMan;
         this.next = next;
@@ -61,6 +65,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         return new BitwisePartitionHandler(
             partition,
             segment,
+            offset,
             logicalSize,
             action,
             next == null

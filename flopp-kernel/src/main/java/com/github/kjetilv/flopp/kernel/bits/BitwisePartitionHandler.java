@@ -40,12 +40,14 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     BitwisePartitionHandler(
         Partition partition,
         MemorySegment segment,
+        long offset,
         long logicalSize,
         BitwisePartitioned.Action action,
         Supplier<BitwisePartitionHandler> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = Objects.requireNonNull(segment, "segment");
+        this.offset = offset;
         this.action = Objects.requireNonNull(action, "action");
         this.next = next;
 

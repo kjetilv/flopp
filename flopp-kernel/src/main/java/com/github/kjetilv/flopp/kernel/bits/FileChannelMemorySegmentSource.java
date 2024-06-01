@@ -3,10 +3,8 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
 
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -33,13 +31,16 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
     }
 
     @Override
-    public MemorySegment get(Partition partition) {
+    public Sourced get(Partition partition) {
         long length = partition.length(shape);
         if (length < 0) {
             throw new IllegalStateException("Invalid length " + length + ": " + partition);
         }
         try {
-            return channel.map(READ_ONLY, partition.offset(), length, arena);
+            return new Sourced(
+                0L,
+                channel.map(READ_ONLY, partition.offset(), length, arena)
+            );
         } catch (Exception e) {
             throw new IllegalStateException(this + " could not open length " + length + ": " + partition, e);
         }
