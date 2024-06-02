@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -91,12 +92,13 @@ class CalculateAverageTest {
                 }
             }
         }
+        test(smaple, Partitioning.create(1), 0);
     }
 
     @Test
     void test2023() {
         test(
-            "measurements-20.txt",
+            "smaples/measurements-20.txt",
             Partitioning.create(23),
             0
         );
@@ -108,7 +110,9 @@ class CalculateAverageTest {
         Partitioning partitioning,
         int tail
     ) {
-        test(Path.of(smaple), partitioning, tail);
+        URL resource = Thread.currentThread().getContextClassLoader().getResource(smaple);
+        assertThat(resource).isNotNull();
+        test(Path.of(resource.getFile()), partitioning, tail);
     }
 
     private static void test(
@@ -118,11 +122,10 @@ class CalculateAverageTest {
     ) {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
         Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go3(
-            smaple
+            smaple, partitioning
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
-        assertThat(out).content()
-            .describedAs(smaple + ", " + partitioning + ", " + shape)
-            .isEqualTo(map + "\n");
+        assertThat(out).hasContent(map + "\n")
+            .describedAs(smaple + ", " + partitioning + ", " + shape);
     }
 }

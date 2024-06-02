@@ -77,12 +77,14 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
 
     private void checkSize(long total) {
         Non.negativeOrZero(total, "total");
-        long reasonablesize = tail + count;
-        if (total < reasonablesize) {
-            throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ", total size is " + total);
-        }
-        if (count > total) {
-            throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
+        if (count > 1) {
+            long reasonablesize = tail + count;
+            if (total < reasonablesize) {
+                throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ", total size is " + total);
+            }
+            if (count > total) {
+                throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
+            }
         }
     }
 

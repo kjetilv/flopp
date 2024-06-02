@@ -41,23 +41,23 @@ public final class CalculateAverage_kjetilvlong {
 //            go3(path);
 //            go3(path);
 //            go3(path);
-            go3(path);
+            go3(path, null);
 //            go3(path);
 //            go3(path);
         }
     }
 
     @SuppressWarnings("unused")
-    static Map<String, Result> go3(Path path) {
+    static Map<String, Result> go3(Path path, Partitioning partitioning) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = partitioning(cpus, shape);
         CsvFormat format = new CsvFormat.Simple(2, ';');
-        int chunks = partitioning.of(shape.size()).size();
+        Partitioning p = partitioning == null ? partitioning(cpus, shape) : partitioning;
+        int chunks = p.of(shape.size()).size();
         AtomicInteger threads = new AtomicInteger();
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
             ExecutorService executor =
 //                 Executors.newWorkStealingPool()
 //                Executors.newVirtualThreadPerTaskExecutor()
@@ -95,8 +95,8 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println(Duration.between(start, Instant.now()));
             System.out.println(map.keySet()
                                    .stream().mapToInt(String::length).sum() / map.size());
+            return map;
         }
-        return null;
     }
 
     private CalculateAverage_kjetilvlong() {
@@ -132,10 +132,9 @@ public final class CalculateAverage_kjetilvlong {
         maps.stream().skip(1)
             .forEach(map ->
                 keys.forEach(key ->
-                    treeMap.put(
-                        key,
-                        treeMap.computeIfAbsent(key, _ -> new Result(0)).merge(map.get(key))
-                    )));
+                    treeMap.compute(key, (_, existing) -> existing == null
+                        ? map.get(key)
+                        : existing.merge(map.get(key)))));
         return treeMap;
     }
 
@@ -286,6 +285,9 @@ public final class CalculateAverage_kjetilvlong {
         public Result merge(Result coll) {
             if (coll == null) {
                 return this;
+            }
+            if (count == 0) {
+                return coll;
             }
             min = Math.min(min, coll.min);
             max = Math.max(max, coll.max);

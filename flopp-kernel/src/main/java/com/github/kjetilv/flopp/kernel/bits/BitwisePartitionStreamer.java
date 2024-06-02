@@ -1,13 +1,14 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 final class BitwisePartitionStreamer implements PartitionStreamer {
 

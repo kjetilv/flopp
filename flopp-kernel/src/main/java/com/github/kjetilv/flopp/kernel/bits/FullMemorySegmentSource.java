@@ -8,17 +8,14 @@ import com.github.kjetilv.flopp.kernel.Shape;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 
+@SuppressWarnings("unused")
 final class FullMemorySegmentSource extends AbstractFileChannelMemorySegmentSource {
 
     private final MemorySegment segment;
 
     FullMemorySegmentSource(Path path, Shape shape) {
         super(path, shape);
-        try {
-            segment = memorySegment(0L, shape.size());
-        } catch (Exception e) {
-            throw new IllegalStateException(this + " could not open " + path, e);
-        }
+        this.segment = memorySegment(0L, shape.size());
     }
 
     @Override

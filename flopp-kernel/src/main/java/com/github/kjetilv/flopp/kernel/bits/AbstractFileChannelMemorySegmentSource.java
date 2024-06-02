@@ -65,14 +65,6 @@ public abstract class AbstractFileChannelMemorySegmentSource implements MemorySe
         return channel;
     }
 
-    protected final Shape getShape() {
-        return shape;
-    }
-
-    protected final RandomAccessFile getRandomAccessFile() {
-        return randomAccessFile;
-    }
-
     protected abstract LineSegment lineSegment(Partition partition, long length);
 
     @SuppressWarnings("resource")
