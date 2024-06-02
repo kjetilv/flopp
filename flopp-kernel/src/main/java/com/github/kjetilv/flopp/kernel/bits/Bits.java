@@ -205,17 +205,6 @@ public final class Bits {
         return binaryString;
     }
 
-    private static int count(long bytes, long mask) {
-        long find = findInstances(bytes, mask);
-        int count = 0;
-        while (find != 0) {
-            int trail = trailingBytes(find);
-            find &= CLEARED[trail];
-            count++;
-        }
-        return count;
-    }
-
     private static int trailingBytes(long data) {
         return Long.numberOfTrailingZeros(data) >> ALIGNMENT_POWER;
     }
@@ -375,7 +364,14 @@ public final class Bits {
 
         @Override
         public int count(long bytes) {
-            return Bits.count(bytes, mask);
+            int count = 0;
+            long find = findInstances(bytes, mask);
+            while (find != 0) {
+                int trail = trailingBytes(find);
+                find &= CLEARED[trail];
+                count++;
+            }
+            return count;
         }
 
         @Override
