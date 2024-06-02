@@ -10,6 +10,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+
 final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
@@ -26,7 +28,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         MemorySegmentSource.Sourced sourced = memorySegmentSource.get(partition);
         MemorySegment segment = sourced.segment();
         long logicalSize = segment.byteSize();
-        MemorySegment safeSegment = partition.last()
+        MemorySegment safeSegment = partition.last()  && !partition.aligned(ALIGNMENT_INT)
             ? MemorySegments.alignmentPadded(segment)
             : segment;
         this.spliterator = new BitwisePartitionSpliterator(

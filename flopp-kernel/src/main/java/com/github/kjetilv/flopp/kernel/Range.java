@@ -14,5 +14,10 @@ public interface Range {
         return endIndex() - startIndex();
     }
 
-    record Immutable(long startIndex, long endIndex) implements Range { }
+    default boolean aligned(int alignment) {
+        return length() % alignment == 0;
+    }
+
+    record Immutable(long startIndex, long endIndex) implements Range {
+    }
 }
