@@ -21,7 +21,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
         this.partitions = partitioning(partitioning, this.shape).of(this.shape.size());
-        this.memorySegmentSource = new FileChannelMemorySegmentSource(this.path, this.shape);
+        this.memorySegmentSource = new PartialMemorySegmentSource(this.path, this.shape);
     }
 
     @Override
