@@ -25,8 +25,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private final BitwisePartitioned.Action action;
 
-    private final long underlyingSize;
-
     private final long limit;
 
     private final long logicalLimit;
@@ -51,7 +49,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         this.action = Objects.requireNonNull(action, "action");
         this.next = next;
 
-        this.underlyingSize = this.segment.byteSize();
         this.limit = this.partition.length();
         this.logicalLimit = logicalSize;
     }
@@ -250,11 +247,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     @Override
     public MemorySegment memorySegment() {
         return segment;
-    }
-
-    @Override
-    public long underlyingSize() {
-        return underlyingSize;
     }
 
     @Override

@@ -16,8 +16,6 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     LineSegment segment;
 
-    long underlyingSize;
-
     MemorySegment memorySegment;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
@@ -33,7 +31,6 @@ abstract sealed class AbstractBitwiseLineSplitter
     public final SeparatedLine apply(LineSegment segment) {
         this.segment = segment;
         this.memorySegment = segment.memorySegment();
-        this.underlyingSize = memorySegment.byteSize();
         separate();
         lines.accept(this);
         return this;
@@ -42,10 +39,6 @@ abstract sealed class AbstractBitwiseLineSplitter
     @Override
     public final MemorySegment memorySegment() {
         return segment.memorySegment();
-    }
-
-    public final long underlyingSize() {
-        return underlyingSize;
     }
 
     @Override
