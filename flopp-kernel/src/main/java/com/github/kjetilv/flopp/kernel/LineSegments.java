@@ -247,6 +247,10 @@ public final class LineSegments {
         return of(MemorySegment.ofArray(ls), 0, length);
     }
 
+    public static LineSegment of(MemorySegment memorySegment, Range range) {
+        return of(memorySegment, range.startIndex(), range.endIndex());
+    }
+
     public static LineSegment of(MemorySegment memorySegment, long start, long end) {
         return new ImmutableLineSegment(memorySegment, start, end);
     }

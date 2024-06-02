@@ -42,8 +42,8 @@ public final class MemorySegments {
         return value << shift >> shift;
     }
 
-    public static MemorySegment alignmentPadded(MemorySegment segment) {
-        long size = segment.byteSize();
+    public static MemorySegment alignmentPadded(MemorySegment segment, long offset) {
+        long size = segment.byteSize() - offset;
         int tail = (int)(size % ALIGNMENT_INT);
         if (tail == 0) {
             return segment;
@@ -53,7 +53,7 @@ public final class MemorySegments {
         MemorySegment.copy(
             segment,
             JAVA_BYTE,
-            0,
+            offset,
             resizedCopy,
             JAVA_BYTE,
             0,

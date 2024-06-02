@@ -1,9 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.*;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Supplier;
@@ -25,19 +22,28 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
         Supplier<BitwisePartitionStreamer> next
     ) {
         this.partition = partition;
-        MemorySegmentSource.Sourced sourced = memorySegmentSource.get(partition);
-        MemorySegment segment = sourced.segment();
-        long logicalSize = segment.byteSize();
-        MemorySegment safeSegment = partition.last()  && !partition.aligned(ALIGNMENT_INT)
-            ? MemorySegments.alignmentPadded(segment)
+        LineSegment sourced = memorySegmentSource.get(partition);
+        MemorySegment segment = sourced.memorySegment();
+
+        long logicalSize = sourced.length();
+
+        boolean troubledTail = partition.troubledTail();
+        long offset = troubledTail ? 0L : sourced.startIndex();
+        MemorySegment safeSegment = troubledTail
+            ? MemorySegments.alignmentPadded(segment, sourced.startIndex())
             : segment;
+
+        Supplier<BitwisePartitionSpliterator> nextSupplier = next == null
+            ? null
+            : () -> next.get().spliterator;
+
         this.spliterator = new BitwisePartitionSpliterator(
             partition,
             safeSegment,
-            sourced.offset(),
+            offset,
             logicalSize,
             HeadersAndFooters.middleMan(partition, shape),
-            next == null ? null : () -> next.get().spliterator
+            nextSupplier
         );
     }
 

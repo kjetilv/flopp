@@ -1,17 +1,15 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.io.Closeable;
-import java.lang.foreign.MemorySegment;
 
 @FunctionalInterface
 interface MemorySegmentSource extends Closeable {
 
-    Sourced get(Partition partition);
+    LineSegment get(Partition partition);
 
     @Override
     default void close() {}
-
-    record Sourced(long offset, MemorySegment segment) {}
 }

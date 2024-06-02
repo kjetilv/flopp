@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
     implements Comparable<Partition>, Range {
@@ -68,6 +69,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     public boolean single() {
         return partitionCount == 1;
+    }
+
+    public boolean troubledTail() {
+        return last() && !aligned(ALIGNMENT_INT);
     }
 
     private String str() {

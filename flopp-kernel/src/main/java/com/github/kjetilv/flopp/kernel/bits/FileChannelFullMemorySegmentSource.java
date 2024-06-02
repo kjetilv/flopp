@@ -7,13 +7,14 @@ import com.github.kjetilv.flopp.kernel.Shape;
 
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-final class FileChannelMemorySegmentSource implements MemorySegmentSource {
+final class FileChannelFullMemorySegmentSource implements MemorySegmentSource {
 
     private final Path path;
 
@@ -21,15 +22,21 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
 
     private final Shape shape;
 
-    private final Arena arena = Arena.ofAuto();
-
     private final FileChannel channel;
 
-    FileChannelMemorySegmentSource(Path path, Shape shape) {
+    private final MemorySegment segment;
+
+    FileChannelFullMemorySegmentSource(Path path, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
-        this.shape = Objects.requireNonNull(shape, "shape");
         this.randomAccessFile = openRandomAccess(path);
+        this.shape = shape;
         this.channel = randomAccessFile.getChannel();
+        try {
+            Arena arena = Arena.ofAuto();
+            segment = channel.map(READ_ONLY, 0, shape.size(), arena);
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " could not open " + path, e);
+        }
     }
 
     @Override
@@ -38,15 +45,7 @@ final class FileChannelMemorySegmentSource implements MemorySegmentSource {
         if (length < 0) {
             throw new IllegalStateException("Invalid length " + length + ": " + partition);
         }
-        try {
-            return LineSegments.of(
-                channel.map(READ_ONLY, partition.offset(), length, arena),
-                0L,
-                length
-            );
-        } catch (Exception e) {
-            throw new IllegalStateException(this + " could not open length " + length + ": " + partition, e);
-        }
+        return LineSegments.of(segment, partition);
     }
 
     @Override

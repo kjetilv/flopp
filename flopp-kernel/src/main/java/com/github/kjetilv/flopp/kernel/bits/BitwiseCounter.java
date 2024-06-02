@@ -37,12 +37,12 @@ final class BitwiseCounter {
     }
 
     private BitwisePartitionHandler handler(BitwisePartitioned.Action action) {
-        MemorySegmentSource.Sourced sourced = memorySegmentSource.get(partition);
-        MemorySegment segment = sourced.segment();
+        LineSegment sourced = memorySegmentSource.get(partition);
+        MemorySegment segment = sourced.memorySegment();
         return new BitwisePartitionHandler(
             partition,
             segment,
-            sourced.offset(),
+            sourced.startIndex(),
             segment.byteSize(),
             action,
             next == null
