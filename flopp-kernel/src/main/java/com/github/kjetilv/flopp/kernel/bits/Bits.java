@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -137,9 +138,7 @@ public final class Bits {
      * @return Finder for cycling through the occurrences in a long
      */
     public static Finder finder(char c, boolean fast) {
-        return fast
-            ? new SwarFinder(c)
-            : new CyclingFinder(c);
+        return fast ? swarFinder(c) : cyclingFinder(c);
     }
 
     public static Finder cyclingFinder(char c) {
@@ -153,11 +152,11 @@ public final class Bits {
     private Bits() {
     }
 
-    private static final long ONES = 0x0101010101010101L;
-
     public static final long EIGHTIES = 0x8080808080808080L;
 
     public static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
+
+    private static final long ONES = 0x0101010101010101L;
 
     private static final int ALIGNMENT = 8;
 
@@ -229,11 +228,11 @@ public final class Bits {
      */
     private static final class SwarFinder implements Finder {
 
-        private long dists;
-
         private final long mask;
 
         private final char c;
+
+        private long dists;
 
         private SwarFinder(char c) {
             this.c = c;
@@ -243,12 +242,12 @@ public final class Bits {
         /**
          * Set the given long, and return the first occurrence.  Mutates this finder.
          *
-         * @param bytes Long
+         * @param data Long
          * @return First occurrence
          */
         @Override
-        public int next(long bytes) {
-            dists = findInstances(bytes, mask);
+        public int next(long data) {
+            dists = findInstances(data, mask);
             return next();
         }
 
@@ -274,7 +273,68 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + c + "'/" + hex(mask) + " " + hex(dists) + "]";
+            return getClass().getSimpleName() + "['" + c + "' / " + hex(dists) + "]";
+        }
+    }
+
+    private static final class DevSwarFinder implements Finder {
+
+        private final long mask;
+
+        private final char c;
+
+        private long dists;
+
+        private long data;
+
+        private int trail;
+
+        private DevSwarFinder(char c) {
+            this.c = c;
+            this.mask = ONES * this.c;
+        }
+
+        /**
+         * Set the given long, and return the first occurrence.  Mutates this finder.
+         *
+         * @param data Long
+         * @return First occurrence
+         */
+        @Override
+        public int next(long data) {
+            if (this.dists == 0L) {
+                this.data = data;
+                this.dists = findInstances(data, mask);
+                return next();
+            }
+            throw new IllegalStateException(this + " not empty: " + Bits.hxD(data));
+        }
+
+        /**
+         * Retuns the next occurrence.  Mutates this finder.
+         *
+         * @return Next occurrence, or the number of bytes in a long (ie. 8) if done
+         */
+        @Override
+        public int next() {
+            if (dists == 0L) {
+                return ALIGNMENT;
+            }
+            trail = trailingBytes(dists);
+            dists &= CLEARED[trail];
+            return trail;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return dists != 0;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "['" + c + "' / " +
+                   trail + "@" + hxD(data) + "/'" + Bits.toString(data, StandardCharsets.UTF_8) + "' : " +
+                   hxD(dists) + "]";
         }
     }
 
@@ -299,13 +359,13 @@ public final class Bits {
         /**
          * Set the given long, and return the first occurrence.  Mutates this finder.
          *
-         * @param bytes Long
+         * @param data Long
          * @return First occurrence
          */
         @Override
-        public int next(long bytes) {
+        public int next(long data) {
             offset = 0;
-            dists = bytes ^ mask;
+            dists = data ^ mask;
             return hasZero(dists)
                 ? next()
                 : (offset = ALIGNMENT);
@@ -382,7 +442,7 @@ public final class Bits {
 
     public interface Finder {
 
-        int next(long bytes);
+        int next(long data);
 
         int next();
 

@@ -56,7 +56,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     @Override
     public void run() {
         try (action) {
-            if (processHead()) {
+            if (partition.first() || processHead()) {
                 if (partition.last()) {
                     processTailBody();
                 } else {
@@ -74,32 +74,67 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return getClass().getSimpleName() + "[" + partition + " " + segmentString + "]";
     }
 
+    @Override
+    public long startIndex() {
+        return startIndex;
+    }
+
+    @Override
+    public long endIndex() {
+        return endIndex;
+    }
+
+    @Override
+    public long length() {
+        return endIndex - startIndex;
+    }
+
+    @Override
+    public MemorySegment memorySegment() {
+        return segment;
+    }
+
+    @Override
+    public String asString(Charset charset) {
+        return asString(null, charset);
+    }
+
+    @Override
+    public String asString(byte[] buffer, Charset charset) {
+        return MemorySegments.fromLongsWithinBounds(segment, startIndex(), endIndex(), buffer, charset);
+    }
+
+    @Override
+    public long headStart() {
+        return startIndex % ALIGNMENT;
+    }
+
+    @Override
+    public boolean isAlignedAtStart() {
+        return startIndex % ALIGNMENT == 0L;
+    }
+
+    @Override
+    public boolean isAlignedAtEnd() {
+        return endIndex % ALIGNMENT == 0;
+    }
+
+    @Override
+    public long head(long head) {
+        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT) >> head * ALIGNMENT;
+    }
+
+    @Override
+    public long longNo(long longNo) {
+        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
+    }
+
+    @Override
+    public long bytesAt(long offset, long count) {
+        return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
+    }
+
     private boolean processHead() {
-        if (partition.first()) {
-            return true;
-        }
-        Long init = initialize();
-        if (init == null) {
-            return false; // No newlines in this partition
-        }
-        long mask = init;
-        if (mask != 0) {
-            do { // Newlines found in current mask
-                mask = shipNextLine(mask);
-            } while (mask != 0);
-            offset += ALIGNMENT;
-        }
-        return true;
-    }
-
-    private void processBody() {
-        processMain(limit);
-        if (!processedOverflow()) {
-            transcend(this.next.get()); // We need to query the next partition
-        }
-    }
-
-    private Long initialize() {
         long tail = limit % ALIGNMENT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
@@ -118,7 +153,36 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             }
             offset += ALIGNMENT;
         }
-        return null; // No newline found in the whole partition
+        return false; // No newline found in the whole partition
+    }
+
+    private boolean initializeFrom(long mask) {
+        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+        // First linebreak was the last
+        if (partition.last() && start + 1 == logicalLimit) {
+            return false;
+        }
+        long mask1 = mask & CLEARED[(int) (start - offset)];
+        if (mask1 == 0) {
+            // We cleared the current mask
+            offset += ALIGNMENT;
+        }
+        // Mark position of new line
+        startIndex = start + 1;
+        if (mask1 != 0) {
+            do { // Newlines found in current mask
+                mask1 = shipNextLine(mask1);
+            } while (mask1 != 0);
+            offset += ALIGNMENT;
+        }
+        return true;
+    }
+
+    private void processBody() {
+        processMain(limit);
+        if (!processedOverflow()) {
+            transcend(this.next.get()); // We need to query the next partition
+        }
     }
 
     private void processTailBody() {
@@ -151,11 +215,11 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         while (offset < lastAligned) {
             long bytes = loadLong(offset);
             long mask = mask(bytes);
-            if (mask == 0) {
-                offset += ALIGNMENT;
-            } else {
+            if (mask != 0) {
                 shipNextLine(mask);
                 return true;
+            } else {
+                offset += ALIGNMENT;
             }
         }
         if (tail > 0) {
@@ -208,21 +272,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return segment.get(JAVA_LONG, offset);
     }
 
-    private Long initializeFrom(long bytes) {
-        long mask = bytes;
-        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
-        if (partition.last() && start + 1 == logicalLimit) {
-            return null; // First linebreak was the last
-        }
-        mask &= CLEARED[(int)(start - offset)];
-        if (mask == 0) { // We cleared the current mask
-            offset += ALIGNMENT;
-        }
-        // Mark position of new line
-        startIndex = start + 1;
-        return mask;
-    }
-
     private long shipNextLine(long mask) {
         int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
         long lineOffset = offset + offsetInMask;
@@ -232,66 +281,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private long loadTail() {
         return MemorySegments.tail(segment, limit);
-    }
-
-    @Override
-    public long startIndex() {
-        return startIndex;
-    }
-
-    @Override
-    public long endIndex() {
-        return endIndex;
-    }
-
-    @Override
-    public MemorySegment memorySegment() {
-        return segment;
-    }
-
-    @Override
-    public String asString(Charset charset) {
-        return asString(null, charset);
-    }
-
-    @Override
-    public String asString(byte[] buffer, Charset charset) {
-        return MemorySegments.fromLongsWithinBounds(segment, startIndex(), endIndex(), buffer, charset);
-    }
-
-    @Override
-    public long length() {
-        return endIndex - startIndex;
-    }
-
-    @Override
-    public long headStart() {
-        return startIndex % ALIGNMENT;
-    }
-
-    @Override
-    public boolean isAlignedAtStart() {
-        return startIndex % ALIGNMENT == 0L;
-    }
-
-    @Override
-    public boolean isAlignedAtEnd() {
-        return endIndex % ALIGNMENT == 0;
-    }
-
-    @Override
-    public long head(long head) {
-        return loadLong(startIndex - startIndex % ALIGNMENT) >> head * ALIGNMENT;
-    }
-
-    @Override
-    public long longNo(long longNo) {
-        return loadLong(startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
-    }
-
-    @Override
-    public long bytesAt(long offset, long count) {
-        return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
     }
 
     private void emitAndAdvance(long endIndex) {
@@ -313,7 +302,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
         long trailing = limit - startIndex;
-        int length = (int)(trailing + nextPrefix);
+        int length = (int) (trailing + nextPrefix);
         MemorySegment buffer = ofLength(length);
         MemorySegment.copy(this.segment, JAVA_BYTE, startIndex, buffer, JAVA_BYTE, 0, trailing);
         MemorySegment.copy(next.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, trailing, nextPrefix);
@@ -333,7 +322,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         for (int i = 0; i < mediaries; i++) {
             mediarySize += collector.get(i).limit;
         }
-        int length = (int)(trail + mediarySize + lastLineOffset);
+        int length = (int) (trail + mediarySize + lastLineOffset);
         MemorySegment buffer = ofLength(length);
         MemorySegment.copy(segment, startIndex, buffer, 0, trail);
         long accumulatedSize = trail;
