@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ofLength;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -56,7 +55,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     @Override
     public void run() {
         try (action) {
-            if (partition.first() || processHead()) {
+            if (partition.first() || processedHead()) {
                 if (partition.last()) {
                     processTailBody();
                 } else {
@@ -106,27 +105,27 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     @Override
     public long headStart() {
-        return startIndex % ALIGNMENT;
+        return startIndex % ALIGNMENT_INT;
     }
 
     @Override
     public boolean isAlignedAtStart() {
-        return startIndex % ALIGNMENT == 0L;
+        return startIndex % ALIGNMENT_INT == 0L;
     }
 
     @Override
     public boolean isAlignedAtEnd() {
-        return endIndex % ALIGNMENT == 0;
+        return endIndex % ALIGNMENT_INT == 0;
     }
 
     @Override
     public long head(long head) {
-        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT) >> head * ALIGNMENT;
+        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT_INT) >> head * ALIGNMENT_INT;
     }
 
     @Override
     public long longNo(long longNo) {
-        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT + longNo * ALIGNMENT);
+        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT_INT + longNo * ALIGNMENT_INT);
     }
 
     @Override
@@ -134,47 +133,43 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
     }
 
-    private boolean processHead() {
-        long tail = limit % ALIGNMENT;
+    private boolean processedHead() {
+        long tail = limit % ALIGNMENT_INT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
             long bytes = loadLong(offset);
             long mask = mask(bytes);
-            if (mask != 0) {
-                return initializeFrom(mask);
+            if (mask == 0) {
+                offset += ALIGNMENT_INT;
+            } else {
+                return foundNewLine(mask);
             }
-            offset += ALIGNMENT;
         }
         if (tail > 0) {
             long bytes = loadTail();
             long mask = mask(bytes);
-            if (mask != 0) {
-                return initializeFrom(mask);
+            if (mask == 0) {
+                offset += ALIGNMENT_INT;
+            } else {
+                return foundNewLine(mask);
             }
-            offset += ALIGNMENT;
         }
         return false; // No newline found in the whole partition
     }
 
-    private boolean initializeFrom(long mask) {
-        long start = offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+    private boolean foundNewLine(long nonZero) {
+        long start = offset + Long.numberOfTrailingZeros(nonZero) / ALIGNMENT_INT;
         // First linebreak was the last
         if (partition.last() && start + 1 == logicalLimit) {
             return false;
         }
-        long mask1 = mask & CLEARED[(int) (start - offset)];
-        if (mask1 == 0) {
-            // We cleared the current mask
-            offset += ALIGNMENT;
+        int index = (int) (start - offset);
+        long mask = nonZero & CLEARED[index];
+        startIndex = start + 1; // Mark position of new line
+        while (mask != 0) { // Newlines found in current mask
+            mask = shipNextLine(mask);
         }
-        // Mark position of new line
-        startIndex = start + 1;
-        if (mask1 != 0) {
-            do { // Newlines found in current mask
-                mask1 = shipNextLine(mask1);
-            } while (mask1 != 0);
-            offset += ALIGNMENT;
-        }
+        offset += ALIGNMENT_INT;
         return true;
     }
 
@@ -186,7 +181,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private void processTailBody() {
-        long tail = limit % ALIGNMENT;
+        long tail = limit % ALIGNMENT_INT;
         long lastOffset = limit - tail;
         processMain(lastOffset);
         if (tail > 0) {
@@ -198,19 +193,19 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private void processMain(long lastOffset) {
-        long steps = (lastOffset - offset) / ALIGNMENT;
+        long steps = (lastOffset - offset) / ALIGNMENT_INT;
         for (long l = 0; l < steps; l++) {
             long bytes = loadLong(offset);
             long mask = mask(bytes);
             while (mask != 0) {
                 mask = shipNextLine(mask);
             }
-            offset += ALIGNMENT;
+            offset += ALIGNMENT_INT;
         }
     }
 
     private boolean processedOverflow() {
-        long tail = logicalLimit % ALIGNMENT;
+        long tail = logicalLimit % ALIGNMENT_INT;
         long lastAligned = logicalLimit - tail;
         while (offset < lastAligned) {
             long bytes = loadLong(offset);
@@ -219,7 +214,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
                 shipNextLine(mask);
                 return true;
             } else {
-                offset += ALIGNMENT;
+                offset += ALIGNMENT_INT;
             }
         }
         if (tail > 0) {
@@ -248,21 +243,21 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private long findFirstLine() {
         long offset = 0L;
-        long tail = limit % ALIGNMENT;
+        long tail = limit % ALIGNMENT_INT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
             long bytes = loadLong(offset);
             long mask = mask(bytes);
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
             }
-            offset += ALIGNMENT;
+            offset += ALIGNMENT_INT;
         }
         if (tail > 0) {
             long tailBytes = MemorySegments.tail(segment, limit);
             long mask = mask(tailBytes);
             if (mask != 0) {
-                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+                return offset + Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
             }
         }
         return limit;
@@ -273,7 +268,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private long shipNextLine(long mask) {
-        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT;
+        int offsetInMask = Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
         long lineOffset = offset + offsetInMask;
         emitAndAdvance(lineOffset);
         return mask & CLEARED[offsetInMask];
@@ -303,9 +298,9 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     private void mergeWithNext(BitwisePartitionHandler next, long nextPrefix) {
         long trailing = limit - startIndex;
         int length = (int) (trailing + nextPrefix);
-        MemorySegment buffer = ofLength(length);
-        MemorySegment.copy(this.segment, JAVA_BYTE, startIndex, buffer, JAVA_BYTE, 0, trailing);
-        MemorySegment.copy(next.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, trailing, nextPrefix);
+        MemorySegment buffer = MemorySegments.ofLength(length);
+        MemorySegments.copyBytes(this.segment, buffer, startIndex, 0, trailing);
+        MemorySegments.copyBytes(next.segment, buffer, 0, trailing, nextPrefix);
         emitMerged(buffer, length, next.partition.last());
     }
 
@@ -323,16 +318,16 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             mediarySize += collector.get(i).limit;
         }
         int length = (int) (trail + mediarySize + lastLineOffset);
-        MemorySegment buffer = ofLength(length);
-        MemorySegment.copy(segment, startIndex, buffer, 0, trail);
+        MemorySegment buffer = MemorySegments.ofLength(length);
+        MemorySegments.copyBytes(segment, buffer, startIndex, 0, trail);
         long accumulatedSize = trail;
         for (int i = 0; i < mediaries; i++) {
             BitwisePartitionHandler step = collector.get(i);
-            MemorySegment.copy(step.segment, JAVA_BYTE, 0, buffer, JAVA_BYTE, accumulatedSize, step.limit);
+            MemorySegments.copyBytes(step.segment, buffer, 0, accumulatedSize, step.limit);
             accumulatedSize += step.limit;
         }
         MemorySegment lastSegment = collector.getLast().segment;
-        MemorySegment.copy(lastSegment, JAVA_BYTE, 0, buffer, JAVA_BYTE, accumulatedSize, lastLineOffset);
+        MemorySegments.copyBytes(lastSegment, buffer, 0, accumulatedSize, lastLineOffset);
         boolean last = lastLineOffset == lastSegment.byteSize();
         emitMerged(buffer, length, last);
     }
@@ -341,8 +336,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
         action.line(LineSegments.of(buffer, 0, length - (trim ? 1 : 0)));
     }
-
-    private static final int ALIGNMENT = (int) JAVA_LONG.byteSize();
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -379,21 +372,21 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             next = nextNext;
             collector.add(next);
             long lo = 0L;
-            long tail = next.logicalLimit % ALIGNMENT;
+            long tail = next.logicalLimit % ALIGNMENT_INT;
             long lastOffset = next.logicalLimit - tail;
             while (lo < lastOffset) {
                 long prebyte = next.segment.get(JAVA_LONG, lo);
                 long premask = mask(prebyte);
                 if (premask != 0) {
-                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
+                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT_INT;
                 }
-                lo += ALIGNMENT;
+                lo += ALIGNMENT_INT;
             }
             if (tail > 0) {
                 long prebyte = MemorySegments.tail(next.segment, next.limit);
                 long premask = mask(prebyte);
                 if (premask != 0) {
-                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT;
+                    return lo + Long.numberOfTrailingZeros(premask) / ALIGNMENT_INT;
                 }
             }
         }

@@ -6,7 +6,8 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class MemorySegments {
 
@@ -44,21 +45,13 @@ public final class MemorySegments {
 
     public static MemorySegment alignmentPadded(MemorySegment segment, long offset) {
         long size = segment.byteSize() - offset;
-        int tail = (int)(size % ALIGNMENT_INT);
+        int tail = (int) (size % ALIGNMENT_INT);
         if (tail == 0) {
             return segment;
         }
         ByteBuffer resizedBuffer = ByteBuffer.allocateDirect(alignedSize(size));
         MemorySegment resizedCopy = MemorySegment.ofBuffer(resizedBuffer);
-        MemorySegment.copy(
-            segment,
-            JAVA_BYTE,
-            offset,
-            resizedCopy,
-            JAVA_BYTE,
-            0,
-            size
-        );
+        copyBytes(segment, resizedCopy, offset, 0, size);
         return resizedCopy;
     }
 
@@ -131,6 +124,23 @@ public final class MemorySegments {
         return new String(bytes, headOffset, length, charset);
     }
 
+    public static void copyBytes(
+        MemorySegment from,
+        MemorySegment to, long srcOffset,
+        long dstOffset,
+        long length
+    ) {
+        MemorySegment.copy(
+            from,
+            JAVA_BYTE,
+            srcOffset,
+            to,
+            JAVA_BYTE,
+            dstOffset,
+            length
+        );
+    }
+
     private MemorySegments() {
     }
 
@@ -139,7 +149,7 @@ public final class MemorySegments {
     public static final int ALIGNMENT_INT = (int) ALIGNMENT;
 
     private static int alignedSize(long size) {
-        return (int)(size + ALIGNMENT_INT - size % ALIGNMENT);
+        return (int) (size + ALIGNMENT_INT - size % ALIGNMENT);
     }
 
     private static ByteBuffer byteBuffer(byte[] bytes) {

@@ -65,12 +65,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default LineSegment copy() {
         MemorySegment buffer =
             MemorySegment.ofBuffer(ByteBuffer.allocateDirect(Math.toIntExact(length())));
-        MemorySegment.copy(
+        MemorySegments.copyBytes(
             memorySegment(),
-            JAVA_BYTE,
-            startIndex(),
             buffer,
-            JAVA_BYTE,
+            startIndex(),
             0,
             length()
         );

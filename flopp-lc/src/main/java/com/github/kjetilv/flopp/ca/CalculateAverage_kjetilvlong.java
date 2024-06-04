@@ -109,8 +109,8 @@ public final class CalculateAverage_kjetilvlong {
         TrailFragmentation trailFragmentation = new TrailFragmentation(
             cpus * 10,
             1d,
-            0.0002d,
-            0.005d
+            .0001d,
+            .1d
         );
         if (shape.size() < 100_000_000) {
             return Partitioning.create(
@@ -119,7 +119,7 @@ public final class CalculateAverage_kjetilvlong {
             ).fragment(trailFragmentation);
         }
         return Partitioning.create(
-            cpus * 200,
+            cpus * 100,
             shape.longestLine()
         ).fragment(trailFragmentation);
     }
