@@ -28,11 +28,15 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private final long logicalLimit;
 
+    private volatile int firstLine = -1;
+
     private long startIndex;
 
     private long endIndex;
 
     private long offset;
+
+    private final boolean last;
 
     BitwisePartitionHandler(
         Partition partition,
@@ -43,6 +47,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         Supplier<BitwisePartitionHandler> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.last = partition.last();
         this.segment = Objects.requireNonNull(segment, "segment");
         this.offset = offset;
         this.action = Objects.requireNonNull(action, "action");
@@ -56,7 +61,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     public void run() {
         try (action) {
             if (partition.first() || processedHead()) {
-                if (partition.last()) {
+                if (last) {
                     processTailBody();
                 } else {
                     processMainBody(limit);
@@ -142,7 +147,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             long mask = mask(bytes);
             if (mask != 0) {
                 long start = offset + offsetIn(mask);
-                if (partition.last() && start + 1 == logicalLimit) {
+                if (last && start + 1 == logicalLimit) {
                     // First linebreak was the last
                     return false;
                 }
@@ -153,6 +158,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
                     mask = shipNextLine(mask);
                 }
                 offset += ALIGNMENT_INT;
+                firstLine = (int) startIndex;
                 return true;
             }
             offset += ALIGNMENT_INT;
@@ -243,7 +249,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private void processNext(BitwisePartitionHandler next) {
-        long nextOffset = next.findFirstLine();
+        long nextOffset = next.firstLine >= 0 ? next.firstLine : next.findFirstLine();
         if (next.containsLine(nextOffset)) { // Next partition contains the next newline
             mergeWithNext(next, nextOffset);
         } else { // Next line is in a later partition!
@@ -274,7 +280,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private boolean containsLine(long nextOffset) {
-        return nextOffset < limit || partition.last();
+        return nextOffset < limit || last;
     }
 
     private void mergeWithNext(BitwisePartitionHandler next, long nextOffset) {
@@ -283,7 +289,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         MemorySegment buffer = MemorySegments.ofLength(length);
         MemorySegments.copyBytes(this.segment, buffer, startIndex, 0, trailing);
         MemorySegments.copyBytes(next.segment, buffer, 0, trailing, nextOffset);
-        emitMerged(buffer, length, next.partition.last());
+        emitMerged(buffer, length, next.last);
     }
 
     private void mergeWithMultiple(BitwisePartitionHandler next) {

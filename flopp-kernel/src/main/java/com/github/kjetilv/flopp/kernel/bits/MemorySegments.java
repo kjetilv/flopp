@@ -106,22 +106,22 @@ public final class MemorySegments {
         byte[] target,
         Charset charset
     ) {
-        int length = (int) (endIndex - startIndex);
+        long length = endIndex - startIndex;
 
-        int headOffset = (int) startIndex % ALIGNMENT_INT;
-        int tailLength = (int) endIndex % ALIGNMENT_INT;
+        long headOffset = startIndex % ALIGNMENT_INT;
+        long tailLength = endIndex % ALIGNMENT_INT;
 
         long alignedStart = startIndex - headOffset;
         long alignedEnd = endIndex + (tailLength > 0 ? ALIGNMENT - tailLength : 0);
 
-        int size = (int) (alignedEnd - alignedStart);
+        long size = alignedEnd - alignedStart;
 
-        byte[] bytes = target == null ? new byte[size] : target;
+        byte[] bytes = target == null ? new byte[(int) size] : target;
         for (int index = 0; index < size; index += ALIGNMENT_INT) {
             long data = segment.get(JAVA_LONG, alignedStart + index);
             Bits.transferDataTo(data, index, bytes);
         }
-        return new String(bytes, headOffset, length, charset);
+        return new String(bytes, (int) headOffset, (int) length, charset);
     }
 
     public static void copyBytes(

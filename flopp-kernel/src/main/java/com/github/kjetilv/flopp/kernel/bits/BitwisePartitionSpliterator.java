@@ -56,11 +56,6 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[@" + partition + "]";
-    }
-
     private BitwisePartitionHandler handler(Action action) {
         return new BitwisePartitionHandler(
             partition,
@@ -68,10 +63,12 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             offset,
             logicalSize,
             action,
-            next == null
-                ? null
-                : () -> next.get().handler(action)
+            next == null ? null : () -> next.get().handler(action)
         );
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[@" + partition + "]";
+    }
 }
