@@ -6,9 +6,9 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import java.util.function.Consumer;
 
 @SuppressWarnings("DuplicatedCode")
-final class BitwiseCsvSimpleLineSplitter extends AbstractBitwiseCsvLineSplitter {
+final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    BitwiseCsvSimpleLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
+    BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
         super(lines, format);
     }
 

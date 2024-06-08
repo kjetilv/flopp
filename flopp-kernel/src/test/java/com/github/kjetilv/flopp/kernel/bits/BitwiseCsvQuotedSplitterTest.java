@@ -16,7 +16,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseCsvDoubleQuotedLineSplitterTest {
+class BitwiseCsvQuotedSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -24,9 +24,9 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(
+        BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(
             adder(splits),
-            new CsvFormat.DoubleQuoted(';', '"')
+            new CsvFormat.Quoted(';', '"')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -36,9 +36,9 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(
+        BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(
             adder(splits),
-            new CsvFormat.DoubleQuoted(';', '"')
+            new CsvFormat.Quoted(';', '"')
         );
         splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
         assertThat(splits).containsExactly("foo123", "bar", "234", "abcdef", "3456");
@@ -112,7 +112,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         List<String> splits1 = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
-                partitioned.splitters().splitters(new CsvFormat.DoubleQuoted(',', '"'))
+                partitioned.splitters().splitters(new CsvFormat.Quoted(',', '"'))
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits1::add)));
             }
@@ -221,7 +221,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(adder(splits), DQ_FORMAT);
+        BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(adder(splits), DQ_FORMAT);
         splitter.accept(LineSegments.of("'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';;';'\\;'",
             UTF_8));
         assertThat(splits).containsExactly(
@@ -241,7 +241,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';';'\\;'";
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(adder(splits), DQ_FORMAT);
+        BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(adder(splits), DQ_FORMAT);
         splitter.accept(LineSegments.of(input, UTF_8));
         assertThat(splits).containsExactly(
             "'foo 1'",
@@ -401,7 +401,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         return splits;
     }
 
-    public static final CsvFormat.DoubleQuoted DQ_FORMAT = new CsvFormat.DoubleQuoted(';', '\'');
+    public static final CsvFormat.Quoted DQ_FORMAT = new CsvFormat.Quoted(';', '\'');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
@@ -414,7 +414,7 @@ class BitwiseCsvDoubleQuotedLineSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseCsvDoubleQuotedLineSplitter splitter = new BitwiseCsvDoubleQuotedLineSplitter(line -> line.columns(UTF_8)
+        BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(line -> line.columns(UTF_8)
             .forEach(splits::add), DQ_FORMAT);
 
         try {

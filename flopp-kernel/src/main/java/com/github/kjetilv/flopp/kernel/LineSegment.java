@@ -17,7 +17,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default long shiftedLongsCount() {
         long length = length();
-        long fullLongs = length / ALIGNMENT_INT;
+        long fullLongs = length >> ALIGNMENT_POW;
         long remainder = length % ALIGNMENT_INT;
         return fullLongs + (remainder == 0 ? 0 : 1);
     }
@@ -32,7 +32,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         if (len < ALIGNMENT_INT) {
             return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         }
-        long length = (endIndex() - tailLen - (startIndex() + headLen)) / ALIGNMENT_INT;
+        long length = (endIndex() - tailLen - (startIndex() + headLen)) >> ALIGNMENT_POW;
         return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
     }
 
@@ -119,14 +119,14 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long alignedCount() {
-        return (alignedEnd() - alignedStart()) / ALIGNMENT_INT;
+        return (alignedEnd() - alignedStart()) >> ALIGNMENT_POW;
     }
 
     @SuppressWarnings("UnnecessaryParentheses")
     default long fullLongCount() {
         int headLen = headLength();
         int tailLen = tailLength();
-        return ((endIndex() - tailLen) - (startIndex() + headLen)) / ALIGNMENT_INT;
+        return ((endIndex() - tailLen) - (startIndex() + headLen)) >> ALIGNMENT_POW;
     }
 
     default long headStart() {
@@ -206,4 +206,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     long ALIGNMENT = MemorySegments.ALIGNMENT;
 
     int ALIGNMENT_INT = MemorySegments.ALIGNMENT_INT;
+
+    int ALIGNMENT_POW = 3;
 }

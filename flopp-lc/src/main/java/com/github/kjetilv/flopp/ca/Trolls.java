@@ -20,7 +20,6 @@ import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,7 +54,7 @@ public final class Trolls {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        CsvFormat format = new CsvFormat.DoubleQuoted(',', '"');
+        CsvFormat format = new CsvFormat.Quoted(',', '"');
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(

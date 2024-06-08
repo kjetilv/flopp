@@ -1,13 +1,15 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
-public record Column(String name, int colunmNo, Parse parse) {
+public record Column(String name, int colunmNo, Parser parser) {
 
     public static Column ofSegment(String name, int col) {
         return ofType(name, col, lineSegment -> lineSegment);
@@ -22,49 +24,101 @@ public record Column(String name, int colunmNo, Parse parse) {
             segment.asString(buffer, charset));
     }
 
-    public static Column ofType(String name, int col, Parse.Obj parser) {
-        return new Column(name, col, parser);
+    public static Column ofType(String name, int col, Parser.Obj parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofInt(String name, int col, Parse.I parser) {
-        return new Column(name, col, parser);
+    public static Column ofInt(String name, int col, Parser.I parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofLong(String name, int col, Parse.L parser) {
-        return new Column(name, col, parser);
+    public static Column ofLong(String name, int col, Parser.L parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofBoolean(String name, int col, Parse.Bo parser) {
-        return new Column(name, col, parser);
+    public static Column ofBoolean(String name, int col, Parser.Bo parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofChar(String name, int col, Parse.C parser) {
-        return new Column(name, col, parser);
+    public static Column ofChar(String name, int col, Parser.C parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofByte(String name, int col, Parse.By parser) {
-        return new Column(name, col, parser);
+    public static Column ofByte(String name, int col, Parser.By parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofShort(String name, int col, Parse.S parser) {
-        return new Column(name, col, parser);
+    public static Column ofShort(String name, int col, Parser.S parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofFloat(String name, int col, Parse.F parser) {
-        return new Column(name, col, parser);
+    public static Column ofFloat(String name, int col, Parser.F parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    public static Column ofDouble(String name, int col, Parse.D parser) {
-        return new Column(name, col, parser);
+    public static Column ofDouble(String name, int col, Parser.D parser) {
+        return new Column(Objects.requireNonNull(name, "name"), col, parser);
     }
 
-    private static final Parse.Obj TO_STRING = lineSegment -> lineSegment.asString(Charset.defaultCharset());
+    public static Column ofSegment(int col) {
+        return new Column(null, col, (Parser.Obj) lineSegment -> lineSegment);
+    }
 
-    private static Parse.Obj toString(byte[] buffer, Charset charset) {
+    public static Column ofString(int col) {
+        return new Column(null, col, TO_STRING);
+    }
+
+    public static Column ofString(int col, byte[] buffer, Charset charset) {
+        return new Column(null, col, (Parser.Obj) segment -> segment.asString(buffer, charset));
+    }
+
+    public static Column ofType(int col, Parser.Obj parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofInt(int col, Parser.I parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofLong(int col, Parser.L parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofBoolean(int col, Parser.Bo parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofChar(int col, Parser.C parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofByte(int col, Parser.By parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofShort(int col, Parser.S parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofFloat(int col, Parser.F parser) {
+        return new Column(null, col, parser);
+    }
+
+    public static Column ofDouble(int col, Parser.D parser) {
+        return new Column(null, col, parser);
+    }
+
+    public Column {
+        Non.negative(colunmNo, "columnNo");
+    }
+
+    private static final Parser.Obj TO_STRING = lineSegment -> lineSegment.asString(Charset.defaultCharset());
+
+    private static Parser.Obj toString(byte[] buffer, Charset charset) {
         return segment -> segment.asString(buffer, charset);
     }
 
-    private static Parse.Obj toBoundedString(byte[] buffer, Charset charset) {
+    private static Parser.Obj toBoundedString(byte[] buffer, Charset charset) {
         return segment ->
             MemorySegments.fromLongsWithinBounds(
                 segment.memorySegment(),
@@ -75,9 +129,9 @@ public record Column(String name, int colunmNo, Parse parse) {
             );
     }
 
-    public sealed interface Parse {
+    public sealed interface Parser {
 
-        non-sealed interface Obj extends Parse {
+        non-sealed interface Obj extends Parser {
 
             Object parse(LineSegment lineSegment);
 
@@ -86,7 +140,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface Bo extends Parse {
+        non-sealed interface Bo extends Parser {
 
             boolean parse(LineSegment segment);
 
@@ -95,7 +149,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface I extends Parse {
+        non-sealed interface I extends Parser {
 
             int parse(LineSegment segment);
 
@@ -104,7 +158,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface L extends Parse {
+        non-sealed interface L extends Parser {
 
             long parse(LineSegment segment);
 
@@ -113,7 +167,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface By extends Parse {
+        non-sealed interface By extends Parser {
 
             byte parse(LineSegment segment);
 
@@ -122,7 +176,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface S extends Parse {
+        non-sealed interface S extends Parser {
 
             short parse(LineSegment segment);
 
@@ -131,7 +185,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface C extends Parse {
+        non-sealed interface C extends Parser {
 
             char parse(LineSegment segment);
 
@@ -140,7 +194,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface D extends Parse {
+        non-sealed interface D extends Parser {
 
             double parse(LineSegment segment);
 
@@ -149,7 +203,7 @@ public record Column(String name, int colunmNo, Parse parse) {
             }
         }
 
-        non-sealed interface F extends Parse {
+        non-sealed interface F extends Parser {
 
             float parse(LineSegment segment);
 

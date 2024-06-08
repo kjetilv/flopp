@@ -76,7 +76,7 @@ public sealed interface CsvFormat {
         }
     }
 
-    record DoubleQuoted(
+    record Quoted(
         char separator,
         char quote,
         int columnCount,
@@ -84,47 +84,47 @@ public sealed interface CsvFormat {
         Charset charset
     ) implements CsvFormat {
 
-        public DoubleQuoted(int columnCount, char quote, char separator) {
+        public Quoted(int columnCount, char quote, char separator) {
             this(separator, quote, columnCount, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted {
+        public Quoted {
             Non.negativeOrZero(columnCount, "column count");
             Objects.requireNonNull(charset, "charset");
         }
 
-        public DoubleQuoted() {
+        public Quoted() {
             this(DEFAULT_SEPARATOR, DEFAULT_QUOTE, DEFAULT_COLUMN_COUNT, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted(char separator) {
+        public Quoted(char separator) {
             this(separator, DEFAULT_QUOTE, DEFAULT_COLUMN_COUNT, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted(int columnCount) {
+        public Quoted(int columnCount) {
             this(DEFAULT_SEPARATOR, DEFAULT_QUOTE, columnCount, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted(char separator, char quote) {
+        public Quoted(char separator, char quote) {
             this(separator, quote, DEFAULT_COLUMN_COUNT, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted(char separator, int columnCount) {
+        public Quoted(char separator, int columnCount) {
             this(separator, DEFAULT_QUOTE, columnCount, false, DEFAULT_CHARSET);
         }
 
-        public DoubleQuoted columns(int columnCount) {
-            return new DoubleQuoted(separator, quote, columnCount, fast, DEFAULT_CHARSET);
+        public Quoted columns(int columnCount) {
+            return new Quoted(separator, quote, columnCount, fast, DEFAULT_CHARSET);
         }
 
         @Override
         public CsvFormat withCharset(Charset charset) {
-            return new DoubleQuoted(separator, quote, columnCount, fast, charset);
+            return new Quoted(separator, quote, columnCount, fast, charset);
         }
 
         @Override
         public CsvFormat fast(boolean fast) {
-            return new DoubleQuoted(separator, quote, columnCount, fast, DEFAULT_CHARSET);
+            return new Quoted(separator, quote, columnCount, fast, DEFAULT_CHARSET);
         }
 
         @Override
@@ -138,10 +138,10 @@ public sealed interface CsvFormat {
                    "]";
         }
 
-        public static final DoubleQuoted DEFAULT = new DoubleQuoted();
+        public static final Quoted DEFAULT = new Quoted();
     }
 
-    record Escaped(
+    record Escape(
         char separator,
         char escape,
         boolean fast,
@@ -149,55 +149,55 @@ public sealed interface CsvFormat {
         Charset charset
     ) implements CsvFormat {
 
-        public Escaped {
+        public Escape {
             Non.negativeOrZero(columnCount, "column count");
             Objects.requireNonNull(charset, "charset");
         }
 
-        public Escaped(boolean fast) {
+        public Escape(boolean fast) {
             this(DEFAULT_SEPARATOR, DEFAULT_ESC, fast);
         }
 
-        public Escaped() {
+        public Escape() {
             this(DEFAULT_SEPARATOR, DEFAULT_ESC, false, DEFAULT_COLUMN_COUNT, DEFAULT_CHARSET);
         }
 
-        public Escaped(char separator) {
+        public Escape(char separator) {
             this(separator, DEFAULT_ESC, false, DEFAULT_COLUMN_COUNT, DEFAULT_CHARSET);
         }
 
-        public Escaped(int columnCount) {
+        public Escape(int columnCount) {
             this(DEFAULT_SEPARATOR, DEFAULT_ESC, false, columnCount, DEFAULT_CHARSET);
         }
 
-        public Escaped(char separator, int columnCount) {
+        public Escape(char separator, int columnCount) {
             this(separator, DEFAULT_ESC, false, columnCount, DEFAULT_CHARSET);
         }
 
-        public Escaped(char separator, char escape) {
+        public Escape(char separator, char escape) {
             this(separator, escape, false, DEFAULT_COLUMN_COUNT, DEFAULT_CHARSET);
         }
 
-        public Escaped(char separator, char escape, int columnCount) {
+        public Escape(char separator, char escape, int columnCount) {
             this(separator, escape, false, columnCount, DEFAULT_CHARSET);
         }
 
-        public Escaped(char separator, char escape, boolean fast) {
+        public Escape(char separator, char escape, boolean fast) {
             this(separator, escape, fast, DEFAULT_COLUMN_COUNT, DEFAULT_CHARSET);
         }
 
-        public Escaped columns(int columnCount) {
-            return new Escaped(separator, escape, fast, columnCount, DEFAULT_CHARSET);
+        public Escape columns(int columnCount) {
+            return new Escape(separator, escape, fast, columnCount, DEFAULT_CHARSET);
         }
 
         @Override
         public CsvFormat withCharset(Charset charset) {
-            return new Escaped(separator, escape, fast, columnCount, charset);
+            return new Escape(separator, escape, fast, columnCount, charset);
         }
 
         @Override
         public CsvFormat fast(boolean fast) {
-            return new Escaped(separator, escape, fast, columnCount, DEFAULT_CHARSET);
+            return new Escape(separator, escape, fast, columnCount, DEFAULT_CHARSET);
         }
 
         @Override
@@ -211,7 +211,7 @@ public sealed interface CsvFormat {
                    "]";
         }
 
-        public static final Escaped DEFAULT = new Escaped();
+        public static final Escape DEFAULT = new Escape();
 
         public static final char DEFAULT_ESC = '\\';
     }

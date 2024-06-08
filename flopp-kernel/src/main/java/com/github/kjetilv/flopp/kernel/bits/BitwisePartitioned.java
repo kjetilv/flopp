@@ -6,6 +6,7 @@ import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 final class BitwisePartitioned implements Partitioned<Path> {
 
@@ -100,11 +101,8 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @FunctionalInterface
-    public interface Action extends Closeable {
+    public interface Action extends Closeable, Consumer<LineSegment> {
 
-        void line(LineSegment lineSegment);
-
-        @Override
         default void close() {
         }
     }

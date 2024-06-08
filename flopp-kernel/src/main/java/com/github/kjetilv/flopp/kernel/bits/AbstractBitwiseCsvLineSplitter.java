@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
-    permits BitwiseCsvDoubleQuotedLineSplitter, BitwiseCsvEscapedLineSplitter, BitwiseCsvSimpleLineSplitter {
+    permits BitwiseCsvQuotedSplitter, BitwiseCsvEscapeSplitter, BitwiseCsvSimpleSplitter {
 
     final Bits.Finder sepFinder;
 

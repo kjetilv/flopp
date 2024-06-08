@@ -6,13 +6,13 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import java.util.function.Consumer;
 
 @SuppressWarnings("DuplicatedCode")
-final class BitwiseCsvDoubleQuotedLineSplitter extends AbstractBitwiseCsvLineSplitter {
+final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private final Bits.Finder quoFinder;
 
     private int state;
 
-    BitwiseCsvDoubleQuotedLineSplitter(Consumer<SeparatedLine> lines, CsvFormat.DoubleQuoted format) {
+    BitwiseCsvQuotedSplitter(Consumer<SeparatedLine> lines, CsvFormat.Quoted format) {
         super(lines, format);
         this.quoFinder = Bits.finder(format.quote(), format.fast());
     }

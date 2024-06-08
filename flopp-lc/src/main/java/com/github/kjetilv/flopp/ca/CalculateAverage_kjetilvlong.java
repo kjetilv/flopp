@@ -40,11 +40,16 @@ public final class CalculateAverage_kjetilvlong {
             Path path = Path.of(arg);
 //            go3(path);
 //            go3(path);
-//            go3(path);
-            go3(path, null);
+            go3(path);
+//            go4It(path);
 //            go3(path);
 //            go3(path);
         }
+    }
+
+    @SuppressWarnings("unused")
+    static Map<String, Result> go3(Path path) {
+        return go3(path, null);
     }
 
     @SuppressWarnings("unused")
@@ -107,10 +112,10 @@ public final class CalculateAverage_kjetilvlong {
             return Partitioning.create(cpus, shape.longestLine());
         }
         TrailFragmentation trailFragmentation = new TrailFragmentation(
-            cpus * 10,
-            1d,
+            cpus * 100,
+            2.0d,
             .0001d,
-            .1d
+            .05d
         );
         if (shape.size() < 100_000_000) {
             return Partitioning.create(
@@ -139,15 +144,15 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static Map<String, Result> map(PartitionedSplitter splitter) {
-        Map<String, Result> m = Maps.ofSize(512);
+        Map<String, Result> m = new HashMap<>(Maps.mapCapacity(512));
         Readers.create(
-            Column.ofString("station", 0, new byte[128], UTF_8),
-            Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
+            Column.ofString(0, new byte[128], UTF_8),
+            Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         ).read(splitter, columns ->
             m.compute(
-                (String) columns.get("station"),
+                (String) columns.get(0),
                 (_, existing) -> {
-                    int dec = columns.getInt("measurement");
+                    int dec = columns.getInt(1);
                     return existing == null
                         ? new Result(dec)
                         : existing.collect(dec);
@@ -165,10 +170,6 @@ public final class CalculateAverage_kjetilvlong {
             shape.longestLine()
         ).scaled(2);
         CsvFormat format = new CsvFormat.Simple(2, ';');
-        Reader reader = Readers.create(
-            Column.ofString("station", 1),
-            Column.ofInt("measurement", 2, CalculateAverage_kjetilvlong::parseValue)
-        );
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
@@ -185,7 +186,11 @@ public final class CalculateAverage_kjetilvlong {
             List<CompletableFuture<Map<LineSegment, Result>>> list = partitionStreamers.map(splitter ->
                     CompletableFuture.supplyAsync(
                         () -> {
-                            Map<LineSegment, Result> results = Maps.ofSize(512);
+                            Reader reader = Readers.create(
+                                Column.ofSegment("station", 0),
+                                Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
+                            );
+                            Map<LineSegment, Result> results = new HashMap<>(Maps.mapCapacity(512));
                             reader.read(splitter, columns -> {
                                 LineSegment station = (LineSegment) columns.get("station");
                                 int dec = (Integer) columns.get("measurement");

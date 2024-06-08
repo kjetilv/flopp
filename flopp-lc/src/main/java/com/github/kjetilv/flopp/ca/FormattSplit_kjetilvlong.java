@@ -66,7 +66,7 @@ public final class FormattSplit_kjetilvlong {
             )
         ) {
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
-            partitionedSplitters.splitters(CsvFormat.Escaped.DEFAULT)
+            partitionedSplitters.splitters(CsvFormat.Escape.DEFAULT)
                 .map(countFuture(reader, longAdder, executor))
                 .toList()
                 .forEach(CompletableFuture::join);

@@ -59,9 +59,9 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             line ->
-                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escaped()
+                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escape()
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
@@ -84,9 +84,9 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             line ->
-                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escaped()
+                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escape()
         );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
@@ -181,7 +181,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat.Escaped format = new CsvFormat.Escaped(',', '\\');
+        CsvFormat.Escape format = new CsvFormat.Escape(',', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1, UTF_8));
         Instant now = Instant.now();
         try (
@@ -198,7 +198,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseCsvEscapedLineSplitter(lines, format)),
+                                        .forEach(new BitwiseCsvEscapeSplitter(lines, format)),
                                 executor
                             ));
                 })

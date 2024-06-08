@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -22,7 +23,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private final MemorySegment segment;
 
-    private final BitwisePartitioned.Action action;
+    private final Consumer<LineSegment> action;
 
     private final long limit;
 
@@ -43,7 +44,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         MemorySegment segment,
         long offset,
         long logicalSize,
-        BitwisePartitioned.Action action,
+        Consumer<LineSegment> action,
         Supplier<BitwisePartitionHandler> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
@@ -59,7 +60,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     @Override
     public void run() {
-        try (action) {
+        try {
             if (partition.first() || processedHead()) {
                 if (last) {
                     processTailBody();
@@ -179,7 +180,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private void processMainBody(long lastOffset) {
-        long steps = (lastOffset - offset) / ALIGNMENT_INT;
+        long steps = lastOffset - offset >> ALIGNMENT_POW;
         for (long l = 0; l < steps; l++) {
             long bytes = loadLong(offset);
             long mask = mask(bytes);
@@ -244,7 +245,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private void emitAndAdvance(long endIndex) {
         this.endIndex = endIndex;
-        action.line(this);
+        action.accept(this);
         this.startIndex = this.endIndex + 1;
     }
 
@@ -322,7 +323,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     private void emitMerged(MemorySegment buffer, int length, boolean last) {
         boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
-        action.line(LineSegments.of(buffer, 0, length - (trim ? 1 : 0)));
+        action.accept(LineSegments.of(buffer, 0, length - (trim ? 1 : 0)));
     }
 
     private static final long[] CLEARED = {
@@ -337,7 +338,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     };
 
     private static int offsetIn(long mask) {
-        return Long.numberOfTrailingZeros(mask) / ALIGNMENT_INT;
+        return Long.numberOfTrailingZeros(mask) >> ALIGNMENT_POW;
     }
 
     private static long mask(long bytes) {
@@ -382,11 +383,5 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
                 }
             }
         }
-    }
-
-    @FunctionalInterface
-    public interface MiddleMan<T> {
-
-        T intercept(T action);
     }
 }

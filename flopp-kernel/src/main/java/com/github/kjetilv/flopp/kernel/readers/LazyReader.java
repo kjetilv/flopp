@@ -5,27 +5,24 @@ import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
-import java.util.Comparator;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import static com.github.kjetilv.flopp.kernel.readers.Column.Parse.*;
+import static com.github.kjetilv.flopp.kernel.readers.Column.Parser.*;
 
 final class LazyReader implements Reader, Reader.Columns {
 
     static Reader create(List<Column> columns) {
-        return readerFor(columnMap(columns));
+        return new LazyReader(columns);
     }
 
     static Reader create(String header, CsvFormat format) {
         List<Column> columns = discoverColumns(header, format);
-        return readerFor(columnMap(columns));
-    }
-
-    static Reader readerFor(Map<String, Column> columnMap) {
-        return new LazyReader(columnMap);
+        return new LazyReader(columns);
     }
 
     private final Map<String, Column> columnMap;
@@ -52,53 +49,67 @@ final class LazyReader implements Reader, Reader.Columns {
 
     private SeparatedLine sl;
 
-    private LazyReader(Map<String, Column> columnMap) {
-        this.columnMap = Map.copyOf(columnMap);
-        int maxCol = columnMap.values()
-            .stream()
-            .max(Comparator.comparingInt(Column::colunmNo))
-            .map(Column::colunmNo)
-            .orElseThrow(() ->
-                new IllegalStateException("No max column: " + columnMap));
+    private LazyReader(List<Column> columns) {
+        if (columns == null || columns.isEmpty()) {
+            throw new IllegalStateException("No columns!");
+        }
+        this.columnMap = columnMap(columns);
+        int size = maxColumnNo(columns) + 1;
+        this.columns = columns.toArray(Column[]::new);
 
-        int size = maxCol + 1;
+        Obj[] objs = null;
+        I[] is = null;
+        L[] ls = null;
+        Bo[] bos = null;
+        By[] bys = null;
+        C[] cs = null;
+        S[] shs = null;
+        F[] fs = null;
+        D[] ds = null;
 
-        this.objs = new Obj[size];
-        this.is = new I[size];
-        this.ls = new L[size];
-        this.bos = new Bo[size];
-        this.bys = new By[size];
-        this.cs = new C[size];
-        this.shs = new S[size];
-        this.fs = new F[size];
-        this.ds = new D[size];
-
-        this.columns = new Column[size];
         this.columnMap.forEach((_, column) ->
-            columns[column.colunmNo()] = column);
-        int[] columnNos = this.columnMap.values()
-            .stream().mapToInt(Column::colunmNo).sorted().toArray();
+            this.columns[column.colunmNo()] = column);
+        int[] columnNos = columns.stream()
+            .mapToInt(Column::colunmNo)
+            .sorted()
+            .toArray();
 
         for (int i : columnNos) {
-            switch (columns[i].parse()) {
-                case Obj obj -> objs[i] = obj;
-                case Bo boo -> bos[i] = boo;
-                case By by -> bys[i] = by;
-                case C c -> cs[i] = c;
-                case D d -> ds[i] = d;
-                case F f -> fs[i] = f;
-                case I ing -> is[i] = ing;
-                case L l -> ls[i] = l;
-                case S s -> this.shs[i] = s;
+            switch (this.columns[i].parser()) {
+                case Obj obj -> (objs == null ? objs = new Obj[size] : objs)[i] = obj;
+                case Bo bo -> (bos == null ? bos = new Bo[size] : bos)[i] = bo;
+                case By by -> (bys == null ? bys = new By[size] : bys)[i] = by;
+                case C c -> (cs == null ? cs = new C[size] : cs)[i] = c;
+                case D d -> (ds == null ? ds = new D[size] : ds)[i] = d;
+                case F f -> (fs == null ? fs = new F[size] : fs)[i] = f;
+                case I ing -> (is == null ? is = new I[size] : is)[i] = ing;
+                case L l -> (ls == null ? ls = new L[size] : ls)[i] = l;
+                case S s -> (shs == null ? shs = new S[size] : shs)[i] = s;
             }
         }
+
+        this.objs = objs;
+        this.is = is;
+        this.ls = ls;
+        this.bos = bos;
+        this.bys = bys;
+        this.cs = cs;
+        this.shs = shs;
+        this.fs = fs;
+        this.ds = ds;
+    }
+
+    private static int maxColumnNo(List<Column> columns) {
+        return columns.stream().mapToInt(Column::colunmNo)
+            .max()
+            .orElseThrow(() ->
+                new IllegalStateException("Unepxected missing max"));
     }
 
     @Override
     public void read(PartitionedSplitter splitter, Consumer<Columns> values) {
         splitter.forEach(separatedLine ->
-            values.accept(
-                columns(separatedLine)));
+            values.accept(columns(separatedLine)));
     }
 
     @Override
@@ -165,9 +176,15 @@ final class LazyReader implements Reader, Reader.Columns {
     }
 
     private static Map<String, Column> columnMap(List<Column> columns) {
-        Map<String, Column> map = Maps.ofSize(columns.size());
+        Map<String, Column> map = new HashMap<>(Maps.mapCapacity(columns.size()));
         for (Column column : columns) {
-            map.put(column.name(), column);
+            String name = column.name();
+            if (name != null) {
+                Column existing = map.put(name, column);
+                if (existing != null) {
+                    throw new IllegalArgumentException("Non-unique column name: " + name);
+                }
+            }
         }
         return Map.copyOf(map);
     }

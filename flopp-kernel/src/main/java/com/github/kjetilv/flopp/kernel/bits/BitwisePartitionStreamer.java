@@ -10,6 +10,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.github.kjetilv.flopp.kernel.bits.HeadersAndFooters.headersAndFooters;
+
 final class BitwisePartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
@@ -43,7 +45,7 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
             safeSegment,
             offset,
             logicalSize,
-            HeadersAndFooters.middleMan(partition, shape),
+            headersAndFooters(partition, shape),
             nextSupplier
         );
     }

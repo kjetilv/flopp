@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.CsvFormat.Escape;
+import com.github.kjetilv.flopp.kernel.CsvFormat.Quoted;
+import com.github.kjetilv.flopp.kernel.CsvFormat.Simple;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -36,9 +39,9 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {
         return switch (format) {
-            case CsvFormat.Escaped escaped -> new BitwiseCsvEscapedLineSplitter(consumer, escaped);
-            case CsvFormat.DoubleQuoted doubleQuoted -> new BitwiseCsvDoubleQuotedLineSplitter(consumer, doubleQuoted);
-            case CsvFormat.Simple simple -> new BitwiseCsvSimpleLineSplitter(consumer, simple);
+            case Escape esc -> new BitwiseCsvEscapeSplitter(consumer, esc);
+            case Quoted dbl -> new BitwiseCsvQuotedSplitter(consumer, dbl);
+            case Simple smp -> new BitwiseCsvSimpleSplitter(consumer, smp);
         };
     }
 }

@@ -8,10 +8,12 @@ import com.github.kjetilv.flopp.kernel.Shape;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<BitwisePartitioned.Action> {
+final class HeadersAndFooters implements Function<Consumer<LineSegment>, BitwisePartitioned.Action> {
 
-    static BitwisePartitionHandler.MiddleMan<BitwisePartitioned.Action> middleMan(
+    static Function<Consumer<LineSegment>, BitwisePartitioned.Action> headersAndFooters(
         Partition partition,
         Shape shape
     ) {
@@ -26,7 +28,7 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
                 return new HeadersAndFooters(0, shape.footer());
             }
         }
-        return null;
+        return consumer -> consumer::accept;
     }
 
     private final int header;
@@ -39,24 +41,24 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
     }
 
     @Override
-    public BitwisePartitioned.Action intercept(BitwisePartitioned.Action action) {
-        return header == 0 && footer == 0 ? action
-            : header > 0 && footer > 0 ? new HeaderAndFooter(action, header, footer)
-                : header > 0 ? new HeaderOnly(action, header)
-                    : new FooterOnly(action, footer);
+    public BitwisePartitioned.Action apply(Consumer<LineSegment> consumer) {
+        return header == 0 && footer == 0 ? consumer::accept
+            : header > 0 && footer > 0 ? new HeaderAndFooter(consumer, header, footer)
+                : header > 0 ? new HeaderOnly(consumer, header)
+                    : new FooterOnly(consumer, footer);
     }
 
     private static void cycle(
         LineSegment lineSegment,
         Deque<Runnable> deq,
-        BitwisePartitioned.Action delegate,
+        Consumer<LineSegment> delegate,
         int footer
     ) {
         if (deq.size() == footer) {
             Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
         }
         LineSegment immutable = lineSegment.immutable();
-        deq.offerFirst(() -> delegate.line(immutable));
+        deq.offerFirst(() -> delegate.accept(immutable));
     }
 
     private static void verifyHeader(int headersLeft, int header) {
@@ -75,22 +77,22 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
     private static final class HeaderOnly implements BitwisePartitioned.Action {
 
-        private final BitwisePartitioned.Action delegate;
+        private final Consumer<LineSegment> delegate;
 
         private final int header;
 
         private int headersLeft;
 
-        private HeaderOnly(BitwisePartitioned.Action delegate, int header) {
+        private HeaderOnly(Consumer<LineSegment> delegate, int header) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = header;
             this.headersLeft = header;
         }
 
         @Override
-        public void line(LineSegment lineSegment) {
+        public void accept(LineSegment lineSegment) {
             if (headersLeft == 0) {
-                delegate.line(lineSegment);
+                delegate.accept(lineSegment);
             } else {
                 headersLeft--;
             }
@@ -98,7 +100,6 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
         @Override
         public void close() {
-            delegate.close();
             verifyHeader(headersLeft, header);
         }
 
@@ -110,7 +111,7 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
     private static final class HeaderAndFooter implements BitwisePartitioned.Action {
 
-        private final BitwisePartitioned.Action delegate;
+        private final Consumer<LineSegment> delegate;
 
         private final int header;
 
@@ -120,7 +121,7 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
         private int headersLeft;
 
-        private HeaderAndFooter(BitwisePartitioned.Action delegate, int header, int footer) {
+        private HeaderAndFooter(Consumer<LineSegment> delegate, int header, int footer) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = Non.negativeOrZero(header, "header");
             this.footer = Non.negativeOrZero(footer, "footer");
@@ -129,7 +130,7 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
         }
 
         @Override
-        public void line(LineSegment lineSegment) {
+        public void accept(LineSegment lineSegment) {
             if (headersLeft == 0) {
                 cycle(lineSegment, deque, delegate, footer);
             } else {
@@ -139,7 +140,6 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
         @Override
         public void close() {
-            delegate.close();
             verifyHeader(headersLeft, header);
             verifyFooter(deque, footer);
         }
@@ -152,26 +152,25 @@ final class HeadersAndFooters implements BitwisePartitionHandler.MiddleMan<Bitwi
 
     private static final class FooterOnly implements BitwisePartitioned.Action {
 
-        private final BitwisePartitioned.Action delegate;
+        private final Consumer<LineSegment> delegate;
 
         private final Deque<Runnable> deque;
 
         private final int footer;
 
-        private FooterOnly(BitwisePartitioned.Action delegate, int footer) {
+        private FooterOnly(Consumer<LineSegment> delegate, int footer) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.footer = Non.negativeOrZero(footer, "footer");
             this.deque = new ArrayDeque<>(this.footer);
         }
 
         @Override
-        public void line(LineSegment lineSegment) {
+        public void accept(LineSegment lineSegment) {
             cycle(lineSegment, deque, delegate, footer);
         }
 
         @Override
         public void close() {
-            delegate.close();
             verifyFooter(deque, footer);
         }
 

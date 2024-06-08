@@ -77,11 +77,11 @@ public final class Bits {
         if (offset > 0) {
             transferLimitedDataTo(data[0], 0, headLen, target);
             firstLong = 1;
-            longCount = (length - headLen) / ALIGNMENT;
+            longCount = (length - headLen) >> ALIGNMENT_POW;
             position = headLen;
         } else {
             firstLong = 0;
-            longCount = length / ALIGNMENT;
+            longCount = length >> ALIGNMENT_POW;
         }
         for (int l = firstLong; l < longCount; l++) {
             transferDataTo(data[l], position, target);
@@ -160,7 +160,7 @@ public final class Bits {
 
     private static final int ALIGNMENT = 8;
 
-    private static final int ALIGNMENT_POWER = 3;
+    private static final int ALIGNMENT_POW = 3;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -205,7 +205,7 @@ public final class Bits {
     }
 
     private static int trailingBytes(long data) {
-        return Long.numberOfTrailingZeros(data) >> ALIGNMENT_POWER;
+        return Long.numberOfTrailingZeros(data) >> ALIGNMENT_POW;
     }
 
     private static boolean zero(int position, long bytes) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -106,7 +107,7 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
 
     private static long[] alignedSizesWithTail(int count, long total, long tail) {
         long headTotal = total - tail;
-        long alignedHeadSlices = headTotal / ALIGNMENT;
+        long alignedHeadSlices = headTotal >> ALIGNMENT_POW;
         long headOvershoot = headTotal % ALIGNMENT;
         long overshootTail = tail + headOvershoot;
         long[] headSizes = sizeDistribution(alignedHeadSlices, count);
@@ -118,7 +119,7 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
 
     private static long[] alignedSizes(int count, long total) {
         long overshoot = total % ALIGNMENT;
-        long alignedSlices = total / ALIGNMENT;
+        long alignedSlices = total >> ALIGNMENT_POW;
         long[] sizes = sizeDistribution(alignedSlices, count);
         if (overshoot != 0) {
             sizes[sizes.length - 1] += overshoot;

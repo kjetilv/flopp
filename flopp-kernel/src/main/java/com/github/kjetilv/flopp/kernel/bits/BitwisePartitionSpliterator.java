@@ -2,20 +2,20 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitionHandler.MiddleMan;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
-    private final MiddleMan<BitwisePartitioned.Action> middleMan;
+    private final Function<Consumer<LineSegment>, Action> headersAndFooters;
 
     private final Supplier<BitwisePartitionSpliterator> next;
 
@@ -30,33 +30,37 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         MemorySegment segment,
         long offset,
         long logicalSize,
-        MiddleMan<Action> middleMan,
+        Function<Consumer<LineSegment>, Action> headersAndFooters,
         Supplier<BitwisePartitionSpliterator> next
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.offset = offset;
         this.logicalSize = logicalSize;
-        this.middleMan = middleMan;
+        this.headersAndFooters = Objects.requireNonNull(headersAndFooters, "headersAndFooters");
         this.next = next;
         this.segment = segment;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
-        try {
-            Action a = middleMan == null
-                ? action::accept
-                : middleMan.intercept(action::accept);
-            BitwisePartitionHandler handler = handler(a);
-            handler.run();
-            return false;
+        try (
+            Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action);
+        ) {
+            handler(wrapped).run();
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed: " + action, e);
         }
+        return false;
     }
 
-    private BitwisePartitionHandler handler(Action action) {
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[@" + partition + "]";
+    }
+
+    private BitwisePartitionHandler handler(Consumer<LineSegment> action) {
         return new BitwisePartitionHandler(
             partition,
             segment,
@@ -65,10 +69,5 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
             action,
             next == null ? null : () -> next.get().handler(action)
         );
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[@" + partition + "]";
     }
 }

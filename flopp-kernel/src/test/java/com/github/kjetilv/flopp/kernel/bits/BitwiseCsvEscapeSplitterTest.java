@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseCsvEscapedLineSplitterTest {
+class BitwiseCsvEscapeSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -26,8 +25,8 @@ class BitwiseCsvEscapedLineSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
-            adder(splits), new CsvFormat.Escaped(';')
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
+            adder(splits), new CsvFormat.Escape(';')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -43,8 +42,8 @@ class BitwiseCsvEscapedLineSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
-            adder(splits), new CsvFormat.Escaped(';')
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
+            adder(splits), new CsvFormat.Escape(';')
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -239,7 +238,7 @@ class BitwiseCsvEscapedLineSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
@@ -262,7 +261,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
         String[] expected = {"'foo 1'", "bar", "234", "'ab\\; cd\\;ef'", "'it is 'aight'", "", "234", "'\\;'", "'\\;'"};
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             adder(splits), CSV_FORMAT
         );
         splitter.accept(LineSegments.of(
@@ -423,7 +422,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         return splits;
     }
 
-    private static final CsvFormat.Escaped CSV_FORMAT = new CsvFormat.Escaped(';', '\\', true);
+    private static final CsvFormat.Escape CSV_FORMAT = new CsvFormat.Escape(';', '\\', true);
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
@@ -436,7 +435,7 @@ class BitwiseCsvEscapedLineSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseCsvEscapedLineSplitter splitter = new BitwiseCsvEscapedLineSplitter(
+        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             line ->
                 line.columns(UTF_8)
                     .forEach(splits::add), CSV_FORMAT

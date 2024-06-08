@@ -9,6 +9,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
+import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.*;
@@ -55,7 +56,7 @@ public final class LineSegments {
             long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT_INT);
             for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT_INT) {
                 long data = memorySegment.get(JAVA_LONG, pos);
-                hashCode += (data * 31L) ^ (longs - (pos / ALIGNMENT_INT));
+                hashCode += (data * 31L) ^ (longs - (pos >> ALIGNMENT_POW));
             }
             if (tailLen > 0) {
                 hashCode += segment.tail() * 31L;
@@ -206,7 +207,7 @@ public final class LineSegments {
         }
         if (length > headLen) {
             long alignedStart = segment.alignedStart();
-            long longs = (segment.alignedEnd() - alignedStart) / ALIGNMENT_INT;
+            long longs = (segment.alignedEnd() - alignedStart) >> ALIGNMENT_POW;
             int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
             int tailLen = (int)(endIndex % ALIGNMENT);

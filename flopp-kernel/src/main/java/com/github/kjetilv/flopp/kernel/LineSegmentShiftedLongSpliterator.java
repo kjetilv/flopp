@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.LongConsumer;
 
+import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -30,7 +31,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
     private final long endIndex;
 
     LineSegmentShiftedLongSpliterator(LineSegment segment, int length, int headLen) {
-        super(length / ALIGNMENT + 2, IMMUTABLE | ORDERED);
+        super(length >> ALIGNMENT_POW + 2, IMMUTABLE | ORDERED);
         this.segment = Objects.requireNonNull(segment, "segment");
         this.memorySegment = this.segment.memorySegment();
         this.alignedStart = this.segment.alignedStart();
