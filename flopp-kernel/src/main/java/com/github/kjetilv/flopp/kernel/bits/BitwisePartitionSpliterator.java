@@ -37,7 +37,7 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
         this.partition = Objects.requireNonNull(partition, "partition");
         this.offset = offset;
         this.logicalSize = logicalSize;
-        this.headersAndFooters = Objects.requireNonNull(headersAndFooters, "headersAndFooters");
+        this.headersAndFooters = headersAndFooters;
         this.next = next;
         this.segment = segment;
     }
@@ -45,12 +45,14 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     @SuppressWarnings("unchecked")
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
-        try (
-            Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action);
-        ) {
-            handler(wrapped).run();
-        } catch (Exception e) {
-            throw new IllegalStateException(this + " failed: " + action, e);
+        if (headersAndFooters == null) {
+            handler(action::accept).run();
+        } else {
+            try (Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action)) {
+                handler(wrapped).run();
+            } catch (Exception e) {
+                throw new IllegalStateException(this + " failed: " + action, e);
+            }
         }
         return false;
     }

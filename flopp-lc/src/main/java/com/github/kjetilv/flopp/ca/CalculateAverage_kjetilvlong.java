@@ -187,13 +187,13 @@ public final class CalculateAverage_kjetilvlong {
                     CompletableFuture.supplyAsync(
                         () -> {
                             Reader reader = Readers.create(
-                                Column.ofSegment("station", 0),
-                                Column.ofInt("measurement", 1, CalculateAverage_kjetilvlong::parseValue)
+                                Column.ofSegment(0),
+                                Column.ofInt( 1, CalculateAverage_kjetilvlong::parseValue)
                             );
                             Map<LineSegment, Result> results = new HashMap<>(Maps.mapCapacity(512));
                             reader.read(splitter, columns -> {
-                                LineSegment station = (LineSegment) columns.get("station");
-                                int dec = (Integer) columns.get("measurement");
+                                LineSegment station = (LineSegment) columns.get(0);
+                                int dec = columns.getInt(1);
                                 results.compute(
                                     station.copy(),
                                     (key, existing) ->

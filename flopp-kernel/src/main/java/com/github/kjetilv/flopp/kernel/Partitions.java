@@ -1,9 +1,12 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.util.Print;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public record Partitions(long total, List<Partition> partitions, long tail) {
 
@@ -60,7 +63,8 @@ public record Partitions(long total, List<Partition> partitions, long tail) {
 
     @SafeVarargs
     private static List<Partition> combine(List<Partition>... partitionLists) {
-        List<Partition> all = Arrays.stream(partitionLists).flatMap(Collection::stream).toList();
+        List<Partition> all = Arrays.stream(partitionLists).flatMap(Collection::stream)
+            .toList();
         int count = all.size();
         return all.stream().reduce(
             new ArrayList<>(),
@@ -85,5 +89,16 @@ public record Partitions(long total, List<Partition> partitions, long tail) {
         Partition last = list.getLast();
         long nextOffset = last.offset() + last.length();
         return new Partition(list.size(), count, nextOffset, partition.length());
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + Print.bigInt(total) +
+               " -> " + partitions.size() + "{" +
+               partitions.stream()
+                   .map(Partition::toString)
+                   .collect(Collectors.joining(" ")) +
+               "} tail:" + tail +
+               "]";
     }
 }

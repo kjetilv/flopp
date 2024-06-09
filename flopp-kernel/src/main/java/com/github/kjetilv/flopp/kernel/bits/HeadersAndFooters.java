@@ -28,7 +28,7 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Bitwise
                 return new HeadersAndFooters(0, shape.footer());
             }
         }
-        return consumer -> consumer::accept;
+        return null;
     }
 
     private final int header;

@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.util.Print;
+
 import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
@@ -54,9 +56,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" +
-               str() + " " + offset + "+" + length +
-               "]";
+        return "P[" + str() + ":" + Print.bigInt(offset) + "+" + Print.bigInt(length) + "]";
     }
 
     public long bufferedTo(long size) {
