@@ -45,16 +45,18 @@ final class BitwisePartitionSpliterator extends Spliterators.AbstractSpliterator
     @SuppressWarnings("unchecked")
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
-        if (headersAndFooters == null) {
-            handler(action::accept).run();
-        } else {
-            try (Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action)) {
-                handler(wrapped).run();
-            } catch (Exception e) {
-                throw new IllegalStateException(this + " failed: " + action, e);
+        try {
+            if (headersAndFooters == null) {
+                handler((Consumer<LineSegment>) action).run();
+            } else {
+                try (Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action)) {
+                    handler(wrapped).run();
+                }
             }
+            return false;
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " failed: " + action, e);
         }
-        return false;
     }
 
     @Override
