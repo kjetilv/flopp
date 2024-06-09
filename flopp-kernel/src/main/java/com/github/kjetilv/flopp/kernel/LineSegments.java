@@ -12,7 +12,8 @@ import java.util.stream.StreamSupport;
 import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
@@ -36,7 +37,7 @@ public final class LineSegments {
 
     @SuppressWarnings("UnnecessaryParentheses")
     public static int hashCode(LineSegment segment) {
-        int length = (int)(segment.length());
+        int length = (int) (segment.length());
         if (length == 0L) {
             return 0;
         }
@@ -210,7 +211,7 @@ public final class LineSegments {
             long longs = (segment.alignedEnd() - alignedStart) >> ALIGNMENT_POW;
             int firstLong = headLen == 0 ? 0 : 1;
             long endIndex = segment.endIndex();
-            int tailLen = (int)(endIndex % ALIGNMENT);
+            int tailLen = (int) (endIndex % ALIGNMENT);
             MemorySegment memorySegment = segment.memorySegment();
             int transferOffset = headLen;
             long position = alignedStart + firstLong * ALIGNMENT;
@@ -273,5 +274,5 @@ public final class LineSegments {
     private LineSegments() {
     }
 
-    public static final byte[] NO_BYTES = new byte[0];
+    private static final byte[] NO_BYTES = new byte[0];
 }
