@@ -5,7 +5,7 @@
     <module name="flopp.flopp-lc.main" />
     <option name="PROGRAM_PARAMETERS" value="/home/kjetilv/Development/data/measurements.txt" />
     <target name="graalvm@mini:22" />
-    <option name="VM_PARAMETERS" value="-XX:+UseG1GC -Xmx4G -Xms4G" />
+    <option name="VM_PARAMETERS" value="-XX:+UseG1GC -Xmx4G -Xms4G -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -Xnoclassgc " />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="onebrc.*" />

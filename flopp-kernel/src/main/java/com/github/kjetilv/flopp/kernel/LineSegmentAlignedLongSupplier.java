@@ -42,31 +42,19 @@ final class LineSegmentAlignedLongSupplier implements LongSupplier {
 
     @Override
     public long getAsLong() {
-        if (position == alignedStart && headLen > 0) {
-            try {
-                long data = segment.head();
-                long shifted = data << ALIGNMENT * (ALIGNMENT - headLen);
-                return shifted;
-            } finally {
-                position += ALIGNMENT;
+        try {
+            if (position == alignedStart && headLen > 0) {
+                return segment.head() << ALIGNMENT * (ALIGNMENT - headLen);
             }
-        }
-        if (position < alignedEnd) {
-            try {
-                long data = memorySegment.get(JAVA_LONG, position);
-                return data;
-            } finally {
-                position += ALIGNMENT;
+            if (position < alignedEnd) {
+                return memorySegment.get(JAVA_LONG, position);
             }
-        }
-        if (position == alignedEnd && tailLen > 0) {
-            try {
-                long data = segment.tail();
-                return data;
-            } finally {
-                position += ALIGNMENT;
+            if (position == alignedEnd && tailLen > 0) {
+                return segment.tail();
             }
+            return 0x0L;
+        } finally {
+            position += ALIGNMENT;
         }
-        return 0x0L;
     }
 }

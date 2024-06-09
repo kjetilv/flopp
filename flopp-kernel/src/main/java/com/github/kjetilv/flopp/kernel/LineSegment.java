@@ -32,7 +32,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         if (len < ALIGNMENT_INT) {
             return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         }
-        long length = (endIndex() - tailLen - (startIndex() + headLen)) >> ALIGNMENT_POW;
+        long length = endIndex() - tailLen - startIndex() - headLen >> ALIGNMENT_POW;
         return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
     }
 
@@ -119,7 +119,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long alignedCount() {
-        return (alignedEnd() - alignedStart()) >> ALIGNMENT_POW;
+        return alignedEnd() - alignedStart() >> ALIGNMENT_POW;
     }
 
     @SuppressWarnings("UnnecessaryParentheses")

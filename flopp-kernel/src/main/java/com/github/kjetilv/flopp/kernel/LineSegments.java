@@ -107,7 +107,9 @@ public final class LineSegments {
     }
 
     public static LongStream longs(LineSegment segment, boolean shift) {
-        return shift ? shiftedLongs(segment) : alignedLongs(segment);
+        return shift
+            ? shiftedLongs(segment)
+            : alignedLongs(segment);
     }
 
     public static LongStream alignedLongs(LineSegment segment) {
@@ -127,12 +129,13 @@ public final class LineSegments {
             long data = segment.head();
             return LongStream.of(data);
         }
-        return headLen == 0
-            ? alignedLongs(segment)
-            : StreamSupport.longStream(
-                new LineSegmentShiftedLongSpliterator(segment, length, headLen),
-                false
-            );
+        if (headLen == 0) {
+            return alignedLongs(segment);
+        }
+        return StreamSupport.longStream(
+            new LineSegmentShiftedLongSpliterator(segment, length, headLen),
+            false
+        );
     }
 
     public static String asString(LineSegment segment, Charset charset) {

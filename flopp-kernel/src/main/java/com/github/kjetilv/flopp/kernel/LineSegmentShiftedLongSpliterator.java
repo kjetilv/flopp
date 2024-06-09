@@ -73,7 +73,6 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
         } else if (headLen > 0) {
             action.accept(data);
         }
-
         return false;
     }
 }

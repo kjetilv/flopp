@@ -33,22 +33,15 @@ final class LineSegmentAlignedLongSpliterator extends Spliterators.AbstractLongS
     @Override
     public boolean tryAdvance(LongConsumer action) {
         if (headLen > 0) {
-            long data = segment.head();
-            long shifted = data << ALIGNMENT * (ALIGNMENT - headLen);
-            action.accept(shifted);
+            action.accept(segment.head() << ALIGNMENT * (ALIGNMENT - headLen));
         }
         if (length > headLen) {
-            long endIndex = segment.endIndex();
-            MemorySegment memorySegment = segment.memorySegment();
             long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
             for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
-                long data = memorySegment.get(JAVA_LONG, pos);
-                action.accept(data);
+                action.accept(segment.memorySegment().get(JAVA_LONG, pos));
             }
-            int tailLen = (int)(endIndex % ALIGNMENT);
-            if (tailLen > 0) {
-                long data = segment.tail();
-                action.accept(data);
+            if (segment.endIndex() % ALIGNMENT > 0L) {
+                action.accept(segment.tail());
             }
         }
         return false;
