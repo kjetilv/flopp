@@ -53,7 +53,7 @@ public record TrailFragmentation(
             long offset = i == 0
                 ? 0L
                 : list.getLast().endIndex();
-            long size = align(minSize + blocks, ALIGNMENT);
+            long size = align(minSize + blocks, ALIGNED);
             list.add(new Partition(
                 i,
                 trailCount,
@@ -64,7 +64,7 @@ public record TrailFragmentation(
         return list;
     }
 
-    private static final int ALIGNMENT = 16;
+    private static final int ALIGNED = 16;
 
     private static long align(long availableRaw, int alignment) {
         return availableRaw - availableRaw % alignment;

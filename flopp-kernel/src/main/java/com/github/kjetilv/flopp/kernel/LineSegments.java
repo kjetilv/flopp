@@ -9,7 +9,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;

@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public record Partitioning(int count, long tail, TrailFragmentation fragmentation) {
 
@@ -88,8 +87,6 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
             }
         }
     }
-
-    public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
 
     private static long[] partitionSizes(int count, long total, long tail) {
         if (count == 1) {

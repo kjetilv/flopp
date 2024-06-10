@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
     permits BitwiseCsvQuotedSplitter, BitwiseCsvEscapeSplitter, BitwiseCsvSimpleSplitter {
@@ -102,6 +104,12 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public String asString(Charset charset) {
         return asString(null, charset);
+    }
+
+    @Override
+    public long head() {
+        long headOffset = startIndex % MemorySegments.ALIGNMENT_INT;
+        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * MemorySegments.ALIGNMENT_INT;
     }
 
     @Override

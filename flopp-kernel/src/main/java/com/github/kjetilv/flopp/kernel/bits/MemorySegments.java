@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,9 +35,9 @@ public final class MemorySegments {
     }
 
     public static long tail(MemorySegment ms, long end) {
-        int tail = (int) (end % LineSegment.ALIGNMENT_INT);
+        int tail = (int) (end % ALIGNMENT_INT);
         long value = ms.get(JAVA_LONG, end - tail);
-        int shift = LineSegment.ALIGNMENT_INT * (LineSegment.ALIGNMENT_INT - tail);
+        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tail);
         return value << shift >> shift;
     }
 
@@ -146,7 +144,9 @@ public final class MemorySegments {
 
     public static final long ALIGNMENT = JAVA_LONG.byteAlignment();
 
-    public static final int ALIGNMENT_INT = (int) ALIGNMENT;
+    public static final int ALIGNMENT_INT = Math.toIntExact(ALIGNMENT);
+
+    public static final int ALIGNMENT_POW = 3;
 
     private static int alignedSize(long size) {
         return (int) (size + ALIGNMENT_INT - size % ALIGNMENT);

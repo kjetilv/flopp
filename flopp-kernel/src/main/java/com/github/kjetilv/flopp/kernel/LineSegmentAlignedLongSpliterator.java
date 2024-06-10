@@ -1,11 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.LongConsumer;
 
-import static com.github.kjetilv.flopp.kernel.LineSegment.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 

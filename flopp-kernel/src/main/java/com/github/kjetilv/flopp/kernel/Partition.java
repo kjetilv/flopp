@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Print;
 
-import static com.github.kjetilv.flopp.kernel.Partitioning.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
@@ -61,10 +61,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
 
     public long bufferedTo(long size) {
         long simpleBuffer = length + size;
-        if (simpleBuffer % ALIGNMENT == 0) {
+        if (simpleBuffer % MemorySegments.ALIGNMENT == 0) {
             return simpleBuffer;
         }
-        return (simpleBuffer / ALIGNMENT + 1) * ALIGNMENT;
+        return (simpleBuffer / MemorySegments.ALIGNMENT + 1) * MemorySegments.ALIGNMENT;
     }
 
     public boolean single() {

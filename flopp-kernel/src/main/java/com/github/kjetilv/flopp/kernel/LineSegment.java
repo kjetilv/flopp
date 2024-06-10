@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.*;
 
 @SuppressWarnings("unused")
@@ -65,7 +66,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default LineSegment copy() {
         MemorySegment buffer =
             MemorySegment.ofBuffer(ByteBuffer.allocateDirect(Math.toIntExact(length())));
-        MemorySegments.copyBytes(
+        copyBytes(
             memorySegment(),
             buffer,
             startIndex(),
@@ -161,7 +162,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         long endIndex = endIndex();
         long length = endIndex - startIndex;
         long headOffset = startIndex % ALIGNMENT_INT;
-        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> headOffset * ALIGNMENT_INT;
+        long shift = headOffset * ALIGNMENT_INT;
+        return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> shift;
     }
 
     default int tailLength() {
@@ -202,10 +204,4 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default int compareTo(LineSegment o) {
         return LineSegments.compare(this, o);
     }
-
-    long ALIGNMENT = MemorySegments.ALIGNMENT;
-
-    int ALIGNMENT_INT = MemorySegments.ALIGNMENT_INT;
-
-    int ALIGNMENT_POW = 3;
 }

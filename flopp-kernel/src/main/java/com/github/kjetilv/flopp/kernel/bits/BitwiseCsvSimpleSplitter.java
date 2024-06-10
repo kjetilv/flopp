@@ -19,7 +19,7 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
         this.startOffset = this.segment.startIndex();
 
         long length = this.segment.length();
-        if (length < ALIGNMENT) {
+        if (length < MemorySegments.ALIGNMENT) {
             findSeps(this.segment.bytesAt(0, length), 0);
             markSeparator(length);
         } else {
@@ -52,8 +52,8 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
     private void findSeps(long bytes, long shift) {
         int sep = sepFinder.next(bytes);
         while (true) {
-            if (sep == ALIGNMENT) {
-                offset += ALIGNMENT;
+            if (sep == MemorySegments.ALIGNMENT) {
+                offset += MemorySegments.ALIGNMENT;
                 return;
             }
             long index = offset + sep + shift;

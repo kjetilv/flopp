@@ -5,6 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
+
 @SuppressWarnings("unused")
 public final class Bits {
 
@@ -70,14 +73,14 @@ public final class Bits {
     public static void transferMultipleDataTo(long[] data, int offset, byte[] target) {
         int firstLong;
         int longCount;
-        int headStart = offset % ALIGNMENT;
-        int headLen = ALIGNMENT - headStart;
+        int headStart = offset % ALIGNMENT_INT;
+        int headLen = ALIGNMENT_INT - headStart;
         int position = 0;
         int length = target.length;
         if (offset > 0) {
             transferLimitedDataTo(data[0], 0, headLen, target);
             firstLong = 1;
-            longCount = (length - headLen) >> ALIGNMENT_POW;
+            longCount = length - headLen >> ALIGNMENT_POW;
             position = headLen;
         } else {
             firstLong = 0;
@@ -85,7 +88,7 @@ public final class Bits {
         }
         for (int l = firstLong; l < longCount; l++) {
             transferDataTo(data[l], position, target);
-            position += ALIGNMENT;
+            position += ALIGNMENT_INT;
         }
         int remainder = length - position;
         if (remainder > 0) {
@@ -113,7 +116,7 @@ public final class Bits {
      */
     public static void transferLimitedDataTo(long data, int offset, int length, byte[] target) {
         for (int i = 0; i < length; i++) {
-            target[offset + i] = (byte) (data >> ALIGNMENT * i & 0xFF);
+            target[offset + i] = (byte) (data >> ALIGNMENT_INT * i & 0xFF);
         }
     }
 
@@ -157,10 +160,6 @@ public final class Bits {
     public static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
 
     private static final long ONES = 0x0101010101010101L;
-
-    private static final int ALIGNMENT = 8;
-
-    private static final int ALIGNMENT_POW = 3;
 
     private static final long[] CLEARED = {
         0xFFFFFFFFFFFFFF00L,
@@ -259,7 +258,7 @@ public final class Bits {
         @Override
         public int next() {
             if (dists == 0L) {
-                return ALIGNMENT;
+                return ALIGNMENT_INT;
             }
             int trail = trailingBytes(dists);
             dists &= CLEARED[trail];
@@ -318,7 +317,7 @@ public final class Bits {
         @Override
         public int next() {
             if (dists == 0L) {
-                return ALIGNMENT;
+                return ALIGNMENT_INT;
             }
             trail = trailingBytes(dists);
             dists &= CLEARED[trail];
@@ -368,7 +367,7 @@ public final class Bits {
             dists = data ^ mask;
             return hasZero(dists)
                 ? next()
-                : (offset = ALIGNMENT);
+                : (offset = ALIGNMENT_INT);
         }
 
         /**
@@ -378,7 +377,7 @@ public final class Bits {
          */
         @Override
         public int next() {
-            while (offset < ALIGNMENT) {
+            while (offset < ALIGNMENT_INT) {
                 try {
                     if (zero(offset, dists)) {
                         return offset;
@@ -387,12 +386,12 @@ public final class Bits {
                     offset++;
                 }
             }
-            return ALIGNMENT;
+            return ALIGNMENT_INT;
         }
 
         @Override
         public boolean hasNext() {
-            while (offset < ALIGNMENT) {
+            while (offset < ALIGNMENT_INT) {
                 if (zero(offset, dists)) {
                     return true;
                 } else {
