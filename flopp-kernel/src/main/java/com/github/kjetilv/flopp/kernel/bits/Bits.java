@@ -224,13 +224,10 @@ public final class Bits {
 
         private final long mask;
 
-        private final char c;
-
         private long dists;
 
         private SwarFinder(char c) {
-            this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = ONES * c;
         }
 
         /**
@@ -267,15 +264,13 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + c + "' / " + hex(dists) + "]";
+            return getClass().getSimpleName() + "['" + (char)(mask & 0xFF) + "' / " + hex(dists) + "]";
         }
     }
 
     private static final class DevSwarFinder implements Finder {
 
         private final long mask;
-
-        private final char c;
 
         private long dists;
 
@@ -284,8 +279,7 @@ public final class Bits {
         private int trail;
 
         private DevSwarFinder(char c) {
-            this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = ONES * c;
         }
 
         /**
@@ -326,7 +320,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + c + "' / " +
+            return getClass().getSimpleName() + "['" + (char)(mask & 0xFF) + "' / " +
                    trail + "@" + hxD(data) + "/'" + Bits.toString(data, StandardCharsets.UTF_8) + "' : " +
                    hxD(dists) + "]";
         }
