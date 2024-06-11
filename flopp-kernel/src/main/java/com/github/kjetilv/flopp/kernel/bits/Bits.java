@@ -30,11 +30,6 @@ public final class Bits {
     }
 
     public static String hex(long mask, boolean dotted) {
-        if (mask == 0) {
-            return dotted
-                ? "0x00.00.00.00.00.00.00.00"
-                : "0x0000000000000000";
-        }
         String hexString = String.format("%08X", mask);
         String paddedHexString = zeroPad(hexString, 16);
         return "0x" + (dotted ? dot(paddedHexString, 2) : hexString);
