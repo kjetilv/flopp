@@ -92,15 +92,14 @@ public final class Bits {
     }
 
     public static void transferDataTo(long data, int offset, byte[] target) {
-        int i = offset;
-        target[i++] = (byte) (data & 0xFF);
-        target[i++] = (byte) (data >> 8 & 0xFF);
-        target[i++] = (byte) (data >> 16 & 0xFF);
-        target[i++] = (byte) (data >> 24 & 0xFF);
-        target[i++] = (byte) (data >> 32 & 0xFF);
-        target[i++] = (byte) (data >> 40 & 0xFF);
-        target[i++] = (byte) (data >> 48 & 0xFF);
-        target[i] = (byte) (data >> 56);
+        target[offset] = (byte) (data & 0xFF);
+        target[offset + 1] = (byte) (data >> 8 & 0xFF);
+        target[offset + 2] = (byte) (data >> 16 & 0xFF);
+        target[offset + 3] = (byte) (data >> 24 & 0xFF);
+        target[offset + 4] = (byte) (data >> 32 & 0xFF);
+        target[offset + 5] = (byte) (data >> 40 & 0xFF);
+        target[offset + 6] = (byte) (data >> 48 & 0xFF);
+        target[offset + 7] = (byte) (data >> 56);
     }
 
     /**
@@ -156,7 +155,7 @@ public final class Bits {
 
     private static final long ONES = 0x0101010101010101L;
 
-    private static final long[] CLEARED = {
+    private static final long[] CLEAR = {
         0xFFFFFFFFFFFFFF00L,
         0xFFFFFFFFFFFF0000L,
         0xFFFFFFFFFF000000L,
@@ -167,7 +166,7 @@ public final class Bits {
         0x0000000000000000L
     };
 
-    private static final long[] CHECK = {
+    private static final long[] ZERO_CHECK = {
         0x00000000000000FFL,
         0x000000000000FF00L,
         0x0000000000FF0000L,
@@ -203,7 +202,7 @@ public final class Bits {
     }
 
     private static boolean zero(int position, long bytes) {
-        return (bytes & CHECK[position]) == 0x00;
+        return (bytes & ZERO_CHECK[position]) == 0x00;
     }
 
     private static long findInstances(long bytes, long mask) {
@@ -253,7 +252,7 @@ public final class Bits {
                 return ALIGNMENT_INT;
             }
             int trail = trailingBytes(dists);
-            dists &= CLEARED[trail];
+            dists &= CLEAR[trail];
             return trail;
         }
 
@@ -264,7 +263,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + (char)(mask & 0xFF) + "' / " + hex(dists) + "]";
+            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "' / " + hex(dists) + "]";
         }
     }
 
@@ -309,7 +308,7 @@ public final class Bits {
                 return ALIGNMENT_INT;
             }
             trail = trailingBytes(dists);
-            dists &= CLEARED[trail];
+            dists &= CLEAR[trail];
             return trail;
         }
 
@@ -320,7 +319,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + (char)(mask & 0xFF) + "' / " +
+            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "' / " +
                    trail + "@" + hxD(data) + "/'" + Bits.toString(data, StandardCharsets.UTF_8) + "' : " +
                    hxD(dists) + "]";
         }
@@ -415,8 +414,7 @@ public final class Bits {
             int count = 0;
             long find = findInstances(bytes, mask);
             while (find != 0) {
-                int trail = trailingBytes(find);
-                find &= CLEARED[trail];
+                find &= CLEAR[trailingBytes(find)];
                 count++;
             }
             return count;

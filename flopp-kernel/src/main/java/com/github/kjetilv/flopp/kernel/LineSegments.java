@@ -274,6 +274,16 @@ public final class LineSegments {
         return asString(of(segment, start, end), null, charset);
     }
 
+    public static String fromLongsWithinBounds(LineSegment lineSegment, byte[] target, Charset charset) {
+        return MemorySegments.fromLongsWithinBounds(
+            lineSegment.memorySegment(),
+            lineSegment.startIndex(),
+            lineSegment.endIndex(),
+            target,
+            charset
+        );
+    }
+
     private LineSegments() {
     }
 

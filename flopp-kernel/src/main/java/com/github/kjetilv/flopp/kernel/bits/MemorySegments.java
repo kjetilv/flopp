@@ -110,7 +110,9 @@ public final class MemorySegments {
         long tailLength = endIndex % ALIGNMENT_INT;
 
         long alignedStart = startIndex - headOffset;
-        long alignedEnd = endIndex + (tailLength > 0 ? ALIGNMENT - tailLength : 0);
+        long alignedEnd = tailLength == 0
+            ? endIndex
+            : endIndex + ALIGNMENT - tailLength;
 
         long size = alignedEnd - alignedStart;
 
