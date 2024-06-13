@@ -144,7 +144,7 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static Map<String, Result> map(PartitionedSplitter splitter) {
-        Map<String, Result> m = new HashMap<>(Maps.mapCapacity(1024));
+        Map<String, Result> m = new HashMap<>(Maps.mapCapacity(2048));
         Readers.create(
             Column.ofString(0, new byte[128], UTF_8),
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)

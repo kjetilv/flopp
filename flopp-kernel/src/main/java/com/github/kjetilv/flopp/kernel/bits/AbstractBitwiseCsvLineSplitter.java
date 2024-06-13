@@ -76,7 +76,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public String column(int column, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            memorySegment,
+            segment.memorySegment(),
             startPositions[column],
             endPositions[column],
             columnBuffer,
@@ -109,7 +109,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public String asString(byte[] buffer, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            memorySegment,
+            segment.memorySegment(),
             startIndex,
             endIndex,
             buffer,

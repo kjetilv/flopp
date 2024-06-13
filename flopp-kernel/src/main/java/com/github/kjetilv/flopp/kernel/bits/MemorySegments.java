@@ -47,7 +47,8 @@ public final class MemorySegments {
         if (tail == 0) {
             return segment;
         }
-        ByteBuffer resizedBuffer = ByteBuffer.allocateDirect(alignedSize(size));
+        int alignedSize = alignedSize(size);
+        ByteBuffer resizedBuffer = ByteBuffer.allocateDirect(alignedSize);
         MemorySegment resizedCopy = MemorySegment.ofBuffer(resizedBuffer);
         copyBytes(segment, resizedCopy, offset, 0, size);
         return resizedCopy;

@@ -134,12 +134,15 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     @Override
     public long head(long head) {
-        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT_INT) >> head * ALIGNMENT_INT;
+        long offset = startIndex - startIndex % ALIGNMENT_INT;
+        long shift = head * ALIGNMENT_INT;
+        return segment.get(JAVA_LONG, offset) >> shift;
     }
 
     @Override
     public long longNo(long longNo) {
-        return segment.get(JAVA_LONG, startIndex - startIndex % ALIGNMENT_INT + longNo * ALIGNMENT_INT);
+        long offset = startIndex - startIndex % ALIGNMENT_INT + longNo * ALIGNMENT_INT;
+        return segment.get(JAVA_LONG, offset);
     }
 
     @Override
@@ -151,7 +154,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         while (offset < limit) {
             try {
                 long data = loadLong(offset);
-                int dist = finder.next(data);
+                int dist = dist(data);
                 if (dist < ALIGNMENT_INT) { // Found newline
                     long start = offset + dist;
                     this.startIndex = start + 1; // Mark position of new line
@@ -159,8 +162,8 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
                     if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
                         return false;
                     }
-                    while ((dist = finder.next()) < ALIGNMENT_INT) {
-                        cycleLine(offset + dist);
+                    while ((dist = dist()) < ALIGNMENT_INT) {
+                        cycle(offset + dist);
                     }
                     return true;
                 }
@@ -179,7 +182,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             processTail();
         }
         if (startIndex < logicalLimit) {
-            cycleLine(logicalLimit);
+            cycle(logicalLimit);
         }
     }
 
@@ -187,11 +190,11 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         long steps = lastOffset - offset >> ALIGNMENT_POW;
         for (long l = 0; l < steps; l++) {
             long data = loadLong(offset);
-            int dist = finder.next(data);
+            int dist = dist(data);
             while (dist < ALIGNMENT_INT) {
                 long lineOffset = offset + dist;
-                cycleLine(lineOffset);
-                dist = finder.next();
+                cycle(lineOffset);
+                dist = dist();
             }
             offset += ALIGNMENT_INT;
         }
@@ -201,20 +204,20 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         long tail = logicalLimit % ALIGNMENT_INT;
         long lastAligned = logicalLimit - tail;
         while (offset < lastAligned) {
-            int dist = finder.next(loadLong(offset));
+            int dist = dist(loadLong(offset));
             if (dist < ALIGNMENT_INT) {
                 long lineOffset = offset + dist;
-                cycleLine(lineOffset);
+                cycle(lineOffset);
                 return true;
             } else {
                 offset += ALIGNMENT_INT;
             }
         }
         if (tail > 0) {
-            int dist = finder.next(loadTail());
+            int dist = dist(loadTail());
             if (dist < ALIGNMENT_INT) { // Tail did not end in newline, send what we got
                 long lineOffset = offset + dist;
-                cycleLine(lineOffset);
+                cycle(lineOffset);
                 return true;
             }
         }
@@ -222,26 +225,34 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     }
 
     private void processTail() {
-        int dist = finder.next(loadTail());
+        int dist = dist(loadTail());
         if (dist < ALIGNMENT_INT) {
             do { // Newlines spotted, ship lines
                 long lineOffset = offset + dist;
-                cycleLine(lineOffset);
-                dist = finder.next();
+                cycle(lineOffset);
+                dist = dist();
             } while (dist < ALIGNMENT_INT);
             if (startIndex < logicalLimit) { // Tail did not end in newline, send what we got
-                cycleLine(logicalLimit);
+                cycle(logicalLimit);
             }
         } else { // Tail did not end in newline, send what we got
-            cycleLine(logicalLimit);
+            cycle(logicalLimit);
         }
+    }
+
+    private int dist(long data) {
+        return finder.next(data);
+    }
+
+    private int dist() {
+        return finder.next();
     }
 
     private long loadLong(long offset) {
         return segment.get(JAVA_LONG, offset);
     }
 
-    private void cycleLine(long index) {
+    private void cycle(long index) {
         this.endIndex = index;
         action.accept(this);
         this.startIndex = index + 1;

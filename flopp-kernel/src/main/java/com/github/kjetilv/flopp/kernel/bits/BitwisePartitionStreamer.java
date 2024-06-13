@@ -26,15 +26,14 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
     ) {
         this.partition = partition;
         LineSegment sourced = memorySegmentSource.get(partition);
-        MemorySegment segment = sourced.memorySegment();
 
         long logicalSize = sourced.length();
 
         boolean troubledTail = partition.troubledTail();
         long offset = troubledTail ? 0L : sourced.startIndex();
         MemorySegment safeSegment = troubledTail
-            ? MemorySegments.alignmentPadded(segment, sourced.startIndex())
-            : segment;
+            ? MemorySegments.alignmentPadded(sourced.memorySegment(), sourced.startIndex())
+            : sourced.memorySegment();
 
         Supplier<BitwisePartitionSpliterator> nextSupplier = next == null
             ? null

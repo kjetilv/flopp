@@ -51,15 +51,12 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private void findSeps(long bytes, long shift) {
         int dist = sepFinder.next(bytes);
-        while (true) {
-            if (dist == MemorySegments.ALIGNMENT) {
-                offset += MemorySegments.ALIGNMENT;
-                return;
-            }
+        while (dist < MemorySegments.ALIGNMENT_INT) {
             long index = offset + dist + shift;
             markSeparator(index);
             currentStart = index;
             dist = sepFinder.next();
         }
+        offset += MemorySegments.ALIGNMENT;
     }
 }

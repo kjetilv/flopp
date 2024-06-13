@@ -336,11 +336,8 @@ public final class Bits {
 
         private final long mask;
 
-        private final char c;
-
         private CyclingFinder(char c) {
-            this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = ONES * c;
         }
 
         /**
@@ -391,7 +388,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + c + "'/" + hex(mask) + " " + hex(dists) + "]";
+            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "'/" + hex(mask) + " " + hex(dists) + "]";
         }
     }
 
@@ -402,11 +399,8 @@ public final class Bits {
 
         private final long mask;
 
-        private final char c;
-
         private SimpleCounter(char c) {
-            this.c = c;
-            this.mask = ONES * this.c;
+            this.mask = ONES * c;
         }
 
         @Override
@@ -422,7 +416,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[" + c + "]";
+            return getClass().getSimpleName() + "[" + (char) (mask & 0xFF) + "]";
         }
     }
 
