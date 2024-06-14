@@ -63,34 +63,21 @@ public final class CalculateAverage_kjetilvlong {
         AtomicInteger threads = new AtomicInteger();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService executor =
-//                 Executors.newWorkStealingPool()
-//                Executors.newVirtualThreadPerTaskExecutor()
-                new ForkJoinPool(
-                    cpus,
-                    pool -> {
-                        ForkJoinWorkerThread thread =
-                            ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
-                        thread.setName("t" + threads.getAndIncrement());
-                        return thread;
-                    },
-                    (t, e) ->
-                        e.printStackTrace(System.err),
-                    true
-                )
-//                new ThreadPoolExecutor(
-//                    Runtime.getRuntime().availableProcessors(),
-//                    Runtime.getRuntime().availableProcessors(),
-//                    0, TimeUnit.SECONDS,
-//                    new LinkedBlockingQueue<>(chunks),
-//                    r -> new Thread(r, "r" + threads.getAndIncrement())
-//                )
+            ExecutorService executor = new ThreadPoolExecutor(
+                cpus,
+                cpus,
+                30, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(bitwisePartitioned.partitions().size()),
+                r -> new Thread(r, "t" + threads.getAndIncrement()),
+                new ThreadPoolExecutor.AbortPolicy()
+            )
         ) {
             List<CompletableFuture<Map<String, Result>>> futures =
                 bitwisePartitioned.splitters(format, executor)
                     .map(splitterFuture ->
                         splitterFuture.thenApply(CalculateAverage_kjetilvlong::map))
                     .toList();
+            executor.shutdown();
             List<Map<String, Result>> maps = futures
                 .stream()
                 .map(CompletableFuture::join)
@@ -98,8 +85,7 @@ public final class CalculateAverage_kjetilvlong {
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
-            System.out.println(map.keySet()
-                                   .stream().mapToInt(String::length).sum() / map.size());
+            System.out.println(map.keySet().stream().mapToInt(String::length).sum() / map.size());
             return map;
         }
     }
@@ -188,7 +174,7 @@ public final class CalculateAverage_kjetilvlong {
                         () -> {
                             Reader reader = Readers.create(
                                 Column.ofSegment(0),
-                                Column.ofInt( 1, CalculateAverage_kjetilvlong::parseValue)
+                                Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
                             );
                             Map<LineSegment, Result> results = new HashMap<>(Maps.mapCapacity(512));
                             reader.read(splitter, columns -> {
@@ -248,7 +234,8 @@ public final class CalculateAverage_kjetilvlong {
     private static int parseValue(LineSegment segment) {
         int value = 0;
         int pos = 1;
-        long head = segment.bytesAt(0, 5);;
+        long head = segment.bytesAt(0, 5);
+        ;
         long len = segment.length();
         for (long i = len - 1; i >= 0; i--) {
             long shift = i * 8;

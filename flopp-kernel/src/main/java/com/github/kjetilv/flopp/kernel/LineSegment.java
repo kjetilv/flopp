@@ -177,14 +177,14 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long longNo(long longNo) {
-        return memorySegment().get(JAVA_LONG, alignedStart() + longNo * ALIGNMENT);
+        return memorySegment().get(JAVA_LONG, alignedStart() + longNo * ALIGNMENT_INT);
     }
 
-    default long fullLongNo(int longNo) {
+    default long fullLongNo(long longNo) {
         return memorySegment().get(JAVA_LONG, firstAlignedStart() + longNo * ALIGNMENT);
     }
 
-    default long unalignedLongNo(int longNo) {
+    default long unalignedLongNo(long longNo) {
         return memorySegment().get(JAVA_LONG_UNALIGNED, startIndex() + longNo * ALIGNMENT);
     }
 

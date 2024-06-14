@@ -155,14 +155,14 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
             try {
                 long data = loadLong(offset);
                 int dist = dist(data);
-                if (dist < ALIGNMENT_INT) { // Found newline
+                if (dist != ALIGNMENT_INT) { // Found newline
                     long start = offset + dist;
                     this.startIndex = start + 1; // Mark position of new line
                     this.firstLine = (int) this.startIndex;
                     if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
                         return false;
                     }
-                    while ((dist = dist()) < ALIGNMENT_INT) {
+                    while ((dist = dist()) != ALIGNMENT_INT) {
                         cycle(offset + dist);
                     }
                     return true;
@@ -191,7 +191,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         for (long l = 0; l < steps; l++) {
             long data = loadLong(offset);
             int dist = dist(data);
-            while (dist < ALIGNMENT_INT) {
+            while (dist != ALIGNMENT_INT) {
                 long lineOffset = offset + dist;
                 cycle(lineOffset);
                 dist = dist();
@@ -205,7 +205,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         long lastAligned = logicalLimit - tail;
         while (offset < lastAligned) {
             int dist = dist(loadLong(offset));
-            if (dist < ALIGNMENT_INT) {
+            if (dist != ALIGNMENT_INT) {
                 long lineOffset = offset + dist;
                 cycle(lineOffset);
                 return true;
@@ -276,15 +276,17 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
         long tail = limit % ALIGNMENT_INT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            int dist = finder.next(loadLong(offset));
-            if (dist < ALIGNMENT_INT) {
+            long data = loadLong(offset);
+            int dist = finder.next(data);
+            if (dist != ALIGNMENT_INT) {
                 return offset + dist;
             }
             offset += ALIGNMENT_INT;
         }
         if (tail > 0) {
-            int dist = finder.next(MemorySegments.tail(segment, limit));
-            if (dist < ALIGNMENT_INT) {
+            long data = MemorySegments.tail(segment, limit);
+            int dist = finder.next(data);
+            if (dist != ALIGNMENT_INT) {
                 return offset + dist;
             }
         }
@@ -335,10 +337,6 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
     private void emitMerged(MemorySegment buffer, int length, boolean last) {
         boolean trim = last && buffer.get(JAVA_BYTE, buffer.byteSize() - 1) == '\n';
         action.accept(LineSegments.of(buffer, 0, length - (trim ? 1 : 0)));
-    }
-
-    private static int offsetIn(long mask) {
-        return Long.numberOfTrailingZeros(mask) >> ALIGNMENT_POW;
     }
 
     private static long collectAndFindLimit(

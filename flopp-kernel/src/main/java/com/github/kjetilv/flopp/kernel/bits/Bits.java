@@ -198,7 +198,8 @@ public final class Bits {
     }
 
     private static int trailingBytes(long data) {
-        return Long.numberOfTrailingZeros(data) >> ALIGNMENT_POW;
+        int trailingZeros = Long.numberOfTrailingZeros(data);
+        return trailingZeros >> ALIGNMENT_POW;
     }
 
     private static boolean zero(int position, long bytes) {
