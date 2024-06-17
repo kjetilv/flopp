@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.LongSupplier;
@@ -57,7 +59,7 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
     @Override
     public long getAsLong() {
         if (headStart + length < ALIGNMENT) {
-            return data;
+            return Bits.truncate(data, length);
         }
         if (position == endIndex) {
             return data;
@@ -69,7 +71,7 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
                 data |= shifted;
                 return data;
             } finally {
-                data = alignedData >> tailShift;
+                data = alignedData >>> tailShift;
                 position += ALIGNMENT;
             }
         }

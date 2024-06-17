@@ -11,20 +11,15 @@ import java.util.stream.Collectors;
 
 public final class Maps {
 
-    @SafeVarargs
-    static <K, V, T> Map<K, V> map(Function<T, K> key, Function<T, V> value, T... list) {
-        return Arrays.stream(list).collect(Collectors.toMap(key, value));
+    public static <K, V, T> Map<T, V> mapKeys(Map<K, V> map, Function<K, T> mapper) {
+        return map.entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                e ->
+                    mapper.apply(e.getKey()),
+                Map.Entry::getValue
+            ));
     }
-
-    static <K, V, T> Map<K, V> map(Collection<T> list, Function<T, K> key, Function<T, V> value) {
-        return list.stream().collect(Collectors.toMap(key, value));
-    }
-
-    private Maps(){
-
-    }
-
-    private static final int MAX_POWER = 1 << Integer.SIZE - 2;
 
     public static <K, V> Map<K, V> ofSize(int size) {
         return new HashMap<>(mapCapacity(size));
@@ -39,4 +34,21 @@ public final class Maps {
         }
         return Integer.MAX_VALUE;
     }
+
+    @SafeVarargs
+    static <K, V, T> Map<K, V> map(Function<T, K> key, Function<T, V> value, T... list) {
+        return Arrays.stream(list)
+            .collect(Collectors.toMap(key, value));
+    }
+
+    static <K, V, T> Map<K, V> map(Collection<T> list, Function<T, K> key, Function<T, V> value) {
+        return list.stream()
+            .collect(Collectors.toMap(key, value));
+    }
+
+    private Maps() {
+
+    }
+
+    private static final int MAX_POWER = 1 << Integer.SIZE - 2;
 }

@@ -83,7 +83,7 @@ final class BitwisePartitionHandler implements Runnable, LineSegment {
 
     @Override
     public String toString() {
-        String segmentString = LineSegments.toString(LineSegments.of(segment, startIndex, offset));
+        String segmentString = LineSegments.toString(this);
         return getClass().getSimpleName() + "[" + partition + " " + segmentString + "]";
     }
 

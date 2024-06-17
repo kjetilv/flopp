@@ -38,7 +38,7 @@ public final class MemorySegments {
         int tail = (int) (end % ALIGNMENT_INT);
         long value = ms.get(JAVA_LONG, end - tail);
         int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tail);
-        return value << shift >> shift;
+        return value << shift >>> shift;
     }
 
     public static MemorySegment alignmentPadded(MemorySegment segment, long offset) {

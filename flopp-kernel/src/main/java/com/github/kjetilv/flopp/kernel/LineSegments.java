@@ -9,9 +9,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -41,6 +39,9 @@ public final class LineSegments {
         if (length == 0L) {
             return 0;
         }
+        if (length < ALIGNMENT_INT) {
+            return (int) (Bits.truncate(segment.unalignedLongNo(0), length) * 31L);
+        }
         long hashCode = 0L;
         int headLen = segment.headLength();
         long alignedStart = segment.alignedStart();
@@ -68,8 +69,8 @@ public final class LineSegments {
 
     @SuppressWarnings("ConstantValue")
     public static int compare(LineSegment segment1, LineSegment segment2) {
-        LongSupplier longSupplier1 = longSupplier(segment1, true);
-        LongSupplier longSupplier2 = longSupplier(segment2, true);
+        LongSupplier longSupplier1 = shiftedLongSupplier(segment1);
+        LongSupplier longSupplier2 = shiftedLongSupplier(segment2);
         long length1 = segment1.shiftedLongsCount();
         long length2 = segment2.shiftedLongsCount();
         long length = Math.min(length1, length2);
@@ -89,21 +90,22 @@ public final class LineSegments {
     }
 
     public static LongSupplier alignedLongSupplier(LineSegment segment) {
-        int length = (int) segment.length();
-        return length == 0
-            ? () -> 0x0L
-            : new LineSegmentAlignedLongSupplier(segment, length);
+        return longSupplier(segment, false);
+    }
+
+    public static LongSupplier shiftedLongSupplier(LineSegment segment) {
+        return longSupplier(segment, true);
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
         int length = (int) segment.length();
         if (length == 0) {
-            return () -> 0x0L;
+            return EMPTY_LONG_SUPPLIER;
         }
         int headLen = segment.headLength();
         return headLen > 0 && shift
             ? new LineSegmentShiftedLongSupplier(segment, length, headLen)
-            : alignedLongSupplier(segment);
+            : new LineSegmentAlignedLongSupplier(segment, length);
     }
 
     public static LongStream longs(LineSegment segment, boolean shift) {
@@ -114,9 +116,13 @@ public final class LineSegments {
 
     public static LongStream alignedLongs(LineSegment segment) {
         int length = (int) segment.length();
-        return length == 0
-            ? LongStream.empty()
-            : StreamSupport.longStream(new LineSegmentAlignedLongSpliterator(segment, length), false);
+        if (length == 0) {
+            return LongStream.empty();
+        }
+        return StreamSupport.longStream(
+            new LineSegmentAlignedLongSpliterator(segment, length),
+            false
+        );
     }
 
     public static LongStream shiftedLongs(LineSegment segment) {
@@ -125,10 +131,6 @@ public final class LineSegments {
             return LongStream.empty();
         }
         int headLen = segment.headLength();
-        if (ALIGNMENT - headLen + length < ALIGNMENT_INT) {
-            long data = segment.head();
-            return LongStream.of(data);
-        }
         if (headLen == 0) {
             return alignedLongs(segment);
         }
@@ -138,43 +140,37 @@ public final class LineSegments {
         );
     }
 
+    public static String asString(LineSegment segment) {
+        return asString(segment, Charset.defaultCharset());
+    }
+
     public static String asString(LineSegment segment, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
         MemorySegment memorySegment = segment.memorySegment();
-        return MemorySegments.fromEdgeLong(
-            memorySegment,
-            startIndex,
-            endIndex,
-            null,
-            charset
-        );
+        return fromEdgeLong(memorySegment, startIndex, endIndex, null, charset);
+    }
+
+    public static String asString(LineSegment segment, byte[] buffer) {
+        return asString(segment, buffer, Charset.defaultCharset());
     }
 
     public static String asString(LineSegment segment, byte[] buffer, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
         MemorySegment memorySegment = segment.memorySegment();
-        return MemorySegments.fromEdgeLong(
-            memorySegment,
-            startIndex,
-            endIndex,
-            buffer,
-            charset
-        );
+        return fromEdgeLong(memorySegment, startIndex, endIndex, buffer, charset);
+    }
+
+    public static String asBoundedString(LineSegment segment, byte[] buffer) {
+        return asBoundedString(segment, buffer, Charset.defaultCharset());
     }
 
     public static String asBoundedString(LineSegment segment, byte[] buffer, Charset charset) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
         MemorySegment memorySegment = segment.memorySegment();
-        return MemorySegments.fromLongsWithinBounds(
-            memorySegment,
-            startIndex,
-            endIndex,
-            buffer,
-            charset
-        );
+        return MemorySegments.fromLongsWithinBounds(memorySegment, startIndex, endIndex, buffer, charset);
     }
 
     public static byte[] simpleBytes(LineSegment segment) {
@@ -194,8 +190,16 @@ public final class LineSegments {
         return bytes;
     }
 
+    public static String fromLongBytes(LineSegment segment) {
+        return fromLongBytes(segment, Charset.defaultCharset());
+    }
+
     public static String fromLongBytes(LineSegment segment, Charset charset) {
         return asString(segment, charset);
+    }
+
+    public static long[] asLongs(LineSegment lineSegment) {
+        return shiftedLongs(lineSegment).toArray();
     }
 
     public static byte[] asBytes(LineSegment segment) {
@@ -232,12 +236,20 @@ public final class LineSegments {
         return string;
     }
 
+    public static String asString(LineSegment segment, int len) {
+        return asString(segment, len, Charset.defaultCharset());
+    }
+
     public static String asString(LineSegment segment, int len, Charset charset) {
         byte[] bytes = new byte[len];
         for (int i = 0; i < len; i++) {
             bytes[i] = segment.byteAt(i);
         }
         return new String(bytes, charset);
+    }
+
+    public static LineSegment of(String string) {
+        return of(string, Charset.defaultCharset());
     }
 
     public static LineSegment of(String string, Charset charset) {
@@ -265,13 +277,21 @@ public final class LineSegments {
     }
 
     public static String toString(LineSegment lineSegment) {
-        return lineSegment.getClass().getSimpleName() + "[" +
+        return LineSegment.class.getSimpleName() + "[" +
                lineSegment.startIndex() + "-" + lineSegment.endIndex() +
                "]";
     }
 
+    public static String asString(MemorySegment segment, long start, long end) {
+        return asString(segment, start, end, Charset.defaultCharset());
+    }
+
     public static String asString(MemorySegment segment, long start, long end, Charset charset) {
         return asString(of(segment, start, end), null, charset);
+    }
+
+    public static String fromLongsWithinBounds(LineSegment lineSegment, byte[] target) {
+        return fromLongsWithinBounds(lineSegment, target, Charset.defaultCharset());
     }
 
     public static String fromLongsWithinBounds(LineSegment lineSegment, byte[] target, Charset charset) {
@@ -286,6 +306,8 @@ public final class LineSegments {
 
     private LineSegments() {
     }
+
+    public static final LongSupplier EMPTY_LONG_SUPPLIER = () -> 0x0L;
 
     private static final byte[] NO_BYTES = new byte[0];
 }

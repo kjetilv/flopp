@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
@@ -92,12 +93,24 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return startIndex() == startIndex && endIndex() == endIndex;
     }
 
+    default String asString() {
+        return asString(Charset.defaultCharset());
+    }
+
     default String asString(Charset charset) {
         return asString(null, charset);
     }
 
+    default String asString(byte[] buffer) {
+        return asString(buffer, Charset.defaultCharset());
+    }
+
     default String asString(byte[] buffer, Charset charset) {
         return LineSegments.asString(this, buffer, charset);
+    }
+
+    default String asString(int length) {
+        return asString(length, Charset.defaultCharset());
     }
 
     default String asString(int length, Charset charset) {
@@ -164,6 +177,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         long headOffset = startIndex % ALIGNMENT_INT;
         long shift = headOffset * ALIGNMENT_INT;
         return memorySegment().get(JAVA_LONG, startIndex - headOffset) >> shift;
+    }
+
+    default long truncatedHead() {
+        return Bits.truncate(head(), headLength());
     }
 
     default int tailLength() {

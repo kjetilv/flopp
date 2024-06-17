@@ -99,6 +99,11 @@ final class LazyReader implements Reader, Reader.Columns {
         this.ds = ds;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + sl + "]";
+    }
+
     private static int maxColumnNo(List<Column> columns) {
         return columns.stream().mapToInt(Column::colunmNo)
             .max()

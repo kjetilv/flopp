@@ -11,8 +11,16 @@ import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 @SuppressWarnings("unused")
 public final class Bits {
 
+    public static String toString(long l) {
+        return toString(l, Charset.defaultCharset());
+    }
+
     public static String toString(long l, Charset charset) {
         return toString(l, -1, charset);
+    }
+
+    public static String toString(long l, int len) {
+        return toString(l, len, Charset.defaultCharset());
     }
 
     public static String toString(long l, int len, Charset charset) {
@@ -49,6 +57,12 @@ public final class Bits {
         }
         String padded = zeroPad(Long.toBinaryString(mask), 64);
         return dotted ? dot(padded, 8) : padded;
+    }
+
+    public static byte[] toBytes(long[] data, int length) {
+        byte[] bytes = new byte[length];
+        transferMultipleDataTo(data, 0, bytes);
+        return bytes;
     }
 
     public static byte[] toBytes(long data) {
@@ -146,6 +160,10 @@ public final class Bits {
         return new SwarFinder(c);
     }
 
+    public static long truncate(long data, int length) {
+        return data & KEEP[length];
+    }
+
     private Bits() {
     }
 
@@ -164,6 +182,18 @@ public final class Bits {
         0xFFFF000000000000L,
         0xFF00000000000000L,
         0x0000000000000000L
+    };
+
+    private static final long[] KEEP = {
+        0x0000000000000000L,
+        0x00000000000000FFL,
+        0x000000000000FFFFL,
+        0x0000000000FFFFFFL,
+        0x00000000FFFFFFFFL,
+        0x000000FFFFFFFFFFL,
+        0x0000FFFFFFFFFFFFL,
+        0x00FFFFFFFFFFFFFFL,
+        0xFFFFFFFFFFFFFFFFL
     };
 
     private static final long[] ZERO_CHECK = {

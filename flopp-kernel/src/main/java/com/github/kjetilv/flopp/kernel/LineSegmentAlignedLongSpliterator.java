@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.LongConsumer;
@@ -32,15 +34,19 @@ final class LineSegmentAlignedLongSpliterator extends Spliterators.AbstractLongS
     @Override
     public boolean tryAdvance(LongConsumer action) {
         if (headLen > 0) {
-            action.accept(segment.head() << ALIGNMENT * (ALIGNMENT - headLen));
+            long data = segment.head() << ALIGNMENT * (ALIGNMENT - headLen);
+            action.accept(data);
         }
         if (length > headLen) {
             long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT);
             for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
-                action.accept(segment.memorySegment().get(JAVA_LONG, pos));
+                long data = segment.memorySegment().get(JAVA_LONG, pos);
+                action.accept(data);
             }
             if (segment.endIndex() % ALIGNMENT > 0L) {
-                action.accept(segment.tail());
+                long data = segment.tail();
+                long truncated = Bits.truncate(data, segment.tailLength());
+                action.accept(truncated);
             }
         }
         return false;

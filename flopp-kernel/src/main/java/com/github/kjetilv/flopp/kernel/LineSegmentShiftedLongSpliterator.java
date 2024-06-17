@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -20,6 +22,8 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
 
     private final MemorySegment memorySegment;
 
+    private final long length;
+
     private final int headLen;
 
     private final int headShift;
@@ -37,6 +41,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
         this.alignedStart = this.segment.alignedStart();
         this.alignedEnd = this.segment.alignedEnd();
         this.endIndex = this.segment.endIndex();
+        this.length = segment.length();
         this.headLen = headLen;
         this.headShift = this.headLen * ALIGNMENT_INT;
         this.tailLen = (int)(this.endIndex % ALIGNMENT);
@@ -48,7 +53,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
         long data = segment.head();
         long position = alignedStart + ALIGNMENT;
         if (position >= endIndex) {
-            action.accept(data);
+            action.accept(Bits.truncate(data, (int) length));
             return false;
         }
         while (position < alignedEnd) {
@@ -56,7 +61,7 @@ class LineSegmentShiftedLongSpliterator extends Spliterators.AbstractLongSpliter
             long shifted = alignedData << headShift;
             data |= shifted;
             action.accept(data);
-            data = alignedData >> tailShift;
+            data = alignedData >>> tailShift;
             position += ALIGNMENT;
         }
         if (position == this.alignedEnd && tailLen > 0) {

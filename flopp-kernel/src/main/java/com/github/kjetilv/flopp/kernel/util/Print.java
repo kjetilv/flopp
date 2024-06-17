@@ -1,13 +1,14 @@
 package com.github.kjetilv.flopp.kernel.util;
 
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
 public final class Print {
 
     public static String bigInt(long i) {
-        return NUMBER_INSTANCE.format(i);
+        return i < 10_000
+            ? String.valueOf(i)
+            : NUMBER_INSTANCE.format(i);
     }
 
     private Print(){

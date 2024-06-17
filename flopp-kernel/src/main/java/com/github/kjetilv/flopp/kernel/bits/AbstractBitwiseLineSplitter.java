@@ -43,7 +43,7 @@ abstract sealed class AbstractBitwiseLineSplitter
         String sub = substring();
         boolean hasSub = sub == null || sub.isBlank();
         return getClass().getSimpleName() + "[" +
-               (hasSub ? "" : sub + " ") + " " + segment +
+               (hasSub ? "" : sub + " ") + segment +
                "]";
     }
 
