@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +43,7 @@ class LineSegmentsTest {
 
     @Test
     void charStream() {
+//        assertLongs("xNgaoundéré;37.8", 3, 19, 14);
         assertLongs("xNgaoundéré;37.8", 1, 13, 10);
         assertLongs("xNgaoundéré;37.8", 1, 11, 9);
         assertLongs("xNgaoundéré;37.8", 2, 11, 8);
@@ -101,13 +101,13 @@ class LineSegmentsTest {
         String shiftSupplierString;
         String alignSupplierString;
 
-        String substring = string.substring(startIndex, startIndex + stringLength);
+        String asLongsString;
 
         try {
             int alignedShift = startIndex % 8;
+            int len = endIndex - startIndex;
 
             LongStream shiftedLongStream = slice.longStream(true);
-            int len = endIndex - startIndex;
             shiftedStreamString = streamed(shiftedLongStream, 0, len);
 
             LongStream alignedLongStream = slice.longStream(false);
@@ -121,9 +121,15 @@ class LineSegmentsTest {
             long alignedLongsCount = slice.alignedLongsCount();
             alignSupplierString = supplied(alignedLongSupplier, alignedShift, len, alignedLongsCount);
 
+            long[] longs = LineSegments.asLongs(slice);
+            byte[] bytes = Bits.toBytes(longs, len);
+            asLongsString = new String(bytes, UTF_8);
+
         } catch (Exception e) {
             throw new RuntimeException("Failed in " + startIndex + ", " + endIndex, e);
         }
+
+        String substring = string.substring(startIndex, startIndex + stringLength);
 
         assertThat(shiftedStreamString)
             .describedAs("Shifted stream produced different string, %s, %s", startIndex, endIndex)
@@ -137,14 +143,17 @@ class LineSegmentsTest {
         assertThat(alignSupplierString)
             .describedAs("Aligned supplier produced different string, %s, %s", startIndex, endIndex)
             .isEqualTo(shiftedStreamString);
+        assertThat(asLongsString
+        )
+            .describedAs("asLongs() produced different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(shiftedStreamString);
     }
 
     private static String streamed(LongStream longStream, int start, int end) {
         byte[] bytes = new byte[64];
         AtomicInteger i = new AtomicInteger();
-        longStream
-            .forEach(data ->
-                Bits.transferDataTo(data, i.getAndAdd(8), bytes));
+        longStream.forEach(data ->
+            Bits.transferDataTo(data, i.getAndAdd(8), bytes));
         return new String(bytes, start, end - start, UTF_8);
     }
 
