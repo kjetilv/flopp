@@ -38,7 +38,7 @@ public final class CalculateAverage_kjetilvlong {
     public static void main(String[] args) {
         for (String arg : args) {
             Path path = Path.of(arg);
-            go3(path);
+//            go3(path);
             go3(path);
 //            go5(path);
 //            go4It(path);
@@ -48,12 +48,12 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     @SuppressWarnings("unused")
-    static Map<String, Result> go3(Path path) {
-        return go3(path, null);
+    static void go3(Path path) {
+        go3(path, null);
     }
 
     @SuppressWarnings("unused")
-    static Map<String, Result> go3(Path path, Partitioning partitioning) {
+    static void go3(Path path, Partitioning partitioning) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
@@ -85,9 +85,7 @@ public final class CalculateAverage_kjetilvlong {
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
-            System.out.println(map.keySet()
-                                   .stream().mapToInt(String::length).sum() / map.size());
-            return map;
+            System.out.println(map.keySet().stream().mapToInt(String::length).sum() / map.size());
         }
     }
 
