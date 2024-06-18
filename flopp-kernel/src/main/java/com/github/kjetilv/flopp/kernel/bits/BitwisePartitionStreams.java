@@ -1,12 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.util.AtomicRefs;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -41,44 +41,42 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public Stream<? extends PartitionStreamer> streamers() {
         int count = partitions.size();
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map =
-            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        AtomicRefs<BitwisePartitionStreamer>  array = new AtomicRefs<>(count);
         return IntStream.range(0, count)
             .mapToObj(index ->
-                streamerFor(index, map));
+                streamerFor(index, array));
     }
 
     @Override
     public Stream<? extends CompletableFuture<PartitionStreamer>> streamers(ExecutorService executorService) {
         int count = partitions.size();
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map =
-            new ConcurrentHashMap<>(Maps.mapCapacity(count));
+        AtomicRefs<BitwisePartitionStreamer> array = new AtomicRefs<>(count);
         return IntStream.range(0, count)
             .mapToObj(index ->
                 CompletableFuture.supplyAsync(
                     () ->
-                        streamerFor(index, map),
+                        streamerFor(index, array),
                     executorService
                 ));
     }
 
     private BitwisePartitionStreamer streamerFor(
         int index,
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map
+        AtomicRefs<BitwisePartitionStreamer> array
     ) {
-        return map.computeIfAbsent(index, _ -> {
+        return array.computeIfAbsent(index, () -> {
             Partition partition = partitions.get(index);
-            return new BitwisePartitionStreamer(partition, shape, source, nextLookup(index, map));
+            return new BitwisePartitionStreamer(partition, shape, source, nextLookup(index,  array));
         });
     }
 
     private Supplier<BitwisePartitionStreamer> nextLookup(
         int index,
-        ConcurrentMap<Integer, BitwisePartitionStreamer> map
+        AtomicRefs<BitwisePartitionStreamer> array
     ) {
         int nextIndex = index + 1;
         return nextIndex < partitions.size()
-            ? () -> streamerFor(nextIndex, map)
+            ? () -> streamerFor(nextIndex, array)
             : null;
     }
 
