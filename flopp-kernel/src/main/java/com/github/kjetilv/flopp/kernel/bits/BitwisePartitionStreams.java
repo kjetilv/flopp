@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.util.AtomicRefs;
+import com.github.kjetilv.flopp.kernel.util.AtomicArray;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
@@ -41,7 +41,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public Stream<? extends PartitionStreamer> streamers() {
         int count = partitions.size();
-        AtomicRefs<BitwisePartitionStreamer>  array = new AtomicRefs<>(count);
+        AtomicArray<BitwisePartitionStreamer> array = new AtomicArray<>(count);
         return IntStream.range(0, count)
             .mapToObj(index ->
                 streamerFor(index, array));
@@ -50,19 +50,18 @@ final class BitwisePartitionStreams implements PartitionedStreams {
     @Override
     public Stream<? extends CompletableFuture<PartitionStreamer>> streamers(ExecutorService executorService) {
         int count = partitions.size();
-        AtomicRefs<BitwisePartitionStreamer> array = new AtomicRefs<>(count);
+        AtomicArray<BitwisePartitionStreamer> array = new AtomicArray<>(count);
         return IntStream.range(0, count)
             .mapToObj(index ->
                 CompletableFuture.supplyAsync(
-                    () ->
-                        streamerFor(index, array),
+                    () -> streamerFor(index, array),
                     executorService
                 ));
     }
 
-    private BitwisePartitionStreamer streamerFor(
+    private <T> BitwisePartitionStreamer streamerFor(
         int index,
-        AtomicRefs<BitwisePartitionStreamer> array
+        AtomicArray<BitwisePartitionStreamer> array
     ) {
         return array.computeIfAbsent(index, () -> {
             Partition partition = partitions.get(index);
@@ -72,7 +71,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
 
     private Supplier<BitwisePartitionStreamer> nextLookup(
         int index,
-        AtomicRefs<BitwisePartitionStreamer> array
+        AtomicArray<BitwisePartitionStreamer> array
     ) {
         int nextIndex = index + 1;
         return nextIndex < partitions.size()
