@@ -59,7 +59,7 @@ final class BitwisePartitionStreams implements PartitionedStreams {
                 ));
     }
 
-    private <T> BitwisePartitionStreamer streamerFor(
+    private BitwisePartitionStreamer streamerFor(
         int index,
         AtomicArray<BitwisePartitionStreamer> array
     ) {
