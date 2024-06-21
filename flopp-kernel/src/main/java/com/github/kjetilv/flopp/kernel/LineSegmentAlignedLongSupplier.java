@@ -13,13 +13,9 @@ final class LineSegmentAlignedLongSupplier implements LongSupplier {
 
     private final int headLen;
 
-    private final long endIndex;
-
     private final int tailLen;
 
     private final LineSegment segment;
-
-    private final int length;
 
     private long position;
 
@@ -27,15 +23,14 @@ final class LineSegmentAlignedLongSupplier implements LongSupplier {
 
     private final long alignedEnd;
 
-    LineSegmentAlignedLongSupplier(LineSegment segment, int length) {
+    LineSegmentAlignedLongSupplier(LineSegment segment) {
         this.segment = Objects.requireNonNull(segment, "segment");
         this.memorySegment = segment.memorySegment();
-        this.length = length;
         this.alignedStart = this.segment.alignedStart();
         this.alignedEnd = this.segment.alignedEnd();
         this.headLen = this.segment.headLength();
-        this.endIndex = this.segment.endIndex();
-        this.tailLen = Math.toIntExact(this.endIndex % ALIGNMENT);
+        long endIndex = this.segment.endIndex();
+        this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
 
         this.position = this.alignedStart;
     }

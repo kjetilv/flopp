@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings("PackageVisibleField")
@@ -67,16 +69,16 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public Stream<String> columns(Charset charset) {
+    public final Stream<String> columns(Charset charset) {
         return IntStream.range(0, columnCount())
             .mapToObj(i ->
                 column(i, this.charset));
     }
 
     @Override
-    public String column(int column, Charset charset) {
+    public final String column(int column, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            segment.memorySegment(),
+            segment,
             startPositions[column],
             endPositions[column],
             columnBuffer,
@@ -102,14 +104,14 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public String asString(Charset charset) {
+    public final String asString(Charset charset) {
         return asString(null, charset);
     }
 
     @Override
-    public String asString(byte[] buffer, Charset charset) {
+    public final String asString(byte[] buffer, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            segment.memorySegment(),
+            segment,
             startIndex,
             endIndex,
             buffer,
@@ -118,10 +120,25 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     }
 
     @Override
-    public long head() {
-        long headOffset = startIndex % MemorySegments.ALIGNMENT_INT;
+    public final long alignedStart() {
+        return startIndex - startIndex % ALIGNMENT_INT;
+    }
+
+    @Override
+    public final long alignedEnd() {
+        return endIndex - endIndex % ALIGNMENT_INT;
+    }
+
+    @Override
+    public final long alignedCount() {
+        return alignedEnd() - alignedStart() >> ALIGNMENT_POW;
+    }
+
+    @Override
+    public final long head() {
+        long headOffset = startIndex % ALIGNMENT_INT;
         long offset = startIndex - headOffset;
-        return memorySegment().get(JAVA_LONG, offset) >>> headOffset * MemorySegments.ALIGNMENT_INT;
+        return memorySegment().get(JAVA_LONG, offset) >>> headOffset * ALIGNMENT_INT;
     }
 
     @Override

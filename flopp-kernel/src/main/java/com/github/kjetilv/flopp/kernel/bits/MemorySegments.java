@@ -27,9 +27,10 @@ public final class MemorySegments {
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         long bytes = 0;
-        for (long i = count - 1; i >= 0; i--) {
-            byte b = memorySegment.get(JAVA_BYTE, offset + i);
-            bytes = (bytes << ALIGNMENT) + (b & 0xFFL);
+        long lastPosition = offset + count;
+        for (long i = 0; i < count; i++) {
+            byte b = memorySegment.get(JAVA_BYTE, lastPosition - i);
+            bytes = (bytes << ALIGNMENT) + b;
         }
         return bytes;
     }
@@ -43,7 +44,7 @@ public final class MemorySegments {
 
     public static MemorySegment alignmentPadded(MemorySegment segment, long offset) {
         long size = segment.byteSize() - offset;
-        int tail = (int) (size % ALIGNMENT_INT);
+        long tail = size % ALIGNMENT_INT;
         if (tail == 0) {
             return segment;
         }

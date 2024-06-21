@@ -14,7 +14,7 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     private final Consumer<SeparatedLine> lines;
 
-    LineSegment segment;
+    MemorySegment segment;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
         this.lines = lines == null ? NONE : lines;
@@ -27,15 +27,15 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     @Override
     public final SeparatedLine apply(LineSegment segment) {
-        this.segment = segment;
-        separate();
+        this.segment = segment.memorySegment();
+        separate(segment);
         lines.accept(this);
         return this;
     }
 
     @Override
     public final MemorySegment memorySegment() {
-        return segment.memorySegment();
+        return segment;
     }
 
     @Override
@@ -51,7 +51,7 @@ abstract sealed class AbstractBitwiseLineSplitter
         return null;
     }
 
-    protected void separate() {
+    protected void separate(LineSegment segment) {
     }
 
     private static final Consumer<SeparatedLine> NONE = _ -> {

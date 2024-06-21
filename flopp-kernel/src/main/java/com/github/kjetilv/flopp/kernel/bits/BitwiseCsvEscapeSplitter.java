@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.function.Consumer;
@@ -20,26 +21,26 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    protected void separate() {
+    protected void separate(LineSegment segment) {
         this.offset = this.columnNo = 0;
         this.currentStart = -1;
-        this.startOffset = this.segment.startIndex();
+        this.startOffset = segment.startIndex();
         this.escaping = false;
 
-        long length = this.segment.length();
+        long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
-            findSeps(this.segment.bytesAt(0, length), 0);
+            findSeps(segment.bytesAt(0, length), 0);
             markSeparator(length);
         } else {
-            processHead();
-            long longCount = this.segment.alignedCount();
+            processHead(segment);
+            long longCount = segment.alignedCount();
             for (int i = 1; i < longCount; i++) {
-                findSeps(this.segment.longNo(i), 0);
+                findSeps(segment.longNo(i), 0);
             }
-            if (this.segment.isAlignedAtEnd()) {
+            if (segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(this.segment.tail(), 0);
+                findSeps(segment.tail(), 0);
                 markSeparator(length);
             }
         }
@@ -70,14 +71,14 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void processHead() {
-        long headStart = this.segment.headStart();
+    private void processHead(LineSegment segment) {
+        long headStart = segment.headStart();
         if (headStart == 0) {
-            long headLong = this.segment.longNo(0);
+            long headLong = segment.longNo(0);
             findSeps(headLong, 0);
         } else {
             offset = -headStart;
-            long headLong = this.segment.head(headStart);
+            long headLong = segment.head(headStart);
             findSeps(headLong, headStart);
         }
     }

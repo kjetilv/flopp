@@ -15,6 +15,7 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
+
     public static boolean equals(LineSegment seg1, LineSegment seg2) {
         if (seg1 == null || seg2 == null) {
             return (seg1 == null) == (seg2 == null);
@@ -104,7 +105,7 @@ public final class LineSegments {
         int headLen = segment.headLength();
         return headLen > 0 && shift
             ? new LineSegmentShiftedLongSupplier(segment, length, headLen)
-            : new LineSegmentAlignedLongSupplier(segment, length);
+            : new LineSegmentAlignedLongSupplier(segment);
     }
 
     public static LongStream longs(LineSegment segment, boolean shift) {

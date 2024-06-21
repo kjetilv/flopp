@@ -39,8 +39,8 @@ public final class CalculateAverage_kjetilvlong {
         for (String arg : args) {
             Path path = Path.of(arg);
 //            go3(path);
-            go3(path);
-//            go5(path);
+//            go3(path);
+            go5(path);
 //            go4It(path);
 //            go3(path);
 //            go3(path);
@@ -48,12 +48,12 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     @SuppressWarnings("unused")
-    static void go3(Path path) {
-        go3(path, null);
+    static Map<String, Result> go3(Path path) {
+        return go3(path, null);
     }
 
     @SuppressWarnings("unused")
-    static void go3(Path path, Partitioning partitioning) {
+    static Map<String, Result> go3(Path path, Partitioning partitioning) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
@@ -85,7 +85,9 @@ public final class CalculateAverage_kjetilvlong {
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
-            System.out.println(map.keySet().stream().mapToInt(String::length).sum() / map.size());
+            System.out.println(map.keySet()
+                                   .stream().mapToInt(String::length).sum() / map.size());
+            return map;
         }
     }
 
@@ -105,28 +107,38 @@ public final class CalculateAverage_kjetilvlong {
         AtomicInteger threads = new AtomicInteger();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
-                cpus,
-                cpus,
-                30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(bitwisePartitioned.partitions().size()),
-                r -> new Thread(r, "t" + threads.getAndIncrement()),
-                new ThreadPoolExecutor.AbortPolicy()
-            )
+            ExecutorService executor =
+                new ThreadPoolExecutor(
+                    cpus,
+                    cpus,
+                    30, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(bitwisePartitioned.partitions().size() + 10),
+                    r -> new Thread(r, "t" + threads.getAndIncrement()),
+                    new ThreadPoolExecutor.AbortPolicy()
+                )
         ) {
-            Stream<CompletableFuture<Map<String, Result>>> futures =
+            List<CompletableFuture<Map<String, Result>>> futures =
                 bitwisePartitioned.splitters(format, executor)
                     .map(splitterFuture ->
                         splitterFuture.thenApply(CalculateAverage_kjetilvlong::mapLSKey))
                     .map(future -> future.thenApply(lsKeyResultMap ->
-                        Maps.mapKeys(lsKeyResultMap, LSKey::toString)))
-//                    .toList()
-                ;
-            List<Map<String, Result>> maps = futures
-//                .stream()
+                        Maps.mapKeys(lsKeyResultMap, LineSegmentKey::toString)))
+                    .toList();
+//                    .reduce(
+//                        new ArrayList<Map<String, Result>>(),
+//                        (list, future)-> {
+//                            list.add(future.join());
+//                            return list;
+//                        },
+//                        (l1, l2) -> {
+//                            l1.addAll(l2);
+//                            return l1;
+//                        }
+//                    )
+//                    .toArray(CompletableFuture[]::new)
+            List<Map<String, Result>> maps = futures.stream()
                 .map(CompletableFuture::join)
                 .toList();
-            executor.shutdown();
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
@@ -194,14 +206,14 @@ public final class CalculateAverage_kjetilvlong {
         return m;
     }
 
-    private static Map<LSKey, Result> mapLSKey(PartitionedSplitter splitter) {
-        Map<LSKey, Result> m = new HashMap<>(Maps.mapCapacity(2048));
+    private static Map<LineSegmentKey, Result> mapLSKey(PartitionedSplitter splitter) {
+        Map<LineSegmentKey, Result> m = new HashMap<>(Maps.mapCapacity(2048));
         Readers.create(
             Column.ofSegment(0),
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         ).read(splitter, columns ->
             m.compute(
-                LSKey.create((LineSegment) columns.get(0)),
+                LineSegmentKey.create((LineSegment) columns.get(0)),
                 (_, existing) -> {
                     int dec = columns.getInt(1);
                     return existing == null

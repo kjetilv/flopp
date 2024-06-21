@@ -6,17 +6,17 @@ import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public record LSKey(int hash, long[] data, int length) implements Comparable<LSKey> {
+public record LineSegmentKey(int hash, long[] data, int length) implements Comparable<LineSegmentKey> {
 
-    public static LSKey create(LineSegment lineSegment) {
+    public static LineSegmentKey create(LineSegment lineSegment) {
         long[] data = LineSegments.asLongs(lineSegment);
         int hash = Arrays.hashCode(data);
-        return new LSKey(hash, data, (int) lineSegment.length());
+        return new LineSegmentKey(hash, data, (int) lineSegment.length());
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof LSKey lsKey && Arrays.equals(lsKey.data, data);
+        return obj instanceof LineSegmentKey lineSegmentKey && Arrays.equals(data, lineSegmentKey.data);
     }
 
     @Override
@@ -26,13 +26,11 @@ public record LSKey(int hash, long[] data, int length) implements Comparable<LSK
 
     @Override
     public String toString() {
-        byte[] bytes = Bits.toBytes(data, length);
-        String s = new String(bytes, UTF_8);
-        return s;
+        return new String(Bits.toBytes(data, length), UTF_8);
     }
 
     @Override
-    public int compareTo(LSKey o) {
+    public int compareTo(LineSegmentKey o) {
         return toString().compareTo(o.toString());
     }
 }

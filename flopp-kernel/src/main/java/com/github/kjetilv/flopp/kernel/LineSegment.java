@@ -166,8 +166,9 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long head(long head) {
-        long l = memorySegment().get(JAVA_LONG, alignedStart());
-        return l >> head * ALIGNMENT_INT;
+        long offset = memorySegment().get(JAVA_LONG, alignedStart());
+        long shift = head * ALIGNMENT_INT;
+        return offset >> shift;
     }
 
     default long head() {
@@ -194,7 +195,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long longNo(long longNo) {
-        return memorySegment().get(JAVA_LONG, alignedStart() + longNo * ALIGNMENT_INT);
+        long offset = alignedStart() + longNo * ALIGNMENT_INT;
+        return memorySegment().get(JAVA_LONG, offset);
     }
 
     default long fullLongNo(long longNo) {
