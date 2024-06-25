@@ -36,6 +36,10 @@ final class LineSegmentShiftedLongSupplier implements LongSupplier {
 
     private final long headStart;
 
+    LineSegmentShiftedLongSupplier(LineSegment segment, int length) {
+        this(segment, (int) segment.length(), segment.headLength());
+    }
+
     LineSegmentShiftedLongSupplier(LineSegment segment, int length, int headLen) {
         this.segment = Objects.requireNonNull(segment, "segment");
         this.headStart = this.segment.headStart();

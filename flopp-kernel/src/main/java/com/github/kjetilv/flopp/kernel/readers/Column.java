@@ -1,12 +1,14 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegmentKey;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.nio.charset.Charset;
 import java.util.Objects;
+import java.util.function.Function;
 
 @SuppressWarnings("unused")
 public record Column(String name, int colunmNo, Parser parser) {
@@ -62,6 +64,10 @@ public record Column(String name, int colunmNo, Parser parser) {
 
     public static Column ofSegment(int col) {
         return new Column(null, col, (Parser.Obj) lineSegment -> lineSegment);
+    }
+
+    public static Column ofKeySegment(int col, Function<LineSegment, LineSegmentKey> keyer) {
+        return new Column(null, col, (Parser.Obj) keyer::apply);
     }
 
     public static Column ofString(int col) {

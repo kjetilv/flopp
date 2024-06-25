@@ -27,7 +27,7 @@ public final class MemorySegments {
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
         long bytes = 0;
-        long lastPosition = offset + count;
+        long lastPosition = offset + count - 1;
         for (long i = 0; i < count; i++) {
             byte b = memorySegment.get(JAVA_BYTE, lastPosition - i);
             bytes = (bytes << ALIGNMENT) + b;

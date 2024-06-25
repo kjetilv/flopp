@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSupplier;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -89,6 +90,8 @@ class LineSegmentsTest {
         }
     }
 
+    private static final BitwiseLongSupplier.Mutable MUTABLE = BitwiseLongSupplier.create();
+
     private static void assertLongs(String string, int startIndex, int endIndex) {
         assertLongs(string, startIndex, endIndex, endIndex - startIndex);
     }
@@ -101,6 +104,9 @@ class LineSegmentsTest {
         String shiftSupplierString;
         String alignSupplierString;
 
+        String bitwiseSuppliedString;
+
+        BitwiseLongSupplier.Mutable bitwiseLongSupplier = MUTABLE;
         String asLongsString;
 
         try {
@@ -125,6 +131,9 @@ class LineSegmentsTest {
             byte[] bytes = Bits.toBytes(longs, len);
             asLongsString = new String(bytes, UTF_8);
 
+            bitwiseLongSupplier = bitwiseLongSupplier.apply(slice);
+            bitwiseSuppliedString = supplied(bitwiseLongSupplier, 0, len, shiftedLongsCount);
+
         } catch (Exception e) {
             throw new RuntimeException("Failed in " + startIndex + ", " + endIndex, e);
         }
@@ -143,10 +152,12 @@ class LineSegmentsTest {
         assertThat(alignSupplierString)
             .describedAs("Aligned supplier produced different string, %s, %s", startIndex, endIndex)
             .isEqualTo(shiftedStreamString);
-        assertThat(asLongsString
-        )
+        assertThat(asLongsString)
             .describedAs("asLongs() produced different string, %s, %s", startIndex, endIndex)
             .isEqualTo(shiftedStreamString);
+        assertThat(bitwiseSuppliedString)
+            .describedAs("bitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(substring);
     }
 
     private static String streamed(LongStream longStream, int start, int end) {
