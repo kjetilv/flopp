@@ -16,7 +16,7 @@ class LineSegmentsTest {
     @Test
     void longs() {
         String string = "1234abcdabcd5678";
-        LongStream longs = LineSegments.of(string, UTF_8).alignedLongStream();
+        LongStream longs = LineSegments.of(string, UTF_8).longStream(false);
         String str = streamed(longs, 0, string.length());
         assertThat(str).isEqualTo(string);
     }
@@ -90,7 +90,9 @@ class LineSegmentsTest {
         }
     }
 
-    private static final BitwiseLongSupplier.Mutable MUTABLE = BitwiseLongSupplier.create();
+    private static final BitwiseLongSupplier.Reusable REUSABLE = BitwiseLongSupplier.create();
+
+    private static final BitwiseLongSupplier.Reusable REUSABLE_ALIGNED = BitwiseLongSupplier.create(true);
 
     private static void assertLongs(String string, int startIndex, int endIndex) {
         assertLongs(string, startIndex, endIndex, endIndex - startIndex);
@@ -105,25 +107,27 @@ class LineSegmentsTest {
         String alignSupplierString;
 
         String bitwiseSuppliedString;
+        String alignBitwiseSuppliedString;
 
-        BitwiseLongSupplier.Mutable bitwiseLongSupplier = MUTABLE;
+        BitwiseLongSupplier.Reusable bitwiseLongSupplier = REUSABLE;
+        BitwiseLongSupplier.Reusable aligneBitwiseLongSupplier = REUSABLE_ALIGNED;
         String asLongsString;
 
         try {
             int alignedShift = startIndex % 8;
             int len = endIndex - startIndex;
 
-            LongStream shiftedLongStream = slice.longStream(true);
+            LongStream shiftedLongStream = slice.longStream();
             shiftedStreamString = streamed(shiftedLongStream, 0, len);
 
-            LongStream alignedLongStream = slice.longStream(false);
+            LongStream alignedLongStream = slice.alignedLongStream();
             alignedStreamString = streamed(alignedLongStream, alignedShift, alignedShift + len);
 
-            LongSupplier shiftedLongSupplier = slice.longSupplier(true);
+            LongSupplier shiftedLongSupplier = slice.longSupplier();
             long shiftedLongsCount = slice.shiftedLongsCount();
             shiftSupplierString = supplied(shiftedLongSupplier, 0, len, shiftedLongsCount);
 
-            LongSupplier alignedLongSupplier = slice.longSupplier(false);
+            LongSupplier alignedLongSupplier = slice.alignedLongSupplier();
             long alignedLongsCount = slice.alignedLongsCount();
             alignSupplierString = supplied(alignedLongSupplier, alignedShift, len, alignedLongsCount);
 
@@ -133,6 +137,9 @@ class LineSegmentsTest {
 
             bitwiseLongSupplier = bitwiseLongSupplier.apply(slice);
             bitwiseSuppliedString = supplied(bitwiseLongSupplier, 0, len, shiftedLongsCount);
+
+            aligneBitwiseLongSupplier = aligneBitwiseLongSupplier.apply(slice);
+            alignBitwiseSuppliedString = supplied(aligneBitwiseLongSupplier, alignedShift, len, alignedLongsCount);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed in " + startIndex + ", " + endIndex, e);
@@ -157,6 +164,9 @@ class LineSegmentsTest {
             .isEqualTo(shiftedStreamString);
         assertThat(bitwiseSuppliedString)
             .describedAs("bitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
+            .isEqualTo(substring);
+        assertThat(alignBitwiseSuppliedString)
+            .describedAs("alignBitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
             .isEqualTo(substring);
     }
 

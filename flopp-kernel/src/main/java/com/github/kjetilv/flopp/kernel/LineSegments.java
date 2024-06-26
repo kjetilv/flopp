@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSpliterator;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSupplier;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
@@ -20,12 +22,14 @@ public final class LineSegments {
         if (seg1 == null || seg2 == null) {
             return (seg1 == null) == (seg2 == null);
         }
-        if (seg1.length() != seg2.length()) {
+        long count1 = seg1.longsCount();
+        long count2 = seg2.longsCount();
+        if (count1 != count2) {
             return false;
         }
-        LongSupplier sup1 = alignedLongSupplier(seg1);
-        LongSupplier sup2 = alignedLongSupplier(seg2);
-        for (long l = 0; l < seg1.alignedLongsCount(); l++) {
+        LongSupplier sup1 = seg1.longSupplier();
+        LongSupplier sup2 = seg2.longSupplier();
+        for (long l = 0; l < count1; l++) {
             if (sup1.getAsLong() != sup2.getAsLong()) {
                 return false;
             }
@@ -33,44 +37,27 @@ public final class LineSegments {
         return true;
     }
 
-    @SuppressWarnings("UnnecessaryParentheses")
-    public static int hashCode(LineSegment segment) {
-        int length = (int) (segment.length());
-        if (length == 0L) {
-            return 0;
-        }
-        if (length < ALIGNMENT_INT) {
-            return (int) (Bits.truncate(segment.unalignedLongNo(0), length) * 31L);
-        }
+    public static long hashCode(LineSegment segment) {
+        return hashCode(segment, BitwiseLongSupplier.create(segment));
+    }
+
+    public  static long hashCode(
+        LineSegment segment,
+        BitwiseLongSupplier.Reusable reusable
+    ) {
+        long count = segment.shiftedLongsCount();
         long hashCode = 0L;
-        int headLen = segment.headLength();
-        long alignedStart = segment.alignedStart();
-        long alignedEnd = segment.alignedEnd();
-        long endIndex = segment.endIndex();
-        long tailLen = endIndex % ALIGNMENT;
-        long longs = segment.fullLongCount() + (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
-        if (headLen > 0) {
-            long data = segment.head();
-            hashCode = data * 31L ^ (longs == 0 ? 1 : longs);
+        for (int i = 0; i < count; i++) {
+            long next = reusable.getAsLong();
+            hashCode += (next * 31L) ^ (count - i);
         }
-        if (length > ALIGNMENT) {
-            MemorySegment memorySegment = segment.memorySegment();
-            long startPosition = alignedStart + (headLen == 0 ? 0 : ALIGNMENT_INT);
-            for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT_INT) {
-                long data = memorySegment.get(JAVA_LONG, pos);
-                hashCode += (data * 31L) ^ (longs - (pos >> ALIGNMENT_POW));
-            }
-            if (tailLen > 0) {
-                hashCode += segment.tail() * 31L;
-            }
-        }
-        return (int) hashCode;
+        return hashCode;
     }
 
     @SuppressWarnings("ConstantValue")
     public static int compare(LineSegment segment1, LineSegment segment2) {
-        LongSupplier longSupplier1 = shiftedLongSupplier(segment1);
-        LongSupplier longSupplier2 = shiftedLongSupplier(segment2);
+        LongSupplier longSupplier1 = segment1.longSupplier(false);
+        LongSupplier longSupplier2 = segment2.longSupplier(false);
         long length1 = segment1.shiftedLongsCount();
         long length2 = segment2.shiftedLongsCount();
         long length = Math.min(length1, length2);
@@ -90,54 +77,24 @@ public final class LineSegments {
     }
 
     public static LongSupplier alignedLongSupplier(LineSegment segment) {
-        return longSupplier(segment, false);
-    }
-
-    public static LongSupplier shiftedLongSupplier(LineSegment segment) {
         return longSupplier(segment, true);
     }
 
-    public static LongSupplier longSupplier(LineSegment segment, boolean shift) {
-        int length = (int) segment.length();
-        if (length == 0) {
-            return EMPTY_LONG_SUPPLIER;
-        }
-        int headLen = segment.headLength();
-        return headLen > 0 && shift
-            ? new LineSegmentShiftedLongSupplier(segment, length, headLen)
-            : new LineSegmentAlignedLongSupplier(segment);
+    public static LongSupplier shiftedLongSupplier(LineSegment segment) {
+        return longSupplier(segment, false);
     }
 
-    public static LongStream longs(LineSegment segment, boolean shift) {
-        return shift
-            ? shiftedLongs(segment)
-            : alignedLongs(segment);
+    public static LongSupplier longSupplier(LineSegment segment, boolean align) {
+        return BitwiseLongSupplier.create(segment, align);
     }
 
-    public static LongStream alignedLongs(LineSegment segment) {
-        int length = (int) segment.length();
+    public static LongStream longs(LineSegment segment, boolean align) {
+        long length = align ? segment.alignedLongsCount() : segment.shiftedLongsCount();
         if (length == 0) {
             return LongStream.empty();
         }
-        return StreamSupport.longStream(
-            new LineSegmentAlignedLongSpliterator(segment, length),
-            false
-        );
-    }
-
-    public static LongStream shiftedLongs(LineSegment segment) {
-        int length = (int) segment.length();
-        if (length == 0) {
-            return LongStream.empty();
-        }
-        int headLen = segment.headLength();
-        if (headLen == 0) {
-            return alignedLongs(segment);
-        }
-        return StreamSupport.longStream(
-            new LineSegmentShiftedLongSpliterator(segment, length, headLen),
-            false
-        );
+        LongSupplier supplier = longSupplier(segment, align);
+        return StreamSupport.longStream(new BitwiseLongSpliterator(length, supplier), false);
     }
 
     public static long[] asLongs(LineSegment segment) {

@@ -17,6 +17,14 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
 
+    default long longsCount() {
+        return longsCount(false);
+    }
+
+    default long longsCount(boolean align) {
+        return align ? alignedLongsCount() : shiftedLongsCount();
+    }
+
     default long shiftedLongsCount() {
         long length = length();
         long fullLongs = length >> ALIGNMENT_POW;
@@ -39,23 +47,35 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default LongStream alignedLongStream() {
-        return LineSegments.alignedLongs(this);
-    }
-
-    default LongSupplier alignedLongSupplier() {
-        return LineSegments.alignedLongSupplier(this);
+        return longStream(true);
     }
 
     default LongStream shiftedLongStream() {
-        return LineSegments.shiftedLongs(this);
+        return longStream(false);
     }
 
-    default LongStream longStream(boolean shift) {
-        return LineSegments.longs(this, shift);
+    default LongStream longStream() {
+        return longStream(false);
     }
 
-    default LongSupplier longSupplier(boolean shift) {
-        return LineSegments.longSupplier(this, shift);
+    default LongStream longStream(boolean align) {
+        return LineSegments.longs(this, align);
+    }
+
+    default LongSupplier alignedLongSupplier() {
+        return longSupplier(true);
+    }
+
+    default LongSupplier shiftedLongSupplier() {
+        return longSupplier(false);
+    }
+
+    default LongSupplier longSupplier() {
+        return longSupplier(false);
+    }
+
+    default LongSupplier longSupplier(boolean align) {
+        return LineSegments.longSupplier(this, align);
     }
 
     @SuppressWarnings("unused")

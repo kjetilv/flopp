@@ -36,7 +36,7 @@ record ImmutableSliceSegment(MemorySegment memorySegment, long length)
 
     @Override
     public int hashCode() {
-        return LineSegments.hashCode(this);
+        return (int) LineSegments.hashCode(this);
     }
 
     @Override

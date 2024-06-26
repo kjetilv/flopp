@@ -143,7 +143,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
 
     @Override
     public final int hashCode() {
-        return LineSegments.hashCode(this);
+        return (int) LineSegments.hashCode(this);
     }
 
     @Override

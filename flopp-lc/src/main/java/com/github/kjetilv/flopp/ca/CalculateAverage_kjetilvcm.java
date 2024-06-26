@@ -222,7 +222,7 @@ public final class CalculateAverage_kjetilvcm {
             long count = segment.shiftedLongsCount();
             out.writeInt(Math.toIntExact(length));
             out.writeInt(Math.toIntExact(count));
-            segment.shiftedLongStream()
+            segment.longStream(true)
                 .forEach(data ->
                     out.writeLong(data));
         }

@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,27 +118,21 @@ public final class CalculateAverage_kjetilvlong {
                     new ThreadPoolExecutor.AbortPolicy()
                 )
         ) {
-            List<CompletableFuture<Map<String, Result>>> futures =
+            List<CompletableFuture<Map<LineSegmentKey, Result>>> futures =
                 bitwisePartitioned.splitters(format, executor)
                     .map(splitterFuture ->
-                        splitterFuture.thenApply(CalculateAverage_kjetilvlong::mapLSKey))
-                    .map(future -> future.thenApply(lsKeyResultMap ->
-                        Maps.mapKeys(lsKeyResultMap, LineSegmentKey::toString)))
+                        splitterFuture.thenApply(splitter ->
+                            mapLineSegments(
+                                splitter,
+                                LineSegmentKey::create
+//                                new LineSegmentKeyPool()::resolve
+                            )))
                     .toList();
-//                    .reduce(
-//                        new ArrayList<Map<String, Result>>(),
-//                        (list, future)-> {
-//                            list.add(future.join());
-//                            return list;
-//                        },
-//                        (l1, l2) -> {
-//                            l1.addAll(l2);
-//                            return l1;
-//                        }
-//                    )
-//                    .toArray(CompletableFuture[]::new)
             List<Map<String, Result>> maps = futures.stream()
                 .map(CompletableFuture::join)
+                .map(resultMap ->
+                    Maps.mapKeys(resultMap, LineSegmentKey::get)
+                )
                 .toList();
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
@@ -206,14 +201,17 @@ public final class CalculateAverage_kjetilvlong {
         return m;
     }
 
-    private static Map<LineSegmentKey, Result> mapLSKey(PartitionedSplitter splitter) {
+    private static Map<LineSegmentKey, Result> mapLineSegments(
+        PartitionedSplitter splitter,
+        Function<LineSegment, LineSegmentKey> keyFunction
+    ) {
         Map<LineSegmentKey, Result> m = new HashMap<>(Maps.mapCapacity(2048));
         Readers.create(
-            Column.ofSegment(0),
+            Column.ofKeySegment(0, keyFunction),
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         ).read(splitter, columns ->
             m.compute(
-                LineSegmentKey.create((LineSegment) columns.get(0)),
+                (LineSegmentKey) columns.get(0),
                 (_, existing) -> {
                     int dec = columns.getInt(1);
                     return existing == null

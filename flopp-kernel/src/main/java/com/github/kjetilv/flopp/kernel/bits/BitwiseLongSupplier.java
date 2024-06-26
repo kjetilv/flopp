@@ -10,40 +10,48 @@ import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSupplier.Mutable> {
+public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSupplier.Reusable> {
 
-    public static Mutable create() {
-        return create(false);
+    public static Reusable create() {
+        return create(null, false);
     }
 
-    public static Mutable create(boolean align) {
-        return new BitwiseLongSupplier(align).apply(null);
+    public static Reusable create(boolean align) {
+        return create(null, align);
+    }
+
+    public static Reusable create(LineSegment segment) {
+        return create(segment, false);
+    }
+
+    public static Reusable create(LineSegment segment, boolean align) {
+        return new BitwiseLongSupplier(align).apply(segment);
     }
 
     private final boolean align;
 
-    private final AbstractMutable none = new Null();
+    private final ReusableBase none = new Null();
 
-    private final AbstractMutable aligned = new Aligned();
+    private final ReusableBase aligned = new Aligned();
 
-    private final AbstractMutable shifted;
+    private final ReusableBase shifted;
 
     public BitwiseLongSupplier(boolean align) {
         this.align = align;
-        this.shifted = align ? null : new Shifted();
+        this.shifted = this.align ? null : new Shifted();
     }
 
     @Override
-    public final Mutable apply(LineSegment segment) {
-        if (segment != null) {
-            int headLen = segment.headLength();
-            AbstractMutable mutable = headLen == 0 || align ? aligned : shifted;
-            return mutable.initialize(segment, headLen);
+    public Reusable apply(LineSegment segment) {
+        if (segment == null) {
+            return none;
         }
-        return none;
+        int headLen = segment.headLength();
+        ReusableBase reusable = headLen == 0 || align ? aligned : shifted;
+        return reusable.initialize(segment, headLen);
     }
 
-    private abstract sealed class AbstractMutable implements Mutable {
+    private abstract sealed class ReusableBase implements Reusable {
 
         LineSegment segment;
 
@@ -56,14 +64,14 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
         int tailLen;
 
         @Override
-        public final Mutable apply(LineSegment lineSegment) {
+        public final Reusable apply(LineSegment lineSegment) {
             return BitwiseLongSupplier.this.apply(lineSegment);
         }
 
-        abstract Mutable initialize(LineSegment segment, int headLen);
+        abstract Reusable initialize(LineSegment segment, int headLen);
     }
 
-    private final class Null extends AbstractMutable {
+    private final class Null extends ReusableBase {
 
         @Override
         public long getAsLong() {
@@ -71,12 +79,17 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
         }
 
         @Override
-        Mutable initialize(LineSegment segment, int headLen) {
+        public long size() {
+            return 0L;
+        }
+
+        @Override
+        Reusable initialize(LineSegment segment, int headLen) {
             return this;
         }
     }
 
-    private final class Shifted extends AbstractMutable {
+    private final class Shifted extends ReusableBase {
 
         private long headStart;
 
@@ -93,10 +106,9 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
         private long data;
 
         @Override
-        public AbstractMutable initialize(LineSegment segment, int headLen) {
+        public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
-            this.memorySegment = segment.
-                memorySegment();
+            this.memorySegment = segment.memorySegment();
             this.headLen = headLen;
             this.headStart = this.segment.headStart();
             this.endIndex = this.segment.endIndex();
@@ -113,6 +125,11 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
 
             this.data = this.segment.head();
             return this;
+        }
+
+        @Override
+        public long size() {
+            return segment.shiftedLongsCount();
         }
 
         @Override
@@ -157,14 +174,14 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
         }
     }
 
-    private final class Aligned extends AbstractMutable {
+    private final class Aligned extends ReusableBase {
 
         private long alignedStart;
 
         private long alignedEnd;
 
         @Override
-        public AbstractMutable initialize(LineSegment segment, int headLen) {
+        public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
             this.headLen = headLen;
@@ -176,6 +193,11 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
 
             this.position = this.alignedStart;
             return this;
+        }
+
+        @Override
+        public long size() {
+            return segment.alignedLongsCount();
         }
 
         @Override
@@ -197,6 +219,8 @@ public class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSup
         }
     }
 
-    public interface Mutable extends LongSupplier, Function<LineSegment, Mutable> {
+    public interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
+
+        long size();
     }
 }

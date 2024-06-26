@@ -17,7 +17,7 @@ record ImmutableLineSegment(MemorySegment memorySegment, long startIndex, long e
 
     @Override
     public int hashCode() {
-        return LineSegments.hashCode(this);
+        return (int) LineSegments.hashCode(this);
     }
 
     @Override
