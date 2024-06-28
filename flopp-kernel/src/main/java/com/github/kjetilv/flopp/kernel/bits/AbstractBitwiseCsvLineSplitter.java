@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -138,7 +139,12 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     public final long head() {
         long headOffset = startIndex % ALIGNMENT_INT;
         long offset = startIndex - headOffset;
-        return memorySegment().get(JAVA_LONG, offset) >>> headOffset * ALIGNMENT_INT;
+        return segment.get(JAVA_LONG, offset) >>> headOffset * ALIGNMENT_INT;
+    }
+
+    @Override
+    public long tail() {
+        return MemorySegments.tail(segment, endIndex);
     }
 
     @Override

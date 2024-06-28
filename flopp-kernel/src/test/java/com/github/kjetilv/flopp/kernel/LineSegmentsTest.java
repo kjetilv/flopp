@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSupplier;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,6 +76,10 @@ class LineSegmentsTest {
         assertHead("1234567foobarzt");
     }
 
+    private static final BitwiseTraverser.Reusable REUSABLE = BitwiseTraverser.create();
+
+    private static final BitwiseTraverser.Reusable REUSABLE_ALIGNED = BitwiseTraverser.create(true);
+
     private static void stressTest(String abc) {
         for (int s = 0; s < abc.length(); s++) {
             for (int e = s; e < abc.length(); e++) {
@@ -90,10 +94,6 @@ class LineSegmentsTest {
         }
     }
 
-    private static final BitwiseLongSupplier.Reusable REUSABLE = BitwiseLongSupplier.create();
-
-    private static final BitwiseLongSupplier.Reusable REUSABLE_ALIGNED = BitwiseLongSupplier.create(true);
-
     private static void assertLongs(String string, int startIndex, int endIndex) {
         assertLongs(string, startIndex, endIndex, endIndex - startIndex);
     }
@@ -106,11 +106,12 @@ class LineSegmentsTest {
         String shiftSupplierString;
         String alignSupplierString;
 
-        String bitwiseSuppliedString;
-        String alignBitwiseSuppliedString;
+        String bitwiseTraversedString;
+        String biwiseAlignedTraversedString;
 
-        BitwiseLongSupplier.Reusable bitwiseLongSupplier = REUSABLE;
-        BitwiseLongSupplier.Reusable aligneBitwiseLongSupplier = REUSABLE_ALIGNED;
+        BitwiseTraverser.Reusable bitwiseLongTraverse = REUSABLE;
+        BitwiseTraverser.Reusable aligneBitwiseLongTraverse = REUSABLE_ALIGNED;
+
         String asLongsString;
 
         try {
@@ -135,11 +136,11 @@ class LineSegmentsTest {
             byte[] bytes = Bits.toBytes(longs, len);
             asLongsString = new String(bytes, UTF_8);
 
-            bitwiseLongSupplier = bitwiseLongSupplier.apply(slice);
-            bitwiseSuppliedString = supplied(bitwiseLongSupplier, 0, len, shiftedLongsCount);
+            bitwiseLongTraverse = bitwiseLongTraverse.apply(slice);
+            bitwiseTraversedString = supplied(bitwiseLongTraverse, 0, len, shiftedLongsCount);
 
-            aligneBitwiseLongSupplier = aligneBitwiseLongSupplier.apply(slice);
-            alignBitwiseSuppliedString = supplied(aligneBitwiseLongSupplier, alignedShift, len, alignedLongsCount);
+            aligneBitwiseLongTraverse = aligneBitwiseLongTraverse.apply(slice);
+            biwiseAlignedTraversedString = supplied(aligneBitwiseLongTraverse, alignedShift, len, alignedLongsCount);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed in " + startIndex + ", " + endIndex, e);
@@ -162,10 +163,10 @@ class LineSegmentsTest {
         assertThat(asLongsString)
             .describedAs("asLongs() produced different string, %s, %s", startIndex, endIndex)
             .isEqualTo(shiftedStreamString);
-        assertThat(bitwiseSuppliedString)
+        assertThat(bitwiseTraversedString)
             .describedAs("bitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
             .isEqualTo(substring);
-        assertThat(alignBitwiseSuppliedString)
+        assertThat(biwiseAlignedTraversedString)
             .describedAs("alignBitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
             .isEqualTo(substring);
     }

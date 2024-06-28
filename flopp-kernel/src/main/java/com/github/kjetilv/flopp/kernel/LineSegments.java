@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSpliterator;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSupplier;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
@@ -13,7 +13,6 @@ import java.util.stream.StreamSupport;
 
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
@@ -38,18 +37,18 @@ public final class LineSegments {
     }
 
     public static long hashCode(LineSegment segment) {
-        return hashCode(segment, BitwiseLongSupplier.create(segment));
+        return hashCode(segment, BitwiseTraverser.create(segment));
     }
 
     public  static long hashCode(
         LineSegment segment,
-        BitwiseLongSupplier.Reusable reusable
+        BitwiseTraverser.Reusable reusable
     ) {
         long count = segment.shiftedLongsCount();
         long hashCode = 0L;
         for (int i = 0; i < count; i++) {
             long next = reusable.getAsLong();
-            hashCode += (next * 31L) ^ (count - i);
+            hashCode += next * 31L ^ count - i;
         }
         return hashCode;
     }
@@ -85,7 +84,7 @@ public final class LineSegments {
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean align) {
-        return BitwiseLongSupplier.create(segment, align);
+        return BitwiseTraverser.create(segment, align);
     }
 
     public static LongStream longs(LineSegment segment, boolean align) {
@@ -102,17 +101,11 @@ public final class LineSegments {
     }
 
     public static long[] asLongs(LineSegment segment, long[] buffer) {
-        int length = (int) segment.length();
-        if (length == 0) {
-            return NO_LONGS;
-        }
-        int headLen = segment.headLength();
-        long[] longs = buffer == null
-            ? new long[(int) segment.shiftedLongsCount()]
-            : buffer;
-        return headLen == 0
-            ? asAlignedLongs(segment, longs, length)
-            : asShiftedLongs(segment, longs, length, headLen);
+        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
+        long[] ls = buffer == null ? new long[(int) reusable.size()] : buffer;
+        reusable.forEach((i, l) ->
+            ls[i] = l);
+        return ls;
     }
 
     public static String asString(LineSegment segment) {
@@ -171,40 +164,6 @@ public final class LineSegments {
 
     public static String fromLongBytes(LineSegment segment, Charset charset) {
         return asString(segment, charset);
-    }
-
-    public static byte[] asBytes(LineSegment segment) {
-        int length = (int) segment.length();
-        if (length == 0) {
-            return NO_BYTES;
-        }
-        byte[] string = new byte[length];
-        int headLen = segment.headLength();
-        if (headLen > 0) {
-            long data = segment.head();
-            Bits.transferLimitedDataTo(data, 0, Math.min(length, headLen), string);
-        }
-        if (length > headLen) {
-            long alignedStart = segment.alignedStart();
-            long longs = segment.alignedEnd() - alignedStart >> ALIGNMENT_POW;
-            int firstLong = headLen == 0 ? 0 : 1;
-            long endIndex = segment.endIndex();
-            int tailLen = (int) (endIndex % ALIGNMENT);
-            MemorySegment memorySegment = segment.memorySegment();
-            int transferOffset = headLen;
-            long position = alignedStart + firstLong * ALIGNMENT;
-            for (int i = firstLong; i < longs; i++) {
-                long data = memorySegment.get(JAVA_LONG, position);
-                Bits.transferDataTo(data, transferOffset, string);
-                transferOffset += ALIGNMENT_INT;
-                position += ALIGNMENT;
-            }
-            if (tailLen > 0) {
-                long data = segment.tail();
-                Bits.transferLimitedDataTo(data, transferOffset, tailLen, string);
-            }
-        }
-        return string;
     }
 
     public static String asString(LineSegment segment, int len) {
@@ -283,63 +242,4 @@ public final class LineSegments {
     private static final long[] NO_LONGS = new long[0];
 
     private static final byte[] NO_BYTES = new byte[0];
-
-    private static long[] asAlignedLongs(LineSegment segment, long[] buffer, int length) {
-        long alignedEnd = segment.alignedEnd();
-        long startPosition = segment.alignedStart();
-        int index = 0;
-        for (long pos = startPosition; pos < alignedEnd; pos += ALIGNMENT) {
-            long data = segment.memorySegment().get(JAVA_LONG, pos);
-            buffer[index++] = data;
-        }
-        if (segment.endIndex() % ALIGNMENT > 0L) {
-            long data = segment.tail();
-            long truncated = Bits.truncate(data, segment.tailLength());
-            buffer[index] = truncated;
-        }
-        return buffer;
-    }
-
-    private static long[] asShiftedLongs(LineSegment segment, long[] buffer, int length, int headLen) {
-        MemorySegment memorySegment = segment.memorySegment();
-        long endIndex = segment.endIndex();
-
-        int headShift = (int) (headLen * ALIGNMENT);
-
-        int tailLen = (int) (endIndex % ALIGNMENT);
-        int tailShift = (int) ((ALIGNMENT - headLen) * ALIGNMENT);
-
-        long alignedEnd = segment.alignedEnd();
-        long position = segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
-
-        long data = segment.head();
-        int index = 0;
-        if (headLen >= length) {
-            buffer[index] = Bits.truncate(data, length);
-            return buffer;
-        }
-        while (position < alignedEnd) {
-            long alignedData = memorySegment.get(JAVA_LONG, position);
-            long shifted = alignedData << headShift;
-            data |= shifted;
-            buffer[index++] = data;
-            data = alignedData >>> tailShift;
-            position += ALIGNMENT_INT;
-        }
-        if (position == alignedEnd && tailLen > 0) {
-            long alignedData = segment.tail();
-            long shifted = alignedData << headShift;
-            data |= shifted;
-            buffer[index++] = data;
-            int headStart = ALIGNMENT_INT - headLen;
-            int restTail = tailLen - headStart;
-            if (restTail > 0) {
-                long remainingData = alignedData >> headStart * ALIGNMENT;
-                buffer[index] = remainingData;
-            }
-        } else if (headLen > 0) {
-            buffer[index] = data;
-        }
-        return buffer;
-    }
 }

@@ -4,68 +4,67 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseLongSupplier.Reusable> {
+public abstract sealed class BitwiseTraverser
+    implements Function<LineSegment, BitwiseTraverser.Reusable> {
 
     public static Reusable create() {
-        return create(null, false);
+        return new MultiModeSuppler().blank();
     }
 
     public static Reusable create(boolean align) {
-        return create(null, align);
+        return (align ? new AlignedTraverser() : new MultiModeSuppler()).blank();
     }
 
     public static Reusable create(LineSegment segment) {
-        return create(segment, false);
+        return new MultiModeSuppler().apply(segment);
     }
 
     public static Reusable create(LineSegment segment, boolean align) {
-        return new BitwiseLongSupplier(align).apply(segment);
+        return (align ? new AlignedTraverser() : new MultiModeSuppler()).apply(segment);
     }
 
-    private final boolean align;
+    @SuppressWarnings("PackageVisibleField")
+    final ReusableBase aligned = new Aligned();
+
+    @SuppressWarnings("PackageVisibleField")
+    final ReusableBase shifted = new Shifted();
 
     private final ReusableBase none = new Null();
 
-    private final ReusableBase aligned = new Aligned();
-
-    private final ReusableBase shifted;
-
-    public BitwiseLongSupplier(boolean align) {
-        this.align = align;
-        this.shifted = this.align ? null : new Shifted();
+    public Reusable blank() {
+        return none;
     }
 
-    @Override
-    public Reusable apply(LineSegment segment) {
-        if (segment == null) {
-            return none;
+    private static final class AlignedTraverser extends BitwiseTraverser {
+
+        @Override
+        public Reusable apply(LineSegment segment) {
+            int headLen = segment.headLength();
+            return aligned.initialize(segment, headLen);
         }
-        int headLen = segment.headLength();
-        ReusableBase reusable = headLen == 0 || align ? aligned : shifted;
-        return reusable.initialize(segment, headLen);
+    }
+
+    private static final class MultiModeSuppler extends BitwiseTraverser {
+
+        @Override
+        public Reusable apply(LineSegment segment) {
+            int headLen = segment.headLength();
+            return (headLen == 0 ? aligned : shifted).initialize(segment, headLen);
+        }
     }
 
     private abstract sealed class ReusableBase implements Reusable {
 
-        LineSegment segment;
-
-        MemorySegment memorySegment;
-
-        int headLen;
-
-        long position;
-
-        int tailLen;
-
         @Override
         public final Reusable apply(LineSegment lineSegment) {
-            return BitwiseLongSupplier.this.apply(lineSegment);
+            return BitwiseTraverser.this.apply(lineSegment);
         }
 
         abstract Reusable initialize(LineSegment segment, int headLen);
@@ -75,21 +74,36 @@ public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseL
 
         @Override
         public long getAsLong() {
-            return 0x0L;
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void forEach(IndexedLongConsumer consumer) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public long size() {
-            return 0L;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         Reusable initialize(LineSegment segment, int headLen) {
-            return this;
+            throw new UnsupportedOperationException();
         }
     }
 
     private final class Shifted extends ReusableBase {
+
+        private LineSegment segment;
+
+        private MemorySegment memorySegment;
+
+        private int headLen;
+
+        private long position;
+
+        private int tailLen;
 
         private long headStart;
 
@@ -130,6 +144,41 @@ public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseL
         @Override
         public long size() {
             return segment.shiftedLongsCount();
+        }
+
+        @Override
+        public void forEach(IndexedLongConsumer consumer) {
+            if (length == 0) {
+                return;
+            }
+            long data = segment.head();
+            if (headLen >= length) {
+                consumer.accept(0, Bits.truncate(data, length));
+                return;
+            }
+            int index = 0;
+            while (position < alignedEnd) {
+                long alignedData = memorySegment.get(JAVA_LONG, position);
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                consumer.accept(index++, data);
+                data = alignedData >>> tailShift;
+                position += ALIGNMENT_INT;
+            }
+            if (position == alignedEnd && tailLen > 0) {
+                long alignedData = segment.tail();
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                consumer.accept(index++, data);
+                int headStart = ALIGNMENT_INT - headLen;
+                int restTail = tailLen - headStart;
+                if (restTail > 0) {
+                    long remainingData = alignedData >> headStart * ALIGNMENT;
+                    consumer.accept(index, remainingData);
+                }
+            } else if (headLen > 0) {
+                consumer.accept(index, data);
+            }
         }
 
         @Override
@@ -176,21 +225,33 @@ public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseL
 
     private final class Aligned extends ReusableBase {
 
+        private LineSegment segment;
+
+        private MemorySegment memorySegment;
+
+        private int headLen;
+
+        private long position;
+
+        private int tailLen;
+
         private long alignedStart;
 
         private long alignedEnd;
+
+        private long length;
 
         @Override
         public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
+            this.length = this.segment.length();
             this.headLen = headLen;
             this.alignedStart = this.segment.alignedStart();
             this.alignedEnd = this.segment.alignedEnd();
             this.headLen = this.segment.headLength();
             long endIndex = this.segment.endIndex();
             this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
-
             this.position = this.alignedStart;
             return this;
         }
@@ -201,26 +262,47 @@ public final class BitwiseLongSupplier implements Function<LineSegment, BitwiseL
         }
 
         @Override
-        public long getAsLong() {
-            try {
-                if (position == alignedStart && headLen > 0) {
-                    return segment.head() << ALIGNMENT * (ALIGNMENT - headLen);
-                }
-                if (position < alignedEnd) {
-                    return memorySegment.get(JAVA_LONG, position);
-                }
-                if (position == alignedEnd && tailLen > 0) {
-                    return segment.tail();
-                }
-                return 0x0L;
-            } finally {
-                position += ALIGNMENT;
+        public void forEach(IndexedLongConsumer consumer) {
+            if (length == 0) {
+                return;
             }
+            int index = 0;
+            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
+                long data = segment.memorySegment().get(JAVA_LONG, pos);
+                consumer.accept(index++, data);
+            }
+            if (segment.endIndex() % ALIGNMENT > 0L) {
+                long data = segment.tail();
+                long truncated = Bits.truncate(data, segment.tailLength());
+                consumer.accept(index, truncated);
+            }
+        }
+
+        @Override
+        public long getAsLong() {
+            long next = position == alignedStart && headLen > 0 ? segment.head() << ALIGNMENT * (ALIGNMENT - headLen)
+                : position < alignedEnd ? memorySegment.get(JAVA_LONG, position)
+                    : position == alignedEnd && tailLen > 0 ? segment.tail()
+                        : 0x0L;
+            position += ALIGNMENT;
+            return next;
         }
     }
 
     public interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
 
         long size();
+
+        void forEach(IndexedLongConsumer consumer);
+    }
+
+    @FunctionalInterface
+    public interface IndexedLongConsumer extends LongConsumer {
+
+        default void accept(long value) {
+            accept(-1, value);
+        }
+
+         void accept(int index, long value);
     }
 }
