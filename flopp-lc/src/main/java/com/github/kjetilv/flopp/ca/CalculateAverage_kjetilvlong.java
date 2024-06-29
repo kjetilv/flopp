@@ -121,10 +121,8 @@ public final class CalculateAverage_kjetilvlong {
             List<CompletableFuture<Map<LineSegmentKey, Result>>> futures =
                 bitwisePartitioned.splitters(format, executor)
                     .map(splitterFuture ->
-                        splitterFuture.thenApply(splitter -> {
-                            Function<LineSegment, LineSegmentKey> factory = LineSegmentKey.factory();
-                            return mapLineSegments(splitter, factory);
-                        }))
+                        splitterFuture.thenApply(splitter ->
+                            mapLineSegments(splitter, LineSegmentKey.pool(128))))
                     .toList();
             List<Map<String, Result>> maps = futures.stream()
                 .map(CompletableFuture::join)

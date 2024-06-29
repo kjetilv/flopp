@@ -17,7 +17,8 @@ class LineSegmentKeyTest {
     void lsKeySubTest() {
         LineSegmentKey foobar = lsKey("foobarzot faderullandei", 3, 10);
         assertThat(foobar).hasToString("barzot fad");
-        assertThat(foobar).hasSameHashCodeAs(lsKey("barzot fad"));
+        LineSegmentKey barzotFad = lsKey("barzot fad");
+        assertThat(foobar).hasSameHashCodeAs(barzotFad);
     }
 
     @Test

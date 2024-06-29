@@ -11,7 +11,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.fromEdgeLong;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
@@ -37,14 +37,11 @@ public final class LineSegments {
     }
 
     public static long hashCode(LineSegment segment) {
-        return hashCode(segment, BitwiseTraverser.create(segment));
+        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
+        return hashCode(reusable, reusable.size());
     }
 
-    public  static long hashCode(
-        LineSegment segment,
-        BitwiseTraverser.Reusable reusable
-    ) {
-        long count = segment.shiftedLongsCount();
+    public static long hashCode(LongSupplier reusable, long count) {
         long hashCode = 0L;
         for (int i = 0; i < count; i++) {
             long next = reusable.getAsLong();
@@ -103,8 +100,7 @@ public final class LineSegments {
     public static long[] asLongs(LineSegment segment, long[] buffer) {
         BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
         long[] ls = buffer == null ? new long[(int) reusable.size()] : buffer;
-        reusable.forEach((i, l) ->
-            ls[i] = l);
+        reusable.forEach((i, l) -> ls[i] = l);
         return ls;
     }
 

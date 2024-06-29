@@ -46,8 +46,7 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public Reusable apply(LineSegment segment) {
-            int headLen = segment.headLength();
-            return aligned.initialize(segment, headLen);
+            return aligned.initialize(segment, segment.headLength());
         }
     }
 
@@ -78,12 +77,17 @@ public abstract sealed class BitwiseTraverser
         }
 
         @Override
+        public long size() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void forEach(IndexedLongConsumer consumer) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long size() {
+        public int longHashCode() {
             throw new UnsupportedOperationException();
         }
 
@@ -99,9 +103,9 @@ public abstract sealed class BitwiseTraverser
 
         private MemorySegment memorySegment;
 
-        private int headLen;
+        private int length;
 
-        private long position;
+        private int headLen;
 
         private int tailLen;
 
@@ -111,11 +115,11 @@ public abstract sealed class BitwiseTraverser
 
         private long endIndex;
 
-        private long headShift;
-
-        private int length;
+        private int headShift;
 
         private int tailShift;
+
+        private long position;
 
         private long data;
 
@@ -129,10 +133,10 @@ public abstract sealed class BitwiseTraverser
 
             this.length = (int) segment.length();
 
-            this.headShift = (int) (headLen * ALIGNMENT);
+            this.headShift = headLen * ALIGNMENT_INT;
 
-            this.tailLen = (int) (endIndex % ALIGNMENT);
-            this.tailShift = (int) ((ALIGNMENT - headLen) * ALIGNMENT);
+            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
+            this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
 
             this.alignedEnd = this.segment.alignedEnd();
             this.position = this.segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
@@ -221,6 +225,48 @@ public abstract sealed class BitwiseTraverser
             }
             return 0x0L;
         }
+
+//        @Override
+//        public int longHashCode() {
+//            if (headStart + length < ALIGNMENT) {
+//                return Long.hashCode(Bits.truncate(data, length));
+//            }
+//            if (position == endIndex) {
+//                return Long.hashCode(data);
+//            }
+//            int hc = 0;
+//            if (position < alignedEnd) {
+//                long alignedData = memorySegment.get(JAVA_LONG, position);
+//                try {
+//                    long shifted = alignedData << headShift;
+//                    data |= shifted;
+//                    hc = Long.hashCode(data);
+//                } finally {
+//                    data = alignedData >>> tailShift;
+//                    position += ALIGNMENT;
+//                }
+//            }
+//            if (position == this.alignedEnd && tailLen > 0) {
+//                long alignedData = segment.tail();
+//                try {
+//                    long shifted = alignedData << headShift;
+//                    data |= shifted;
+//                    hc = hc * 31 + Long.hashCode(data);
+//                } finally {
+//                    position += ALIGNMENT_INT;
+//                }
+//            }
+//            int headStart = ALIGNMENT_INT - headLen;
+//            if (tailLen > headStart) {
+//                int restTail = tailLen - headStart;
+//                if (restTail > 0) {
+//                    long alignedData = segment.tail();
+//                    long remainingData = alignedData >> headStart * ALIGNMENT;
+//                    hc = hc * 31 + Long.hashCode(remainingData);
+//                }
+//            }
+//            return hc;
+//        }
     }
 
     private final class Aligned extends ReusableBase {
@@ -231,27 +277,27 @@ public abstract sealed class BitwiseTraverser
 
         private int headLen;
 
-        private long position;
-
         private int tailLen;
 
         private long alignedStart;
 
         private long alignedEnd;
 
-        private long length;
+        private int length;
+
+        private long position;
 
         @Override
         public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
-            this.length = this.segment.length();
+            this.length = (int) this.segment.length();
             this.headLen = headLen;
             this.alignedStart = this.segment.alignedStart();
             this.alignedEnd = this.segment.alignedEnd();
             this.headLen = this.segment.headLength();
             long endIndex = this.segment.endIndex();
-            this.tailLen = Math.toIntExact(endIndex % ALIGNMENT);
+            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
             this.position = this.alignedStart;
             return this;
         }
@@ -278,6 +324,24 @@ public abstract sealed class BitwiseTraverser
             }
         }
 
+//        @Override
+//        public int longHashCode() {
+//            if (length == 0) {
+//                return 0;
+//            }
+//            int hc = 0;
+//            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
+//                long data = segment.memorySegment().get(JAVA_LONG, pos);
+//                hc = hc * 31 + Long.hashCode(data);
+//            }
+//            if (segment.endIndex() % ALIGNMENT > 0L) {
+//                long data = segment.tail();
+//                long truncated = Bits.truncate(data, segment.tailLength());
+//                hc = hc * 31 + Long.hashCode(truncated);
+//            }
+//            return hc;
+//        }
+
         @Override
         public long getAsLong() {
             long next = position == alignedStart && headLen > 0 ? segment.head() << ALIGNMENT * (ALIGNMENT - headLen)
@@ -291,9 +355,26 @@ public abstract sealed class BitwiseTraverser
 
     public interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
 
+        default Reusable reset(LineSegment segment) {
+            return apply(segment);
+        }
+
         long size();
 
         void forEach(IndexedLongConsumer consumer);
+
+        default long[] fill(long[] buffer) {
+            forEach((index, value) -> buffer[index] = value);
+            return buffer;
+        }
+
+        default int longHashCode() {
+            int hash = 0;
+            for (int i = 0; i < size(); i++) {
+                hash = hash * 31 + Long.hashCode(getAsLong());
+            }
+            return hash;
+        }
     }
 
     @FunctionalInterface
@@ -303,6 +384,6 @@ public abstract sealed class BitwiseTraverser
             accept(-1, value);
         }
 
-         void accept(int index, long value);
+        void accept(int index, long value);
     }
 }
