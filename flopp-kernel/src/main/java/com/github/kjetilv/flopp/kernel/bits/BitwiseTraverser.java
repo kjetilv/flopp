@@ -129,18 +129,16 @@ public abstract sealed class BitwiseTraverser
             this.segment = segment;
             this.memorySegment = segment.memorySegment();
             this.headLen = headLen;
-            this.headStart = this.segment.headStart();
+            long startIndex = this.segment.startIndex();
+            this.headStart = startIndex % ALIGNMENT_INT;
             this.endIndex = this.segment.endIndex();
-
-            this.length = (int) segment.length();
-
+            this.length = (int) (endIndex - startIndex);
             this.headShift = headLen * ALIGNMENT_INT;
-
             this.tailLen = (int) (endIndex % ALIGNMENT_INT);
             this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
 
-            this.alignedEnd = this.segment.alignedEnd();
-            this.position = this.segment.alignedStart() + (headLen > 0 ? ALIGNMENT : 0);
+            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+            this.position = startIndex - headStart + (headLen > 0 ? ALIGNMENT : 0);
 
             this.data = this.segment.head();
             return this;
@@ -194,7 +192,7 @@ public abstract sealed class BitwiseTraverser
             }
             long data = segment.head();
             if (headLen >= length) {
-                hash = nextHash(hash ,Bits.truncate(data, length));
+                hash = nextHash(hash, Bits.truncate(data, length));
                 return hash;
             }
             while (position < alignedEnd) {
@@ -217,7 +215,7 @@ public abstract sealed class BitwiseTraverser
                     hash = nextHash(hash, remainingData);
                 }
             } else if (headLen > 0) {
-                hash = nextHash(hash,data);
+                hash = nextHash(hash, data);
             }
             return hash;
         }
@@ -227,29 +225,24 @@ public abstract sealed class BitwiseTraverser
             if (headStart + length < ALIGNMENT) {
                 return Bits.truncate(data, length);
             }
-            if (position == endIndex) {
-                return data;
-            }
             if (position < alignedEnd) {
                 long alignedData = memorySegment.get(JAVA_LONG, position);
-                try {
-                    long shifted = alignedData << headShift;
-                    data |= shifted;
-                    return data;
-                } finally {
-                    data = alignedData >>> tailShift;
-                    position += ALIGNMENT;
-                }
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                long value = data;
+                data = alignedData >>> tailShift;
+                position += ALIGNMENT;
+                return value;
             }
             if (position == this.alignedEnd && tailLen > 0) {
                 long alignedData = MemorySegments.tail(memorySegment, endIndex);
-                try {
-                    long shifted = alignedData << headShift;
-                    data |= shifted;
-                    return data;
-                } finally {
-                    position += ALIGNMENT_INT;
-                }
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                position += ALIGNMENT_INT;
+                return data;
+            }
+            if (position == endIndex) {
+                return data;
             }
             int headStart = ALIGNMENT_INT - headLen;
             if (tailLen > headStart) {
@@ -270,6 +263,8 @@ public abstract sealed class BitwiseTraverser
 
         private MemorySegment memorySegment;
 
+        private long endIndex;
+
         private int headLen;
 
         private int tailLen;
@@ -282,18 +277,20 @@ public abstract sealed class BitwiseTraverser
 
         private long position;
 
-        private long endIndex;
-
         @Override
         public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
             this.memorySegment = this.segment.memorySegment();
-            this.length = (int) this.segment.length();
             this.headLen = headLen;
-            this.alignedStart = this.segment.alignedStart();
-            this.alignedEnd = this.segment.alignedEnd();
-            this.headLen = this.segment.headLength();
+            long startIndex = this.segment.startIndex();
             this.endIndex = this.segment.endIndex();
+            this.length = (int) (endIndex - startIndex);
+            int headStart = (int) (startIndex % ALIGNMENT_INT);
+            this.alignedStart = startIndex - headStart;
+            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+            this.headLen = headStart == 0L
+                ? 0
+                : ALIGNMENT_INT - headStart;
             this.tailLen = (int) (endIndex % ALIGNMENT_INT);
             this.position = this.alignedStart;
             return this;

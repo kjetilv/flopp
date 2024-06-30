@@ -181,8 +181,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default int headLength() {
         long head = startIndex() % ALIGNMENT_INT;
-        long padding = head == 0L ? 0L : ALIGNMENT_INT - head;
-        return Math.toIntExact(padding);
+        return head == 0L ? 0 : ALIGNMENT_INT - (int) head;
     }
 
     default long head(long head) {
