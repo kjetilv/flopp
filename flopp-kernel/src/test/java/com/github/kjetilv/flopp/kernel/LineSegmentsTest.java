@@ -171,7 +171,7 @@ class LineSegmentsTest {
             .isEqualTo(substring);
 
         LineSegmentKey lsk = LineSegmentKey.create(slice);
-        int actual = bitwiseLongTraverse.reset(slice).longHashCode();
+        int actual = Long.hashCode(bitwiseLongTraverse.reset(slice).toHashCode());
         assertThat(actual)
             .describedAs("reusabler provided different hashCode, %s, %s", startIndex, endIndex)
             .isEqualTo(lsk.hashCode());

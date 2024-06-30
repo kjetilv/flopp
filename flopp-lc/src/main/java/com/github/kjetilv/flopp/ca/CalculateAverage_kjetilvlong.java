@@ -22,6 +22,8 @@ import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,15 +38,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class CalculateAverage_kjetilvlong {
 
-    public static void main(String[] args) {
-        for (String arg : args) {
-            Path path = Path.of(arg);
+    public static void main(String[] args) throws IOException {
+        Path path = Path.of(args[0]);
 //            go3(path);
 //            go3(path);
-            go5(path);
+        Map<String, Result> stringResultMap = go5(path);
 //            go4It(path);
 //            go3(path);
 //            go3(path);
+
+        if (args.length > 1) {
+            String content = Files.readString(Path.of(args[1]));
+            System.out.println(stringResultMap.toString().equals(content.trim()));
         }
     }
 
@@ -122,20 +127,17 @@ public final class CalculateAverage_kjetilvlong {
                 bitwisePartitioned.splitters(format, executor)
                     .map(splitterFuture ->
                         splitterFuture.thenApply(splitter ->
-                            mapLineSegments(splitter, LineSegmentKey.pool(128))))
+                            mapLineSegments(splitter, LineSegmentKey.factory())))
                     .toList();
             List<Map<String, Result>> maps = futures.stream()
-                .map(CompletableFuture::join)
-                .map(resultMap ->
-                    Maps.mapKeys(resultMap, key -> key.apply(UTF_8))
-                )
+                .map(mf ->
+                    mf.thenApply(m ->
+                            Maps.mapKeys(m, l -> l.apply(UTF_8)))
+                        .join())
                 .toList();
             Map<String, Result> map = combineMaps(maps);
             System.out.println(map);
             System.out.println(Duration.between(start, Instant.now()));
-            System.out.println(map.keySet()
-                                   .stream()
-                                   .mapToInt(String::length).sum() / map.size());
             return map;
         }
     }

@@ -42,12 +42,16 @@ public final class LineSegments {
     }
 
     public static long hashCode(LongSupplier reusable, long count) {
-        long hashCode = 0L;
+        long hashCode = 0;
         for (int i = 0; i < count; i++) {
             long next = reusable.getAsLong();
-            hashCode += next * 31L ^ count - i;
+            hashCode = nextHash(hashCode, next);
         }
         return hashCode;
+    }
+
+    public static long nextHash(long hash, long next) {
+        return hash * HASH_PRIME + Long.hashCode(next);
     }
 
     @SuppressWarnings("ConstantValue")
@@ -232,6 +236,8 @@ public final class LineSegments {
 
     private LineSegments() {
     }
+
+    public static final int HASH_PRIME = 31;
 
     private static final LongSupplier EMPTY_LONG_SUPPLIER = () -> 0x0L;
 

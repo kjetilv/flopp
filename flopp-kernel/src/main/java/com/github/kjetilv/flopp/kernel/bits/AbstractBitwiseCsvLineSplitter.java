@@ -5,7 +5,6 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;

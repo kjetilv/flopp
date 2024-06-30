@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
+import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
@@ -87,7 +88,7 @@ public abstract sealed class BitwiseTraverser
         }
 
         @Override
-        public int longHashCode() {
+        public long toHashCode() {
             throw new UnsupportedOperationException();
         }
 
@@ -170,7 +171,7 @@ public abstract sealed class BitwiseTraverser
                 position += ALIGNMENT_INT;
             }
             if (position == alignedEnd && tailLen > 0) {
-                long alignedData = segment.tail();
+                long alignedData = MemorySegments.tail(memorySegment, endIndex);
                 long shifted = alignedData << headShift;
                 data |= shifted;
                 consumer.accept(index++, data);
@@ -183,6 +184,42 @@ public abstract sealed class BitwiseTraverser
             } else if (headLen > 0) {
                 consumer.accept(index, data);
             }
+        }
+
+        @Override
+        public long toHashCode() {
+            long hash = 0;
+            if (length == 0) {
+                return hash;
+            }
+            long data = segment.head();
+            if (headLen >= length) {
+                hash = nextHash(hash ,Bits.truncate(data, length));
+                return hash;
+            }
+            while (position < alignedEnd) {
+                long alignedData = memorySegment.get(JAVA_LONG, position);
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                hash = nextHash(hash, data);
+                data = alignedData >>> tailShift;
+                position += ALIGNMENT_INT;
+            }
+            if (position == alignedEnd && tailLen > 0) {
+                long alignedData = MemorySegments.tail(memorySegment, endIndex);
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                hash = nextHash(hash, data);
+                int headStart = ALIGNMENT_INT - headLen;
+                int restTail = tailLen - headStart;
+                if (restTail > 0) {
+                    long remainingData = alignedData >> headStart * ALIGNMENT;
+                    hash = nextHash(hash, remainingData);
+                }
+            } else if (headLen > 0) {
+                hash = nextHash(hash,data);
+            }
+            return hash;
         }
 
         @Override
@@ -205,7 +242,7 @@ public abstract sealed class BitwiseTraverser
                 }
             }
             if (position == this.alignedEnd && tailLen > 0) {
-                long alignedData = segment.tail();
+                long alignedData = MemorySegments.tail(memorySegment, endIndex);
                 try {
                     long shifted = alignedData << headShift;
                     data |= shifted;
@@ -218,55 +255,13 @@ public abstract sealed class BitwiseTraverser
             if (tailLen > headStart) {
                 int restTail = tailLen - headStart;
                 if (restTail > 0) {
-                    long alignedData = segment.tail();
+                    long alignedData = MemorySegments.tail(memorySegment, endIndex);
                     long remainingData = alignedData >> headStart * ALIGNMENT;
                     return remainingData;
                 }
             }
             return 0x0L;
         }
-
-//        @Override
-//        public int longHashCode() {
-//            if (headStart + length < ALIGNMENT) {
-//                return Long.hashCode(Bits.truncate(data, length));
-//            }
-//            if (position == endIndex) {
-//                return Long.hashCode(data);
-//            }
-//            int hc = 0;
-//            if (position < alignedEnd) {
-//                long alignedData = memorySegment.get(JAVA_LONG, position);
-//                try {
-//                    long shifted = alignedData << headShift;
-//                    data |= shifted;
-//                    hc = Long.hashCode(data);
-//                } finally {
-//                    data = alignedData >>> tailShift;
-//                    position += ALIGNMENT;
-//                }
-//            }
-//            if (position == this.alignedEnd && tailLen > 0) {
-//                long alignedData = segment.tail();
-//                try {
-//                    long shifted = alignedData << headShift;
-//                    data |= shifted;
-//                    hc = hc * 31 + Long.hashCode(data);
-//                } finally {
-//                    position += ALIGNMENT_INT;
-//                }
-//            }
-//            int headStart = ALIGNMENT_INT - headLen;
-//            if (tailLen > headStart) {
-//                int restTail = tailLen - headStart;
-//                if (restTail > 0) {
-//                    long alignedData = segment.tail();
-//                    long remainingData = alignedData >> headStart * ALIGNMENT;
-//                    hc = hc * 31 + Long.hashCode(remainingData);
-//                }
-//            }
-//            return hc;
-//        }
     }
 
     private final class Aligned extends ReusableBase {
@@ -287,16 +282,18 @@ public abstract sealed class BitwiseTraverser
 
         private long position;
 
+        private long endIndex;
+
         @Override
         public ReusableBase initialize(LineSegment segment, int headLen) {
             this.segment = segment;
-            this.memorySegment = segment.memorySegment();
+            this.memorySegment = this.segment.memorySegment();
             this.length = (int) this.segment.length();
             this.headLen = headLen;
             this.alignedStart = this.segment.alignedStart();
             this.alignedEnd = this.segment.alignedEnd();
             this.headLen = this.segment.headLength();
-            long endIndex = this.segment.endIndex();
+            this.endIndex = this.segment.endIndex();
             this.tailLen = (int) (endIndex % ALIGNMENT_INT);
             this.position = this.alignedStart;
             return this;
@@ -314,39 +311,39 @@ public abstract sealed class BitwiseTraverser
             }
             int index = 0;
             for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
-                long data = segment.memorySegment().get(JAVA_LONG, pos);
+                long data = memorySegment.get(JAVA_LONG, pos);
                 consumer.accept(index++, data);
             }
-            if (segment.endIndex() % ALIGNMENT > 0L) {
-                long data = segment.tail();
-                long truncated = Bits.truncate(data, segment.tailLength());
+            if (endIndex % ALIGNMENT > 0L) {
+                long data = MemorySegments.tail(memorySegment, endIndex);
+                long truncated = Bits.truncate(data, tailLen);
                 consumer.accept(index, truncated);
             }
         }
 
-//        @Override
-//        public int longHashCode() {
-//            if (length == 0) {
-//                return 0;
-//            }
-//            int hc = 0;
-//            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
-//                long data = segment.memorySegment().get(JAVA_LONG, pos);
-//                hc = hc * 31 + Long.hashCode(data);
-//            }
-//            if (segment.endIndex() % ALIGNMENT > 0L) {
-//                long data = segment.tail();
-//                long truncated = Bits.truncate(data, segment.tailLength());
-//                hc = hc * 31 + Long.hashCode(truncated);
-//            }
-//            return hc;
-//        }
+        @Override
+        public long toHashCode() {
+            if (length == 0) {
+                return 0;
+            }
+            long hash = 0;
+            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
+                long data = memorySegment.get(JAVA_LONG, pos);
+                hash = nextHash(hash, data);
+            }
+            if (endIndex % ALIGNMENT > 0L) {
+                long data = MemorySegments.tail(memorySegment, endIndex);
+                long truncated = Bits.truncate(data, tailLen);
+                hash = nextHash(hash, truncated);
+            }
+            return hash;
+        }
 
         @Override
         public long getAsLong() {
             long next = position == alignedStart && headLen > 0 ? segment.head() << ALIGNMENT * (ALIGNMENT - headLen)
                 : position < alignedEnd ? memorySegment.get(JAVA_LONG, position)
-                    : position == alignedEnd && tailLen > 0 ? segment.tail()
+                    : position == alignedEnd && tailLen > 0 ? MemorySegments.tail(memorySegment, endIndex)
                         : 0x0L;
             position += ALIGNMENT;
             return next;
@@ -368,10 +365,11 @@ public abstract sealed class BitwiseTraverser
             return buffer;
         }
 
-        default int longHashCode() {
-            int hash = 0;
-            for (int i = 0; i < size(); i++) {
-                hash = hash * 31 + Long.hashCode(getAsLong());
+        default long toHashCode() {
+            long hash = 0;
+            long size = size();
+            for (int i = 0; i < size; i++) {
+                hash = nextHash(hash, getAsLong());
             }
             return hash;
         }
