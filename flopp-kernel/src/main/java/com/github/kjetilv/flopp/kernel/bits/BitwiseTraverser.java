@@ -37,27 +37,45 @@ public abstract sealed class BitwiseTraverser
     @SuppressWarnings("PackageVisibleField")
     final ReusableBase shifted = new Shifted();
 
+    @SuppressWarnings("PackageVisibleField")
+    final ReusableBase empty = new Empty();
+
     private final ReusableBase none = new Null();
 
     public Reusable blank() {
         return none;
     }
 
+    @Override
+    public Reusable apply(LineSegment segment) {
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        long head = segment.startIndex() % ALIGNMENT_INT;
+        int length = (int) (endIndex - startIndex);
+        if (length == 0) {
+            return empty;
+        }
+        int headLen = head == 0L
+            ? 0
+            : ALIGNMENT_INT - (int) head;
+        return baseFor(headLen).initialize(segment, headLen, startIndex, endIndex, length);
+    }
+
+    abstract ReusableBase baseFor(int headLen);
+
     private static final class AlignedTraverser extends BitwiseTraverser {
 
         @Override
-        public Reusable apply(LineSegment segment) {
-            return aligned.initialize(segment, segment.headLength());
+        ReusableBase baseFor(int headLen) {
+            return aligned;
         }
     }
 
     private static final class MultiModeSuppler extends BitwiseTraverser {
 
         @Override
-        public Reusable apply(LineSegment segment) {
-            int headLen = segment.headLength();
-            ReusableBase base = headLen == 0 ? aligned : shifted;
-            return base.initialize(segment, headLen);
+        ReusableBase baseFor(int headLen) {
+            return headLen == 0 ? aligned : shifted;
         }
     }
 
@@ -68,7 +86,9 @@ public abstract sealed class BitwiseTraverser
             return BitwiseTraverser.this.apply(lineSegment);
         }
 
-        abstract Reusable initialize(LineSegment segment, int headLen);
+        Reusable initialize(LineSegment segment, int headLen, long startIndex, long endIndex, int length) {
+            return null;
+        }
     }
 
     private final class Null extends ReusableBase {
@@ -92,9 +112,21 @@ public abstract sealed class BitwiseTraverser
         public long toHashCode() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private final class Empty extends ReusableBase {
 
         @Override
-        Reusable initialize(LineSegment segment, int headLen) {
+        public long size() {
+            return 0;
+        }
+
+        @Override
+        public void forEach(IndexedLongConsumer consumer) {
+        }
+
+        @Override
+        public long getAsLong() {
             throw new UnsupportedOperationException();
         }
     }
@@ -132,9 +164,6 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public void forEach(IndexedLongConsumer consumer) {
-            if (length == 0) {
-                return;
-            }
             if (headLen >= length) {
                 consumer.accept(0, Bits.truncate(data, length));
                 return;
@@ -167,9 +196,6 @@ public abstract sealed class BitwiseTraverser
         @Override
         public long toHashCode() {
             long hash = 0;
-            if (length == 0) {
-                return hash;
-            }
             long data = segment.head();
             if (headLen >= length) {
                 hash = nextHash(hash, Bits.truncate(data, length));
@@ -236,19 +262,18 @@ public abstract sealed class BitwiseTraverser
         }
 
         @Override
-        ReusableBase initialize(LineSegment segment, int headLen) {
+        ReusableBase initialize(LineSegment segment, int headLen, long startIndex, long endIndex, int length) {
             this.segment = segment;
-            long startIndex = segment.startIndex();
-            this.endIndex = segment.endIndex();
-            this.length = (int) (endIndex - startIndex);
+            this.endIndex = endIndex;
+            this.length = length;
             this.memorySegment = segment.memorySegment();
             this.headLen = headLen;
             this.headStart = (int) (startIndex % ALIGNMENT_INT);
             this.headShift = headLen * ALIGNMENT_INT;
-            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
+            this.tailLen = (int) (this.endIndex % ALIGNMENT_INT);
             this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
 
-            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+            this.alignedEnd = this.endIndex - this.endIndex % ALIGNMENT_INT;
             this.position = startIndex - headStart + (headLen > 0 ? ALIGNMENT : 0);
 
             this.data = this.segment.head();
@@ -272,8 +297,6 @@ public abstract sealed class BitwiseTraverser
 
         private long alignedEnd;
 
-        private int length;
-
         private long position;
 
         @Override
@@ -283,9 +306,6 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public void forEach(IndexedLongConsumer consumer) {
-            if (length == 0) {
-                return;
-            }
             int index = 0;
             for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
                 long data = memorySegment.get(JAVA_LONG, pos);
@@ -300,9 +320,6 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public long toHashCode() {
-            if (length == 0) {
-                return 0;
-            }
             long hash = 0;
             for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
                 long data = memorySegment.get(JAVA_LONG, pos);
@@ -327,17 +344,15 @@ public abstract sealed class BitwiseTraverser
         }
 
         @Override
-        ReusableBase initialize(LineSegment segment, int headLen) {
+        ReusableBase initialize(LineSegment segment, int headLen, long startIndex, long endIndex, int length) {
             this.segment = segment;
-            long startIndex = segment.startIndex();
-            this.endIndex = segment.endIndex();
-            this.length = (int) (endIndex - startIndex);
+            this.endIndex = endIndex;
             this.memorySegment = this.segment.memorySegment();
             this.headLen = headLen;
             int headStart = (int) (startIndex % ALIGNMENT_INT);
             this.alignedStart = startIndex - headStart;
-            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
-            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
+            this.alignedEnd = this.endIndex - this.endIndex % ALIGNMENT_INT;
+            this.tailLen = (int) (this.endIndex % ALIGNMENT_INT);
             this.position = this.alignedStart;
             return this;
         }
