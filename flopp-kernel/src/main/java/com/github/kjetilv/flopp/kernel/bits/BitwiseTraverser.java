@@ -56,7 +56,8 @@ public abstract sealed class BitwiseTraverser
         @Override
         public Reusable apply(LineSegment segment) {
             int headLen = segment.headLength();
-            return (headLen == 0 ? aligned : shifted).initialize(segment, headLen);
+            ReusableBase base = headLen == 0 ? aligned : shifted;
+            return base.initialize(segment, headLen);
         }
     }
 
@@ -110,7 +111,7 @@ public abstract sealed class BitwiseTraverser
 
         private int tailLen;
 
-        private long headStart;
+        private int headStart;
 
         private long alignedEnd;
 
@@ -130,7 +131,7 @@ public abstract sealed class BitwiseTraverser
             this.memorySegment = segment.memorySegment();
             this.headLen = headLen;
             long startIndex = this.segment.startIndex();
-            this.headStart = startIndex % ALIGNMENT_INT;
+            this.headStart = (int) (startIndex % ALIGNMENT_INT);
             this.endIndex = this.segment.endIndex();
             this.length = (int) (endIndex - startIndex);
             this.headShift = headLen * ALIGNMENT_INT;
@@ -244,7 +245,6 @@ public abstract sealed class BitwiseTraverser
             if (position == endIndex) {
                 return data;
             }
-            int headStart = ALIGNMENT_INT - headLen;
             if (tailLen > headStart) {
                 int restTail = tailLen - headStart;
                 if (restTail > 0) {
