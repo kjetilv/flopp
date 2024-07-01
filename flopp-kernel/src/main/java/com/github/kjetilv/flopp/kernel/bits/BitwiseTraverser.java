@@ -126,26 +126,6 @@ public abstract sealed class BitwiseTraverser
         private long data;
 
         @Override
-        public ReusableBase initialize(LineSegment segment, int headLen) {
-            this.segment = segment;
-            this.memorySegment = segment.memorySegment();
-            this.headLen = headLen;
-            long startIndex = this.segment.startIndex();
-            this.headStart = (int) (startIndex % ALIGNMENT_INT);
-            this.endIndex = this.segment.endIndex();
-            this.length = (int) (endIndex - startIndex);
-            this.headShift = headLen * ALIGNMENT_INT;
-            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
-            this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
-
-            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
-            this.position = startIndex - headStart + (headLen > 0 ? ALIGNMENT : 0);
-
-            this.data = this.segment.head();
-            return this;
-        }
-
-        @Override
         public long size() {
             return segment.shiftedLongsCount();
         }
@@ -155,7 +135,6 @@ public abstract sealed class BitwiseTraverser
             if (length == 0) {
                 return;
             }
-            long data = segment.head();
             if (headLen >= length) {
                 consumer.accept(0, Bits.truncate(data, length));
                 return;
@@ -223,7 +202,7 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public long getAsLong() {
-            if (headStart + length < ALIGNMENT) {
+            if (headLen >= length) {
                 return Bits.truncate(data, length);
             }
             if (position < alignedEnd) {
@@ -255,6 +234,26 @@ public abstract sealed class BitwiseTraverser
             }
             return 0x0L;
         }
+
+        @Override
+        ReusableBase initialize(LineSegment segment, int headLen) {
+            this.segment = segment;
+            long startIndex = segment.startIndex();
+            this.endIndex = segment.endIndex();
+            this.length = (int) (endIndex - startIndex);
+            this.memorySegment = segment.memorySegment();
+            this.headLen = headLen;
+            this.headStart = (int) (startIndex % ALIGNMENT_INT);
+            this.headShift = headLen * ALIGNMENT_INT;
+            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
+            this.tailShift = (ALIGNMENT_INT - headLen) * ALIGNMENT_INT;
+
+            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+            this.position = startIndex - headStart + (headLen > 0 ? ALIGNMENT : 0);
+
+            this.data = this.segment.head();
+            return this;
+        }
     }
 
     private final class Aligned extends ReusableBase {
@@ -276,25 +275,6 @@ public abstract sealed class BitwiseTraverser
         private int length;
 
         private long position;
-
-        @Override
-        public ReusableBase initialize(LineSegment segment, int headLen) {
-            this.segment = segment;
-            this.memorySegment = this.segment.memorySegment();
-            this.headLen = headLen;
-            long startIndex = this.segment.startIndex();
-            this.endIndex = this.segment.endIndex();
-            this.length = (int) (endIndex - startIndex);
-            int headStart = (int) (startIndex % ALIGNMENT_INT);
-            this.alignedStart = startIndex - headStart;
-            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
-            this.headLen = headStart == 0L
-                ? 0
-                : ALIGNMENT_INT - headStart;
-            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
-            this.position = this.alignedStart;
-            return this;
-        }
 
         @Override
         public long size() {
@@ -344,6 +324,22 @@ public abstract sealed class BitwiseTraverser
                         : 0x0L;
             position += ALIGNMENT;
             return next;
+        }
+
+        @Override
+        ReusableBase initialize(LineSegment segment, int headLen) {
+            this.segment = segment;
+            long startIndex = segment.startIndex();
+            this.endIndex = segment.endIndex();
+            this.length = (int) (endIndex - startIndex);
+            this.memorySegment = this.segment.memorySegment();
+            this.headLen = headLen;
+            int headStart = (int) (startIndex % ALIGNMENT_INT);
+            this.alignedStart = startIndex - headStart;
+            this.alignedEnd = endIndex - endIndex % ALIGNMENT_INT;
+            this.tailLen = (int) (endIndex % ALIGNMENT_INT);
+            this.position = this.alignedStart;
+            return this;
         }
     }
 
