@@ -8,13 +8,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record Partitions(long total, List<Partition> partitions, long tail) {
+public record Partitions(
+    long total,
+    List<Partition> partitions,
+    long tail
+) {
 
     public Partitions(long total, List<Partition> partitions, long tail) {
         this.total = Non.negative(total, "total");
-        this.partitions = Non.empty(partitions, "partitions")
-            .stream().sorted()
-            .toList();
+        this.partitions = Non.empty(partitions, "partitions").stream().sorted().toList();
         this.tail = tail > 0 ? partitions().getLast().length() : 0L;
         if (this.total != this.partitions.stream().mapToLong(Partition::length).sum()) {
             throw new IllegalArgumentException("Wrong total: " + total + ": " + partitions);

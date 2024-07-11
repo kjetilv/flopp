@@ -2,15 +2,15 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.lang.foreign.MemorySegment;
 
-record HashedLineSegment(MemorySegment memorySegment, long startIndex, long endIndex, int hash)
+record HashedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
     implements LineSegment, LineSegment.Immutable, LineSegment.Hashed {
 
     public static LineSegment hash(LineSegment ls) {
-        return hash(ls, LineSegments.hashCode(ls));
+        return hash(LineSegments.hashCode(ls), ls);
     }
 
-    public static LineSegment hash(LineSegment ls, int hash) {
-        return new HashedLineSegment(ls.memorySegment(), ls.startIndex(), ls.endIndex(), hash);
+    public static LineSegment hash(int hash, LineSegment ls) {
+        return new HashedLineSegment(hash, ls.memorySegment(), ls.startIndex(), ls.endIndex());
     }
 
     @Override

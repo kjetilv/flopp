@@ -84,7 +84,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default LineSegment hashedWith(int hash) {
-        return hash(this, hash);
+        return hash(hash, this);
     }
 
     default boolean matches(LineSegment other) {

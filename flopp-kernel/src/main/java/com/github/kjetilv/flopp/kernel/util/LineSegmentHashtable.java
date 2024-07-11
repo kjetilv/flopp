@@ -23,9 +23,13 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
     private final BitwiseTraverser.Reusable reusable;
 
     public LineSegmentHashtable(int size) {
+        this(size, null);
+    }
+
+    public LineSegmentHashtable(int size, BitwiseTraverser.Reusable reusable) {
         this.size = Non.negativeOrZero(size, "size");
         this.table = new Record<?>[this.size];
-        this.reusable = BitwiseTraverser.create();
+        this.reusable = reusable == null ? BitwiseTraverser.create() : reusable;
     }
 
     @SuppressWarnings("unchecked")

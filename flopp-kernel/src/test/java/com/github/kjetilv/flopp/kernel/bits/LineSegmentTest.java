@@ -39,7 +39,7 @@ class LineSegmentTest {
         assertThat(ls.alignedCount()).isEqualTo(4L);
         assertThat(ls.fullLongCount()).isEqualTo(4L);
         assertThat(ls.startIndex()).isEqualTo(0L);
-        assertThat(Bits.toString(ls.longNo(0), UTF_8)).isEqualTo("foo bar ");
+        assertThat(Bits.toString(ls.longAt(0), UTF_8)).isEqualTo("foo bar ");
         assertThat(Bits.toString(ls.fullLongNo(0), UTF_8)).isEqualTo("foo bar ");
         assertThat(Bits.toString(ls.tail(), ls.tailLength(), UTF_8)).isEqualTo("zot\n");
 

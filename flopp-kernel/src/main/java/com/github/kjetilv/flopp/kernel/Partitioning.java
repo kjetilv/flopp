@@ -7,7 +7,7 @@ import java.util.List;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.Integer.MAX_VALUE;
 
-public record Partitioning(int count, long tail, TrailFragmentation fragmentation) {
+public record Partitioning(int count, long tail, TailShards fragmentation) {
 
     public static Partitioning create() {
         return new Partitioning(Runtime.getRuntime().availableProcessors(), 0, null);
@@ -49,8 +49,19 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
         return new Partitioning(count, tail, fragmentation);
     }
 
-    public Partitioning fragment(TrailFragmentation trailFragmentation) {
-        return new Partitioning(count, tail, trailFragmentation);
+    public Partitioning fragment(
+        int shardCount,
+        double tailPerc,
+        double partitionMaxPerc,
+        double partitionMinPerc
+    ) {
+        return fragment(
+            new TailShards(shardCount, tailPerc, partitionMaxPerc, partitionMinPerc)
+        );
+    }
+
+    public Partitioning fragment(TailShards tailShards) {
+        return new Partitioning(count, tail, tailShards);
     }
 
     public Partitions of(long total) {
@@ -62,14 +73,14 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
             return new Partitions(total, partitions, tail);
         }
         if (total > count) {
-            TrailFragmentation.Result result = fragmentation.create(total, count, tail);
-            long mainTotal = total - result.partitions().total();
+            Partitions fragmentedPartitions = fragmentation.create(total, count, tail);
+            long mainTotal = total - fragmentedPartitions.total();
 
             long[] sizes = partitionSizes(count, mainTotal, tail);
             List<Partition> partitions = partitions(sizes);
 
             Partitions mainPart = new Partitions(mainTotal, partitions, tail);
-            return mainPart.insertAtEnd(result.partitions());
+            return mainPart.insertAtEnd(fragmentedPartitions);
         }
         List<Partition> partitions = singlePartition(total);
         return new Partitions(total, partitions, tail);
@@ -78,12 +89,14 @@ public record Partitioning(int count, long tail, TrailFragmentation fragmentatio
     private void checkSize(long total) {
         Non.negativeOrZero(total, "total");
         if (count > 1) {
-            long reasonablesize = tail + count;
-            if (total < reasonablesize) {
-                throw new IllegalStateException(this + " requires a length >= " + reasonablesize + ", total size is " + total);
+            long reasonableSize = tail + count;
+            if (total < reasonableSize) {
+                throw new IllegalStateException(
+                    this + " requires a length >= " + reasonableSize + ", total size is " + total);
             }
             if (count > total) {
-                throw new IllegalStateException("Too many partitions for " + total + ": " + count + " partitions");
+                throw new IllegalStateException(
+                    "Too many partitions for " + total + ": " + count + " partitions");
             }
         }
     }

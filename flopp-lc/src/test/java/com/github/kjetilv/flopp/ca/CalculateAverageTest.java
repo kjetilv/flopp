@@ -121,8 +121,9 @@ class CalculateAverageTest {
         int tail
     ) {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
-        Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go6(
-            smaple, partitioning
+        Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
+            smaple,
+            new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d)
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).hasContent(map + "\n")

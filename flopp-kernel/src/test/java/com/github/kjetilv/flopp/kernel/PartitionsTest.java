@@ -43,11 +43,11 @@ class PartitionsTest {
         Partitions partitions = Partitioning.create(
                 cpus,
                 250
-            ).fragment(new TrailFragmentation(
+            ).fragment(new TailShards(
                 cpus * 3,
                 1.0d,
-                0.01d,
-                0.1d
+                0.1d,
+                0.01d
             ))
             .of(1_000_000_000);
         System.out.println(partitions);
