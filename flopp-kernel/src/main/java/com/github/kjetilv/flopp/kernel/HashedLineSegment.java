@@ -14,6 +14,17 @@ record HashedLineSegment(int hash, MemorySegment memorySegment, long startIndex,
     }
 
     @Override
+    public boolean matches(LineSegment other) {
+        long otherEnd = other.endIndex();
+        long otherStart = other.startIndex();
+        long otherLength = otherEnd - otherStart;
+        return endIndex - startIndex == otherLength && MemorySegment.mismatch(
+            memorySegment, startIndex, endIndex,
+            other.memorySegment(), otherStart, otherEnd
+        ) < 0;
+    }
+
+    @Override
     public LineSegment hashed() {
         return this;
     }

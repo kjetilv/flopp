@@ -7,6 +7,7 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
@@ -17,38 +18,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
 
-    public static long mismatch(LineSegment seg1, LineSegment seg2) {
-        return MemorySegment.mismatch(
-            seg1.memorySegment(), seg1.startIndex(), seg1.endIndex(),
-            seg2.memorySegment(), seg2.startIndex(), seg2.endIndex()
-        );
-    }
-
-    public static boolean equals(LineSegment seg1, LineSegment seg2) {
-        if (seg1 == null || seg2 == null) {
-            return (seg1 == null) == (seg2 == null);
-        }
-        long count1 = seg1.longsCount();
-        long count2 = seg2.longsCount();
-        if (count1 != count2) {
-            return false;
-        }
-        if (count1 < 2) {
-            return mismatch(seg1, seg2) < 0;
-        }
-        LongSupplier sup1 = seg1.longSupplier();
-        LongSupplier sup2 = seg2.longSupplier();
-        for (long l = 0; l < count1; l++) {
-            if (sup1.getAsLong() != sup2.getAsLong()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public static int hashCode(LineSegment segment) {
-        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
-        return hashCode(reusable, reusable.size());
+        return segment.memorySegment().hashCode();
     }
 
     public static int hashCode(LongSupplier supplier, long count) {

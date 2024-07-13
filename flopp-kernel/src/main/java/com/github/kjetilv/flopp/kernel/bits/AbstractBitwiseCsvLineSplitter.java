@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -101,6 +102,17 @@ abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLine
     @Override
     public final long endIndex() {
         return endIndex;
+    }
+
+    @Override
+    public boolean matches(LineSegment other) {
+        long otherStart = other.startIndex();
+        long otherEnd = other.endIndex();
+        long otherLength = otherEnd - otherStart;
+        return endIndex - startIndex == otherLength && MemorySegment.mismatch(
+            segment, startIndex, endIndex,
+            other.memorySegment(), otherStart, otherEnd
+        ) < 0;
     }
 
     @Override

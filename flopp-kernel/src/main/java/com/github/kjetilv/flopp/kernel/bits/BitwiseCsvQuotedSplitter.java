@@ -6,6 +6,8 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.function.Consumer;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+
 @SuppressWarnings("DuplicatedCode")
 final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
@@ -31,9 +33,10 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
             markSeparator(length);
         } else {
             processHead(segment);
-            long longCount = segment.alignedCount();
-            for (int i = 1; i < longCount; i++) {
-                findSeps(segment.longNo(i), 0);
+            long start = segment.alignedStart() + ALIGNMENT_INT;
+            long end = segment.alignedEnd();
+            for (long i = start; i < end; i += ALIGNMENT_INT) {
+                findSeps(segment.longAt(i), 0);
             }
             if (segment.isAlignedAtEnd()) {
                 markSeparator(length);

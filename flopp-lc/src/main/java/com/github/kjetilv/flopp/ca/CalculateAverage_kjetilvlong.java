@@ -50,8 +50,8 @@ public final class CalculateAverage_kjetilvlong {
         Path path = resolve(Path.of(args[0]));
         Settings settings = new Settings(
             1,
-            40,
-            .1d,
+            64,
+            .2d,
             .001d,
             .0001d
         );
@@ -79,7 +79,7 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         CsvFormat format = new CsvFormat.Simple(2, ';');
         Partitioning p = partitioning(cpus, shape, settings);
-        int chunks = p.of(shape.size()).size();
+        Partitions partitions = p.of(shape.size());
         AtomicInteger threads = new AtomicInteger();
         Map<String, Result> map = new TreeMap<>();
         try (
@@ -92,6 +92,7 @@ public final class CalculateAverage_kjetilvlong {
                 new LinkedBlockingQueue<>(bitwisePartitioned.partitions().size())
             )
         ) {
+            int chunks = bitwisePartitioned.partitions().size();
             BlockingQueue<Map<String, Result>> queue = new ArrayBlockingQueue<>(chunks);
             Map<Long, LineSegmentHashtable<Result>> rs = new ConcurrentHashMap<>();
             bitwisePartitioned.splitters(format, executor)

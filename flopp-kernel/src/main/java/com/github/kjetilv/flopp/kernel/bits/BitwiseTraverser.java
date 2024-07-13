@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 
-import java.lang.foreign.MemorySegment;
 import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
@@ -10,7 +9,6 @@ import java.util.function.LongSupplier;
 import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public abstract sealed class BitwiseTraverser
     implements Function<LineSegment, BitwiseTraverser.Reusable> {
@@ -84,7 +82,7 @@ public abstract sealed class BitwiseTraverser
             return BitwiseTraverser.this.apply(lineSegment);
         }
 
-        Reusable initialize(
+        protected Reusable initialize(
             LineSegment segment,
             int headLen,
             int headStart,
@@ -253,18 +251,13 @@ public abstract sealed class BitwiseTraverser
                 return data;
             }
             if (tailLen > headStart) {
-                int restTail = tailLen - headStart;
-                if (restTail > 0) {
-                    long alignedData = segment.tail();
-                    long remainingData = alignedData >> headStart * ALIGNMENT;
-                    return remainingData;
-                }
+                return segment.tail() >> headStart * ALIGNMENT;
             }
             return 0x0L;
         }
 
         @Override
-        ReusableBase initialize(
+        protected ReusableBase initialize(
             LineSegment segment,
             int headLen,
             int headStart,
@@ -356,7 +349,7 @@ public abstract sealed class BitwiseTraverser
         }
 
         @Override
-        ReusableBase initialize(
+        protected ReusableBase initialize(
             LineSegment segment,
             int headLen,
             int headStart,

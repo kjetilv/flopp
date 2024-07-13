@@ -88,7 +88,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default boolean matches(LineSegment other) {
-        return this.length() == other.length() && LineSegments.mismatch(this, other) < 0;
+        return this.length() == other.length() && MemorySegment.mismatch(
+            memorySegment(), startIndex(), endIndex(),
+            other.memorySegment(), other.startIndex(), other.endIndex()
+        ) < 0;
     }
 
     @SuppressWarnings("unused")
