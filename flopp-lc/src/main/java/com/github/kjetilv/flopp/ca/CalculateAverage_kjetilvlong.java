@@ -38,20 +38,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class CalculateAverage_kjetilvlong {
 
-    public record Settings(
-        int cpuMultiplier,
-        int tailMultiplier,
-        double tailPerc,
-        double partitionMaxPerc,
-        double partitionMinPerc
-    ) {}
-
     public static void main(String[] args) throws IOException {
         Path path = resolve(Path.of(args[0]));
         Settings settings = new Settings(
             1,
             64,
-            .2d,
+            .5d,
             .001d,
             .0001d
         );
@@ -144,8 +136,8 @@ public final class CalculateAverage_kjetilvlong {
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         );
         reader.read(splitter, columns -> {
-            LineSegment raw = columns.getRaw(0);
-            Result result = table.get(raw, Result::new);
+            LineSegment segment = columns.getRaw(0);
+            Result result = table.get(segment, Result::new);
             result.add(columns.getInt(1));
         });
         return table;
@@ -184,6 +176,15 @@ public final class CalculateAverage_kjetilvlong {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Failed", e);
         }
+    }
+
+    public record Settings(
+        int cpuMultiplier,
+        int tailMultiplier,
+        double tailPerc,
+        double partitionMaxPerc,
+        double partitionMinPerc
+    ) {
     }
 
     public static final class Result {

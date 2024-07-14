@@ -91,7 +91,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return this.length() == other.length() && MemorySegment.mismatch(
             memorySegment(), startIndex(), endIndex(),
             other.memorySegment(), other.startIndex(), other.endIndex()
-        ) < 0;
+        ) == -1;
     }
 
     @SuppressWarnings("unused")

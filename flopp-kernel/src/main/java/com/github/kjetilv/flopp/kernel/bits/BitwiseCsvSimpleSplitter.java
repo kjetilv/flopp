@@ -23,7 +23,8 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
         long length = segment.length();
         if (length < ALIGNMENT_INT) {
-            findSeps(segment.bytesAt(0, length), 0);
+            long bytes = segment.bytesAt(0, length);
+            findSeps(bytes, 0);
             markSeparator(length);
         } else {
             processHead(segment);

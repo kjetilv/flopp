@@ -17,11 +17,11 @@ record HashedLineSegment(int hash, MemorySegment memorySegment, long startIndex,
     public boolean matches(LineSegment other) {
         long otherEnd = other.endIndex();
         long otherStart = other.startIndex();
-        long otherLength = otherEnd - otherStart;
-        return endIndex - startIndex == otherLength && MemorySegment.mismatch(
+        long mismatch = MemorySegment.mismatch(
             memorySegment, startIndex, endIndex,
             other.memorySegment(), otherStart, otherEnd
-        ) < 0;
+        );
+        return mismatch == -1;
     }
 
     @Override
