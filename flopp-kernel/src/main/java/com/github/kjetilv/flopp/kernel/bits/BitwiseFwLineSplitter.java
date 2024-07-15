@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.FwFormat;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
@@ -51,5 +52,9 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public long end(int column) {
         return end[column];
+    }
+
+    @Override
+    protected void separate(LineSegment segment) {
     }
 }

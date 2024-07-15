@@ -16,7 +16,9 @@ import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings("PackageVisibleField")
-abstract sealed class AbstractBitwiseCsvLineSplitter extends AbstractBitwiseLineSplitter implements LineSegment
+abstract sealed class AbstractBitwiseCsvLineSplitter
+    extends AbstractBitwiseLineSplitter
+    implements LineSegment
     permits BitwiseCsvQuotedSplitter, BitwiseCsvEscapeSplitter, BitwiseCsvSimpleSplitter {
 
     final Bits.Finder sepFinder;

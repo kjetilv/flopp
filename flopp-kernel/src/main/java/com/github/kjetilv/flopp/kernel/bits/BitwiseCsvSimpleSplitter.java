@@ -24,40 +24,39 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
         long length = segment.length();
         if (length < ALIGNMENT_INT) {
             long bytes = segment.bytesAt(0, length);
-            findSeps(bytes, 0);
+            findSeps(bytes);
             markSeparator(length);
         } else {
             long headStart = this.startOffset % ALIGNMENT_INT;
-            processHead(segment, headStart);
+            findInitialSeps(segment.head(headStart), headStart);
             long start = this.startOffset - headStart + ALIGNMENT_INT;
             long end = segment.alignedEnd();
             for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i), 0);
+                findSeps(segment.longAt(i));
             }
             if (segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(segment.tail(), 0);
+                findSeps(segment.tail());
                 markSeparator(length);
             }
         }
     }
 
-    private void processHead(LineSegment segment, long headStart) {
-        if (headStart == 0) {
-            long headLong = segment.longNo(0);
-            findSeps(headLong, 0);
-        } else {
-            offset = -headStart;
-            long headLong = segment.head(headStart);
-            findSeps(headLong, headStart);
+    private void findInitialSeps(long data, long headStart) {
+        int dist = sepFinder.next(data);
+        while (dist < ALIGNMENT_INT) {
+            markSeparator(dist);
+            currentStart = dist;
+            dist = sepFinder.next();
         }
+        offset += ALIGNMENT_INT - headStart;
     }
 
-    private void findSeps(long bytes, long shift) {
-        int dist = sepFinder.next(bytes);
+    private void findSeps(long data) {
+        int dist = sepFinder.next(data);
         while (dist < ALIGNMENT_INT) {
-            long index = offset + dist + shift;
+            long index = offset + dist;
             markSeparator(index);
             currentStart = index;
             dist = sepFinder.next();

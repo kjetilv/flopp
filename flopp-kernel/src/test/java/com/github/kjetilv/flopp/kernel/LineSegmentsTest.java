@@ -169,12 +169,6 @@ class LineSegmentsTest {
         assertThat(biwiseAlignedTraversedString)
             .describedAs("alignBitwiseLongSupplier provided different string, %s, %s", startIndex, endIndex)
             .isEqualTo(substring);
-
-        LineSegmentKey lsk = LineSegmentKey.create(slice);
-        int actual = bitwiseLongTraverse.reset(slice).toHashCode();
-        assertThat(actual)
-            .describedAs("reusabler provided different hashCode, %s, %s", startIndex, endIndex)
-            .isEqualTo(lsk.hashCode());
     }
 
     private static String streamed(LongStream longStream, int start, int end) {

@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegmentKey;
 import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
@@ -68,10 +67,6 @@ public record Column(String name, int colunmNo, Parser parser) {
 
     public static Column ofSegment(int col, Function<LineSegment, LineSegment> fun) {
         return new Column(null, col, (Parser.Obj) fun::apply);
-    }
-
-    public static Column ofKeySegment(int col, Function<LineSegment, LineSegmentKey> keyer) {
-        return new Column(null, col, (Parser.Obj) keyer::apply);
     }
 
     public static Column ofString(int col) {

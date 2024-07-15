@@ -7,13 +7,13 @@ import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseLineSplitter
     implements Function<LineSegment, SeparatedLine>, Consumer<LineSegment>, SeparatedLine
     permits AbstractBitwiseCsvLineSplitter, BitwiseFwLineSplitter {
 
     private final Consumer<SeparatedLine> lines;
 
+    @SuppressWarnings("PackageVisibleField")
     MemorySegment segment;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
@@ -26,9 +26,9 @@ abstract sealed class AbstractBitwiseLineSplitter
     }
 
     @Override
-    public final SeparatedLine apply(LineSegment segment) {
-        this.segment = segment.memorySegment();
-        separate(segment);
+    public final SeparatedLine apply(LineSegment lineSegment) {
+        segment = lineSegment.memorySegment();
+        separate(lineSegment);
         lines.accept(this);
         return this;
     }
@@ -42,17 +42,14 @@ abstract sealed class AbstractBitwiseLineSplitter
     public final String toString() {
         String sub = substring();
         boolean hasSub = sub == null || sub.isBlank();
-        return getClass().getSimpleName() + "[" +
-               (hasSub ? "" : sub + " ") + segment +
-               "]";
+        return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + segment + "]";
     }
 
     String substring() {
         return null;
     }
 
-    protected void separate(LineSegment segment) {
-    }
+    protected abstract void separate(LineSegment segment);
 
     private static final Consumer<SeparatedLine> NONE = _ -> {
     };
