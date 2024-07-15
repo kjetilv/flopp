@@ -19,9 +19,15 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     BitwiseFwLineSplitter(FwFormat format, Consumer<SeparatedLine> lines) {
         super(lines);
-        this.length = format.ranges().length;
-        this.start = Arrays.stream(format.ranges()).mapToLong(Range::startIndex).toArray();
-        this.end = Arrays.stream(format.ranges()).mapToLong(Range::endIndex).toArray();
+        Range[] ranges = format.ranges();
+        this.length = ranges.length;
+        this.start = new long[this.length];
+        this.end = new long[this.length];
+        for (int i = 0; i < this.length; i++) {
+            Range range = ranges[i];
+            this.start[i] = range.startIndex();
+            this.end[i] = range.endIndex();
+        }
     }
 
     @Override
