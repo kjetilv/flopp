@@ -34,8 +34,9 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
             findSeps(segment.bytesAt(0, length), 0);
             markSeparator(length);
         } else {
-            processHead(segment);
-            long start = segment.alignedStart() + ALIGNMENT_INT;
+            long headStart = this.startOffset % ALIGNMENT_INT;
+            processHead(segment, headStart);
+            long start = this.startOffset - headStart + ALIGNMENT_INT;
             long end = segment.alignedEnd();
             for (long i = start; i < end; i += ALIGNMENT_INT) {
                 findSeps(segment.longAt(i), 0);
@@ -74,8 +75,7 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void processHead(LineSegment segment) {
-        long headStart = segment.headStart();
+    private void processHead(LineSegment segment, long headStart) {
         if (headStart == 0) {
             long headLong = segment.longNo(0);
             findSeps(headLong, 0);
