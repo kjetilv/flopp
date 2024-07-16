@@ -17,50 +17,35 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
     @Override
     protected void separate(LineSegment segment) {
-        this.offset = this.columnNo = 0;
+        this.columnNo = 0;
         this.currentStart = -1;
         this.startOffset = segment.startIndex();
 
-        long length = segment.length();
-        if (length < ALIGNMENT_INT) {
-            long data = segment.bytesAt(0, length);
-            findSeps(data);
-            markSeparator(length);
-        } else {
-            long headStart = this.startOffset % ALIGNMENT_INT;
-            findInitialSeps(segment.head(headStart), headStart);
-            long start = this.startOffset - headStart + ALIGNMENT_INT;
-            long end = segment.alignedEnd();
-            for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i));
-            }
-            if (segment.isAlignedAtEnd()) {
-                markSeparator(length);
-            } else {
-                findSeps(segment.tail());
-                markSeparator(length);
-            }
+        long endOffset = segment.endIndex();
+        long headStart = this.startOffset % ALIGNMENT_INT;
+
+        long headLen;
+        long offset = 0;
+        long start = this.startOffset;
+        if (headStart != 0) {
+            findSeps(offset, segment.head(headStart));
+            headLen = ALIGNMENT_INT - headStart;
+            offset += headLen;
+            start += headLen;
         }
+        long end = endOffset - endOffset % ALIGNMENT_INT;
+        for (long i = start; i < end; i += ALIGNMENT_INT, offset += ALIGNMENT_INT) {
+            findSeps(offset, segment.longAt(i));
+        }
+        findSeps(offset, segment.tail());
     }
 
-    private void findInitialSeps(long data, long headStart) {
-        int dist = sepFinder.next(data);
-        while (dist < ALIGNMENT_INT) {
-            markSeparator(dist);
-            currentStart = dist;
-            dist = sepFinder.next();
-        }
-        offset += ALIGNMENT_INT - headStart;
-    }
-
-    private void findSeps(long data) {
+    private void findSeps(long offset, long data) {
         int dist = sepFinder.next(data);
         while (dist < ALIGNMENT_INT) {
             long index = offset + dist;
             markSeparator(index);
-            currentStart = index;
             dist = sepFinder.next();
         }
-        offset += ALIGNMENT_INT;
     }
 }

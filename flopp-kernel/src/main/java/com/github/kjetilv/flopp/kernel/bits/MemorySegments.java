@@ -36,9 +36,12 @@ public final class MemorySegments {
     }
 
     public static long tail(MemorySegment ms, long end) {
-        int tail = (int) (end % ALIGNMENT_INT);
-        long value = ms.get(JAVA_LONG, end - tail);
-        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tail);
+        int tailLen = (int) end % ALIGNMENT_INT;
+        if (tailLen == 0) {
+            return 0x0L;
+        }
+        long value = ms.get(JAVA_LONG, end - tailLen);
+        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);
         return value << shift >>> shift;
     }
 

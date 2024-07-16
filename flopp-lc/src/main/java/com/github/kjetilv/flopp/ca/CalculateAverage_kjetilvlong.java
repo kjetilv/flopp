@@ -28,9 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,11 +55,10 @@ public final class CalculateAverage_kjetilvlong {
             "  " + partitioning(cpus, Shape.of(path), settings)
         );
 
-        Map<String, Result> map = go(path, settings, new CsvFormat.Simple(2, ';'));
-//        Map<String, Result> map1 = go(path, settings, new CsvFormat.Escape(';', '\\', 2));
-//        System.gc();
-//        Map<String, Result> map2 = go(path, settings, new CsvFormat.Quoted(2, '"', ';'));
-//        System.gc();
+        Instant start = Instant.now();
+        LineSegmentMap<Result> map = go(path, settings, new CsvFormat.Simple(2, ';'));
+        System.out.println(map.toStringSorted());
+        System.out.println(Duration.between(start, Instant.now()));
 
         if (args.length > 1) {
             String content = Files.readString(resolve(Path.of(args[1])));
@@ -70,14 +68,14 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     @SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
-    static Map<String, Result> go(Path path, Settings settings, CsvFormat format) {
-        Instant start = Instant.now();
+    static LineSegmentMap<Result> go(Path path, Settings settings, CsvFormat format) {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = partitioning(cpus, shape, settings);
         Partitions partitions = p.of(shape.size());
         AtomicInteger threads = new AtomicInteger();
-        Map<String, Result> map = new TreeMap<>();
+        int size = 32 * 1024;
+        LineSegmentHashtable<Result> map = new LineSegmentHashtable<>(size);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
             ExecutorService executor = new ThreadPoolExecutor(
@@ -89,20 +87,42 @@ public final class CalculateAverage_kjetilvlong {
             )
         ) {
             int chunks = bitwisePartitioned.partitions().size();
-            BlockingQueue<Map<String, Result>> queue = new ArrayBlockingQueue<>(chunks);
-            Map<Long, LineSegmentHashtable<Result>> rs = new ConcurrentHashMap<>();
+            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
+            List<Throwable> errors = new CopyOnWriteArrayList<>();
             bitwisePartitioned.splitters(format, executor)
                 .forEach(future ->
-                    future.thenApply(CalculateAverage_kjetilvlong::table)
-                        .thenAccept(table ->
-                            queue.offer(table.toStringMap())));
-            for (int i = 0; i < chunks; i++) {
-                merge(map, take(queue));
+                    future.thenApply(splitter -> table(splitter, size))
+                        .thenAccept(queue::offer)
+                        .exceptionally(throwable ->
+                            printAndAdd(throwable, errors)));
+            if (errors.isEmpty()) {
+                for (int i = 0; i < chunks; i++) {
+                    map.merge(take(queue), Result::merge);
+                }
+                return map;
+            } else {
+                return fail(errors);
             }
         }
-        System.out.println(map);
-        System.out.println(Duration.between(start, Instant.now()));
-        return map;
+    }
+
+    private static <T> T fail(List<Throwable> errors) {
+        IllegalStateException e = new IllegalStateException("Failed");
+        errors.forEach(e::addSuppressed);
+        throw e;
+    }
+
+    private static Void printAndAdd(Throwable throwable, List<Throwable> errors) {
+        System.out.println("Error: " + throwable.getMessage());
+        for (
+            Throwable cause = throwable.getCause();
+            cause != null && cause != cause.getCause();
+            cause = cause.getCause()
+        ) {
+            System.out.println("  Cause: " + cause);
+        }
+        errors.add(throwable);
+        return null;
     }
 
     private static Path resolve(Path path) {
@@ -134,8 +154,8 @@ public final class CalculateAverage_kjetilvlong {
         );
     }
 
-    private static LineSegmentMap<Result> table(PartitionedSplitter splitter) {
-        LineSegmentMap<Result> table = new LineSegmentHashtable<>(32 * 1024);
+    private static LineSegmentMap<Result> table(PartitionedSplitter splitter, int size) {
+        LineSegmentMap<Result> table = new LineSegmentHashtable<>(size);
         Reader reader = Readers.create(
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         );
@@ -166,11 +186,6 @@ public final class CalculateAverage_kjetilvlong {
             pos *= 10;
         }
         return value;
-    }
-
-    private static <K> void merge(Map<K, Result> acc, Map<K, Result> map) {
-        map.forEach((key, value) ->
-            acc.merge(key, value, Result::merge));
     }
 
     private static <T> T take(BlockingQueue<T> queue) {

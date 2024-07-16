@@ -6,7 +6,6 @@ import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
@@ -62,5 +61,9 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     @Override
     protected void separate(LineSegment segment) {
+    }
+
+    @Override
+    protected void markEnd() {
     }
 }

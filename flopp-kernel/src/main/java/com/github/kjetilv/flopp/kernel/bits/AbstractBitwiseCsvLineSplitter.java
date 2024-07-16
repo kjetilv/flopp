@@ -167,7 +167,17 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         return "format=" + format.toString();
     }
 
-    final void markSeparator(long length) {
+    @Override
+    protected void markEnd() {
+        mark(length);
+    }
+
+    final void markSeparator(long index) {
+        mark(index);
+        currentStart = index;
+    }
+
+    private void mark(long length) {
         long startPosition = startOffset + currentStart + 1;
         long endPosition = startOffset + length;
         this.startPositions[columnNo] = startPosition;

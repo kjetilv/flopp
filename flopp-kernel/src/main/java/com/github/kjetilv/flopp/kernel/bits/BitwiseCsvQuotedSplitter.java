@@ -30,8 +30,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
-            findSeps(Bits.truncate(segment.head(), (int) length));
-            markSeparator(length);
+            findSeps(segment.bytesAt(0, length));
         } else {
             long shift = this.startOffset % ALIGNMENT_INT;
             findInitialSeps(segment.head(shift), shift);
@@ -40,12 +39,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
             for (long i = start; i < end; i += ALIGNMENT_INT) {
                 findSeps(segment.longAt(i));
             }
-            if (segment.isAlignedAtEnd()) {
-                markSeparator(length);
-            } else {
-                findSeps(segment.tail());
-                markSeparator(length);
-            }
+            findSeps(segment.tail());
         }
     }
 
@@ -93,11 +87,9 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         switch (state) {
             case STARTING_COLUMN -> {
                 markSeparator(index);
-                currentStart = index;
             }
             case QUOTING_QUOTE -> {
                 markSeparator(index);
-                currentStart = index;
                 state = STARTING_COLUMN;
             }
         }

@@ -32,7 +32,6 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
             findSeps(segment.bytesAt(0, length), 0);
-            markSeparator(length);
         } else {
             long headStart = this.startOffset % ALIGNMENT_INT;
             processHead(segment, headStart);
@@ -41,11 +40,8 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
             for (long i = start; i < end; i += ALIGNMENT_INT) {
                 findSeps(segment.longAt(i), 0);
             }
-            if (segment.isAlignedAtEnd()) {
-                markSeparator(length);
-            } else {
+            if (!segment.isAlignedAtEnd()) {
                 findSeps(segment.tail(), 0);
-                markSeparator(length);
             }
         }
     }
@@ -92,7 +88,6 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         boolean effective = !(escaping && position == nextEscape);
         if (effective) {
             markSeparator(position);
-            currentStart = position;
         } else {
             escaping = false;
         }

@@ -383,6 +383,10 @@ public abstract sealed class BitwiseTraverser
             return buffer;
         }
 
+        default int toHashCode(LineSegment lineSegment) {
+            return apply(lineSegment).toHashCode();
+        }
+
         default int toHashCode() {
             int hash = 17;
             long size = size();
