@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Disabled;
@@ -123,7 +124,7 @@ class CalculateAverageTest {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
         Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
             smaple,
-            new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d)
+            new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d), new CsvFormat.Simple(2, ';')
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).hasContent(map + "\n")

@@ -22,47 +22,38 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
     @Override
     protected void separate(LineSegment segment) {
-        this.offset = this.columnNo = 0;
+        this.offset = 0;
+        this.columnNo = 0;
         this.currentStart = -1;
         this.state = STARTING_COLUMN;
         this.startOffset = segment.startIndex();
 
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
-            findSeps(segment.bytesAt(0, length), 0);
+            findSeps(Bits.truncate(segment.head(), (int) length));
             markSeparator(length);
         } else {
-            long headStart = this.startOffset % ALIGNMENT_INT;
-            processHead(segment, headStart);
-            long start = this.startOffset - headStart + ALIGNMENT_INT;
+            long shift = this.startOffset % ALIGNMENT_INT;
+            findInitialSeps(segment.head(shift), shift);
+            long start = this.startOffset - shift + ALIGNMENT_INT;
             long end = segment.alignedEnd();
             for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i), 0);
+                findSeps(segment.longAt(i));
             }
             if (segment.isAlignedAtEnd()) {
                 markSeparator(length);
             } else {
-                findSeps(segment.tail(), 0);
+                findSeps(segment.tail());
                 markSeparator(length);
             }
         }
     }
 
-    private void processHead(LineSegment segment, long headStart) {
-        if (headStart == 0) {
-            long headLong = segment.longNo(0);
-            findSeps(headLong, 0);
-        } else {
-            offset = -headStart;
-            long headLong = segment.head(headStart);
-            findSeps(headLong, headStart);
-        }
-    }
+    private void findInitialSeps(long bytes, long shift) {
+        offset = -shift;
 
-    private void findSeps(long bytes, long shift) {
         int sep = sepFinder.next(bytes);
         int quo = quoFinder.next(bytes);
-
         while (true) {
             int diff = sep - quo;
             if (diff == 0) {
@@ -70,7 +61,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
                 return;
             }
             if (diff < 0) {
-                handleSep(sep + shift);
+                handleSep(offset + sep + shift);
                 sep = sepFinder.next();
             } else {
                 handleQuo();
@@ -79,8 +70,26 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void handleSep(long nextSep) {
-        long index = offset + nextSep;
+    private void findSeps(long bytes) {
+        int sep = sepFinder.next(bytes);
+        int quo = quoFinder.next(bytes);
+        while (true) {
+            int diff = sep - quo;
+            if (diff == 0) {
+                offset += MemorySegments.ALIGNMENT;
+                return;
+            }
+            if (diff < 0) {
+                handleSep(offset + sep);
+                sep = sepFinder.next();
+            } else {
+                handleQuo();
+                quo = quoFinder.next();
+            }
+        }
+    }
+
+    private void handleSep(long index) {
         switch (state) {
             case STARTING_COLUMN -> {
                 markSeparator(index);
@@ -98,8 +107,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         state = switch (state) {
             case STARTING_COLUMN, QUOTING_QUOTE -> QUOTING_COLUMN;
             case QUOTING_COLUMN -> QUOTING_QUOTE;
-            default ->
-                throw new IllegalStateException("Wrong state: " + state);
+            default -> throw new IllegalStateException("Wrong state: " + state);
         };
     }
 

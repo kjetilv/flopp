@@ -55,7 +55,12 @@ public final class CalculateAverage_kjetilvlong {
         System.out.println(
             "  " + partitioning(cpus, Shape.of(path), settings)
         );
-        Map<String, Result> map = go(path, settings);
+
+        Map<String, Result> map = go(path, settings, new CsvFormat.Simple(2, ';'));
+//        Map<String, Result> map1 = go(path, settings, new CsvFormat.Escape(';', '\\', 2));
+//        System.gc();
+//        Map<String, Result> map2 = go(path, settings, new CsvFormat.Quoted(2, '"', ';'));
+//        System.gc();
 
         if (args.length > 1) {
             String content = Files.readString(resolve(Path.of(args[1])));
@@ -65,11 +70,10 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     @SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
-    static Map<String, Result> go(Path path, Settings settings) {
+    static Map<String, Result> go(Path path, Settings settings, CsvFormat format) {
         Instant start = Instant.now();
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
-        CsvFormat format = new CsvFormat.Simple(2, ';');
         Partitioning p = partitioning(cpus, shape, settings);
         Partitions partitions = p.of(shape.size());
         AtomicInteger threads = new AtomicInteger();

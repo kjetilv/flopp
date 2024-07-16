@@ -201,6 +201,15 @@ public final class Bits {
      * @param length How many bytes to retain in the long
      * @return Truncated long
      */
+    public static long truncate(long l, long length) {
+        return truncate(l, (int) length);
+    }
+
+    /**
+     * @param l      Long
+     * @param length How many bytes to retain in the long
+     * @return Truncated long
+     */
     public static long truncate(long l, int length) {
         return l & KEEP[length];
     }
