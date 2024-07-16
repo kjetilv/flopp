@@ -55,9 +55,9 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         return formatString() + " " + (escaping ? "escaping" : "");
     }
 
-    private void findSeps(long bytes, long shift) {
-        int sep = sepFinder.next(bytes);
-        int esc = escFinder.next(bytes);
+    private void findSeps(long data, long shift) {
+        int sep = sepFinder.next(data);
+        int esc = escFinder.next(data);
 
         while (true) {
             int diff = sep - esc;

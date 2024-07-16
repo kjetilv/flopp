@@ -313,8 +313,8 @@ public final class Bits {
         return (l & ZERO_CHECK[position]) == 0x00;
     }
 
-    private static long findInstances(long bytes, long mask) {
-        long masked = bytes ^ mask;
+    private static long findInstances(long data, long mask) {
+        long masked = data ^ mask;
         long underflown = masked - ONES;
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & EIGHTIES;
@@ -509,9 +509,9 @@ public final class Bits {
         }
 
         @Override
-        public int count(long bytes) {
+        public int count(long data) {
             int count = 0;
-            long find = findInstances(bytes, mask);
+            long find = findInstances(data, mask);
             while (find != 0) {
                 find &= CLEAR[trailingBytes(find)];
                 count++;
@@ -536,6 +536,6 @@ public final class Bits {
 
     public interface Counter {
 
-        int count(long bytes);
+        int count(long data);
     }
 }

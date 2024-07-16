@@ -49,11 +49,11 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void findInitialSeps(long bytes, long shift) {
+    private void findInitialSeps(long data, long shift) {
         offset = -shift;
 
-        int sep = sepFinder.next(bytes);
-        int quo = quoFinder.next(bytes);
+        int sep = sepFinder.next(data);
+        int quo = quoFinder.next(data);
         while (true) {
             int diff = sep - quo;
             if (diff == 0) {
@@ -70,9 +70,9 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void findSeps(long bytes) {
-        int sep = sepFinder.next(bytes);
-        int quo = quoFinder.next(bytes);
+    private void findSeps(long data) {
+        int sep = sepFinder.next(data);
+        int quo = quoFinder.next(data);
         while (true) {
             int diff = sep - quo;
             if (diff == 0) {
