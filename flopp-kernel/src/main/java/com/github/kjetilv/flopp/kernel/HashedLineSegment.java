@@ -14,28 +14,15 @@ record HashedLineSegment(int hash, MemorySegment memorySegment, long startIndex,
     }
 
     @Override
-    public boolean matches(LineSegment other) {
-        long otherStart = other.startIndex();
-        long otherEnd = other.endIndex();
-        return endIndex - startIndex == otherEnd - otherStart && MemorySegment.mismatch(
-            memorySegment, startIndex, endIndex,
-            other.memorySegment(), otherStart, otherEnd
-        ) == -1;
-    }
-
-    @Override
-    public LineSegment hashed() {
-        return this;
-    }
-
-    @Override
     public LineSegment immutable() {
         return this;
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof LineSegment lineSegment && this.matches(lineSegment);
+        return obj instanceof HashedLineSegment hashedLineSegment &&
+               hash == hashedLineSegment.hash &&
+               this.matches(hashedLineSegment);
     }
 
     @Override

@@ -28,10 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -78,7 +78,7 @@ public final class CalculateAverage_kjetilvlong {
         LineSegmentHashtable<Result> map = new LineSegmentHashtable<>(size);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
+            ExecutorService workingExecutor = new ThreadPoolExecutor(
                 cpus,
                 cpus,
                 30,
@@ -88,31 +88,21 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             int chunks = bitwisePartitioned.partitions().size();
             BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
-            List<Throwable> errors = new CopyOnWriteArrayList<>();
-            bitwisePartitioned.splitters(format, executor)
+            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
+            bitwisePartitioned.splitters(format, workingExecutor)
                 .forEach(future ->
-                    future.thenApply(splitter -> table(splitter, size))
+                    future
+                        .thenApply(splitter -> table(splitter, size))
                         .thenAccept(queue::offer)
-                        .exceptionally(throwable ->
-                            printAndAdd(throwable, errors)));
-            if (errors.isEmpty()) {
-                for (int i = 0; i < chunks; i++) {
-                    map.merge(take(queue), Result::merge);
-                }
-                return map;
-            } else {
-                return fail(errors);
+                        .exceptionally(printException));
+            for (int i = 0; i < chunks; i++) {
+                map.merge(take(queue), Result::merge);
             }
+            return map;
         }
     }
 
-    private static <T> T fail(List<Throwable> errors) {
-        IllegalStateException e = new IllegalStateException("Failed");
-        errors.forEach(e::addSuppressed);
-        throw e;
-    }
-
-    private static Void printAndAdd(Throwable throwable, List<Throwable> errors) {
+    private static Void print(Throwable throwable) {
         System.out.println("Error: " + throwable.getMessage());
         for (
             Throwable cause = throwable.getCause();
@@ -121,7 +111,6 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             System.out.println("  Cause: " + cause);
         }
-        errors.add(throwable);
         return null;
     }
 

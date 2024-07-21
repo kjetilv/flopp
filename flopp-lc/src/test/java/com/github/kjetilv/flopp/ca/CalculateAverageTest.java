@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.ca;
 import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.util.LineSegmentMap;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
@@ -122,7 +122,7 @@ class CalculateAverageTest {
         int tail
     ) {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
-        Map<String, CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
+        LineSegmentMap<CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
             smaple,
             new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d), new CsvFormat.Simple(2, ';')
         );

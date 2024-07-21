@@ -23,8 +23,6 @@ public interface LineSegmentMap<T> {
 
     void forEach(BiConsumer<LineSegment, T> consumer);
 
-    int size();
-
     default Map<String, T> toStringMap() {
         return toStringMap(Charset.defaultCharset());
     }

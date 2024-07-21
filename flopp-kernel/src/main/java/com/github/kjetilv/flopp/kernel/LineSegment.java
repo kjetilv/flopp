@@ -33,17 +33,21 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default long alignedLongsCount() {
-        int headLen = headLength();
-        int tailLen = tailLength();
-        long len = length();
-        if (len == 0) {
+        long startIndex = startIndex();
+        long endIndex = endIndex();
+        if (startIndex == endIndex) {
             return 0L;
         }
+        long len = endIndex - startIndex;
+        long headStart = startIndex % ALIGNMENT_INT;
+        int tailLen = (int) endIndex % ALIGNMENT_INT;
         if (len < ALIGNMENT_INT) {
-            return (headLen > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
+            return (headStart > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
         }
-        long length = endIndex() - tailLen - startIndex() - headLen >> ALIGNMENT_POW;
-        return (headLen > 0 ? 1 : 0) + length + (tailLen > 0 ? 1 : 0);
+        int headLen = headStart == 0L ? 0 : ALIGNMENT_INT - (int) headStart;
+        long bytesCount = endIndex - tailLen - startIndex - headLen;
+        long count = bytesCount >> ALIGNMENT_POW;
+        return (headStart > 0 ? 1 : 0) + count + (tailLen > 0 ? 1 : 0);
     }
 
     default LongStream alignedLongStream() {
@@ -76,10 +80,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default LongSupplier longSupplier(boolean align) {
         return LineSegments.longSupplier(this, align);
-    }
-
-    default LineSegment hashed() {
-        return this instanceof Hashed ? this : hash(this);
     }
 
     default LineSegment hashedWith(int hash) {

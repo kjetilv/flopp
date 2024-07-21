@@ -25,8 +25,6 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     private final BitwiseTraverser.Reusable reusable;
 
-    private int size;
-
     public LineSegmentHashtable(int limit) {
         this(limit, null);
     }
@@ -39,11 +37,44 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     @Override
     public T get(LineSegment segment) {
-        return getOrCreate(segment, null).value();
+        int hash = reusable.toHashCode(segment);
+        int initialPos = indexOf(hash);
+        int slotPos = initialPos;
+        while (true) {
+            TableEntry<?> existing = table[slotPos];
+            if (existing == null) {
+                return null;
+            }
+            if (existing.matches(segment, hash)) {
+                return ((TableEntry<T>) existing).value();
+            }
+            slotPos = indexOf(slotPos + 1);
+            if (slotPos == initialPos) {
+                throw new IllegalStateException(this + " is full");
+            }
+        }
     }
 
     public T get(LineSegment segment, Supplier<T> newEntry) {
-        return getOrCreate(segment, newEntry).value();
+        int hash = reusable.toHashCode(segment);
+        int initialPos = indexOf(hash);
+        int slotPos = initialPos;
+        while (true) {
+            TableEntry<?> existing = table[slotPos];
+            if (existing == null) {
+                T value = newEntry.get();
+                TableEntry<T> newTableEntry = new TableEntry<>(segment.hashedWith(hash), hash, value);
+                table[slotPos] = newTableEntry;
+                return value;
+            }
+            if (existing.matches(segment, hash)) {
+                return ((TableEntry<T>) existing).value();
+            }
+            slotPos = indexOf(slotPos + 1);
+            if (slotPos == initialPos) {
+                throw new IllegalStateException(this + " is full");
+            }
+        }
     }
 
     @Override
@@ -67,11 +98,6 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
     }
 
     @Override
-    public int size() {
-        return size;
-    }
-
-    @Override
     public Map<String, T> toStringMap(Charset charset) {
         if (charset == null || charset == CHARSET) {
             return tableEntries().collect(Collectors.toMap(
@@ -87,7 +113,7 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     @Override
     public String toStringSorted() {
-        return toString(tableEntries()
+        return str(tableEntries()
             .sorted(
                 Comparator.comparing(TableEntry::segmentString)));
     }
@@ -130,56 +156,20 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     @Override
     public String toString() {
-        return toString(tableEntries());
+        return str(tableEntries());
     }
 
     public String toString(boolean sorted) {
-        return toString(sorted
+        return str(sorted
             ? tableEntries().sorted()
             : tableEntries());
     }
 
-    private TableEntry<?> merge(TableEntry<?> tableEntry, BiFunction<T, T, T> merger) {
-        LineSegment segment = tableEntry.segment();
-        TableEntry<T> local = (TableEntry<T>) tableEntry(segment);
-        if (local == null) {
-            return store(tableEntry);
-        }
-        return store(local.merge(merger.apply(
-            local.value(),
-            (T) tableEntry.value()
-        )));
-    }
-
-    @SuppressWarnings("unchecked")
-    private TableEntry<T> getOrCreate(LineSegment segment, Supplier<T> newEntry) {
-        int hash = reusable.toHashCode(segment);
-        int initialPos = indexOf(hash);
-        int slotPos = initialPos;
-        while (true) {
-            TableEntry<?> existing = table[slotPos];
-            if (existing == null) {
-                if (newEntry == null) {
-                    return (TableEntry<T>) TableEntry.NULL;
-                }
-                T value = newEntry.get();
-                if (value == null) {
-                    return (TableEntry<T>) TableEntry.NULL;
-                }
-                TableEntry<T> newTableEntry =
-                    new TableEntry<>(segment.hashedWith(hash), hash, value);
-                table[slotPos] = newTableEntry;
-                size++;
-                return newTableEntry;
-            }
-            if (existing.matches(segment, hash)) {
-                return (TableEntry<T>) existing;
-            }
-            slotPos = indexOf(slotPos + 1);
-            if (slotPos == initialPos) {
-                throw new IllegalStateException(this + " is full");
-            }
-        }
+    private TableEntry<?> merge(TableEntry<?> newEntry, BiFunction<T, T, T> merger) {
+        TableEntry<T> local = (TableEntry<T>) tableEntry(newEntry.segment());
+        return store(local == null
+            ? newEntry
+            : local.merge(merger.apply(local.value(), (T) newEntry.value())));
     }
 
     private TableEntry<?> store(TableEntry<?> tableEntry) {
@@ -189,11 +179,7 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         int slotPos = initialPos;
         while (true) {
             TableEntry<?> existing = table[slotPos];
-            boolean newEntry = existing == null;
-            if (newEntry) {
-                size++;
-            }
-            if (newEntry || existing.matches(segment, hash)) {
+            if (existing == null || existing.matches(segment, hash)) {
                 table[slotPos] = tableEntry;
                 return existing;
             }
@@ -238,7 +224,7 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         return tableEntry -> (T) tableEntry.value();
     }
 
-    private static String toString(Stream<TableEntry<?>> tableEntries) {
+    private static String str(Stream<TableEntry<?>> tableEntries) {
         Stream<String> entries = tableEntries.flatMap(e -> Stream.of(
             ", ",
             e.segmentString(),
@@ -246,10 +232,10 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
             e.value().toString()
         ));
         return Stream.of(
-            Stream.of("{"),
-            entries.skip(1),
-            Stream.of("}")
-        ).flatMap(Function.identity())
+                Stream.of("{"),
+                entries.skip(1),
+                Stream.of("}")
+            ).flatMap(Function.identity())
             .collect(Collectors.joining());
     }
 }

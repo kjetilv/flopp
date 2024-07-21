@@ -370,18 +370,9 @@ public abstract sealed class BitwiseTraverser
 
     public interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
 
-        default Reusable reset(LineSegment segment) {
-            return apply(segment);
-        }
-
         long size();
 
         void forEach(IndexedLongConsumer consumer);
-
-        default long[] fill(long[] buffer) {
-            forEach((index, value) -> buffer[index] = value);
-            return buffer;
-        }
 
         default int toHashCode(LineSegment lineSegment) {
             return apply(lineSegment).toHashCode();

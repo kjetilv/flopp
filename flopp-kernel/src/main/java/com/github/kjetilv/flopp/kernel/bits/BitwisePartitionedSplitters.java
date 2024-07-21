@@ -19,32 +19,36 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
     }
 
     @Override
-    public Stream<PartitionedSplitter> splitters(FwFormat format) {
-        return streams.streamers()
-            .map(streamer ->
-                new BitwiseFwSplitter(streamer, format.withCharset(shape.charset())));
-    }
-
-    @Override
     public Stream<PartitionedSplitter> splitters(CsvFormat format) {
+        CsvFormat csvFormat = format.withCharset(shape.charset());
         return streams.streamers()
             .map(streamer ->
-                new BitwiseCsvSplitter(streamer, format.withCharset(shape.charset())));
+                new BitwiseCsvSplitter(streamer, csvFormat));
     }
 
     @Override
     public Stream<CompletableFuture<PartitionedSplitter>> splitters(CsvFormat format, ExecutorService executorService) {
+        CsvFormat csvFormat = format.withCharset(shape.charset());
         return streams.streamers(executorService)
             .map(future ->
                 future.thenApply(streamer ->
-                    new BitwiseCsvSplitter(streamer, format.withCharset(shape.charset()))));
+                    new BitwiseCsvSplitter(streamer, csvFormat)));
+    }
+
+    @Override
+    public Stream<PartitionedSplitter> splitters(FwFormat format) {
+        FwFormat fwFormat = format.withCharset(shape.charset());
+        return streams.streamers()
+            .map(streamer ->
+                new BitwiseFwSplitter(streamer, fwFormat));
     }
 
     @Override
     public Stream<CompletableFuture<PartitionedSplitter>> splitters(FwFormat format, ExecutorService executorService) {
+        FwFormat fwFormat = format.withCharset(shape.charset());
         return streams.streamers(executorService)
             .map(future ->
                 future.thenApply(streamer ->
-                    new BitwiseFwSplitter(streamer, format.withCharset(shape.charset()))));
+                    new BitwiseFwSplitter(streamer, fwFormat)));
     }
 }
