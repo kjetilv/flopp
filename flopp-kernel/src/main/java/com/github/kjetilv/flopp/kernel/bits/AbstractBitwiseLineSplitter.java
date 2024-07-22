@@ -29,8 +29,7 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     @Override
     public final SeparatedLine apply(LineSegment lineSegment) {
-        this.segment = lineSegment.memorySegment();
-        this.length = lineSegment.length();
+        init(lineSegment);
         separate(lineSegment);
         markEnd();
         this.lines.accept(this);
@@ -49,11 +48,13 @@ abstract sealed class AbstractBitwiseLineSplitter
         return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + segment + "]";
     }
 
+    abstract void init(LineSegment lineSegment);
+
+    abstract void separate(LineSegment segment);
+
     String substring() {
         return null;
     }
-
-    protected abstract void separate(LineSegment segment);
 
     protected abstract void markEnd();
 

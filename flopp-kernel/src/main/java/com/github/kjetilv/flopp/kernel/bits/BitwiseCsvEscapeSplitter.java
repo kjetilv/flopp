@@ -23,12 +23,8 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    protected void separate(LineSegment segment) {
-        this.offset = this.columnNo = 0;
-        this.currentStart = -1;
-        this.startOffset = segment.startIndex();
+    void separate(LineSegment segment) {
         this.escaping = false;
-
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
             findSeps(segment.bytesAt(0, length), 0);

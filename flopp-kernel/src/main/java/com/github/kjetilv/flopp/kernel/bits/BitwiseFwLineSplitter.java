@@ -60,10 +60,15 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    protected void separate(LineSegment segment) {
+    protected void markEnd() {
     }
 
     @Override
-    protected void markEnd() {
+    void init(LineSegment lineSegment) {
+        this.segment = lineSegment.memorySegment();
+    }
+
+    @Override
+    void separate(LineSegment segment) {
     }
 }

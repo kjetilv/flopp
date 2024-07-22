@@ -16,20 +16,13 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    protected void separate(LineSegment segment) {
-        this.columnNo = 0;
-        this.currentStart = -1;
-        this.startOffset = segment.startIndex();
-
+    void separate(LineSegment segment) {
         long endOffset = segment.endIndex();
-        long headStart = this.startOffset % ALIGNMENT_INT;
-
-        long headLen;
-        long offset = 0;
+        int headStart = (int) this.startOffset % ALIGNMENT_INT;
         long start = this.startOffset;
         if (headStart != 0) {
             findSeps(offset, segment.head(headStart));
-            headLen = ALIGNMENT_INT - headStart;
+            int headLen = ALIGNMENT_INT - headStart;
             offset += headLen;
             start += headLen;
         }

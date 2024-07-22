@@ -159,6 +159,16 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     }
 
     @Override
+     final void init(LineSegment lineSegment) {
+        this.segment = lineSegment.memorySegment();
+        this.length = lineSegment.length();
+        this.offset = 0;
+        this.columnNo = 0;
+        this.currentStart = -1;
+        this.startOffset = lineSegment.startIndex();
+    }
+
+    @Override
     String substring() {
         return formatString();
     }

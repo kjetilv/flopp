@@ -21,12 +21,8 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    protected void separate(LineSegment segment) {
-        this.offset = 0;
-        this.columnNo = 0;
-        this.currentStart = -1;
+    void separate(LineSegment segment) {
         this.state = STARTING_COLUMN;
-        this.startOffset = segment.startIndex();
 
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
