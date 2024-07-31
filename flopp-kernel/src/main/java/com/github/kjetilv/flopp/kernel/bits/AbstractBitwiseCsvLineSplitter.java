@@ -19,7 +19,9 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 abstract sealed class AbstractBitwiseCsvLineSplitter
     extends AbstractBitwiseLineSplitter
     implements LineSegment
-    permits BitwiseCsvQuotedSplitter, BitwiseCsvEscapeSplitter, BitwiseCsvSimpleSplitter {
+    permits
+    BitwiseCsvEscapeSplitter, BitwiseCsvQuotedSplitter, BitwiseCsvSimpleSplitter,
+    BitwiseCsvSimpleDelegatingSplitter {
 
     final Bits.Finder sepFinder;
 
@@ -159,7 +161,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     }
 
     @Override
-     final void init(LineSegment lineSegment) {
+    final void init(LineSegment lineSegment) {
         this.segment = lineSegment.memorySegment();
         this.length = lineSegment.length();
         this.offset = 0;
@@ -173,13 +175,13 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         return formatString();
     }
 
-    final String formatString() {
-        return "format=" + format.toString();
-    }
-
     @Override
     protected void markEnd() {
         mark(length);
+    }
+
+    final String formatString() {
+        return "format=" + format.toString();
     }
 
     final void markSeparator(long index) {

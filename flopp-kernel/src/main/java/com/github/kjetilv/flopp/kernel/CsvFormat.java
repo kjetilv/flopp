@@ -47,6 +47,10 @@ public sealed interface CsvFormat {
             Objects.requireNonNull(charset, "charset");
         }
 
+        public Simple(char separator) {
+            this(DEFAULT_COLUMN_COUNT, separator);
+        }
+
         public Simple(int columnCount, char separator) {
             this(separator, columnCount, DEFAULT_CHARSET);
         }

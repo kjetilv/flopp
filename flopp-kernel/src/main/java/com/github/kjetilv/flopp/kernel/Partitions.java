@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.util.Combine;
 import com.github.kjetilv.flopp.kernel.util.Print;
 
 import java.util.ArrayList;
@@ -16,7 +17,9 @@ public record Partitions(
 
     public Partitions(long total, List<Partition> partitions, long tail) {
         this.total = Non.negative(total, "total");
-        this.partitions = Non.empty(partitions, "partitions").stream().sorted().toList();
+        this.partitions = Non.empty(partitions, "partitions")
+            .stream().sorted()
+            .toList();
         this.tail = tail > 0 ? partitions().getLast().length() : 0L;
         if (this.total != this.partitions.stream().mapToLong(Partition::length).sum()) {
             throw new IllegalArgumentException("Wrong total: " + total + ": " + partitions);
@@ -37,6 +40,17 @@ public record Partitions(
 
     public Partition getLast() {
         return partitions.getLast();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + Print.bigInt(total) +
+               " -> " + partitions.size() + "{" +
+               partitions.stream()
+                   .map(Partition::toString)
+                   .collect(Collectors.joining(" ")) +
+               "} tail:" + tail +
+               "]";
     }
 
     Partitions insertAtEnd(Partitions other) {
@@ -65,18 +79,17 @@ public record Partitions(
 
     @SafeVarargs
     private static List<Partition> combine(List<Partition>... partitionLists) {
-        List<Partition> all = Arrays.stream(partitionLists).flatMap(Collection::stream)
+        List<Partition> partitionList = Arrays.stream(partitionLists)
+            .flatMap(Collection::stream)
             .toList();
-        int count = all.size();
-        return all.stream().reduce(
-            new ArrayList<>(),
+        int partitionCount = partitionList.size();
+        return partitionList.stream().reduce(
+            new ArrayList<>(partitionCount),
             (list, partition) -> {
-                list.add(next(list, partition, count));
+                list.add(next(list, partition, partitionCount));
                 return list;
             },
-            (ps1, ps2) -> {
-                throw new IllegalStateException(ps1 + " / " + ps2);
-            }
+            Combine.same()
         );
     }
 
@@ -91,16 +104,5 @@ public record Partitions(
         Partition last = list.getLast();
         long nextOffset = last.offset() + last.length();
         return new Partition(list.size(), count, nextOffset, partition.length());
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + Print.bigInt(total) +
-               " -> " + partitions.size() + "{" +
-               partitions.stream()
-                   .map(Partition::toString)
-                   .collect(Collectors.joining(" ")) +
-               "} tail:" + tail +
-               "]";
     }
 }

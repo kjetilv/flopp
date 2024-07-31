@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -174,8 +175,17 @@ class LineSegmentsTest {
     private static String streamed(LongStream longStream, int start, int end) {
         byte[] bytes = new byte[64];
         AtomicInteger i = new AtomicInteger();
-        longStream.forEach(data ->
-            Bits.transferDataTo(data, i.getAndAdd(8), bytes));
+        longStream.forEach(data -> {
+            try {
+                if (i.get() == 0) {
+                    Bits.transferLimitedDataTo(data, start, ALIGNMENT_INT - start, bytes);
+                } else {
+                    Bits.transferDataTo(data, i.get(), bytes);
+                }
+            } finally {
+                i.getAndAdd(8);
+            }
+        });
         return new String(bytes, start, end - start, UTF_8);
     }
 
@@ -184,7 +194,15 @@ class LineSegmentsTest {
         AtomicInteger ai = new AtomicInteger();
         for (int i = 0; i < count; i++) {
             long data = longSupplier.getAsLong();
-            Bits.transferDataTo(data, ai.getAndAdd(8), bytes);
+            try {
+                if (i == 0 && start > 0) {
+                    Bits.transferLimitedDataTo(data, start, ALIGNMENT_INT - start, bytes);
+                } else {
+                    Bits.transferDataTo(data, ai.get(), bytes);
+                }
+            } finally {
+                ai.getAndAdd(8);
+            }
         }
         return new String(bytes, start, end, UTF_8);
     }

@@ -9,19 +9,28 @@ import java.util.function.Consumer;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("DuplicatedCode")
-final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
+final class BitwiseCsvSimpleDelegatingSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
+    private final BitwiseTraverser.Reusable reusable;
+
+    BitwiseCsvSimpleDelegatingSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
         super(lines, format);
+        this.reusable = BitwiseTraverser.create(true);
     }
 
     @Override
     void separate(LineSegment segment) {
+        BitwiseTraverser.Reusable applied = reusable.apply(segment);
+        long l = segment.alignedLongsCount();
+        for (long i = 0; i < l; i++) {
+            long data = applied.getAsLong();
+            findSeps(offset, data);
+        }
         long endOffset = segment.endIndex();
         int headStart = (int) this.startOffset % ALIGNMENT_INT;
         long start = this.startOffset;
         if (headStart != 0) {
-            long data = segment.head(headStart);
+            long data = applied.getAsLong();
             findSeps(offset, data);
             int headLen = ALIGNMENT_INT - headStart;
             offset += headLen;
@@ -29,9 +38,9 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
         }
         long end = endOffset - endOffset % ALIGNMENT_INT;
         for (long i = start; i < end; i += ALIGNMENT_INT, offset += ALIGNMENT_INT) {
-            findSeps(offset, segment.longAt(i));
+            findSeps(offset, applied.getAsLong());
         }
-        findSeps(offset, segment.tail());
+        findSeps(offset, applied.getAsLong());
     }
 
     private void findSeps(long offset, long data) {

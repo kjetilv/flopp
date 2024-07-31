@@ -336,7 +336,7 @@ public abstract sealed class BitwiseTraverser
         public long getAsLong() {
             long next;
             if (position == alignedStart && headLen > 0) {
-                next = segment.head() << ALIGNMENT * (ALIGNMENT - headLen);
+                next = segment.head();
             } else if (position == alignedEnd && tailLen > 0) {
                 next = segment.tail();
             } else if (position < alignedEnd) {
