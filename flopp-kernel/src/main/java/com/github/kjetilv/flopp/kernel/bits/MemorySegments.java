@@ -36,12 +36,12 @@ public final class MemorySegments {
     }
 
     public static long tail(MemorySegment ms, long end) {
-        int tailLen = (int) end % ALIGNMENT_INT;
-        if (tailLen == 0) {
-            return 0x0L;
+        long tailLen = end % ALIGNMENT_INT;
+        if (tailLen == 0L) {
+            return 0L;
         }
         long value = ms.get(JAVA_LONG, end - tailLen);
-        int shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);
+        long shift = ALIGNMENT_INT * (ALIGNMENT_INT - tailLen);
         return value << shift >>> shift;
     }
 
@@ -65,6 +65,10 @@ public final class MemorySegments {
         byte[] target,
         Charset charset
     ) {
+        int tailLength = (int) endIndex % ALIGNMENT_INT;
+        if (tailLength == 0) {
+            return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
+        }
         long underlyingSize = memorySegment.byteSize();
         int length = (int) (endIndex - startIndex);
         if (underlyingSize < ALIGNMENT_INT) {
@@ -72,10 +76,6 @@ public final class MemorySegments {
             long data = bytesAt(memorySegment, 0, length);
             Bits.transferLimitedDataTo(data, 0, length, bytes);
             return new String(bytes, 0, length, charset);
-        }
-        int tailLength = (int) endIndex % ALIGNMENT_INT;
-        if (tailLength == 0) {
-            return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
         }
         int tailStart = (int) (endIndex - tailLength);
         if (tailStart + ALIGNMENT <= underlyingSize) {
@@ -109,7 +109,7 @@ public final class MemorySegments {
         byte[] target,
         Charset charset
     ) {
-        long length = endIndex - startIndex;
+        long length = Math.max(0, endIndex - startIndex);
 
         long headOffset = startIndex % ALIGNMENT_INT;
         long tailLength = endIndex % ALIGNMENT_INT;

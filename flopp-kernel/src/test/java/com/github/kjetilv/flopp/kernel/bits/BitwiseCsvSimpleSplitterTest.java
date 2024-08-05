@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -217,24 +218,11 @@ class BitwiseCsvSimpleSplitterTest {
             "",
             "234",
             "','",
-            "'\\;'"
+            "'\\",
+            "'"
         );
     }
 
-    //    @Test
-//    void quotingQuotes() {
-//        assertSplit(
-//            Partitioning.single(),
-//            """
-//                'foo 1';'it''s';''foo'';4
-//                """, CSV_FORMAT,
-//            "foo 1",
-//            "it''s",
-//            "'foo'",
-//            "4"
-//        );
-//    }
-//
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
@@ -247,12 +235,17 @@ class BitwiseCsvSimpleSplitterTest {
             "'foo 1'",
             "bar",
             "234",
-            "'ab\\; cd\\;ef'",
+            "'ab\\",
+            " cd\\",
+            "ef'",
             "'it is 'aight'",
             "",
             "234",
-            "'\\;\\;'",
-            "'\\;'"
+            "'\\",
+            "\\",
+            "'",
+            "'\\",
+            "'"
         );
     }
 
@@ -260,7 +253,7 @@ class BitwiseCsvSimpleSplitterTest {
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
-        String[] expected = {"'foo 1'", "bar", "234", "'ab\\; cd\\;ef'", "'it is 'aight'", "", "234", "'\\;'", "'\\;'"};
+        String[] expected = {"'foo 1'", "bar", "234", "'ab\\", " cd\\", "ef'", "'it is 'aight'", "", "234", "'\\", "'", "'\\", "'"};
         BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
             adder(splits), CSV_FORMAT
         );
@@ -276,9 +269,11 @@ class BitwiseCsvSimpleSplitterTest {
             """
                 def123;cba;234;abcdef;3456
                 abc234;foo;456;dfgfgh;1234
-                foo;bar;zot
+                foo;bar;zot;
                 foo;bar
                 
+                a;
+                ;
                 
                 zot;
                 moreStuff;1;2;3;4;5;6
@@ -296,8 +291,13 @@ class BitwiseCsvSimpleSplitterTest {
             "foo",
             "bar",
             "zot",
+            "",
             "foo",
             "bar",
+            "",
+            "a",
+            "",
+            "",
             "",
             "",
             "zot",
@@ -320,8 +320,8 @@ class BitwiseCsvSimpleSplitterTest {
                 'b\\; ar';42
                 """,
             "foo",
-            "'123\\; ok'",
-            "'b\\; ar'",
+            "'123\\", " ok'",
+            "'b\\", " ar'",
             "42"
 
         );
@@ -338,7 +338,7 @@ class BitwiseCsvSimpleSplitterTest {
                 ;
                 """,
             "''",
-            "''",
+            "",
             "f\\",
             "o\\",
             "o'",
@@ -347,7 +347,7 @@ class BitwiseCsvSimpleSplitterTest {
             "123123123",
             "234234234",
             "345345345",
-            "'1\\'",
+            "'1\\",
             "2'",
             "3",
             "",
@@ -364,7 +364,9 @@ class BitwiseCsvSimpleSplitterTest {
                 """,
             "''",
             "",
-            "f\\;o\\;o'"
+            "f\\",
+            "o\\",
+            "o'"
         );
     }
 

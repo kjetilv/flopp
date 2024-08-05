@@ -32,9 +32,8 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
     }
 
     @Override
-    public Stream<SeparatedLine> separatedLine() {
-        return streamer.lines()
-            .map(splitter(null));
+    public Stream<SeparatedLine> separatedLines() {
+        return streamer.lines().map(splitter(null));
     }
 
     private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {

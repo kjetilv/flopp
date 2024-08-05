@@ -9,5 +9,5 @@ public interface PartitionedSplitter {
 
     void forEach(Consumer<SeparatedLine> consumer);
 
-    Stream<SeparatedLine> separatedLine();
+    Stream<SeparatedLine> separatedLines();
 }

@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
 import static java.lang.Integer.MAX_VALUE;
 
 public record Partitioning(int count, long tail, TailShards fragmentation) {
@@ -55,13 +56,12 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         double partitionMaxPerc,
         double partitionMinPerc
     ) {
-        return fragment(
-            new TailShards(shardCount, tailPerc, partitionMaxPerc, partitionMinPerc)
-        );
-    }
-
-    public Partitioning fragment(TailShards tailShards) {
-        return new Partitioning(count, tail, tailShards);
+        return fragment(new TailShards(
+            shardCount,
+            tailPerc,
+            partitionMaxPerc,
+            partitionMinPerc
+        ));
     }
 
     public Partitions of(long total) {
@@ -84,6 +84,10 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         }
         List<Partition> partitions = singlePartition(total);
         return new Partitions(total, partitions, tail);
+    }
+
+    Partitioning fragment(TailShards tailShards) {
+        return new Partitioning(count, tail, tailShards);
     }
 
     private void checkSize(long total) {

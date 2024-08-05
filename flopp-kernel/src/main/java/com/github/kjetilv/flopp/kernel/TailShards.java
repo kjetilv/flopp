@@ -8,10 +8,11 @@ record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, doub
     TailShards(
         int shardCount,
         double tailPerc,
-        double partitionMaxPerc, double partitionMinPerc
+        double partitionMaxPerc,
+        double partitionMinPerc
     ) {
-        if (tailPerc > 99) {
-            throw new IllegalStateException("Too big tail %: " + tailPerc);
+        if (tailPerc > 10) {
+            throw new IllegalStateException("Tail too big: %" + tailPerc);
         }
         this.shardCount = Non.negativeOrZero(shardCount, "shardCount");
         this.tailPerc = Non.negativeOrZero(tailPerc, "tailPercentage");

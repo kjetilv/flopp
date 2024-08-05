@@ -86,6 +86,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return hash(hash, this);
     }
 
+    default LineSegment hashedWith(int hash, boolean aligned) {
+        return hash(hash, this, aligned);
+    }
+
     default boolean matches(LineSegment other) {
         return this.length() == other.length() && MemorySegment.mismatch(
             memorySegment(), startIndex(), endIndex(),

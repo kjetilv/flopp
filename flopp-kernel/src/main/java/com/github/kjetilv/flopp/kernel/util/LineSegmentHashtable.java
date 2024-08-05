@@ -55,16 +55,16 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         }
     }
 
-    public T get(LineSegment segment, Supplier<T> newEntry) {
+    public T get(LineSegment segment, Supplier<T> valueSupplier) {
         int hash = reusable.toHashCode(segment);
         int initialPos = indexOf(hash);
         int slotPos = initialPos;
         while (true) {
             TableEntry<?> existing = table[slotPos];
             if (existing == null) {
-                T value = newEntry.get();
-                TableEntry<T> newTableEntry = new TableEntry<>(segment.hashedWith(hash), hash, value);
-                table[slotPos] = newTableEntry;
+                T value = valueSupplier.get();
+                table[slotPos] =
+                    new TableEntry<>(segment.hashedWith(hash, true), hash, value);
                 return value;
             }
             if (existing.matches(segment, hash)) {

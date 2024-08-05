@@ -7,7 +7,6 @@ import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
-import java.util.Objects;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;

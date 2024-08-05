@@ -28,7 +28,7 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
     }
 
     @Override
-    public Stream<SeparatedLine> separatedLine() {
+    public Stream<SeparatedLine> separatedLines() {
         return streamer.lines().map(new BitwiseFwLineSplitter(format, null));
     }
 }
