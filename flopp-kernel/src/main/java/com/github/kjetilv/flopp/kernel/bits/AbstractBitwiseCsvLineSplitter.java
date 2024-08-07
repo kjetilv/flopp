@@ -17,21 +17,24 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter
-    extends AbstractBitwiseLineSplitter
-    implements LineSegment
+    extends
+    AbstractBitwiseLineSplitter
+    implements
+    LineSegment
     permits
-    BitwiseCsvEscapeSplitter, BitwiseCsvQuotedSplitter, BitwiseCsvSimpleSplitter,
-    BitwiseCsvSimpleDelegatingSplitter {
+    BitwiseCsvEscapeSplitter,
+    BitwiseCsvQuotedSplitter,
+    BitwiseCsvSimpleSplitter {
 
     final Bits.Finder sepFinder;
 
-    long currentStart;
-
     long startOffset;
 
-    long offset;
+    long endOffset;
 
-    int columnNo;
+    private int columnNo;
+
+    private long currentStart;
 
     private final CsvFormat format;
 
@@ -146,7 +149,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     }
 
     @Override
-    public long tail() {
+    public final long tail() {
         return MemorySegments.tail(segment, endIndex);
     }
 
@@ -162,12 +165,11 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
 
     @Override
     final void init(LineSegment lineSegment) {
-        this.segment = lineSegment.memorySegment();
-        this.length = lineSegment.length();
-        this.offset = 0;
         this.columnNo = 0;
-        this.currentStart = -1;
+        this.segment = lineSegment.memorySegment();
         this.startOffset = lineSegment.startIndex();
+        this.endOffset = lineSegment.endIndex();
+        this.currentStart = startOffset;
     }
 
     @Override
@@ -176,8 +178,8 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     }
 
     @Override
-    protected void markEnd() {
-        mark(length);
+    final void markEnd() {
+        mark(endOffset);
     }
 
     final String formatString() {
@@ -186,14 +188,12 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
 
     final void markSeparator(long index) {
         mark(index);
-        currentStart = index;
+        currentStart = index + 1;
     }
 
-    private void mark(long length) {
-        long startPosition = startOffset + currentStart + 1;
-        long endPosition = startOffset + length;
-        this.startPositions[columnNo] = startPosition;
-        this.endPositions[columnNo] = endPosition;
+    private void mark(long index) {
+        this.startPositions[columnNo] = currentStart;
+        this.endPositions[columnNo] = index;
         this.columnNo++;
     }
 }

@@ -33,10 +33,10 @@ public final class Bits {
      * @param charset Charset
      * @return n-byte string in charset
      */
-    public static String toString(long l, int n, Charset charset) {
+    public static String toString(long l, long n, Charset charset) {
         return n < 0
             ? new String(toBytes(l), charset)
-            : new String(toBytes(l), 0, n, charset);
+            : new String(toBytes(l), 0, (int) n, charset);
     }
 
     /**

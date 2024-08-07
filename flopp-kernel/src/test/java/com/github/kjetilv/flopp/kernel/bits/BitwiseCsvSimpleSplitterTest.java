@@ -78,6 +78,21 @@ class BitwiseCsvSimpleSplitterTest {
     }
 
     @Test
+    void shortStrings() {
+        assertSplit(
+            Partitioning.single(),
+            """
+                foo;bar
+                zot;zip
+                """,
+            "foo",
+            "bar",
+            "zot",
+            "zip"
+        );
+    }
+
+    @Test
     void shorterString() {
         assertSplit(
             Partitioning.single(),
@@ -94,6 +109,17 @@ class BitwiseCsvSimpleSplitterTest {
             """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
+                jk;kl
+                """
+        );
+    }
+    @Test
+    void shorterStringUTF82() {
+        assertSplit(
+            Partitioning.single(),
+            """
+                a;b
+                å;øøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
                 jk;kl
                 """
         );
@@ -440,7 +466,7 @@ class BitwiseCsvSimpleSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
+        LineSplitter splitter = new BitwiseCsvSimpleSplitter(
             line ->
                 line.columns(UTF_8)
                     .forEach(splits::add), CSV_FORMAT

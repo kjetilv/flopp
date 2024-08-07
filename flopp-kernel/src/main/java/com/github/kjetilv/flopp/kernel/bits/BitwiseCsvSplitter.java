@@ -36,7 +36,7 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
         return streamer.lines().map(splitter(null));
     }
 
-    private AbstractBitwiseLineSplitter splitter(Consumer<SeparatedLine> consumer) {
+    private LineSplitter splitter(Consumer<SeparatedLine> consumer) {
         return switch (format) {
             case Escape esc -> new BitwiseCsvEscapeSplitter(consumer, esc);
             case Quoted dbl -> new BitwiseCsvQuotedSplitter(consumer, dbl);

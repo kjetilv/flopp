@@ -1,30 +1,23 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseLineSplitter
-    implements Function<LineSegment, SeparatedLine>, Consumer<LineSegment>, SeparatedLine
+    implements LineSplitter, SeparatedLine, LineSegment
     permits AbstractBitwiseCsvLineSplitter, BitwiseFwLineSplitter {
 
     MemorySegment segment;
-
-    long length;
 
     private final Consumer<SeparatedLine> lines;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
         this.lines = lines == null ? NONE : lines;
-    }
-
-    @Override
-    public final void accept(LineSegment segment) {
-        apply(segment);
     }
 
     @Override
@@ -50,13 +43,15 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     abstract void init(LineSegment lineSegment);
 
-    abstract void separate(LineSegment segment);
-
     String substring() {
         return null;
     }
 
-    protected abstract void markEnd();
+    void separate(LineSegment segment) {
+    }
+
+    void markEnd() {
+    }
 
     private static final Consumer<SeparatedLine> NONE = _ -> {
     };

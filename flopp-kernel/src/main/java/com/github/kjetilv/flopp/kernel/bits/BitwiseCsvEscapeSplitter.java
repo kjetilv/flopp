@@ -27,17 +27,17 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         this.escaping = false;
         long length = segment.length();
         if (length < MemorySegments.ALIGNMENT) {
-            findSeps(segment.bytesAt(0, length), 0);
+            findSeps(segment.bytesAt(0, length), 0, 0);
         } else {
             long headStart = this.startOffset % ALIGNMENT_INT;
-            processHead(segment, headStart);
+            long offset = processHead(segment, headStart);
             long start = this.startOffset - headStart + ALIGNMENT_INT;
             long end = segment.alignedEnd();
             for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i), 0);
+                findSeps(segment.longAt(i), 0, offset);
             }
             if (!segment.isAlignedAtEnd()) {
-                findSeps(segment.tail(), 0);
+                findSeps(segment.tail(), 0, offset);
             }
         }
     }
@@ -47,38 +47,37 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         return formatString() + " " + (escaping ? "escaping" : "");
     }
 
-    private void findSeps(long data, long shift) {
+    private void findSeps(long data, long shift, long offset) {
         int sep = sepFinder.next(data);
         int esc = escFinder.next(data);
-
         while (true) {
             int diff = sep - esc;
             if (diff == 0) {
-                offset += MemorySegments.ALIGNMENT;
                 return;
             }
             if (diff < 0) {
-                handleSep(sep, shift);
+                handleSep(sep, shift, offset);
                 sep = sepFinder.next();
             } else {
-                handleEsc(esc + shift);
+                handleEsc(esc + shift, offset);
                 esc = escFinder.next();
             }
         }
     }
 
-    private void processHead(LineSegment segment, long headStart) {
+    private long processHead(LineSegment segment, long headStart) {
         if (headStart == 0) {
             long headLong = segment.longNo(0);
-            findSeps(headLong, 0);
+            findSeps(headLong, 0, 0);
+            return 0;
         } else {
-            offset = -headStart;
             long headLong = segment.head(headStart);
-            findSeps(headLong, headStart);
+            findSeps(headLong, headStart, -headStart);
+            return -headStart;
         }
     }
 
-    private void handleSep(long index, long shift) {
+    private void handleSep(long index, long shift, long offset) {
         long adjusted = index + shift;
         long position = offset + adjusted;
         boolean effective = !(escaping && position == nextEscape);
@@ -89,7 +88,7 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void handleEsc(long index) {
+    private void handleEsc(long index, long offset) {
         if (escaping && offset + index == nextEscape) {
             escaping = false;
         } else {

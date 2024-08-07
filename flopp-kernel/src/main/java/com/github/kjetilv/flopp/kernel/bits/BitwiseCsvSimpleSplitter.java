@@ -7,38 +7,39 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import java.util.function.Consumer;
 
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
-        super(lines, format);
+    BitwiseCsvSimpleSplitter(
+        Consumer<SeparatedLine> lines,
+        CsvFormat.Simple format
+    ) {
+        super(
+            lines,
+            format
+        );
     }
 
     @Override
     void separate(LineSegment segment) {
-        int headStart = (int) this.startOffset % ALIGNMENT_INT;
-        int headLen = 0;
-        if (headStart != 0) {
-            long data = segment.head(headStart);
-            findSeps(offset, data, length);
-            headLen = ALIGNMENT_INT - headStart;
-            offset += headLen;
+        long headStart = this.startOffset % ALIGNMENT_INT;
+        long headLong = segment.longAt(startOffset - headStart);
+        findSeps(startOffset, headLong >>> headStart * ALIGNMENT_INT);
+        long offset = startOffset + ALIGNMENT_INT - headStart;
+        while (offset < endOffset) {
+            findSeps(offset, segment.longAt(offset));
+            offset += ALIGNMENT_INT;
         }
-        long endOffset = segment.endIndex();
-        for (
-            long i = this.startOffset + headLen;
-            i < endOffset;
-            i += ALIGNMENT_INT, offset += ALIGNMENT_INT
-        ) {
-            findSeps(offset, segment.longAt(i), length);
-        }
-        findSeps(offset, segment.tail(), length);
     }
 
-    private void findSeps(long offset, long data, long length) {
+    private void findSeps(
+        long offset,
+        long data
+    ) {
         int dist = sepFinder.next(data);
         long index;
-        while (dist < ALIGNMENT_INT && (index = offset + dist) < length) {
+        while (dist < ALIGNMENT_INT && (index = offset + dist) < endOffset) {
             markSeparator(index);
             dist = sepFinder.next();
         }

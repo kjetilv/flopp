@@ -23,31 +23,31 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
     @Override
     void separate(LineSegment segment) {
         this.state = STARTING_COLUMN;
-
         long length = segment.length();
+        long offset = 0;
         if (length < MemorySegments.ALIGNMENT) {
-            findSeps(segment.bytesAt(0, length));
+            findSeps(segment.bytesAt(0, length), offset);
         } else {
             long shift = this.startOffset % ALIGNMENT_INT;
             findInitialSeps(segment.head(shift), shift);
+            offset += MemorySegments.ALIGNMENT;
             long start = this.startOffset - shift + ALIGNMENT_INT;
             long end = segment.alignedEnd();
             for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i));
+                findSeps(segment.longAt(i), offset);
+                offset += MemorySegments.ALIGNMENT;
             }
-            findSeps(segment.tail());
+            findSeps(segment.tail(), offset);
         }
     }
 
     private void findInitialSeps(long data, long shift) {
-        offset = -shift;
-
+        long offset = -shift;
         int sep = sepFinder.next(data);
         int quo = quoFinder.next(data);
         while (true) {
             int diff = sep - quo;
             if (diff == 0) {
-                offset += MemorySegments.ALIGNMENT;
                 return;
             }
             if (diff < 0) {
@@ -60,13 +60,12 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void findSeps(long data) {
+    private void findSeps(long data, long offset) {
         int sep = sepFinder.next(data);
         int quo = quoFinder.next(data);
         while (true) {
             int diff = sep - quo;
             if (diff == 0) {
-                offset += MemorySegments.ALIGNMENT;
                 return;
             }
             if (diff < 0) {
@@ -81,7 +80,8 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private void handleSep(long index) {
         switch (state) {
-            case STARTING_COLUMN -> {
+            case STARTING_COLUMN ->
+            {
                 markSeparator(index);
             }
             case QUOTING_QUOTE -> {

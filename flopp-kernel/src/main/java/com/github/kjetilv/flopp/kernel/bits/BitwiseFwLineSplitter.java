@@ -16,6 +16,8 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     private final int length;
 
+    private int column;
+
     BitwiseFwLineSplitter(FwFormat format, Consumer<SeparatedLine> lines) {
         super(lines);
         Range[] ranges = format.ranges();
@@ -35,11 +37,6 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    public String column(int column, Charset charset) {
-        return "";
-    }
-
-    @Override
     public long[] start() {
         return start;
     }
@@ -47,6 +44,11 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public long[] end() {
         return end;
+    }
+
+    @Override
+    public String column(int column, Charset charset) {
+        return "";
     }
 
     @Override
@@ -60,15 +62,23 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
-    protected void markEnd() {
+    public LineSegment segment(int column) {
+        this.column = column;
+        return this;
+    }
+
+    @Override
+    public long startIndex() {
+        return start[column];
+    }
+
+    @Override
+    public long endIndex() {
+        return end[column];
     }
 
     @Override
     void init(LineSegment lineSegment) {
         this.segment = lineSegment.memorySegment();
-    }
-
-    @Override
-    void separate(LineSegment segment) {
     }
 }

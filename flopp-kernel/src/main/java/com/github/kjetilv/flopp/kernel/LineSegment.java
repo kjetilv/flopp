@@ -173,8 +173,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     @SuppressWarnings("UnnecessaryParentheses")
     default long fullLongCount() {
-        int headLen = headLength();
-        int tailLen = tailLength();
+        long headLen = headLength();
+        long tailLen = tailLength();
         return ((endIndex() - tailLen) - (startIndex() + headLen)) >> ALIGNMENT_POW;
     }
 
@@ -194,7 +194,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return startIndex() + headLength();
     }
 
-    default int headLength() {
+    default long headLength() {
         long head = startIndex() % ALIGNMENT_INT;
         return head == 0L ? 0 : ALIGNMENT_INT - (int) head;
     }
@@ -213,8 +213,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return memorySegment().get(JAVA_LONG, startIndex - headOffset) >>> shift;
     }
 
-    default int tailLength() {
-        return (int) endIndex() % ALIGNMENT_INT;
+    default long tailLength() {
+        return endIndex() % ALIGNMENT_INT;
     }
 
     default long tail() {
