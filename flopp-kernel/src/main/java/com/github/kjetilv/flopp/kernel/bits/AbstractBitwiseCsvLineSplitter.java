@@ -170,14 +170,15 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         this.startOffset = lineSegment.startIndex();
         this.endOffset = lineSegment.endIndex();
         this.currentStart = startOffset;
-        inited();
     }
 
     @Override
     final void separate(LineSegment segment) {
+        inited();
         long headStart = this.startOffset % ALIGNMENT_INT;
-        long data = segment.longAt(startOffset - headStart);
-        findSeps(startOffset, data >>> headStart * ALIGNMENT_INT, endOffset);
+        long headLong = segment.longAt(startOffset - headStart);
+        long headData = headLong >>> headStart * ALIGNMENT_INT;
+        findSeps(startOffset, headData, endOffset);
         long offset = startOffset + ALIGNMENT_INT - headStart;
         while (offset < endOffset) {
             findSeps(offset, segment.longAt(offset), endOffset);
@@ -207,11 +208,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     void inited() {
     }
 
-    abstract void findSeps(
-        long offset,
-        long data,
-        long endOffset
-    );
+    abstract void findSeps(long offset, long data, long endOffset);
 
     private void mark(long index) {
         this.startPositions[columnNo] = currentStart;
