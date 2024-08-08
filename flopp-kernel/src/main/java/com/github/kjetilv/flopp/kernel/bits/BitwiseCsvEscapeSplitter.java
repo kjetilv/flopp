@@ -1,12 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.CsvFormat;
-import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.function.Consumer;
-
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("DuplicatedCode")
 final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
@@ -23,63 +20,38 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    void separate(LineSegment segment) {
-        this.escaping = false;
-        long length = segment.length();
-        if (length < MemorySegments.ALIGNMENT) {
-            findSeps(segment.bytesAt(0, length), 0, 0);
-        } else {
-            long headStart = this.startOffset % ALIGNMENT_INT;
-            long offset = processHead(segment, headStart);
-            long start = this.startOffset - headStart + ALIGNMENT_INT;
-            long end = segment.alignedEnd();
-            for (long i = start; i < end; i += ALIGNMENT_INT) {
-                findSeps(segment.longAt(i), 0, offset);
-            }
-            if (!segment.isAlignedAtEnd()) {
-                findSeps(segment.tail(), 0, offset);
-            }
-        }
-    }
-
-    @Override
     protected String substring() {
         return formatString() + " " + (escaping ? "escaping" : "");
     }
 
-    private void findSeps(long data, long shift, long offset) {
+    @Override
+    void inited() {
+        escaping = false;
+        nextEscape = -1;
+    }
+
+    @Override
+    void findSeps(long offset, long data, long endOffset) {
         int sep = sepFinder.next(data);
         int esc = escFinder.next(data);
         while (true) {
             int diff = sep - esc;
-            if (diff == 0) {
+            if (diff == 0 || offset + sep > endOffset) {
                 return;
             }
             if (diff < 0) {
-                handleSep(sep, shift, offset);
+                long position = offset + sep;
+                handleSep(position);
                 sep = sepFinder.next();
             } else {
-                handleEsc(esc + shift, offset);
+                long position = offset + esc;
+                handleEsc(position);
                 esc = escFinder.next();
             }
         }
     }
 
-    private long processHead(LineSegment segment, long headStart) {
-        if (headStart == 0) {
-            long headLong = segment.longNo(0);
-            findSeps(headLong, 0, 0);
-            return 0;
-        } else {
-            long headLong = segment.head(headStart);
-            findSeps(headLong, headStart, -headStart);
-            return -headStart;
-        }
-    }
-
-    private void handleSep(long index, long shift, long offset) {
-        long adjusted = index + shift;
-        long position = offset + adjusted;
+    private void handleSep(long position) {
         boolean effective = !(escaping && position == nextEscape);
         if (effective) {
             markSeparator(position);
@@ -88,11 +60,11 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
         }
     }
 
-    private void handleEsc(long index, long offset) {
-        if (escaping && offset + index == nextEscape) {
+    private void handleEsc(long position) {
+        if (escaping && position == nextEscape) {
             escaping = false;
         } else {
-            nextEscape = offset + index + 1;
+            nextEscape = position + 1;
             escaping = true;
         }
     }
