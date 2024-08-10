@@ -41,7 +41,7 @@ class PartitionedTest {
                 8dddddddddddd
                 9eeeeee
                 10
-                                          
+                
                 11
                 """.split("\n"))
         );
@@ -103,7 +103,7 @@ class PartitionedTest {
                 8dddddddddddd
                 9eeeeee
                 10
-                                          
+                
                 11
                 FOOTER1
                 FOOTER2
@@ -163,7 +163,7 @@ class PartitionedTest {
                 8dddddddddddd
                 9eeeeee
                 10
-                                          
+                
                 11
                 """.split("\n"))
         );

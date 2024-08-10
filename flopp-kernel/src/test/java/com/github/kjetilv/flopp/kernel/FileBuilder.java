@@ -32,7 +32,8 @@ public final class FileBuilder {
         int header = decor.header();
         int footer = decor.footer();
         AtomicLong countdown = new AtomicLong(lineCount + header + footer);
-        Iterable<String> lines = () -> new Iterator<>() {
+
+        return () -> new Iterator<>() {
 
             @Override
             public boolean hasNext() {
@@ -53,7 +54,5 @@ public final class FileBuilder {
                     .collect(joining(";"));
             }
         };
-
-        return lines;
     }
 }

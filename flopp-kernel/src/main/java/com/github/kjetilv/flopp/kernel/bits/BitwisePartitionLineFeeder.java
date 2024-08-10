@@ -43,7 +43,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private final boolean last;
 
-    private boolean first;
+    private final boolean first;
 
     BitwisePartitionLineFeeder(
         Partition partition,
