@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,7 +28,7 @@ class BitwiseCsvEscapeSplitterTest {
     void splitLine() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits), new CsvFormat.Escape(';')
+            adder(splits), CsvFormat.escape(';')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -43,7 +45,7 @@ class BitwiseCsvEscapeSplitterTest {
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits), new CsvFormat.Escape(';')
+            adder(splits),  CsvFormat.escape(';')
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -422,7 +424,7 @@ class BitwiseCsvEscapeSplitterTest {
         return splits;
     }
 
-    private static final CsvFormat.Escape CSV_FORMAT = new CsvFormat.Escape(';', '\\', true);
+    private static final CsvFormat.Escape CSV_FORMAT = CsvFormat.escape(';', '\\', true);
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

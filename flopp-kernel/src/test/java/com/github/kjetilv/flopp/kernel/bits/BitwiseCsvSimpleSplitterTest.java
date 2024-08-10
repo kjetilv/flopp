@@ -1,9 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ class BitwiseCsvSimpleSplitterTest {
     void splitLine() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), new CsvFormat.Simple(';')
+            adder(splits), CsvFormat.simple(';')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -44,7 +45,7 @@ class BitwiseCsvSimpleSplitterTest {
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
         BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), new CsvFormat.Simple(';')
+            adder(splits), CsvFormat.simple(';')
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -453,7 +454,7 @@ class BitwiseCsvSimpleSplitterTest {
         return splits;
     }
 
-    private static final CsvFormat.Simple CSV_FORMAT = new CsvFormat.Simple(';');
+    private static final CsvFormat CSV_FORMAT = CsvFormat.simple(';');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

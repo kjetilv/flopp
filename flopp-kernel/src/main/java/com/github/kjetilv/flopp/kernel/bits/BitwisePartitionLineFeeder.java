@@ -43,6 +43,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private final boolean last;
 
+    private boolean first;
+
     BitwisePartitionLineFeeder(
         Partition partition,
         MemorySegment segment,
@@ -52,6 +54,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         Supplier<BitwisePartitionLineFeeder> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
+        this.first = partition.first();
         this.last = partition.last();
         this.segment = Objects.requireNonNull(segment, "segment");
         this.finder = Bits.swarFinder('\n');
@@ -66,13 +69,13 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     @Override
     public void run() {
         try {
-            if (partition.first() || processedHead()) {
+            if (first || processedHead()) {
                 if (last) {
                     processTailBody();
                 } else {
                     processMainBody(limit);
                     if (!processedOverflow()) {
-                        processNext(this.next.get()); // We need to query the next partition
+                        processNextPartition(this.next.get());
                     }
                 }
             }
@@ -153,8 +156,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     private boolean processedHead() {
         while (offset < limit) {
             try {
-                long data = loadLong(offset);
-                int dist = dist(data);
+                long data = segment.get(JAVA_LONG, offset);
+                int dist = finder.next(data);
                 if (dist != ALIGNMENT_INT) { // Found newline
                     long start = offset + dist;
                     this.startIndex = start + 1; // Mark position of new line
@@ -162,7 +165,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
                     if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
                         return false;
                     }
-                    while ((dist = dist()) != ALIGNMENT_INT) {
+                    while ((dist = finder.next()) != ALIGNMENT_INT) {
                         cycle(offset + dist);
                     }
                     return true;
@@ -189,12 +192,11 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     private void processMainBody(long lastOffset) {
         long steps = lastOffset - offset >> ALIGNMENT_POW;
         for (long l = 0; l < steps; l++) {
-            long data = loadLong(offset);
-            int dist = dist(data);
+            long data = segment.get(JAVA_LONG, offset);
+            int dist = finder.next(data);
             while (dist != ALIGNMENT_INT) {
-                long lineOffset = offset + dist;
-                cycle(lineOffset);
-                dist = dist();
+                cycle(offset + dist);
+                dist = finder.next();
             }
             offset += ALIGNMENT_INT;
         }
@@ -204,7 +206,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         long tail = logicalLimit % ALIGNMENT_INT;
         long lastAligned = logicalLimit - tail;
         while (offset < lastAligned) {
-            int dist = dist(loadLong(offset));
+            long data = segment.get(JAVA_LONG, offset);
+            int dist = finder.next(data);
             if (dist != ALIGNMENT_INT) {
                 long lineOffset = offset + dist;
                 cycle(lineOffset);
@@ -214,10 +217,10 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
             }
         }
         if (tail > 0) {
-            int dist = dist(loadTail());
+            long data = loadTail();
+            int dist = finder.next(data);
             if (dist < ALIGNMENT_INT) { // Tail did not end in newline, send what we got
-                long lineOffset = offset + dist;
-                cycle(lineOffset);
+                cycle(offset + dist);
                 return true;
             }
         }
@@ -225,12 +228,12 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     }
 
     private void processTail() {
-        int dist = dist(loadTail());
+        long data = loadTail();
+        int dist = finder.next(data);
         if (dist < ALIGNMENT_INT) {
             do { // Newlines spotted, ship lines
-                long lineOffset = offset + dist;
-                cycle(lineOffset);
-                dist = dist();
+                cycle(offset + dist);
+                dist = finder.next();
             } while (dist < ALIGNMENT_INT);
             if (startIndex < logicalLimit) { // Tail did not end in newline, send what we got
                 cycle(logicalLimit);
@@ -238,18 +241,6 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         } else { // Tail did not end in newline, send what we got
             cycle(logicalLimit);
         }
-    }
-
-    private int dist(long data) {
-        return finder.next(data);
-    }
-
-    private int dist() {
-        return finder.next();
-    }
-
-    private long loadLong(long offset) {
-        return segment.get(JAVA_LONG, offset);
     }
 
     private void cycle(long index) {
@@ -262,7 +253,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         return MemorySegments.tail(segment, limit);
     }
 
-    private void processNext(BitwisePartitionLineFeeder next) {
+    private void processNextPartition(BitwisePartitionLineFeeder next) {
         long nextOffset = next.firstLine >= 0 ? next.firstLine : next.findFirstLine(finder);
         if (next.containsLine(nextOffset)) { // Next partition contains the next newline
             mergeWithNext(next, nextOffset);
@@ -276,7 +267,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         long tail = limit % ALIGNMENT_INT;
         long lastOffset = limit - tail;
         while (offset < lastOffset) {
-            long data = loadLong(offset);
+            long data = segment.get(JAVA_LONG, offset);
             int dist = finder.next(data);
             if (dist != ALIGNMENT_INT) {
                 return offset + dist;

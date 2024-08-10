@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
-import com.github.kjetilv.flopp.kernel.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;

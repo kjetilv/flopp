@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.util.Combine;
+import com.github.kjetilv.flopp.kernel.util.Non;
 import com.github.kjetilv.flopp.kernel.util.Print;
 
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public record Partitions(
                "]";
     }
 
-    Partitions insertAtEnd(Partitions other) {
+    public Partitions insertAtEnd(Partitions other) {
         long combinedTotal = total + other.total();
         if (tail == 0L) {
             return new Partitions(

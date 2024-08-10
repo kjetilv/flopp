@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 
 import java.io.Closeable;
 import java.nio.charset.Charset;

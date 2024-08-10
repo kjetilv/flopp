@@ -17,6 +17,9 @@ package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 import net.openhft.chronicle.bytes.Bytes;
@@ -44,7 +47,7 @@ public final class CalculateAverage_kjetilvcm {
             Instant start = Instant.now();
             Shape shape = Shape.of(path, UTF_8).longestLine(128);
             Partitioning partitioning = Partitioning.create(500, shape.longestLine());
-            CsvFormat format = new CsvFormat.Simple(2, ';');
+            CsvFormat format = CsvFormat.simple(2, ';');
             try (
                 Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
                 ExecutorService executor =Executors.newSingleThreadExecutor()

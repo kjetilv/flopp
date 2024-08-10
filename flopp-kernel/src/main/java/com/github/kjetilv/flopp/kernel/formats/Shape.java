@@ -1,4 +1,6 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.formats;
+
+import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

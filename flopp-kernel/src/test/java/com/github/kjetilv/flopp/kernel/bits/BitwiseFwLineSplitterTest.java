@@ -1,10 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.Range;
+import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,13 +17,14 @@ import java.util.UUID;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("SameParameterValue")
 class BitwiseFwLineSplitterTest {
 
     @Test
     void test() {
         assertFileContents(
             "foobarzot",
-            new FwFormat(Range.of(3, 6)),
+            FwFormat.fw(Range.of(3, 6)),
             "bar"
         );
     }

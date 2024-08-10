@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.util.function.Consumer;
 
@@ -9,7 +9,7 @@ import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
 
 final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
-    BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
+    BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
         super(lines, format);
     }
 

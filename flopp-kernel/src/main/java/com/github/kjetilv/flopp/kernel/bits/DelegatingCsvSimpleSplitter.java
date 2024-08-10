@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.CsvFormat;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSplitter;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
@@ -27,7 +27,7 @@ final class DelegatingCsvSimpleSplitter implements LineSplitter, LineSegment, Se
 
     private MemorySegment memorySegment;
 
-    DelegatingCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat.Simple format) {
+    DelegatingCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
         this.lines = lines;
         this.sepFinder = Bits.finder(format.separator(), true);
         this.reusable = BitwiseTraverser.create(false);

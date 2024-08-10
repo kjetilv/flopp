@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel.util;
 
-import com.github.kjetilv.flopp.kernel.Non;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;

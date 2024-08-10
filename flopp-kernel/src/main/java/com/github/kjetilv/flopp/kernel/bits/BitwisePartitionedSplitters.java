@@ -1,6 +1,11 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitters;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;

@@ -1,6 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,7 +28,7 @@ class BitwiseCsvQuotedSplitterTest {
         List<String> splits = new ArrayList<>();
         BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(
             adder(splits),
-            new CsvFormat.Quoted(';', '"')
+            CsvFormat.quoted(';', '"')
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -38,7 +40,7 @@ class BitwiseCsvQuotedSplitterTest {
         List<String> splits = new ArrayList<>();
         BitwiseCsvQuotedSplitter splitter = new BitwiseCsvQuotedSplitter(
             adder(splits),
-            new CsvFormat.Quoted(';', '"')
+            CsvFormat.quoted(';', '"')
         );
         splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
         assertThat(splits).containsExactly("foo123", "bar", "234", "abcdef", "3456");
@@ -112,16 +114,15 @@ class BitwiseCsvQuotedSplitterTest {
         List<String> splits1 = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
-                partitioned.splitters().splitters(new CsvFormat.Quoted(',', '"'))
+                partitioned.splitters().splitters(CsvFormat.quoted(',', '"'))
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits1::add)));
             }
         } catch (Exception e) {
             throw new IllegalStateException("Failed: " + String.join("\n", splits1), e);
         }
-        List<String> splits = splits1;
 
-        splits.stream()
+        splits1.stream()
             .map(s -> "`" + s + "`")
             .forEach(System.out::println);
     }
@@ -401,7 +402,7 @@ class BitwiseCsvQuotedSplitterTest {
         return splits;
     }
 
-    public static final CsvFormat.Quoted DQ_FORMAT = new CsvFormat.Quoted(';', '\'');
+    public static final CsvFormat.Quoted DQ_FORMAT = CsvFormat.quoted(';', '\'');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

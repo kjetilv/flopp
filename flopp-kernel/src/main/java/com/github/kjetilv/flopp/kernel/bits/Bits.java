@@ -102,7 +102,7 @@ public final class Bits {
      */
     public static byte[] toBytes(long[] data, int n) {
         byte[] bytes = new byte[n];
-        transferMultipleDataTo(data, 0, bytes);
+        transferMultipleDataTo(data, bytes);
         return bytes;
     }
 
@@ -258,23 +258,11 @@ public final class Bits {
         0xFF00000000000000L
     };
 
-    private static void transferMultipleDataTo(long[] data, int offset, byte[] target) {
-        int headStart = offset % ALIGNMENT_INT;
-        int headLen = ALIGNMENT_INT - headStart;
+    private static void transferMultipleDataTo(long[] data, byte[] target) {
         int length = target.length;
-        int firstLong;
-        int longCount;
         int position = 0;
-        if (offset > 0) {
-            transferLimitedDataTo(data[0], 0, headLen, target);
-            firstLong = 1;
-            longCount = length - headLen >> ALIGNMENT_POW;
-            position = headLen;
-        } else {
-            firstLong = 0;
-            longCount = length >> ALIGNMENT_POW;
-        }
-        for (int l = firstLong; l < longCount; l++) {
+        int longCount = length >> ALIGNMENT_POW;
+        for (int l = 0; l < longCount; l++) {
             transferDataTo(data[l], position, target);
             position += ALIGNMENT_INT;
         }
@@ -305,8 +293,7 @@ public final class Bits {
     }
 
     private static int trailingBytes(long l) {
-        int trailingZeros = Long.numberOfTrailingZeros(l);
-        return trailingZeros >> ALIGNMENT_POW;
+        return Long.numberOfTrailingZeros(l) >> ALIGNMENT_POW;
     }
 
     private static boolean zero(long l, int position) {

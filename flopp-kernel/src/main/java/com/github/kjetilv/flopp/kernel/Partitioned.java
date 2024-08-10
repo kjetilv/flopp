@@ -1,5 +1,8 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.List;

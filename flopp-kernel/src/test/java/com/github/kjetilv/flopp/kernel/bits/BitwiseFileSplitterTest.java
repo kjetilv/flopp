@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +64,7 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             line ->
-                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escape()
+                airlines.add(line.column(1, UTF_8)), CsvFormat.escape()
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
@@ -86,7 +89,7 @@ class BitwiseFileSplitterTest {
         Path path = PATH;
         BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
             line ->
-                airlines.add(line.column(1, UTF_8)), new CsvFormat.Escape()
+                airlines.add(line.column(1, UTF_8)), CsvFormat.escape()
         );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
@@ -181,7 +184,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat.Escape format = new CsvFormat.Escape(',', '\\');
+        CsvFormat.Escape format = CsvFormat.escape(',', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1, UTF_8));
         Instant now = Instant.now();
         try (

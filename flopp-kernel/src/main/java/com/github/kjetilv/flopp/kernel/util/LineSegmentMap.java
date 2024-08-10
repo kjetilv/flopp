@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.util;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -11,7 +12,15 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
-public interface LineSegmentMap<T> {
+public sealed interface LineSegmentMap<T> permits LineSegmentHashtable {
+
+    static <T> LineSegmentMap<T> of(int size) {
+        return of(size, null);
+    }
+
+    static <T> LineSegmentMap<T> of(int size, BitwiseTraverser.Reusable reusable) {
+        return new LineSegmentHashtable<>(size, reusable);
+    }
 
     T get(LineSegment segment);
 

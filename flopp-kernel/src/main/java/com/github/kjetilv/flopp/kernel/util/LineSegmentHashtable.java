@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.util;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.Non;
 import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
 
 import java.nio.charset.Charset;
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
-public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
+final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     private final int limit;
 
@@ -25,11 +24,7 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     private final BitwiseTraverser.Reusable reusable;
 
-    public LineSegmentHashtable(int limit) {
-        this(limit, null);
-    }
-
-    public LineSegmentHashtable(int limit, BitwiseTraverser.Reusable reusable) {
+    LineSegmentHashtable(int limit, BitwiseTraverser.Reusable reusable) {
         this.limit = Non.negativeOrZero(limit, "limit");
         this.table = new TableEntry<?>[this.limit];
         this.reusable = reusable == null ? BitwiseTraverser.create() : reusable;
@@ -55,6 +50,7 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         }
     }
 
+    @Override
     public T get(LineSegment segment, Supplier<T> valueSupplier) {
         int hash = reusable.toHashCode(segment);
         int initialPos = indexOf(hash);
@@ -79,7 +75,8 @@ public final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     @Override
     public T put(LineSegment segment, T value) {
-        TableEntry<?> existing = store(new TableEntry<>(segment, reusable.toHashCode(segment), value));
+        TableEntry<?> existing =
+            store(new TableEntry<>(segment, reusable.toHashCode(segment), value));
         return existing == null ? null : (T) existing.value();
     }
 

@@ -1,4 +1,8 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.formats;
+
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +90,7 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return new Partitions(total, partitions, tail);
     }
 
-    Partitioning fragment(TailShards tailShards) {
+    public Partitioning fragment(TailShards tailShards) {
         return new Partitioning(count, tail, tailShards);
     }
 
