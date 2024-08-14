@@ -25,11 +25,6 @@ record ImmutableSliceSegment(MemorySegment memorySegment, long length)
     }
 
     @Override
-    public LineSegment immutableSlice() {
-        return this;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         return obj instanceof LineSegment lineSegment && this.matches(lineSegment);
     }

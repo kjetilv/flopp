@@ -18,7 +18,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public final class LineSegments {
 
     public static int hashCode(LineSegment segment) {
-        return segment.memorySegment().hashCode();
+        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
+        return hashCode(reusable, reusable.size());
     }
 
     public static int hashCode(LongSupplier supplier, long count) {

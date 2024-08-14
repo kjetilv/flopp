@@ -218,10 +218,10 @@ public abstract sealed class BitwiseTraverser
                 int restTail = tailLen - headStart;
                 if (restTail > 0) {
                     long remainingData = alignedData >> headStart * ALIGNMENT;
-                    hash = nextHash(hash, remainingData);
+                    return nextHash(hash, remainingData);
                 }
             } else if (headLen > 0) {
-                hash = nextHash(hash, data);
+                return nextHash(hash, data);
             }
             return hash;
         }
@@ -334,18 +334,20 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public long getAsLong() {
-            long next;
-            if (position == alignedStart && headLen > 0) {
-                next = segment.head();
-            } else if (position == alignedEnd && tailLen > 0) {
-                next = segment.tail();
-            } else if (position < alignedEnd) {
-                next = segment.longAt(position);
-            } else {
-                next = 0x0L;
+            try {
+                if (position == alignedStart && headLen > 0) {
+                    return segment.head();
+                }
+                if (position == alignedEnd && tailLen > 0) {
+                    return segment.tail();
+                }
+                if (position < alignedEnd) {
+                    return segment.longAt(position);
+                }
+                return 0x0L;
+            } finally {
+                position += ALIGNMENT;
             }
-            position += ALIGNMENT;
-            return next;
         }
 
         @Override

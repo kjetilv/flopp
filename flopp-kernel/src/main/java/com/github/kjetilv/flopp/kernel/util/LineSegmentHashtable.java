@@ -59,8 +59,7 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
             TableEntry<?> existing = table[slotPos];
             if (existing == null) {
                 T value = valueSupplier.get();
-                table[slotPos] =
-                    new TableEntry<>(segment.hashedWith(hash, true), hash, value);
+                table[slotPos] = new TableEntry<>(segment.alignedHashedWith(hash), hash, value);
                 return value;
             }
             if (existing.matches(segment, hash)) {

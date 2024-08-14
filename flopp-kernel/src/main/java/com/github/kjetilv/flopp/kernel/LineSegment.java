@@ -8,7 +8,7 @@ import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
-import static com.github.kjetilv.flopp.kernel.HashedLineSegment.hash;
+import static com.github.kjetilv.flopp.kernel.HashedLineSegment.*;
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.*;
 
@@ -82,8 +82,12 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.longSupplier(this, align);
     }
 
-    default LineSegment hashedWith(int hash) {
-        return hash(hash, this);
+    default LineSegment unalignedHashedWith(int hash) {
+        return unalignedHash(hash, this);
+    }
+
+    default LineSegment alignedHashedWith(int hash) {
+        return alignedHash(hash, this);
     }
 
     default LineSegment hashedWith(int hash, boolean aligned) {
@@ -110,18 +114,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
             MemorySegment.ofBuffer(ByteBuffer.allocateDirect(Math.toIntExact(length())));
         copyBytes(memorySegment(), startIndex(), buffer, length());
         return new ImmutableLineSegment(buffer, 0, length());
-    }
-
-    @SuppressWarnings("unused")
-    default LineSegment immutableSlice() {
-        return immutableSlice(endIndex());
-    }
-
-    default LineSegment immutableSlice(long length) {
-        return new ImmutableSliceSegment(
-            memorySegment().asSlice(startIndex(), length),
-            length
-        );
     }
 
     default boolean hasRange(int startIndex, int endIndex) {

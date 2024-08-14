@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 
 import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.fromEdgeLong;
 
-record HashedUnalignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex, boolean aligned)
+record HashedUnalignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
     implements HashedLineSegment {
 
     @Override
