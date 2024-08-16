@@ -243,6 +243,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.of(memorySegment(), startIndex, endIndex);
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     default int compareTo(LineSegment o) {
         return LineSegments.compare(this, o);
