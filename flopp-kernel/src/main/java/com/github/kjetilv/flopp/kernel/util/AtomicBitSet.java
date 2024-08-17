@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.util;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
+@SuppressWarnings("unused")
 public final class AtomicBitSet {
 
     private final AtomicIntegerArray ints;
