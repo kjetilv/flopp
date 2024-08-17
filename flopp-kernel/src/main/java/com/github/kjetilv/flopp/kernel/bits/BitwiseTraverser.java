@@ -334,20 +334,20 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public long getAsLong() {
-            try {
-                if (position == alignedStart && headLen > 0) {
-                    return segment.head();
-                }
-                if (position == alignedEnd && tailLen > 0) {
-                    return segment.tail();
-                }
-                if (position < alignedEnd) {
-                    return segment.longAt(position);
-                }
-                return 0x0L;
-            } finally {
+            if (position == alignedStart && headLen > 0) {
+                long head = segment.head();
                 position += ALIGNMENT;
+                return head;
             }
+            if (position < alignedEnd) {
+                long data = segment.longAt(position);
+                position += ALIGNMENT;
+                return data;
+            }
+            if (position == alignedEnd && tailLen > 0) {
+                return segment.tail();
+            }
+            return 0x0L;
         }
 
         @Override
@@ -370,7 +370,7 @@ public abstract sealed class BitwiseTraverser
         }
     }
 
-    public interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
+    public sealed interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
 
         long size();
 

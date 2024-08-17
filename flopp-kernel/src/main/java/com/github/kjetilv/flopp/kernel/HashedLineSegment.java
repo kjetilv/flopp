@@ -1,6 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
-public sealed interface HashedLineSegment extends LineSegment, LineSegment.Immutable, LineSegment.Hashed
+import com.github.kjetilv.flopp.kernel.LineSegment.Hashed;
+import com.github.kjetilv.flopp.kernel.LineSegment.Immutable;
+
+public sealed interface HashedLineSegment
+    extends LineSegment, Immutable, Hashed
     permits HashedAlignedLineSegment, HashedUnalignedLineSegment {
 
     static LineSegment hash(int hash, LineSegment ls, boolean aligned) {

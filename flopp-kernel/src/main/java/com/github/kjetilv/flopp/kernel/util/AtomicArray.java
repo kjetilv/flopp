@@ -12,10 +12,14 @@ public final class AtomicArray<T> {
     private final Object[] array;
 
     public AtomicArray(int size) {
+        this(size, false);
+    }
+
+    public AtomicArray(int size, boolean fair) {
         this.array = new Object[size];
         this.locks = new Lock[size];
         for (int i = 0; i < array.length; i++) {
-            locks[i] = new ReentrantLock();
+            locks[i] = new ReentrantLock(fair);
         }
     }
 
