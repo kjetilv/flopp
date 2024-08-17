@@ -4,36 +4,37 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public final class AtomicBitSet {
 
-    private final AtomicIntegerArray array;
+    private final AtomicIntegerArray ints;
 
     public AtomicBitSet(int length) {
-        this.array = new AtomicIntegerArray(length + 31 >>> 5);
-    }
-
-    public boolean set(long n) {
-        int bit = bit(n);
-        int idx = index(n);
-        do {
-            int current = get(idx);
-            int updated = current | bit;
-            if (current == updated) {
-                return false;
-            }
-            if (array.compareAndSet(idx, current, updated)) {
-                return true;
-            }
-        } while (true);
+        this.ints = new AtomicIntegerArray(Non.negativeOrZero(length, "length") + 31 >>> 5);
     }
 
     public boolean get(long n) {
         int bit = bit(n);
         int index = index(n);
-        int existingValue = get(index);
-        return (existingValue & bit) != 0;
+        int current = ints.get(index);
+        return (current & bit) != 0;
     }
 
-    private int get(int idx) {
-        return array.get(idx);
+    public boolean set(long n) {
+        int bit = bit(n);
+        int index = index(n);
+        do {
+            int current = ints.get(index);
+            int updated = current | bit;
+            if (current == updated) {
+                return false;
+            }
+            if (ints.compareAndSet(index, current, updated)) {
+                return true;
+            }
+        } while (true);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[ints:" + ints.length() + "]";
     }
 
     private static int index(long n) {
