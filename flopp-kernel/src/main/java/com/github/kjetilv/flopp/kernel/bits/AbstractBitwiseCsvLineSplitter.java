@@ -44,11 +44,11 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     AbstractBitwiseCsvLineSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
         super(lines);
         this.format = Objects.requireNonNull(format, "format");
-        this.charset = Objects.requireNonNull(format.charset(), "format charset");
-        this.sepFinder = Bits.finder(format.separator(), true);
-        this.startPositions = new long[format.columnCount()];
-        this.endPositions = new long[format.columnCount()];
-        this.columnBuffer = new byte[format.maxColumnWidth()];
+        this.charset = this.format.charset();
+        this.sepFinder = Bits.swarFinder(this.format.separator());
+        this.startPositions = new long[this.format.columnCount()];
+        this.endPositions = new long[this.format.columnCount()];
+        this.columnBuffer = new byte[this.format.maxColumnWidth()];
     }
 
     @Override

@@ -15,7 +15,7 @@ class LineSegmentHashtableTest {
         LineSegment foo = LineSegments.of("foo");
         LineSegment bar = LineSegments.of("bar");
 
-        LineSegmentMap<Integer> table = LineSegmentMap.of(16);
+        LineSegmentMap<Integer> table = LineSegmentMaps.create(16);
 
         table.put(foo, 42);
         table.put(bar, 47);
@@ -33,7 +33,7 @@ class LineSegmentHashtableTest {
         LineSegment foo = LineSegments.of("foo");
         LineSegment bar = LineSegments.of("bar");
 
-        LineSegmentMap<Integer> table = LineSegmentMap.of(16);
+        LineSegmentMap<Integer> table = LineSegmentMaps.create(16);
 
         table.put(foo, 42);
         table.put(bar, 47);
@@ -46,9 +46,9 @@ class LineSegmentHashtableTest {
     void putMergeGet() {
         LineSegment foo = LineSegments.of("foo");
 
-        LineSegmentMap<Integer> table1 = LineSegmentMap.of(16);
+        LineSegmentMap<Integer> table1 = LineSegmentMaps.create(16);
         table1.put(foo, 42);
-        LineSegmentMap<Integer> table2 = LineSegmentMap.of(16);
+        LineSegmentMap<Integer> table2 = LineSegmentMaps.create(16);
         table2.put(foo, 47);
         table1.merge(table2, Integer::sum);
 

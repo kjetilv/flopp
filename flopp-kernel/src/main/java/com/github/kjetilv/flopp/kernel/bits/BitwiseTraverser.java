@@ -17,6 +17,10 @@ public abstract sealed class BitwiseTraverser
         return new MultiModeSuppler().blank();
     }
 
+    public static Reusable createAligned() {
+        return new AlignedTraverser().blank();
+    }
+
     public static Reusable create(boolean align) {
         return (align ? new AlignedTraverser() : new MultiModeSuppler()).blank();
     }

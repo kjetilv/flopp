@@ -5,8 +5,6 @@ import java.util.stream.Stream;
 
 public interface PartitionedSplitter {
 
-    Partition partition();
-
     void forEach(Consumer<SeparatedLine> consumer);
 
     Stream<SeparatedLine> separatedLines();

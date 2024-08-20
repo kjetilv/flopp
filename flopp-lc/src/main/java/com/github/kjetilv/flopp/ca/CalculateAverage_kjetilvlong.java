@@ -27,6 +27,7 @@ import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
 import com.github.kjetilv.flopp.kernel.util.LineSegmentMap;
+import com.github.kjetilv.flopp.kernel.util.LineSegmentMaps;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,13 +66,13 @@ public final class CalculateAverage_kjetilvlong {
 
         Instant start = Instant.now();
         LineSegmentMap<Result> map = go(path, settings, CsvFormat.simple(2, ';'));
-        System.out.println(map.toStringSorted());
+        String mapStringSorted = map.toStringSorted();
+        System.out.println(mapStringSorted);
         System.out.println(Duration.between(start, Instant.now()));
 
         if (args.length > 1) {
             String content = Files.readString(resolve(Path.of(args[1])));
-            String string = map.toString();
-            System.out.println(string.equals(content.trim()));
+            System.out.println(mapStringSorted.equals(content.trim()));
         }
     }
 
@@ -83,17 +84,10 @@ public final class CalculateAverage_kjetilvlong {
         Partitions partitions = p.of(shape.size());
         AtomicInteger threads = new AtomicInteger();
         int size = 32 * 1024;
-        LineSegmentMap<Result> map = LineSegmentMap.of(size);
+        LineSegmentMap<Result> map = LineSegmentMaps.create(size);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
             ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
-//                new ThreadPoolExecutor(
-//                cpus,
-//                cpus,
-//                30,
-//                TimeUnit.SECONDS,
-//                new LinkedBlockingQueue<>(bitwisePartitioned.partitions().size())
-//            )
         ) {
             int chunks = bitwisePartitioned.partitions().size();
             BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
@@ -153,7 +147,7 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static LineSegmentMap<Result> table(PartitionedSplitter splitter, int size) {
-        LineSegmentMap<Result> table = LineSegmentMap.of(size);
+        LineSegmentMap<Result> table = LineSegmentMaps.create(size);
         Reader reader = Readers.create(
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         );

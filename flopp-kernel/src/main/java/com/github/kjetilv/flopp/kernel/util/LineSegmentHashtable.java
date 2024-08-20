@@ -85,6 +85,18 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
     }
 
     @Override
+    public Stream<Map.Entry<LineSegment, T>> entries() {
+        return tableEntries().map(tableEntry ->
+            Map.entry(tableEntry.segment(), (T) tableEntry.value()));
+    }
+
+    @Override
+    public Stream<Map.Entry<String, T>> stringEntries() {
+        return tableEntries().map(tableEntry ->
+            Map.entry(tableEntry.segmentString(), (T) tableEntry.value()));
+    }
+
+    @Override
     public void forEach(BiConsumer<LineSegment, T> consumer) {
         tableEntries().forEach(tableEntry ->
             consumer.accept(

@@ -29,8 +29,8 @@ final class DelegatingCsvSimpleSplitter implements LineSplitter, LineSegment, Se
 
     DelegatingCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
         this.lines = lines;
-        this.sepFinder = Bits.finder(format.separator(), true);
-        this.reusable = BitwiseTraverser.create(false);
+        this.sepFinder = Bits.swarFinder(format.separator());
+        this.reusable = BitwiseTraverser.createAligned();
         this.startPositions = new long[format.columnCount()];
         this.endPositions = new long[format.columnCount()];
     }

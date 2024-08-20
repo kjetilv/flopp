@@ -41,9 +41,9 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private long offset;
 
-    private final boolean last;
-
     private final boolean first;
+
+    private final boolean last;
 
     BitwisePartitionLineFeeder(
         Partition partition,
@@ -54,8 +54,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         Supplier<BitwisePartitionLineFeeder> next
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
-        this.first = partition.first();
-        this.last = partition.last();
+        this.first = this.partition.first();
+        this.last = this.partition.last();
         this.segment = Objects.requireNonNull(segment, "segment");
         this.finder = Bits.swarFinder('\n');
         this.offset = offset;
