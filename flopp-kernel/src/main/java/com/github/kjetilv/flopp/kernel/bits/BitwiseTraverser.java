@@ -1,14 +1,14 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
-import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
 
 public abstract sealed class BitwiseTraverser
     implements Function<LineSegment, BitwiseTraverser.Reusable> {

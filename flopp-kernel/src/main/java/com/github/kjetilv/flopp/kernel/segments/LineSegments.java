@@ -1,9 +1,8 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseLongSpliterator;
 import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.io.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
@@ -11,7 +10,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.fromEdgeLong;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.fromEdgeLong;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
@@ -74,8 +73,9 @@ public final class LineSegments {
         if (length == 0) {
             return LongStream.empty();
         }
-        LongSupplier supplier = longSupplier(segment, align);
-        return StreamSupport.longStream(new BitwiseLongSpliterator(length, supplier), false);
+        return StreamSupport.longStream(
+            new SuppliedLongSpliterator(longSupplier(segment, align), length),
+            false);
     }
 
     public static long[] asLongs(LineSegment segment) {

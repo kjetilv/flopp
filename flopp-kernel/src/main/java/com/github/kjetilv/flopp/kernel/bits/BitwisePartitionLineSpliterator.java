@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
 
@@ -65,13 +65,9 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
     }
 
     private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
-        return new BitwisePartitionLineFeeder(
-            partition,
-            segment,
-            offset,
-            logicalSize,
-            action,
-            next == null ? null : () -> next.get().feeder(action)
-        );
+        Supplier<BitwisePartitionLineFeeder> supplier = next == null
+            ? null
+            : () -> next.get().feeder(action);
+        return new BitwisePartitionLineFeeder(partition, segment, offset, logicalSize, action, supplier);
     }
 }

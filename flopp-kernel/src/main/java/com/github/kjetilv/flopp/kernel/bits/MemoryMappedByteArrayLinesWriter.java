@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LinesWriter;
+import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;

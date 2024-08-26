@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 
 import java.util.function.Consumer;

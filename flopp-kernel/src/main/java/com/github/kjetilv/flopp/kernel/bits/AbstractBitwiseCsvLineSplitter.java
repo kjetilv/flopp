@@ -1,8 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.io.MemorySegments;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.nio.charset.Charset;
@@ -11,8 +12,8 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SuppressWarnings("PackageVisibleField")

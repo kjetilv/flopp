@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat.Escape;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat.Quoted;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.util.Objects;
 import java.util.function.Consumer;

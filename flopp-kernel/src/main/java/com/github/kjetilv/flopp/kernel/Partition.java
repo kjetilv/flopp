@@ -1,11 +1,12 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.io.MemorySegments;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.segments.Range;
 import com.github.kjetilv.flopp.kernel.util.Non;
 import com.github.kjetilv.flopp.kernel.util.Print;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
 
 public record Partition(int partitionNo, int partitionCount, long offset, long length)
     implements Comparable<Partition>, Range {

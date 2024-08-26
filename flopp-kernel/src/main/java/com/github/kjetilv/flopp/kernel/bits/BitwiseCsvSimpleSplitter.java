@@ -1,11 +1,11 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.util.function.Consumer;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
 
 final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 

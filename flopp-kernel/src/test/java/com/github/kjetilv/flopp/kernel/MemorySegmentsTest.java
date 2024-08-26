@@ -1,10 +1,9 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.MemorySegments;
+import com.github.kjetilv.flopp.kernel.io.MemorySegments;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.StandardCharsets;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;

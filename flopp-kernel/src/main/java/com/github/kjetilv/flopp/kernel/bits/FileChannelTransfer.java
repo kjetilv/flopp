@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Transfer;
+import com.github.kjetilv.flopp.kernel.io.Transfer;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

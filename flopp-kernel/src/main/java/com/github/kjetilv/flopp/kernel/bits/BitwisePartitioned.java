@@ -3,6 +3,10 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.io.LinesWriter;
+import com.github.kjetilv.flopp.kernel.io.TempTargets;
+import com.github.kjetilv.flopp.kernel.io.Transfers;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.io.Closeable;
 import java.nio.charset.Charset;

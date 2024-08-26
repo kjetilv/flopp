@@ -7,6 +7,8 @@ import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.formats.Partitioning;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

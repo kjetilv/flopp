@@ -5,8 +5,6 @@ import org.gradle.jvm.toolchain.JvmVendorSpec.GRAAL_VM
 dependencies {
     implementation(project(":flopp-kernel"))
 
-    implementation("net.openhft:chronicle-map:3.25ea6")
-
     runtimeOnly("ch.qos.logback:logback-classic:1.5.6")
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")

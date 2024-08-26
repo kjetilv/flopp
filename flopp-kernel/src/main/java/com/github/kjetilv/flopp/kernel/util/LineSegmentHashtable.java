@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.util;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
 
 import java.nio.charset.Charset;

@@ -23,6 +23,7 @@ import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.nio.file.Path;
 import java.time.Duration;

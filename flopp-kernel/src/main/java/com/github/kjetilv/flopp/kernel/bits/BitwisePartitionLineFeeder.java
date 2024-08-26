@@ -1,7 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.io.MemorySegments;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.lang.foreign.MemorySegment;
@@ -12,8 +13,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -245,7 +246,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private void cycle(long index) {
         this.endIndex = index;
-        action.accept(this);
+        this.action.accept(this);
         this.startIndex = index + 1;
     }
 

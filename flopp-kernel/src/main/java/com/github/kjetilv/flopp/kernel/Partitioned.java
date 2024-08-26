@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.io.Closeable;
 import java.nio.file.Path;

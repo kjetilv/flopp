@@ -1,7 +1,7 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.segments;
 
-import com.github.kjetilv.flopp.kernel.LineSegment.Hashed;
-import com.github.kjetilv.flopp.kernel.LineSegment.Immutable;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment.Hashed;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment.Immutable;
 
 public sealed interface HashedLineSegment
     extends LineSegment, Immutable, Hashed

@@ -1,14 +1,13 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSplitter;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("DuplicatedCode")
 final class DelegatingCsvSimpleSplitter implements LineSplitter, LineSegment, SeparatedLine {

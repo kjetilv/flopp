@@ -1,4 +1,6 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel.io;
+
+import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;

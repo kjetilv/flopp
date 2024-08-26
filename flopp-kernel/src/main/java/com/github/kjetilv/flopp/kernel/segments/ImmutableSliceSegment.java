@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import java.lang.foreign.MemorySegment;
 

@@ -1,18 +1,18 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import java.util.Spliterators;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_POW;
 
-public final class BitwiseLongSpliterator extends Spliterators.AbstractLongSpliterator {
+final class SuppliedLongSpliterator extends Spliterators.AbstractLongSpliterator {
 
     private final long length;
 
     private final LongSupplier longSupplier;
 
-    public BitwiseLongSpliterator(long length, LongSupplier supplier) {
+    SuppliedLongSpliterator(LongSupplier supplier, long length) {
         super(length >> ALIGNMENT_POW + 2, IMMUTABLE | ORDERED);
         this.length = length;
         longSupplier = supplier;

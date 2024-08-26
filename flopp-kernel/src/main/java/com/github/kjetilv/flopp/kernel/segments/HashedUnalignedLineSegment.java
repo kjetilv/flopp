@@ -1,21 +1,21 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 
-import static com.github.kjetilv.flopp.kernel.bits.MemorySegments.fromLongsWithinBounds;
+import static com.github.kjetilv.flopp.kernel.io.MemorySegments.fromEdgeLong;
 
-record HashedAlignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
+record HashedUnalignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
     implements HashedLineSegment {
 
     @Override
     public String asString(byte[] buffer, Charset charset) {
-        return fromLongsWithinBounds(memorySegment, startIndex, endIndex, buffer, charset);
+        return fromEdgeLong(memorySegment, startIndex, endIndex, buffer, charset);
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof HashedAlignedLineSegment hashedLineSegment &&
+        return obj instanceof HashedUnalignedLineSegment hashedLineSegment &&
                hash == hashedLineSegment.hash &&
                this.matches(hashedLineSegment);
     }
