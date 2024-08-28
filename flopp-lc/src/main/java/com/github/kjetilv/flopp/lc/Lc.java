@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.lc;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.formats.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 
 import java.nio.file.Path;

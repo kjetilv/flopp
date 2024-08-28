@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
-import com.github.kjetilv.flopp.kernel.io.MemorySegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
@@ -10,14 +8,14 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.fromEdgeLong;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.fromEdgeLong;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
 
     public static int hashCode(LineSegment segment) {
-        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
+        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         return hashCode(reusable, reusable.size());
     }
 
@@ -65,7 +63,7 @@ public final class LineSegments {
     }
 
     public static LongSupplier longSupplier(LineSegment segment, boolean align) {
-        return BitwiseTraverser.create(segment, align);
+        return LineSegmentTraverser.create(segment, align);
     }
 
     public static LongStream longs(LineSegment segment, boolean align) {
@@ -83,7 +81,7 @@ public final class LineSegments {
     }
 
     public static long[] asLongs(LineSegment segment, long[] buffer) {
-        BitwiseTraverser.Reusable reusable = BitwiseTraverser.create(segment);
+        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         long[] ls = buffer == null ? new long[(int) reusable.size()] : buffer;
         reusable.forEach((i, l) -> ls[i] = l);
         return ls;

@@ -2,7 +2,7 @@ package com.github.kjetilv.flopp.kernel.readers;
 
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.io.MemorySegments;
+import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;

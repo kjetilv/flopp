@@ -1,6 +1,4 @@
-package com.github.kjetilv.flopp.kernel.util;
-
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import java.nio.charset.Charset;
 import java.util.Comparator;

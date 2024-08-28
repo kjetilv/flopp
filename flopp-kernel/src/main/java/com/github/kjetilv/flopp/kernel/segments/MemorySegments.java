@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.io;
+package com.github.kjetilv.flopp.kernel.segments;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 

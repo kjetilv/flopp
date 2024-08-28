@@ -4,7 +4,7 @@ import java.util.Spliterators;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
 
 final class SuppliedLongSpliterator extends Spliterators.AbstractLongSpliterator {
 

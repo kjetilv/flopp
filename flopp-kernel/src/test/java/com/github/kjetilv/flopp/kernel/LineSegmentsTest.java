@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bits;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,9 +79,9 @@ class LineSegmentsTest {
         assertHead("1234567foobarzt");
     }
 
-    private static final BitwiseTraverser.Reusable REUSABLE = BitwiseTraverser.create();
+    private static final LineSegmentTraverser.Reusable REUSABLE = LineSegmentTraverser.create();
 
-    private static final BitwiseTraverser.Reusable REUSABLE_ALIGNED = BitwiseTraverser.create(true);
+    private static final LineSegmentTraverser.Reusable REUSABLE_ALIGNED = LineSegmentTraverser.create(true);
 
     private static void stressTest(String abc) {
         for (int s = 0; s < abc.length(); s++) {
@@ -112,8 +112,8 @@ class LineSegmentsTest {
         String bitwiseTraversedString;
         String biwiseAlignedTraversedString;
 
-        BitwiseTraverser.Reusable bitwiseLongTraverse = REUSABLE;
-        BitwiseTraverser.Reusable aligneBitwiseLongTraverse = REUSABLE_ALIGNED;
+        LineSegmentTraverser.Reusable bitwiseLongTraverse = REUSABLE;
+        LineSegmentTraverser.Reusable aligneBitwiseLongTraverse = REUSABLE_ALIGNED;
 
         String asLongsString;
 

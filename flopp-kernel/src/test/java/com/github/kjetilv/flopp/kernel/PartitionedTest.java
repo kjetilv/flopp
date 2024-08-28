@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.formats.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

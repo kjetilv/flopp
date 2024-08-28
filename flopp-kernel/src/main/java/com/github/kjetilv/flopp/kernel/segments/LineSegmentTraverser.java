@@ -1,17 +1,17 @@
-package com.github.kjetilv.flopp.kernel.bits;
+package com.github.kjetilv.flopp.kernel.segments;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
 import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
 
-public abstract sealed class BitwiseTraverser
-    implements Function<LineSegment, BitwiseTraverser.Reusable> {
+public abstract sealed class LineSegmentTraverser
+    implements Function<LineSegment, LineSegmentTraverser.Reusable> {
 
     public static Reusable create() {
         return new MultiModeSuppler().blank();
@@ -63,7 +63,7 @@ public abstract sealed class BitwiseTraverser
 
     abstract ReusableBase baseFor(int headStart);
 
-    private static final class AlignedTraverser extends BitwiseTraverser {
+    private static final class AlignedTraverser extends LineSegmentTraverser {
 
         @Override
         ReusableBase baseFor(int headStart) {
@@ -71,7 +71,7 @@ public abstract sealed class BitwiseTraverser
         }
     }
 
-    private static final class MultiModeSuppler extends BitwiseTraverser {
+    private static final class MultiModeSuppler extends LineSegmentTraverser {
 
         @Override
         ReusableBase baseFor(int headStart) {
@@ -83,7 +83,7 @@ public abstract sealed class BitwiseTraverser
 
         @Override
         public final Reusable apply(LineSegment lineSegment) {
-            return BitwiseTraverser.this.apply(lineSegment);
+            return LineSegmentTraverser.this.apply(lineSegment);
         }
 
         protected Reusable initialize(

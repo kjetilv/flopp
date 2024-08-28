@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.formats;
+package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.util.Non;
 

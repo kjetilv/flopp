@@ -21,13 +21,13 @@ import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.Partitions;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.formats.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
-import com.github.kjetilv.flopp.kernel.util.LineSegmentMap;
-import com.github.kjetilv.flopp.kernel.util.LineSegmentMaps;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
 
 import java.io.IOException;
 import java.nio.file.Files;

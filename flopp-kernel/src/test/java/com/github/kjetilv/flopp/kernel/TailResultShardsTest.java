@@ -1,6 +1,5 @@
-package com.github.kjetilv.flopp.kernel.formats;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.Partitions;
 import org.junit.jupiter.api.Test;
 
 class TailResultShardsTest {

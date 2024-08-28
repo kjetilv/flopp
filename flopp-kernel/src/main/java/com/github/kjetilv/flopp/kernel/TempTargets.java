@@ -1,6 +1,4 @@
-package com.github.kjetilv.flopp.kernel.io;
-
-import com.github.kjetilv.flopp.kernel.Partition;
+package com.github.kjetilv.flopp.kernel;
 
 import java.io.Closeable;
 

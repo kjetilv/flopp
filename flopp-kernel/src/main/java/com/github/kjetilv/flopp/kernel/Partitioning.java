@@ -1,15 +1,13 @@
-package com.github.kjetilv.flopp.kernel.formats;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Partitions;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
 import static java.lang.Integer.MAX_VALUE;
 
 public record Partitioning(int count, long tail, TailShards fragmentation) {

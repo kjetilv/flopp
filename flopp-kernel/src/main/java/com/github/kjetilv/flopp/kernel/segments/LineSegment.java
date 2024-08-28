@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
-import com.github.kjetilv.flopp.kernel.io.MemorySegments;
-
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -9,7 +7,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
 import static com.github.kjetilv.flopp.kernel.segments.HashedLineSegment.*;
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.*;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.*;
 
 @SuppressWarnings("unused")

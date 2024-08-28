@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.segments;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 
-import static com.github.kjetilv.flopp.kernel.io.MemorySegments.fromEdgeLong;
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.fromEdgeLong;
 
 record HashedUnalignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
     implements HashedLineSegment {

@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.io.TempTargets;
+import com.github.kjetilv.flopp.kernel.TempTargets;
 
 import java.io.IOException;
 import java.nio.file.Files;

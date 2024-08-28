@@ -1,7 +1,6 @@
-package com.github.kjetilv.flopp.kernel.util;
+package com.github.kjetilv.flopp.kernel.segments;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
+import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -22,12 +21,12 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     private final TableEntry<?>[] table;
 
-    private final BitwiseTraverser.Reusable reusable;
+    private final LineSegmentTraverser.Reusable reusable;
 
-    LineSegmentHashtable(int limit, BitwiseTraverser.Reusable reusable) {
+    LineSegmentHashtable(int limit, LineSegmentTraverser.Reusable reusable) {
         this.limit = Non.negativeOrZero(limit, "limit");
         this.table = new TableEntry<?>[this.limit];
-        this.reusable = reusable == null ? BitwiseTraverser.create() : reusable;
+        this.reusable = reusable == null ? LineSegmentTraverser.create() : reusable;
     }
 
     @Override

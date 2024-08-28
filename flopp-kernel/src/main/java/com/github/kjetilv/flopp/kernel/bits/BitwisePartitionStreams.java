@@ -4,7 +4,7 @@ import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitions;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.util.AtomicArray;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 

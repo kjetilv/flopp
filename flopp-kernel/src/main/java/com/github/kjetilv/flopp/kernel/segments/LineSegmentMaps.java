@@ -1,6 +1,4 @@
-package com.github.kjetilv.flopp.kernel.util;
-
-import com.github.kjetilv.flopp.kernel.bits.BitwiseTraverser;
+package com.github.kjetilv.flopp.kernel.segments;
 
 public final class LineSegmentMaps {
 
@@ -8,7 +6,7 @@ public final class LineSegmentMaps {
         return create(size, null);
     }
 
-    public static <T> LineSegmentMap<T> create(int size, BitwiseTraverser.Reusable reusable) {
+    public static <T> LineSegmentMap<T> create(int size, LineSegmentTraverser.Reusable reusable) {
         return new LineSegmentHashtable<>(size, reusable);
     }
 
