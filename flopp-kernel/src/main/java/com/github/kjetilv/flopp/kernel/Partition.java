@@ -85,7 +85,6 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         }
         String pos = f ? "<" : l ? ">" : "";
         Object no = f || l ? "" : partitionNo;
-        String s = pos + no + "/" + (partitionCount - 1);
-        return s;
+        return pos + no + "/" + (partitionCount - 1);
     }
 }

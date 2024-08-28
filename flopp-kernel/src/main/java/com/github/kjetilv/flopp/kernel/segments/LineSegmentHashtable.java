@@ -30,63 +30,8 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
     }
 
     @Override
-    public T get(LineSegment segment) {
-        int hash = reusable.toHashCode(segment);
-        int initialPos = indexOf(hash);
-        int slotPos = initialPos;
-        while (true) {
-            TableEntry<?> existing = table[slotPos];
-            if (existing == null) {
-                return null;
-            }
-            if (existing.matches(segment, hash)) {
-                return ((TableEntry<T>) existing).value();
-            }
-            slotPos = indexOf(slotPos + 1);
-            if (slotPos == initialPos) {
-                throw new IllegalStateException(this + " is full");
-            }
-        }
-    }
-
-    @Override
-    public T get(LineSegment segment, Supplier<T> valueSupplier) {
-        int hash = reusable.toHashCode(segment);
-        int initialPos = indexOf(hash);
-        int slotPos = initialPos;
-        while (true) {
-            TableEntry<?> existing = table[slotPos];
-            if (existing == null) {
-                T value = valueSupplier.get();
-                table[slotPos] = new TableEntry<>(segment.alignedHashedWith(hash), hash, value);
-                return value;
-            }
-            if (existing.matches(segment, hash)) {
-                return ((TableEntry<T>) existing).value();
-            }
-            slotPos = indexOf(slotPos + 1);
-            if (slotPos == initialPos) {
-                throw new IllegalStateException(this + " is full");
-            }
-        }
-    }
-
-    @Override
-    public T put(LineSegment segment, T value) {
-        TableEntry<?> existing =
-            store(new TableEntry<>(segment, reusable.toHashCode(segment), value));
-        return existing == null ? null : (T) existing.value();
-    }
-
-    @Override
     public Stream<T> values() {
         return (Stream<T>) tableEntries().map(TableEntry::value);
-    }
-
-    @Override
-    public Stream<Map.Entry<LineSegment, T>> entries() {
-        return tableEntries().map(tableEntry ->
-            Map.entry(tableEntry.segment(), (T) tableEntry.value()));
     }
 
     @Override
@@ -139,6 +84,61 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
             TableEntry::segment,
             toValue()
         ));
+    }
+
+    @Override
+    public T get(LineSegment segment) {
+        int hash = reusable.toHashCode(segment);
+        int initialPos = indexOf(hash);
+        int slotPos = initialPos;
+        while (true) {
+            TableEntry<?> existing = table[slotPos];
+            if (existing == null) {
+                return null;
+            }
+            if (existing.matches(segment, hash)) {
+                return ((TableEntry<T>) existing).value();
+            }
+            slotPos = indexOf(slotPos + 1);
+            if (slotPos == initialPos) {
+                throw new IllegalStateException(this + " is full");
+            }
+        }
+    }
+
+    @Override
+    public T get(LineSegment segment, Supplier<T> valueSupplier) {
+        int hash = reusable.toHashCode(segment);
+        int initialPos = indexOf(hash);
+        int slotPos = initialPos;
+        while (true) {
+            TableEntry<?> existing = table[slotPos];
+            if (existing == null) {
+                T value = valueSupplier.get();
+                table[slotPos] = new TableEntry<>(segment.alignedHashedWith(hash), hash, value);
+                return value;
+            }
+            if (existing.matches(segment, hash)) {
+                return ((TableEntry<T>) existing).value();
+            }
+            slotPos = indexOf(slotPos + 1);
+            if (slotPos == initialPos) {
+                throw new IllegalStateException(this + " is full");
+            }
+        }
+    }
+
+    @Override
+    public T put(LineSegment segment, T value) {
+        TableEntry<?> existing =
+            store(new TableEntry<>(segment, reusable.toHashCode(segment), value));
+        return existing == null ? null : (T) existing.value();
+    }
+
+    @Override
+    public Stream<Map.Entry<LineSegment, T>> entries() {
+        return tableEntries().map(tableEntry ->
+            Map.entry(tableEntry.segment(), (T) tableEntry.value()));
     }
 
     @Override

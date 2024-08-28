@@ -35,7 +35,7 @@ public interface LineSegmentMap<T> {
     }
 
     default String toStringSorted() {
-        return str(stringEntries().sorted(Comparator.comparing(Map.Entry::getKey)));
+        return str(stringEntries().sorted(Map.Entry.comparingByKey()));
     }
 
     default <K> Map<K, T> toKeyMap(Function<LineSegment, K> toKey) {

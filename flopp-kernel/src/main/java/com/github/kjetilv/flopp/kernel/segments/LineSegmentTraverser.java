@@ -10,6 +10,7 @@ import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
 import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
 
+@SuppressWarnings("unused")
 public abstract sealed class LineSegmentTraverser
     implements Function<LineSegment, LineSegmentTraverser.Reusable> {
 

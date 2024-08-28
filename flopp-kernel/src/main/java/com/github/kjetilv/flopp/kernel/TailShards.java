@@ -5,9 +5,9 @@ import com.github.kjetilv.flopp.kernel.util.Non;
 import java.util.ArrayList;
 import java.util.List;
 
-record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
+public record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
 
-    TailShards(
+    public TailShards(
         int shardCount,
         double tailPerc,
         double partitionMaxPerc,

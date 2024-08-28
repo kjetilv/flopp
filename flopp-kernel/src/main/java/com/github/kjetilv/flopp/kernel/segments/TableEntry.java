@@ -37,6 +37,4 @@ record TableEntry<T>(
     public int compareTo(TableEntry<T> other) {
         return segment.compareTo(other.segment());
     }
-
-    static final TableEntry<?> NULL = new TableEntry<>(null, 0, null, null);
 }
