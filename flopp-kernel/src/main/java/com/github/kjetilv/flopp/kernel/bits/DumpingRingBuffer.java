@@ -69,5 +69,4 @@ final class DumpingRingBuffer implements Closeable {
         bufferIndex++;
         bufferLeft--;
     }
-
 }

@@ -1,10 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.nio.charset.Charset;
 import java.util.Objects;
