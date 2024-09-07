@@ -84,7 +84,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private static final int BUFFER_SIZE = 8192;
 
-    private static LinesWriter writer(Path target, Charset charset) {
+    private static LinesWriter<String> writer(Path target, Charset charset) {
         return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
     }
 

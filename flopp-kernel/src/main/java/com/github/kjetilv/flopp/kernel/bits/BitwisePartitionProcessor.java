@@ -22,7 +22,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
 
     private final PartitionedMapper partitionedMapper;
 
-    private final LinesWriterFactory<Path> linesWriterFactory;
+    private final LinesWriterFactory<Path, String> linesWriterFactory;
 
     private final TempTargets<Path> tempTargets;
 
@@ -36,7 +36,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
         PartitionedMapper partitionedMapper,
         Partitions partitions,
         Charset charset,
-        LinesWriterFactory<Path> linesWriterFactory,
+        LinesWriterFactory<Path, String> linesWriterFactory,
         TempTargets<Path> tempTargets,
         Transfers<Path> transfers
     ) {
@@ -57,7 +57,7 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
                 BiFunction<Partition, Stream<LineSegment>, Path> processing =
                     (partition, lines) -> {
                         Path tempTarget = tempTargets.temp(partition);
-                        try (LinesWriter linesWriter = linesWriterFactory.create(tempTarget, charset)) {
+                        try (LinesWriter<String> linesWriter = linesWriterFactory.create(tempTarget, charset)) {
                             lines.forEach(line ->
                                 linesWriter.accept(processor.apply(line)));
                         } catch (Exception e) {

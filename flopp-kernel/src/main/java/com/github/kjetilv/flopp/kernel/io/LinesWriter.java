@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.util.function.Consumer;
 
 @FunctionalInterface
-public interface LinesWriter extends Consumer<String>, Closeable {
+public interface LinesWriter<L> extends Consumer<L>, Closeable {
 
     @Override
     default void close() {
