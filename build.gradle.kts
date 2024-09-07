@@ -9,6 +9,7 @@ plugins {
 subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "java")
+    apply(plugin = "jvm-test-suite")
 
     group = "com.github.kjetilv.flopp"
     version = "0.1.0-SNAPSHOT"
@@ -27,6 +28,10 @@ subprojects {
         modularity.inferModulePath
         sourceCompatibility = VERSION_22
         targetCompatibility = VERSION_22
+    }
+
+    tasks.named<Test>("test") {
+        useJUnitPlatform()
     }
 
     publishing {

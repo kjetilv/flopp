@@ -18,7 +18,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment> {
+final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment, String> {
 
     private final PartitionedMapper partitionedMapper;
 

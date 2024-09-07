@@ -18,9 +18,9 @@ import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled
 class CalculateAverageTest {
 
-    @Disabled
     @Test
     void testAll() throws IOException {
         Path path = Path.of(

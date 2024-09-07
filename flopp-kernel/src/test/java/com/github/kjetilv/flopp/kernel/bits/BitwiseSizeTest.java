@@ -131,7 +131,7 @@ public class BitwiseSizeTest {
         Partitioning partitioning = Partitioning.create(partitions);
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment> processor = partititioned.processor(tmp)
+            PartitionedProcessor<LineSegment, String> processor = partititioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         }
@@ -150,7 +150,7 @@ public class BitwiseSizeTest {
         Partitioning partitioning = Partitioning.create(partitions, bufferSize);
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment> partitioned = partititioned.processor(tmp)
+            PartitionedProcessor<LineSegment, String> partitioned = partititioned.processor(tmp)
         ) {
             partitioned.process(processor, readerExec);
         }
@@ -163,7 +163,7 @@ public class BitwiseSizeTest {
         Partitioning partitioning = Partitioning.create(partitions, 8192);
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment> processor = bitwisePartitioned.processor(tmp)
+            PartitionedProcessor<LineSegment, String> processor = bitwisePartitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         } catch (Exception e) {
@@ -179,7 +179,7 @@ public class BitwiseSizeTest {
         Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment> processor = partitioned.processor(tmp)
+            PartitionedProcessor<LineSegment, String> processor = partitioned.processor(tmp)
         ) {
             processor.process(fun, readerExec);
         }

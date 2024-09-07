@@ -18,7 +18,7 @@ public interface Partitioned<P> extends Closeable {
 
     Partitions partitions();
 
-    PartitionedProcessor<LineSegment> processor(Path target);
+    PartitionedProcessor<LineSegment, String> processor(Path target);
 
     PartitionedMapper mapper();
 

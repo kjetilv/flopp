@@ -106,7 +106,7 @@ public class FastPartitionerTest {
         );
 
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(32).headerFooter(1, 1);
-        LongAdder cont;
+        LongAdder count;
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(
                 file,
@@ -114,15 +114,15 @@ public class FastPartitionerTest {
                 shape
             )
         ) {
-            cont = new LongAdder();
+            count = new LongAdder();
             partitioned.consumer().forEachLine(
                     (_, entries) ->
-                        entries.forEach(_ -> cont.increment())
+                        entries.forEach(_ -> count.increment())
                 )
                 .toList()
                 .forEach(CompletableFuture::join);
         }
-        assertThat(cont).hasValue(lineCount);
+        assertThat(count).hasValue(lineCount);
     }
 
     private void run3(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {

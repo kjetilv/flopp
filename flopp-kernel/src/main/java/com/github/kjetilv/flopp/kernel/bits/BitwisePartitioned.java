@@ -4,8 +4,6 @@ import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
-import com.github.kjetilv.flopp.kernel.TempTargets;
-import com.github.kjetilv.flopp.kernel.Transfers;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.io.Closeable;
@@ -42,14 +40,16 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedProcessor<LineSegment> processor(Path target) {
+    public PartitionedProcessor<LineSegment, String> processor(Path target) {
+        TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
+        Transfers<Path> transfers = new FileChannelTransfers(target);
         return new BitwisePartitionProcessor(
             mapper(),
             partitions,
             shape.charset(),
             BitwisePartitioned::writer,
-            tempTargets(path),
-            transfers(target)
+            tempTargets,
+            transfers
         );
     }
 
@@ -88,22 +88,17 @@ final class BitwisePartitioned implements Partitioned<Path> {
         return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
     }
 
-    private static TempTargets<Path> tempTargets(Path path) {
-        return new PathTempTargets(path.getFileName().toString());
-    }
-
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
-        return withTail(partitioning == null ? Partitioning.create() : partitioning, shape);
+        return withTail(
+            partitioning == null ? Partitioning.create() : partitioning,
+            shape);
     }
 
     private static Partitioning withTail(Partitioning partitioning, Shape shape) {
-        return partitioning.tail() == 0 && shape.limitsLineLength()
-            ? partitioning.tail(shape.longestLine())
-            : partitioning;
-    }
-
-    private static Transfers<Path> transfers(Path target) {
-        return new FileChannelTransfers(target);
+        if (partitioning.tail() == 0 && shape.limitsLineLength()) {
+            return partitioning.tail(shape.longestLine());
+        }
+        return partitioning;
     }
 
     @FunctionalInterface
