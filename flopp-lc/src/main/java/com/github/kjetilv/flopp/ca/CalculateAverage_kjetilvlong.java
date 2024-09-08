@@ -15,17 +15,13 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
-import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
 
@@ -34,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -47,7 +44,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) throws IOException {
-        Path path = resolve(Path.of(args[0]));
+        Path path2 = Path.of(args[0]);
+        Path path = resolve(path2)
+            .orElseThrow(() ->
+                new IllegalArgumentException("No path: " + path2));
         Settings settings = new Settings(
             1,
             64,
@@ -65,19 +65,46 @@ public final class CalculateAverage_kjetilvlong {
         );
 
         Instant start = Instant.now();
-        LineSegmentMap<Result> map = go(path, settings, CsvFormat.simple(2, ';'));
+        CsvFormat simple = CsvFormat.simple(2, ';');
+        LineSegmentMap<Result> map = mapAverages(path, settings, simple);
         String mapStringSorted = map.toStringSorted();
         System.out.println(mapStringSorted);
         System.out.println(Duration.between(start, Instant.now()));
 
-        if (args.length > 1) {
-            String content = Files.readString(resolve(Path.of(args[1])));
-            System.out.println(mapStringSorted.equals(content.trim()));
+        pathArgument(args, 1)
+            .flatMap(CalculateAverage_kjetilvlong::resolve)
+            .map(CalculateAverage_kjetilvlong::readString)
+                .ifPresent(contents ->
+                System.out.println(mapStringSorted.equals(contents.trim())));
+
+        if (args.length > 2) {
+            Path out = pathArgument(args, 2)
+                .flatMap(CalculateAverage_kjetilvlong::resolve)
+                .orElseGet(() -> Path.of(args[2]));
+            temper(map, path, settings, simple, out);
+        }
+    }
+
+    static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, CsvFormat format, Path out) {
+        Shape shape = Shape.of(originalPath, UTF_8).longestLine(128);
+        int cpus = Runtime.getRuntime().availableProcessors();
+        Partitioning p = partitioning(cpus, shape, settings);
+        try (
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(originalPath, p, shape);
+            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+        ) {
+            int chunks = bitwisePartitioned.partitions().size();
+            PartitionedProcessor<LineSegment, String> processor = bitwisePartitioned.processor(out);
+            processor.process(
+                lineSegment ->
+                    lineSegment.asString() + ";" + map.get(lineSegment.prefix(';')),
+                workingExecutor
+            );
         }
     }
 
     @SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
-    static LineSegmentMap<Result> go(Path path, Settings settings, CsvFormat format) {
+    static LineSegmentMap<Result> mapAverages(Path path, Settings settings, CsvFormat format) {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = partitioning(cpus, shape, settings);
@@ -105,6 +132,13 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
+    private static Optional<Path> pathArgument(String[] args, int no) {
+        return Arrays.stream(args)
+            .skip(no)
+            .findFirst()
+            .map(Path::of);
+    }
+
     private static Void print(Throwable throwable) {
         System.out.println("Error: " + throwable.getMessage());
         for (
@@ -117,7 +151,7 @@ public final class CalculateAverage_kjetilvlong {
         return null;
     }
 
-    private static Path resolve(Path path) {
+    private static Optional<Path> resolve(Path path) {
         return Optional.of(path)
             .filter(Files::isRegularFile)
             .or(() ->
@@ -128,9 +162,7 @@ public final class CalculateAverage_kjetilvlong {
                         str.replace("~", System.getProperty("user.home")))
                     .map(Path::of))
             .filter(Files::isRegularFile)
-            .map(Path::normalize)
-            .orElseThrow(() ->
-                new IllegalArgumentException("No path: " + path));
+            .map(Path::normalize);
     }
 
     private static Partitioning partitioning(int cpus, Shape shape, Settings settings) {
@@ -186,6 +218,14 @@ public final class CalculateAverage_kjetilvlong {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Failed", e);
+        }
+    }
+
+    private static String readString(Path file) {
+        try {
+            return Files.readString(file);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
     }
 

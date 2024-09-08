@@ -116,6 +116,23 @@ public final class Bits {
     }
 
     /**
+     * Index of byte in long. -1 if not present.
+     *
+     * @param b    byte
+     * @param data long
+     */
+    public static int indexOf(int b, long data) {
+        long l = data;
+        for (int i = 0; i < ALIGNMENT_INT; i++) {
+            if (b == (l & 0xFF)) {
+                return i;
+            }
+            l >>= ALIGNMENT_INT;
+        }
+        return -1;
+    }
+
+    /**
      * @param l Long
      * @return Long as eigth-byte array
      */

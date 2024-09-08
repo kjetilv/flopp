@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.formats.FwFormat;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.io.Closeable;
 import java.nio.file.Path;
@@ -19,6 +20,11 @@ public interface Partitioned<P> extends Closeable {
     Partitions partitions();
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
+
+    PartitionedProcessor<SeparatedLine, LineSegment> processor(
+        Path target,
+        CsvFormat format
+    );
 
     PartitionedMapper mapper();
 

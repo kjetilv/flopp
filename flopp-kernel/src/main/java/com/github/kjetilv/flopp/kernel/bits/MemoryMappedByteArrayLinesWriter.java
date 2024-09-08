@@ -12,7 +12,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter<String> {
 
     private final Charset charset;
 
-    private final DumpingRingBuffer dumpingRingBuffer;
+    private final BytesDumpingRingBuffer bytesDumpingRingBuffer;
 
     MemoryMappedByteArrayLinesWriter(Path target, int bufferSize, Charset charset) {
         try {
@@ -22,7 +22,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter<String> {
         }
         this.charset = charset;
         byte[] bytes = new byte[bufferSize];
-        this.dumpingRingBuffer = new DumpingRingBuffer(
+        this.bytesDumpingRingBuffer = new BytesDumpingRingBuffer(
             bytes,
             length -> {
                 try {
@@ -36,12 +36,12 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter<String> {
 
     @Override
     public void accept(String line) {
-        dumpingRingBuffer.accept(line.getBytes(charset), (byte) '\n');
+        bytesDumpingRingBuffer.accept(line.getBytes(charset), (byte) '\n');
     }
 
     @Override
     public void close() {
-        dumpingRingBuffer.close();
+        bytesDumpingRingBuffer.close();
         try {
             randomAccessFile.close();
         } catch (Exception e) {

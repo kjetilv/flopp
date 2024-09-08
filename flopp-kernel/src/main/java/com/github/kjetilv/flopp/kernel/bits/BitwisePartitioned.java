@@ -1,13 +1,12 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.io.LinesWriter;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.io.Closeable;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -41,16 +40,29 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     @Override
     public PartitionedProcessor<LineSegment, String> processor(Path target) {
+        LinesWriterFactory<Path, String> factory = path ->
+            new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, shape.charset());
         TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
         Transfers<Path> transfers = new FileChannelTransfers(target);
-        return new BitwisePartitionProcessor(
-            mapper(),
-            partitions,
-            shape.charset(),
-            BitwisePartitioned::writer,
-            tempTargets,
-            transfers
-        );
+        return new BitwisePartitionProcessor<>(mapper(), partitions, factory, tempTargets, transfers);
+    }
+
+    @Override
+    public PartitionedProcessor<SeparatedLine, LineSegment> processor(Path target, CsvFormat format) {
+        LinesWriterFactory<Path, LineSegment> linesWriterFactory = path ->
+            new MemorySegmentLinesWriter(path, MEMORY_SEGMENT_SIZE);
+        TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
+        Transfers<Path> transfers = new FileChannelTransfers(target);
+
+        return null;
+//        new BitwisePartitionProcessor<>(
+//            mapper(),
+//            partitions,
+//            linesWriterFactory,
+//            tempTargets,
+//            transfers
+//        );
+
     }
 
     @Override
@@ -84,9 +96,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private static final int BUFFER_SIZE = 8192;
 
-    private static LinesWriter<String> writer(Path target, Charset charset) {
-        return new MemoryMappedByteArrayLinesWriter(target, BUFFER_SIZE, charset);
-    }
+    private static final int MEMORY_SEGMENT_SIZE = 8 * BUFFER_SIZE;
 
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(

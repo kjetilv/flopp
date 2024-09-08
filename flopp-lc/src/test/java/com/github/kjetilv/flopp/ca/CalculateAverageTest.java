@@ -122,7 +122,7 @@ class CalculateAverageTest {
         int tail
     ) {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
-        LineSegmentMap<CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.go(
+        LineSegmentMap<CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.mapAverages(
             smaple,
             new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d), CsvFormat.simple(2, ';')
         );

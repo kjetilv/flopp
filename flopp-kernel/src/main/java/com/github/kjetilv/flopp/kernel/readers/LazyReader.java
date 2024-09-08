@@ -126,62 +126,54 @@ final class LazyReader implements Reader, Reader.Columns {
     }
 
     @Override
-    public Object get(int col) {
-        Obj obj = objs[col];
-        return obj.parse(sl, col);
+    public Object get(int c) {
+        Obj obj = objs[c];
+        return obj.parse(sl, c);
     }
 
     @Override
-    public LineSegment getRaw(int col) {
-        return sl.segment(col);
+    public LineSegment getRaw(int c) {
+        return sl.segment(c);
     }
 
     @Override
-    public int getInt(int col) {
-        I i = is[col];
-        return i.parse(sl, col);
+    public int getInt(int c) {
+        return is[c].parse(sl, c);
     }
 
     @Override
-    public long getLong(int col) {
-        L l = ls[col];
-        return l.parse(sl, col);
+    public long getLong(int c) {
+        return ls[c].parse(sl, c);
     }
 
     @Override
-    public boolean getBoolean(int col) {
-        Bo bo = bos[col];
-        return bo.parse(sl, col);
+    public boolean getBoolean(int c) {
+        return bos[c].parse(sl, c);
     }
 
     @Override
-    public short getShort(int col) {
-        S sh = shs[col];
-        return sh.parse(sl, col);
+    public short getShort(int c) {
+        return shs[c].parse(sl, c);
     }
 
     @Override
-    public byte getByte(int col) {
-        By by = bys[col];
-        return by.parse(sl, col);
+    public byte getByte(int c) {
+        return bys[c].parse(sl, c);
     }
 
     @Override
-    public char getChar(int col) {
-        C c = cs[col];
-        return c.parse(sl, col);
+    public char getChar(int c) {
+        return cs[c].parse(sl, c);
     }
 
     @Override
-    public float getFloat(int col) {
-        F f = fs[col];
-        return f.parse(sl, col);
+    public float getFloat(int c) {
+        return fs[c].parse(sl, c);
     }
 
     @Override
-    public double getDouble(int col) {
-        D[] d = ds;
-        return d[col].parse(sl, col);
+    public double getDouble(int c) {
+        return ds[c].parse(sl, c);
     }
 
     private Columns columns(SeparatedLine separatedLine) {

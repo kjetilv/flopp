@@ -6,10 +6,10 @@ import java.util.function.Function;
 
 @SuppressWarnings("unused")
 @FunctionalInterface
-public interface PartitionedProcessor<T, O> extends Closeable {
+public interface PartitionedProcessor<I, O> extends Closeable {
 
     void process(
-        Function<T, O> processor,
+        Function<I, O> processor,
         ExecutorService executorService
     );
 

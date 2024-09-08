@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -46,8 +47,11 @@ final class FileChannelTransfers implements Transfers<Path> {
     }
 
     private RandomAccessFile randomAccess(Path file) {
+        if (Files.isDirectory(file)) {
+            throw new IllegalArgumentException("Not a file: " + file);
+        }
         try {
-            return new RandomAccessFile(file.toFile(), READ_WRITE);
+            return new RandomAccessFile(file.toAbsolutePath().toFile(), READ_WRITE);
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed to open " + file, e);
         }

@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.bits.Bits;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -238,7 +240,28 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default LineSegment slice(long startIndex, long endIndex) {
-        return LineSegments.of(memorySegment(), startIndex, endIndex);
+        long base = this.startIndex();
+        return LineSegments.of(memorySegment(), base + startIndex, base + endIndex);
+    }
+
+    default LineSegment prefix(int b) {
+        long index = indexOf(b);
+        return index < 0 ? this : slice(0, index);
+    }
+
+    default long indexOf(int b) {
+        LongSupplier longSupplier = longSupplier();
+        long count = shiftedLongsCount();
+        long index = 0;
+        for (long l = 0; l < count; l++) {
+            long data = longSupplier.getAsLong();
+            int longIndex = Bits.indexOf(b, data);
+            if (longIndex >= 0) {
+                return index + longIndex;
+            }
+            index += ALIGNMENT_INT;
+        }
+        return -1;
     }
 
     @SuppressWarnings("NullableProblems")

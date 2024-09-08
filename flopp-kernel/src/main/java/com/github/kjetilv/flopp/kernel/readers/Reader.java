@@ -14,7 +14,7 @@ public interface Reader {
 
         Column column(String name);
 
-        default int columnNo(String name) {
+        default int col(String name) {
             return column(name).colunmNo();
         }
 
@@ -22,60 +22,60 @@ public interface Reader {
             return get(column(name).colunmNo());
         }
 
-        Object get(int col);
+        Object get(int c);
 
-        default LineSegment getRaw(String name) {
-            return getRaw(column(name).colunmNo());
+        default LineSegment getRaw(String n) {
+            return getRaw(column(n).colunmNo());
         }
 
-        LineSegment getRaw(int col);
+        LineSegment getRaw(int c);
 
-        default int getInt(String name) {
-            return getInt(columnNo(name));
+        default int getInt(String n) {
+            return getInt(col(n));
         }
 
-        int getInt(int col);
+        int getInt(int c);
 
-        default long getLong(String name) {
-            return getLong(columnNo(name));
+        default long getLong(String n) {
+            return getLong(col(n));
         }
 
-        long getLong(int col);
+        long getLong(int c);
 
-        default boolean getBoolean(String name) {
-            return getBoolean(columnNo(name));
+        default boolean getBoolean(String n) {
+            return getBoolean(col(n));
         }
 
-        boolean getBoolean(int col);
+        boolean getBoolean(int c);
 
-        default short getShort(String name) {
-            return getShort(columnNo(name));
+        default short getShort(String n) {
+            return getShort(col(n));
         }
 
-        short getShort(int col);
+        short getShort(int c);
 
-        default byte getByte(String name) {
-            return getByte(columnNo(name));
+        default byte getByte(String string) {
+            return getByte(col(string));
         }
 
-        byte getByte(int col);
+        byte getByte(int c);
 
-        default char getChar(String name) {
-            return getChar(columnNo(name));
+        default char getChar(String n) {
+            return getChar(col(n));
         }
 
-        char getChar(int col);
+        char getChar(int c);
 
-        default float getFloat(String name) {
-            return getFloat(columnNo(name));
+        default float getFloat(String n) {
+            return getFloat(col(n));
         }
 
-        float getFloat(int col);
+        float getFloat(int c);
 
-        default double getDouble(String name) {
-            return getDouble(columnNo(name));
+        default double getDouble(String n) {
+            return getDouble(col(n));
         }
 
-        double getDouble(int col);
+        double getDouble(int c);
     }
 }

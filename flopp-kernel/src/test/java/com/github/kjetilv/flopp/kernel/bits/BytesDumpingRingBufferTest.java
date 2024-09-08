@@ -8,7 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class DumpingRingBufferTest {
+class BytesDumpingRingBufferTest {
 
     @Test
     void test() {
@@ -16,7 +16,7 @@ class DumpingRingBufferTest {
         StringBuilder stringBuilder = new StringBuilder();
         byte[] bytes = new byte[10];
         try (
-            DumpingRingBuffer buffer = new DumpingRingBuffer(
+            BytesDumpingRingBuffer buffer = new BytesDumpingRingBuffer(
                 bytes,
                 length -> {
                     strings.add(new String(bytes, 0, length));
@@ -44,7 +44,7 @@ class DumpingRingBufferTest {
                 stringBuilder.toString());
     }
 
-    private static void line(DumpingRingBuffer buffer, String foobar) {
+    private static void line(BytesDumpingRingBuffer buffer, String foobar) {
         buffer.accept(foobar.getBytes(StandardCharsets.UTF_8), (byte)'\n');
     }
 

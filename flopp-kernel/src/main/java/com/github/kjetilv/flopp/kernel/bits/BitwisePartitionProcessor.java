@@ -8,7 +8,6 @@ import com.github.kjetilv.flopp.kernel.TempTargets;
 import com.github.kjetilv.flopp.kernel.Transfers;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -18,11 +17,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegment, String> {
+final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSegment, O> {
 
     private final PartitionedMapper partitionedMapper;
 
-    private final LinesWriterFactory<Path, String> linesWriterFactory;
+    private final LinesWriterFactory<Path, O> linesWriterFactory;
 
     private final TempTargets<Path> tempTargets;
 
@@ -30,13 +29,10 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
 
     private final Partitions partitions;
 
-    private final Charset charset;
-
     BitwisePartitionProcessor(
         PartitionedMapper partitionedMapper,
         Partitions partitions,
-        Charset charset,
-        LinesWriterFactory<Path, String> linesWriterFactory,
+        LinesWriterFactory<Path, O> linesWriterFactory,
         TempTargets<Path> tempTargets,
         Transfers<Path> transfers
     ) {
@@ -44,20 +40,19 @@ final class BitwisePartitionProcessor implements PartitionedProcessor<LineSegmen
         this.linesWriterFactory = Objects.requireNonNull(linesWriterFactory, "linesWriterFactory");
         this.tempTargets = Objects.requireNonNull(tempTargets, "tempTargets");
         this.transfers = Objects.requireNonNull(transfers, "transfers");
-        this.partitions = partitions;
-        this.charset = charset;
+        this.partitions = Objects.requireNonNull(partitions, "partitions");
     }
 
     @Override
-    public void process(Function<LineSegment, String> processor, ExecutorService executorService) {
+    public void process(Function<LineSegment, O> processor, ExecutorService executorService) {
         ResultCollector<Path> collector =
-            new ResultCollector<>(partitions.size(), path -> Shape.of(path, charset).size());
+            new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () -> {
                 BiFunction<Partition, Stream<LineSegment>, Path> processing =
                     (partition, lines) -> {
                         Path tempTarget = tempTargets.temp(partition);
-                        try (LinesWriter<String> linesWriter = linesWriterFactory.create(tempTarget, charset)) {
+                        try (LinesWriter<O> linesWriter = linesWriterFactory.create(tempTarget)) {
                             lines.forEach(line ->
                                 linesWriter.accept(processor.apply(line)));
                         } catch (Exception e) {
