@@ -2,8 +2,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat.Escape;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat.Quoted;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.util.Objects;
@@ -23,21 +21,12 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines()
-            .forEach(splitter(consumer));
+        streamer.lines().forEach(LineSplitters.csv(format, consumer));
     }
 
     @Override
     public Stream<SeparatedLine> separatedLines() {
-        return streamer.lines()
-            .map(splitter(null));
+        return streamer.lines().map(LineSplitters.csv(format));
     }
 
-    private LineSplitter splitter(Consumer<SeparatedLine> consumer) {
-        return switch (format) {
-            case Escape esc -> new BitwiseCsvEscapeSplitter(consumer, esc);
-            case Quoted dbl -> new BitwiseCsvQuotedSplitter(consumer, dbl);
-            default -> new BitwiseCsvSimpleSplitter(consumer, format);
-        };
-    }
 }

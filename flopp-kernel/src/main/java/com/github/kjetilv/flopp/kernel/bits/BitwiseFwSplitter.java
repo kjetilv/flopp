@@ -22,11 +22,11 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines().forEach(new BitwiseFwLineSplitter(format, consumer));
+        streamer.lines().forEach(LineSplitters.fw(format, consumer));
     }
 
     @Override
     public Stream<SeparatedLine> separatedLines() {
-        return streamer.lines().map(new BitwiseFwLineSplitter(format, null));
+        return streamer.lines().map(LineSplitters.fw(format, null));
     }
 }

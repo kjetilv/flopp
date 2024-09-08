@@ -10,6 +10,7 @@ import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 final class BitwisePartitioned implements Partitioned<Path> {
 
@@ -44,6 +45,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
             new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, shape.charset());
         TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
         Transfers<Path> transfers = new FileChannelTransfers(target);
+
         return new BitwisePartitionProcessor<>(mapper(), partitions, factory, tempTargets, transfers);
     }
 
@@ -54,19 +56,21 @@ final class BitwisePartitioned implements Partitioned<Path> {
         TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
         Transfers<Path> transfers = new FileChannelTransfers(target);
 
-        return null;
-//        new BitwisePartitionProcessor<>(
+        Stream<BitwiseCsvSplitter> bitwiseCsvSplitterStream = streams().streamers()
+            .map(streamer ->
+                new BitwiseCsvSplitter(streamer, format));
+return null;
+//        return new BitwisePartitionProcessor<>(
 //            mapper(),
 //            partitions,
 //            linesWriterFactory,
 //            tempTargets,
 //            transfers
 //        );
-
     }
 
     @Override
-    public PartitionedMapper mapper() {
+    public PartitionedMapper<LineSegment> mapper() {
         return new BitwisePartitionedMapper(streams());
     }
 
@@ -101,7 +105,8 @@ final class BitwisePartitioned implements Partitioned<Path> {
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
             partitioning == null ? Partitioning.create() : partitioning,
-            shape);
+            shape
+        );
     }
 
     private static Partitioning withTail(Partitioning partitioning, Shape shape) {

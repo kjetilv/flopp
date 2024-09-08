@@ -26,7 +26,7 @@ public interface Partitioned<P> extends Closeable {
         CsvFormat format
     );
 
-    PartitionedMapper mapper();
+    PartitionedMapper<LineSegment> mapper();
 
     PartitionedConsumer consumer();
 

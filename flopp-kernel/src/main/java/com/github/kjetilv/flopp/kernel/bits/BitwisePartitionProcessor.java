@@ -1,15 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
-import com.github.kjetilv.flopp.kernel.TempTargets;
-import com.github.kjetilv.flopp.kernel.Transfers;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -17,9 +12,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSegment, O> {
+final class BitwisePartitionProcessor<I, O> implements PartitionedProcessor<I, O> {
 
-    private final PartitionedMapper partitionedMapper;
+    private final PartitionedMapper<I> partitionedMapper;
 
     private final LinesWriterFactory<Path, O> linesWriterFactory;
 
@@ -30,7 +25,7 @@ final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSeg
     private final Partitions partitions;
 
     BitwisePartitionProcessor(
-        PartitionedMapper partitionedMapper,
+        PartitionedMapper<I> partitionedMapper,
         Partitions partitions,
         LinesWriterFactory<Path, O> linesWriterFactory,
         TempTargets<Path> tempTargets,
@@ -44,12 +39,12 @@ final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSeg
     }
 
     @Override
-    public void process(Function<LineSegment, O> processor, ExecutorService executorService) {
+    public void process(Function<I, O> processor, ExecutorService executorService) {
         ResultCollector<Path> collector =
             new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
         CompletableFuture<Void> streamFuture = CompletableFuture.runAsync(
             () -> {
-                BiFunction<Partition, Stream<LineSegment>, Path> processing =
+                BiFunction<Partition, Stream<I>, Path> processing =
                     (partition, lines) -> {
                         Path tempTarget = tempTargets.temp(partition);
                         try (LinesWriter<O> linesWriter = linesWriterFactory.create(tempTarget)) {
@@ -60,22 +55,17 @@ final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSeg
                         }
                         return tempTarget;
                     };
-                futures(
-                    processing,
-                    partitionedMapper,
-                    executorService
-                ).forEach(collector::collect);
+                partitionedMapper.map(processing, executorService)
+                    .forEach(collector::collect);
             },
             executorService
         );
-        List<CompletableFuture<Void>> transferFutures = collector.streamCollected()
-            .map(result ->
-                transfers.transfer(result.partition(), result.result()))
-            .map(transfer ->
-                CompletableFuture.runAsync(transfer, executorService))
-            .toList();
         try {
-            transferFutures.forEach(CompletableFuture::join);
+            collector.streamCollected()
+                .map(result ->
+                    transfers.transfer(result.partition(), result.result()).in(executorService))
+                .toList()
+                .forEach(CompletableFuture::join);
         } finally {
             streamFuture.join();
         }
@@ -84,13 +74,5 @@ final class BitwisePartitionProcessor<O> implements PartitionedProcessor<LineSeg
     @Override
     public void close() {
         transfers.close();
-    }
-
-    private static Stream<CompletableFuture<PartitionResult<Path>>> futures(
-        BiFunction<Partition, Stream<LineSegment>, Path> processor,
-        PartitionedMapper mapper,
-        ExecutorService executorService
-    ) {
-        return mapper.map(processor, executorService);
     }
 }

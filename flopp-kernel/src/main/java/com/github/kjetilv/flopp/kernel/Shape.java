@@ -113,12 +113,10 @@ public record Shape(long size, long longestLine, Charset charset, Decor decor) {
     }
 
     private static long sizeOf(Path file) {
-        long size;
         try {
-            size = Files.size(file);
+            return Files.size(file);
         } catch (Exception e) {
             throw new IllegalArgumentException("Bad file:" + file, e);
         }
-        return size;
     }
 }

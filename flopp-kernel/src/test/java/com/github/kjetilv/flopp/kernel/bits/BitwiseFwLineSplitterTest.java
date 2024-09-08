@@ -43,7 +43,7 @@ class BitwiseFwLineSplitterTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        BitwiseFwLineSplitter splitter = new BitwiseFwLineSplitter(
+        LineSplitter splitter = LineSplitters.fw(
             format,
             line ->
                 line.columns(UTF_8)
