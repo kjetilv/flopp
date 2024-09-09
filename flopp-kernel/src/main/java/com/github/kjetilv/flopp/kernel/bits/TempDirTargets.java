@@ -6,6 +6,8 @@ import com.github.kjetilv.flopp.kernel.TempTargets;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 class TempDirTargets implements TempTargets<Path> {
 
@@ -16,6 +18,10 @@ class TempDirTargets implements TempTargets<Path> {
     private final int suffixIndex;
 
     private final String suffix;
+
+    TempDirTargets(Path base) {
+        this(Objects.requireNonNull(base, "base").getFileName().toString());
+    }
 
     TempDirTargets(String fileName) {
         this.sourceName = fileName;
@@ -39,9 +45,18 @@ class TempDirTargets implements TempTargets<Path> {
     @Override
     public void close() {
         try {
+            try (Stream<Path> list = Files.list(tempDirectory)) {
+                list.forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Failed to delete " + path, e);
+                    }
+                });
+            }
             Files.deleteIfExists(tempDirectory);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to close", e);
+            throw new IllegalStateException("Failed to delete " + tempDirectory, e);
         }
     }
 

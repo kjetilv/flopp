@@ -14,9 +14,17 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final CsvFormat format;
 
+    private final Partition partition;
+
     BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
+        this.partition = this.streamer.partition();
+    }
+
+    @Override
+    public Partition partition() {
+        return partition;
     }
 
     @Override
@@ -28,5 +36,4 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
     public Stream<SeparatedLine> separatedLines() {
         return streamer.lines().map(LineSplitters.csv(format));
     }
-
 }

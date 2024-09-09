@@ -3,8 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.PartitionResult;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
-import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.ToLongFunction;
@@ -25,6 +23,23 @@ final class ResultCollector<T> {
 
     public Stream<PartitionResult<T>> streamCollected() {
         return StreamSupport.stream(consumerSpliterator, false);
+    }
+
+    public void collect(
+        Transfers<T> transfers,
+        ExecutorService executorService,
+        Runnable close
+    ) {
+        try {
+            streamCollected()
+                .map(result ->
+                    transfers.transfer(result.partition(), result.result())
+                        .in(executorService))
+                .toList()
+                .forEach(CompletableFuture::join);
+        } finally {
+            close.run();
+        }
     }
 
     @Override

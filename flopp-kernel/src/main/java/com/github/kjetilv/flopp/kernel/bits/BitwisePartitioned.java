@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -9,6 +10,8 @@ import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -43,30 +46,71 @@ final class BitwisePartitioned implements Partitioned<Path> {
     public PartitionedProcessor<LineSegment, String> processor(Path target) {
         LinesWriterFactory<Path, String> factory = path ->
             new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, shape.charset());
-        TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
-        Transfers<Path> transfers = new FileChannelTransfers(target);
 
-        return new BitwisePartitionProcessor<>(mapper(), partitions, factory, tempTargets, transfers);
+        return (processor, executorService) -> {
+            try (
+                TempTargets<Path> tempTargets = new TempDirTargets(path);
+                Transfers<Path> transfers = new FileChannelTransfers(target)
+            ) {
+                ResultCollector<Path> collector =
+                    new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
+
+                PartitionedMapper<LineSegment> mapper = mapper();
+                CompletableFuture<Void> future = runVoid(
+                    () -> mapper.map(
+                            (partition, lines) -> {
+                                Path tempTarget = tempTargets.temp(partition);
+                                try (LinesWriter<String> writer = factory.create(tempTarget)) {
+                                    lines.forEach(lineSegment ->
+                                        writer.accept(processor.apply(lineSegment)));
+                                }
+                                return tempTarget;
+                            },
+                            executorService
+                        )
+                        .forEach(collector::collect),
+                    executorService
+                );
+                collector.collect(transfers, executorService, future::join);
+            }
+        };
     }
 
     @Override
     public PartitionedProcessor<SeparatedLine, LineSegment> processor(Path target, CsvFormat format) {
-        LinesWriterFactory<Path, LineSegment> linesWriterFactory = path ->
-            new MemorySegmentLinesWriter(path, MEMORY_SEGMENT_SIZE);
-        TempTargets<Path> tempTargets = new TempDirTargets(path.getFileName().toString());
-        Transfers<Path> transfers = new FileChannelTransfers(target);
 
-        Stream<BitwiseCsvSplitter> bitwiseCsvSplitterStream = streams().streamers()
-            .map(streamer ->
-                new BitwiseCsvSplitter(streamer, format));
-return null;
-//        return new BitwisePartitionProcessor<>(
-//            mapper(),
-//            partitions,
-//            linesWriterFactory,
-//            tempTargets,
-//            transfers
-//        );
+        return (processor, executorService) -> {
+            LinesWriterFactory<Path, LineSegment> linesWriterFactory = path ->
+                new MemorySegmentLinesWriter(path, MEMORY_SEGMENT_SIZE);
+            try (
+                TempTargets<Path> tempTargets = new TempDirTargets(path);
+                Transfers<Path> transfers = new FileChannelTransfers(target)
+            ) {
+                ResultCollector<Path> collector =
+                    new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
+
+                Stream<BitwiseCsvSplitter> splitters = streams().streamers()
+                    .map(streamer ->
+                        new BitwiseCsvSplitter(streamer, format));
+                CompletableFuture<Void> future = runVoid(
+                    () ->
+                        splitters.forEach(splitter ->
+                            runVoid(
+                                () -> {
+                                    Path temp = tempTargets.temp(splitter.partition());
+                                    try (LinesWriter<LineSegment> writer = linesWriterFactory.create(temp)) {
+                                        splitter.forEach(separatedLine -> {
+                                            writer.accept(processor.apply(separatedLine));
+                                        });
+                                    }
+                                },
+                                executorService
+                            )),
+                    executorService
+                );
+                collector.collect(transfers, executorService, future::join);
+            }
+        };
     }
 
     @Override
@@ -101,6 +145,10 @@ return null;
     private static final int BUFFER_SIZE = 8192;
 
     private static final int MEMORY_SEGMENT_SIZE = 8 * BUFFER_SIZE;
+
+    private static CompletableFuture<Void> runVoid(Runnable runnable, ExecutorService executorService) {
+        return CompletableFuture.runAsync(runnable, executorService);
+    }
 
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
