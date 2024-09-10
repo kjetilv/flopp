@@ -15,7 +15,7 @@ public final class MemorySegments {
         return MemorySegment.ofBuffer(byteBuffer);
     }
 
-    public static MemorySegment ofLength(int length) {
+    public static MemorySegment ofLength(long length) {
         return of(ByteBuffer.allocateDirect(alignedSize(length)));
     }
 

@@ -4,12 +4,13 @@ import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+
+import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
 class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
 
@@ -37,35 +38,44 @@ class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
         this.channel = this.randomAccessFile.getChannel();
         this.arena = Arena.ofAuto();
 
-        memorySegment = nextSegment();
+        memorySegment = nextSegment(0);
     }
 
     @Override
-    public void accept(LineSegment lineSegment) {
-        long length = lineSegment.length();
-        if (segmentOffset + length < inMemorySize) {
-            copy(lineSegment, 0, length);
-            return;
+    public void accept(LineSegment segment) {
+        long srcOffset = 0L;
+        long srcLeft = segment.length();
+        while (true) {
+            long remaining = inMemorySize - segmentOffset;
+            if (remaining >= srcLeft) {
+                write(segment, srcOffset, srcLeft);
+                return;
+            }
+            if (remaining > 0) {
+                write(segment, srcOffset, remaining);
+                srcOffset += remaining;
+                srcLeft -= remaining;
+            }
+            cycle();
         }
+    }
 
-        long available = inMemorySize - segmentOffset;
-        copy(lineSegment, 0, available);
-
-        long remaining = length - available;
-        this.memorySegment = nextSegment();
-        copy(lineSegment, available, remaining);
+    private void cycle() {
+        this.offset += this.inMemorySize;
+        this.memorySegment = nextSegment(this.offset);
+        this.segmentOffset = 0;
     }
 
     @Override
     public void close() {
         try {
-            arena.close();
+            channel.truncate(offset + segmentOffset);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to close " + arena, e);
+            throw new IllegalStateException("Failed to truncate " + channel, e);
         }
         try {
             channel.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to close " + channel, e);
         }
         try {
@@ -75,7 +85,7 @@ class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
         }
     }
 
-    private void copy(LineSegment lineSegment, long srcOffset, long length) {
+    private void write(LineSegment lineSegment, long srcOffset, long length) {
         MemorySegment src = lineSegment.memorySegment();
         MemorySegment.copy(
             src,
@@ -87,13 +97,11 @@ class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
         this.segmentOffset += length;
     }
 
-    private MemorySegment nextSegment() {
+    private MemorySegment nextSegment(long offset) {
         try {
-            return channel.map(FileChannel.MapMode.READ_WRITE, offset, this.inMemorySize, this.arena);
+            return channel.map(READ_WRITE, offset, this.inMemorySize, this.arena);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to open segment @ " + offset, e);
-        } finally {
-            offset += this.inMemorySize;
         }
     }
 }

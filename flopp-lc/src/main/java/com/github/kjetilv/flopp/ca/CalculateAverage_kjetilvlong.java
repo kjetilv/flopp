@@ -21,9 +21,7 @@ import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.Reader;
 import com.github.kjetilv.flopp.kernel.readers.Readers;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
+import com.github.kjetilv.flopp.kernel.segments.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -93,11 +92,20 @@ public final class CalculateAverage_kjetilvlong {
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(originalPath, p, shape);
             ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
-            int chunks = bitwisePartitioned.partitions().size();
-            PartitionedProcessor<LineSegment, String> processor = bitwisePartitioned.processor(out);
+            PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor =
+                bitwisePartitioned.processor(out, format);
             processor.process(
-                lineSegment ->
-                    lineSegment.asString() + ";" + map.get(lineSegment.prefix(';')),
+                separatedLine -> {
+                    Result result = map.get(separatedLine.segment(0));
+                    return Stream.of(
+                        separatedLine.segment(0),
+                        LineSegments.of(";"),
+                        separatedLine.segment(1),
+                        LineSegments.of(";"),
+                        LineSegments.of(result.toString(), shape.charset()),
+                        LineSegments.of("\n")
+                    );
+                },
                 workingExecutor
             );
         }

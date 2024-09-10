@@ -54,6 +54,21 @@ public final class LineSegments {
                 : 0;
     }
 
+    public static LineSegment cat(LineSegment... segments) {
+        long length = 0;
+        for (LineSegment segment : segments) {
+            length += segment.length();
+        }
+        MemorySegment memorySegment = MemorySegments.ofLength(length);
+        long offset = 0;
+        for (LineSegment segment : segments) {
+            long l = segment.length();
+            MemorySegments.copyBytes(segment.memorySegment(), memorySegment, offset, l);
+            offset += l;
+        }
+        return LineSegments.of(memorySegment, length);
+    }
+
     public static LongSupplier alignedLongSupplier(LineSegment segment) {
         return longSupplier(segment, true);
     }
@@ -175,6 +190,10 @@ public final class LineSegments {
 
     public static LineSegment of(MemorySegment memorySegment, Range range) {
         return of(memorySegment, range.startIndex(), range.endIndex());
+    }
+
+    public static LineSegment of(MemorySegment memorySegment, long length) {
+        return of(memorySegment, 0L, length);
     }
 
     public static LineSegment of(MemorySegment memorySegment, long start, long end) {

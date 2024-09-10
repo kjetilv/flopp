@@ -21,7 +21,7 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
 
-    PartitionedProcessor<SeparatedLine, LineSegment> processor(Path target, CsvFormat format);
+    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, CsvFormat format);
 
     PartitionedMapper<LineSegment> mapper();
 
