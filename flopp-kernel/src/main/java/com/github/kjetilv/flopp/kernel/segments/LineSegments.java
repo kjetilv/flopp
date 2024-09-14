@@ -14,6 +14,11 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
 
+    public final static LineSegment NIL = new ImmutableLineSegment(
+        MemorySegment.NULL,
+        0L,
+        0L);
+
     public static int hashCode(LineSegment segment) {
         LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         return hashCode(reusable, reusable.size());

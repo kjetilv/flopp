@@ -1,8 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.PartitionResult;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.ToLongFunction;
@@ -13,11 +15,14 @@ final class ResultCollector<T> {
 
     private final ResultConsumerSpliterator<T> consumerSpliterator;
 
-    ResultCollector(int resultsCount, ToLongFunction<T> sizer) {
+    private final ExecutorService executorService;
+
+    ResultCollector(int resultsCount, ToLongFunction<T> sizer, ExecutorService executorService) {
         this.consumerSpliterator = new ResultConsumerSpliterator<>(resultsCount, sizer);
+        this.executorService = Objects.requireNonNull(executorService, "executorService");
     }
 
-    public void collect(CompletableFuture<PartitionResult<T>> future) {
+    public void sync(CompletableFuture<PartitionResult<T>> future) {
         consumerSpliterator.accept(future);
     }
 
@@ -25,21 +30,15 @@ final class ResultCollector<T> {
         return StreamSupport.stream(consumerSpliterator, false);
     }
 
-    public void collect(
-        Transfers<T> transfers,
-        ExecutorService executorService,
-        Runnable close
-    ) {
-        try {
-            streamCollected()
-                .map(result ->
-                    transfers.transfer(result.partition(), result.result())
-                        .in(executorService))
-                .toList()
-                .forEach(CompletableFuture::join);
-        } finally {
-            close.run();
-        }
+    public void sync(Transfers<T> transfers) {
+        streamCollected()
+            .map(result -> {
+                System.out.println("Done: " + result);
+                return transfers.transfer(result.partition(), result.result())
+                    .in(executorService);
+            })
+            .toList()
+            .forEach(CompletableFuture::join);
     }
 
     @Override

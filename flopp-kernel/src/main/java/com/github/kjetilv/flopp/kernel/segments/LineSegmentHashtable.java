@@ -29,6 +29,14 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         this.reusable = reusable == null ? LineSegmentTraverser.create() : reusable;
     }
 
+    private LineSegmentHashtable(TableEntry<?>... table) {
+        this.limit = 0;
+        this.table = Arrays.stream(table)
+            .map(entry -> entry == null ? null : entry.freeze())
+            .toArray(TableEntry[]::new);
+        this.reusable = LineSegmentTraverser.create();
+    }
+
     @Override
     public Stream<T> values() {
         return (Stream<T>) tableEntries().map(TableEntry::value);
@@ -84,6 +92,11 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
             TableEntry::segment,
             toValue()
         ));
+    }
+
+    @Override
+    public LineSegmentMap<T> freeze() {
+        return new LineSegmentHashtable<>(table);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.io.RandomAccessFile;
@@ -11,33 +12,36 @@ import java.util.Objects;
 
 final class FileChannelTransfers implements Transfers<Path> {
 
-    private final String target;
+    private final Path target;
 
     private final RandomAccessFile randomAccessFile;
 
     private final FileChannel receivingChannel;
 
     FileChannelTransfers(Path target) {
-        this.randomAccessFile = randomAccess(Objects.requireNonNull(target, "path"));
+        this.target = Objects.requireNonNull(target, "target");
+        this.randomAccessFile = randomAccess(Objects.requireNonNull(this.target, "path"));
         this.receivingChannel = this.randomAccessFile.getChannel();
-        this.target = target.toString();
     }
 
     @Override
     public Transfer transfer(Partition partition, Path source) {
+        System.out.println("Init: " + source + " " + " " + partition + " " + Thread.currentThread().threadId());
         return new FileChannelTransfer(receivingChannel, partition, source);
     }
 
     @Override
     public void close() {
+        System.out.println("Done: " + target + " " + Shape.of(target).size() + " " + Thread.currentThread().threadId());
         try {
-            try {
-                receivingChannel.close();
-            } finally {
-                randomAccessFile.close();
-            }
+            receivingChannel.close();
         } catch (Exception e) {
-            throw new IllegalStateException(this + " failed to close " + receivingChannel + "/" + randomAccessFile, e);
+            throw new IllegalStateException(this + " failed to close " + receivingChannel, e);
+        }
+        try {
+            randomAccessFile.close();
+        } catch (Exception e) {
+            throw new IllegalStateException(this + " failed to close " + randomAccessFile, e);
         }
     }
 

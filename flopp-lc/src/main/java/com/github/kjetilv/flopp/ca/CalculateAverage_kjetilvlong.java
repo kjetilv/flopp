@@ -24,6 +24,7 @@ import com.github.kjetilv.flopp.kernel.readers.Readers;
 import com.github.kjetilv.flopp.kernel.segments.*;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -80,7 +81,7 @@ public final class CalculateAverage_kjetilvlong {
             Path out = pathArgument(args, 2)
                 .flatMap(CalculateAverage_kjetilvlong::resolve)
                 .orElseGet(() -> Path.of(args[2]));
-            temper(map, path, settings, simple, out);
+            temper(map.freeze(), path, settings, simple, out);
         }
     }
 
@@ -94,6 +95,7 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor =
                 bitwisePartitioned.processor(out, format);
+            Charset charset = shape.charset();
             processor.process(
                 separatedLine -> {
                     Result result = map.get(separatedLine.segment(0));
@@ -102,7 +104,9 @@ public final class CalculateAverage_kjetilvlong {
                         LineSegments.of(";"),
                         separatedLine.segment(1),
                         LineSegments.of(";"),
-                        LineSegments.of(result.toString(), shape.charset()),
+                        result == null
+                            ? LineSegments.NIL
+                            : LineSegments.of(result.toString(), charset),
                         LineSegments.of("\n")
                     );
                 },

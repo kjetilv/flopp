@@ -33,6 +33,10 @@ record TableEntry<T>(
         return hash == this.hash && this.segment.matches(segment);
     }
 
+    TableEntry<T> freeze() {
+        return new TableEntry<>(segment().immutable(), hash(), value, cachedString);
+    }
+
     @Override
     public int compareTo(TableEntry<T> other) {
         return segment.compareTo(other.segment());

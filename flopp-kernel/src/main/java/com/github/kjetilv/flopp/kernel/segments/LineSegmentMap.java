@@ -51,6 +51,8 @@ public interface LineSegmentMap<T> {
         ));
     }
 
+    LineSegmentMap<T> freeze();
+
     T get(LineSegment segment);
 
     T get(LineSegment segment, Supplier<T> newEntry);

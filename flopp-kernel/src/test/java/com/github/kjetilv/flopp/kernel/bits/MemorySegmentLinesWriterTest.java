@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,8 +18,8 @@ class MemorySegmentLinesWriterTest {
     @Test
     void writeSinmple() throws IOException {
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
-        try (LinesWriter<LineSegment> writer = new MemorySegmentLinesWriter(tempFile, 100)) {
-            writer.accept(LineSegments.of("foobar"));
+        try (LinesWriter<Stream<LineSegment>> writer = new MemorySegmentLinesWriter(tempFile, 100)) {
+            writer.accept(Stream.of(LineSegments.of("foobar")));
         }
         assertThat(tempFile).hasContent("foobar");
     }
@@ -26,15 +27,19 @@ class MemorySegmentLinesWriterTest {
     @Test
     void writeCyling() throws IOException {
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
-        try (LinesWriter<LineSegment> writer = new MemorySegmentLinesWriter(tempFile, 8)) {
-            writer.accept(LineSegments.of("foobar\n"));
-            writer.accept(LineSegments.of("zotzip\n"));
+        try (LinesWriter<Stream<LineSegment>> writer = new MemorySegmentLinesWriter(tempFile, 8)) {
+            writer.accept(Stream.of(
+                    "foobar\n",
+                    "zotzip\n",
+                    "coolx"
+                )
+                .map(LineSegments::of));
         }
         assertThat(tempFile).hasContent(
             """
                 foobar
                 zotzip
-                """);
+                coolx""");
     }
 
 }

@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 final class BitwisePartitioned implements Partitioned<Path> {
@@ -46,36 +47,38 @@ final class BitwisePartitioned implements Partitioned<Path> {
     @Override
     public PartitionedProcessor<LineSegment, String> processor(Path target) {
         return (processor, executorService) -> {
-            LinesWriterFactory<Path, String> factory = path ->
+            LinesWriterFactory<Path, String> writers = path ->
                 new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, shape.charset());
-
             try (
                 TempTargets<Path> tempTargets = new TempDirTargets(path);
                 Transfers<Path> transfers = new FileChannelTransfers(target)
             ) {
-                ResultCollector<Path> collector =
-                    new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
-
+                ResultCollector<Path> collector = new ResultCollector<>(
+                    partitions.size(),
+                    sizer(),
+                    executorService
+                );
                 CompletableFuture<Void> future = asyncVoid(
                     () -> streams().streamers()
                         .map(streamer ->
                             async(
                                 () -> {
                                     Path tempTarget = tempTargets.temp(streamer.partition());
-                                    try (LinesWriter<String> writer = factory.create(tempTarget)) {
+                                    try (LinesWriter<String> writer = writers.create(tempTarget)) {
                                         streamer.lines()
-                                            .forEach(lineSegment ->
-                                                writer.accept(processor.apply(lineSegment)));
+                                            .map(processor)
+                                            .forEach(writer);
                                     }
                                     return tempTarget;
                                 },
                                 executorService
                             ).thenApply(result ->
                                 new PartitionResult<>(streamer.partition(), result)))
-                        .forEach(collector::collect),
+                        .forEach(collector::sync),
                     executorService
                 );
-                collector.collect(transfers, executorService, future::join);
+                collector.sync(transfers);
+                future.join();
             }
         };
     }
@@ -83,38 +86,41 @@ final class BitwisePartitioned implements Partitioned<Path> {
     @Override
     public PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, CsvFormat format) {
         return (processor, executorService) -> {
-            LinesWriterFactory<Path, LineSegment> linesWriterFactory = path ->
+            LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
                 new MemorySegmentLinesWriter(path, MEMORY_SEGMENT_SIZE);
-
             try (
                 TempTargets<Path> tempTargets = new TempDirTargets(path);
                 Transfers<Path> transfers = new FileChannelTransfers(target)
             ) {
-                ResultCollector<Path> collector =
-                    new ResultCollector<>(partitions.size(), path -> Shape.of(path).size());
-
-                CompletableFuture<Void> future = asyncVoid(
-                    () -> splitters().splitters(format)
-                        .map(splitter ->
-                            async(
-                                () -> {
-                                    Path tempTarget = tempTargets.temp(splitter.partition());
-                                    try (LinesWriter<LineSegment> writer = linesWriterFactory.create(tempTarget)) {
-                                        splitter
-                                            .forEach(separatedLine -> {
-                                                processor.apply(separatedLine)
-                                                    .forEach(writer);
-                                            });
-                                    }
-                                    return tempTarget;
-                                },
-                                executorService
-                            ).thenApply(result ->
-                                new PartitionResult<>(splitter.partition(), result)))
-                        .forEach(collector::collect),
+                ResultCollector<Path> collector = new ResultCollector<>(
+                    partitions.size(),
+                    sizer(),
                     executorService
                 );
-                collector.collect(transfers, executorService, future::join);
+                CompletableFuture<Void> future = asyncVoid(
+                    () ->
+                        splitters().splitters(format)
+                            .map(splitter ->
+                                async(
+                                    () -> {
+                                        Path tempTarget = tempTargets.temp(splitter.partition());
+                                        try (
+                                            LinesWriter<Stream<LineSegment>> writer = writers.create(tempTarget)
+                                        ) {
+                                            splitter.separatedLines()
+                                                .map(processor)
+                                                .forEach(writer);
+                                        }
+                                        return tempTarget;
+                                    },
+                                    executorService
+                                ).thenApply(result ->
+                                    new PartitionResult<>(splitter.partition(), result)))
+                            .forEach(collector::sync),
+                    executorService
+                );
+                collector.sync(transfers);
+                future.join();
             }
         };
     }
@@ -151,6 +157,10 @@ final class BitwisePartitioned implements Partitioned<Path> {
     private static final int BUFFER_SIZE = 8192;
 
     private static final int MEMORY_SEGMENT_SIZE = 8 * BUFFER_SIZE;
+
+    private static ToLongFunction<Path> sizer() {
+        return path -> Shape.of(path).size();
+    }
 
     private static CompletableFuture<Void> asyncVoid(Runnable runnable, ExecutorService executorService) {
         return CompletableFuture.runAsync(runnable, executorService);

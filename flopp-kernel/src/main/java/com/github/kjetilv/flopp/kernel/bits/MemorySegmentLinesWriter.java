@@ -9,10 +9,11 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
-class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
+class MemorySegmentLinesWriter implements LinesWriter<Stream<LineSegment>> {
 
     private final RandomAccessFile randomAccessFile;
 
@@ -42,22 +43,25 @@ class MemorySegmentLinesWriter implements LinesWriter<LineSegment> {
     }
 
     @Override
-    public void accept(LineSegment segment) {
-        long srcOffset = 0L;
-        long srcLeft = segment.length();
-        while (true) {
-            long remaining = inMemorySize - segmentOffset;
-            if (remaining >= srcLeft) {
-                write(segment, srcOffset, srcLeft);
-                return;
+    public void accept(Stream<LineSegment> lineSegmentStream) {
+        lineSegmentStream.forEach(segment -> {
+            long srcOffset = 0L;
+            long srcLeft = segment.length();
+            while (true) {
+                long remaining = inMemorySize - segmentOffset;
+                if (remaining < srcLeft) {
+                    if (remaining > 0) {
+                        write(segment, srcOffset, remaining);
+                        srcOffset += remaining;
+                        srcLeft -= remaining;
+                    }
+                    cycle();
+                } else {
+                    write(segment, srcOffset, srcLeft);
+                    return;
+                }
             }
-            if (remaining > 0) {
-                write(segment, srcOffset, remaining);
-                srcOffset += remaining;
-                srcLeft -= remaining;
-            }
-            cycle();
-        }
+        });
     }
 
     private void cycle() {
