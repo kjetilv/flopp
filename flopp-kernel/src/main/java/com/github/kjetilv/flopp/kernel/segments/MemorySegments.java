@@ -47,16 +47,23 @@ public final class MemorySegments {
         return value << shift >>> shift;
     }
 
-    public static MemorySegment alignmentPadded(MemorySegment segment, long offset) {
-        long size = segment.byteSize() - offset;
+    public static MemorySegment createAligned(long length) {
+        return MemorySegment.ofBuffer(
+            ByteBuffer.allocateDirect(
+                Math.toIntExact(
+                    MemorySegments.alignedSize(length))));
+    }
+
+    public static MemorySegment alignmentPadded(MemorySegment source, long offset) {
+        long size = source.byteSize() - offset;
         long tail = size % ALIGNMENT_INT;
         if (tail == 0) {
-            return segment;
+            return source;
         }
         int alignedSize = alignedSize(size);
         ByteBuffer resizedBuffer = ByteBuffer.allocateDirect(alignedSize);
         MemorySegment resizedCopy = MemorySegment.ofBuffer(resizedBuffer);
-        copyBytes(segment, offset, resizedCopy, size);
+        copyBytes(source, offset, resizedCopy, size);
         return resizedCopy;
     }
 
@@ -167,6 +174,10 @@ public final class MemorySegments {
         );
     }
 
+    public static int alignedSize(long size) {
+        return (int) (size + ALIGNMENT_INT - size % ALIGNMENT);
+    }
+
     private MemorySegments() {
     }
 
@@ -175,10 +186,6 @@ public final class MemorySegments {
     public static final int ALIGNMENT_INT = Math.toIntExact(ALIGNMENT);
 
     public static final int ALIGNMENT_POW = 3;
-
-    private static int alignedSize(long size) {
-        return (int) (size + ALIGNMENT_INT - size % ALIGNMENT);
-    }
 
     private static ByteBuffer alignedByteBuffer(byte[] bytes) {
         int length = bytes.length;

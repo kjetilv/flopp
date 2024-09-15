@@ -33,8 +33,12 @@ record TableEntry<T>(
         return hash == this.hash && this.segment.matches(segment);
     }
 
-    TableEntry<T> freeze() {
-        return new TableEntry<>(segment().immutable(), hash(), value, cachedString);
+    TableEntry<T> freezeTo(LineSegment segment, long offset) {
+        return frozen(this.segment.copyTo(segment, offset));
+    }
+
+    private TableEntry<T> frozen(LineSegment copied) {
+        return new TableEntry<>(copied, hash(), value, cachedString);
     }
 
     @Override

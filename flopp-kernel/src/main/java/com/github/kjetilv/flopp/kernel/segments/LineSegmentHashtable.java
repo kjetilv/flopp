@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
@@ -29,11 +30,9 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         this.reusable = reusable == null ? LineSegmentTraverser.create() : reusable;
     }
 
-    private LineSegmentHashtable(TableEntry<?>... table) {
-        this.limit = 0;
-        this.table = Arrays.stream(table)
-            .map(entry -> entry == null ? null : entry.freeze())
-            .toArray(TableEntry[]::new);
+    private LineSegmentHashtable(int limit, TableEntry<?>... table) {
+        this.limit = limit;
+        this.table = table;
         this.reusable = LineSegmentTraverser.create();
     }
 
@@ -96,7 +95,16 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     @Override
     public LineSegmentMap<T> freeze() {
-        return new LineSegmentHashtable<>(table);
+        LineSegment segment = LineSegments.segmentOfSize(lengths().sum());
+        int[] lengths = lengths().toArray();
+        int[] indexes = activeIndexes();
+        TableEntry<T>[] frozenEntries = new TableEntry[table.length];
+        int offset = 0;
+        for (int i = 0; i < indexes.length; i++) {
+            frozenEntries[indexes[i]] = entry(indexes[i]).freezeTo(segment, offset);
+            offset += lengths[i];
+        }
+        return new LineSegmentHashtable<>(limit, frozenEntries);
     }
 
     @Override
@@ -105,12 +113,12 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         int initialPos = indexOf(hash);
         int slotPos = initialPos;
         while (true) {
-            TableEntry<?> existing = table[slotPos];
+            TableEntry<T> existing = entry(slotPos);
             if (existing == null) {
                 return null;
             }
             if (existing.matches(segment, hash)) {
-                return ((TableEntry<T>) existing).value();
+                return existing.value();
             }
             slotPos = indexOf(slotPos + 1);
             if (slotPos == initialPos) {
@@ -125,14 +133,14 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         int initialPos = indexOf(hash);
         int slotPos = initialPos;
         while (true) {
-            TableEntry<?> existing = table[slotPos];
+            TableEntry<T> existing = entry(slotPos);
             if (existing == null) {
                 T value = valueSupplier.get();
                 table[slotPos] = new TableEntry<>(segment.alignedHashedWith(hash), hash, value);
                 return value;
             }
             if (existing.matches(segment, hash)) {
-                return ((TableEntry<T>) existing).value();
+                return existing.value();
             }
             slotPos = indexOf(slotPos + 1);
             if (slotPos == initialPos) {
@@ -185,6 +193,13 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
             : tableEntries());
     }
 
+    private IntStream lengths() {
+        return Arrays.stream(table)
+            .filter(Objects::nonNull)
+            .mapToInt(entry ->
+                Math.toIntExact(entry.segment().length()));
+    }
+
     private TableEntry<?> merge(TableEntry<?> newEntry, BiFunction<T, T, T> merger) {
         TableEntry<T> local = (TableEntry<T>) tableEntry(newEntry.segment());
         return store(local == null
@@ -198,7 +213,7 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         int initialPos = indexOf(hash);
         int slotPos = initialPos;
         while (true) {
-            TableEntry<?> existing = table[slotPos];
+            TableEntry<?> existing = entry(slotPos);
             if (existing == null || existing.matches(segment, hash)) {
                 table[slotPos] = tableEntry;
                 return existing;
@@ -238,10 +253,25 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         return hash & limit - 1;
     }
 
+    private int[] activeIndexes() {
+        return IntStream.range(0, table.length)
+            .filter(this::isSet)
+            .toArray();
+    }
+
+    private TableEntry<T> entry(int i) {
+        return (TableEntry<T>) table[i];
+    }
+
+    private boolean isSet(int i) {
+        return table[i] != null;
+    }
+
     private static final Charset CHARSET = Charset.defaultCharset();
 
     private static <T> Function<TableEntry<?>, T> toValue() {
-        return tableEntry -> (T) tableEntry.value();
+        return tableEntry ->
+            (T) tableEntry.value();
     }
 
     private static String str(Stream<TableEntry<?>> tableEntries) {

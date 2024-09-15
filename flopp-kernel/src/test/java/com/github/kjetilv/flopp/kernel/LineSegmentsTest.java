@@ -79,10 +79,24 @@ class LineSegmentsTest {
         assertHead("1234567foobarzt");
     }
 
+    @Test
+    void copyTo() {
+        LineSegment donor1 = LineSegments.of("foo");
+        LineSegment donor2 = LineSegments.of("bar");
+        LineSegment receiver = LineSegments.of(128);
+        LineSegment copied1 = donor1.copyTo(receiver, 0L);
+        LineSegment copied2 = donor2.copyTo(receiver, donor1.length());
+        assertThat(donor1).hasSameHashCodeAs(copied1);
+        assertThat(donor2).hasSameHashCodeAs(copied2);
+        assertThat(receiver.slice(0, donor1.length() + donor2.length()))
+            .isEqualTo(LineSegments.of("foobar"));
+    }
+
     private static final LineSegmentTraverser.Reusable REUSABLE = LineSegmentTraverser.create();
 
     private static final LineSegmentTraverser.Reusable REUSABLE_ALIGNED = LineSegmentTraverser.create(true);
 
+    @SuppressWarnings("SameParameterValue")
     private static void stressTest(String abc) {
         for (int s = 0; s < abc.length(); s++) {
             for (int e = s; e < abc.length(); e++) {

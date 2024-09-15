@@ -6,11 +6,30 @@ import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LineSegmentHashtableTest {
+
+    @Test
+    void foobar() {
+        LineSegment foo = LineSegments.of("foo");
+        LineSegment bar = LineSegments.of("bar");
+
+        LineSegmentMap<Integer> table = LineSegmentMaps.create(16);
+
+        table.put(foo, 42);
+        table.put(bar, 47);
+
+        LineSegmentMap<Integer> frozen = table.freeze();
+
+        assertThat(frozen.get(foo)).isEqualTo(42);
+        assertThat(frozen.get(bar)).isEqualTo(47);
+        Map<LineSegment, Integer> frozenMap = frozen.toMap();
+        assertThat(table.toMap()).isEqualTo(frozenMap);
+    }
 
     @Test
     void toStringTest() {

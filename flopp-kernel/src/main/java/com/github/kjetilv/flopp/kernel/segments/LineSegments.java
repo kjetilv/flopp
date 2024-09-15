@@ -14,11 +14,6 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public final class LineSegments {
 
-    public final static LineSegment NIL = new ImmutableLineSegment(
-        MemorySegment.NULL,
-        0L,
-        0L);
-
     public static int hashCode(LineSegment segment) {
         LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         return hashCode(reusable, reusable.size());
@@ -93,7 +88,8 @@ public final class LineSegments {
         }
         return StreamSupport.longStream(
             new SuppliedLongSpliterator(longSupplier(segment, align), length),
-            false);
+            false
+        );
     }
 
     public static long[] asLongs(LineSegment segment) {
@@ -240,6 +236,12 @@ public final class LineSegments {
     private LineSegments() {
     }
 
+    public final static LineSegment NIL = new ImmutableLineSegment(
+        MemorySegment.NULL,
+        0L,
+        0L
+    );
+
     public static final int HASH_PRIME = 31;
 
     private static final LongSupplier EMPTY_LONG_SUPPLIER = () -> 0x0L;
@@ -247,4 +249,8 @@ public final class LineSegments {
     private static final long[] NO_LONGS = new long[0];
 
     private static final byte[] NO_BYTES = new byte[0];
+
+    static LineSegment segmentOfSize(long size) {
+        return of(MemorySegments.createAligned(size), 0, size);
+    }
 }

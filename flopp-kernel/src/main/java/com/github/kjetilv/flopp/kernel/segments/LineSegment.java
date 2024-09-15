@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.segments;
 import com.github.kjetilv.flopp.kernel.bits.Bits;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
@@ -110,10 +109,19 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     @SuppressWarnings("unused")
     default LineSegment copy() {
-        MemorySegment buffer =
-            MemorySegment.ofBuffer(ByteBuffer.allocateDirect(Math.toIntExact(length())));
+        MemorySegment buffer = MemorySegments.createAligned(length());
         copyBytes(memorySegment(), startIndex(), buffer, length());
         return new ImmutableLineSegment(buffer, 0, length());
+    }
+
+    @SuppressWarnings("unused")
+    default LineSegment copyTo(LineSegment receiver, long offset) {
+        long length = length();
+        MemorySegments.copyBytes(
+            this.memorySegment(), startIndex(),
+            receiver.memorySegment(), offset, length
+        );
+        return LineSegments.of(receiver.memorySegment(), offset, offset + length);
     }
 
     default boolean hasRange(int startIndex, int endIndex) {
