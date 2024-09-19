@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.segments;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment.Hashed;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment.Immutable;
 
-public sealed interface HashedLineSegment
+sealed interface HashedLineSegment
     extends LineSegment, Immutable, Hashed
     permits HashedAlignedLineSegment, HashedUnalignedLineSegment {
 

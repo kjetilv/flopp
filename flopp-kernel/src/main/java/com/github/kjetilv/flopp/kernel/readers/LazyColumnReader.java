@@ -15,15 +15,14 @@ import java.util.stream.IntStream;
 
 import static com.github.kjetilv.flopp.kernel.readers.Column.Parser.*;
 
-final class LazyReader implements Reader, Reader.Columns {
+final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
 
-    static Reader create(List<Column> columns) {
-        return new LazyReader(columns);
+    static ColumnReader create(String header, CsvFormat format) {
+        return create(discoverColumns(header, format));
     }
 
-    static Reader create(String header, CsvFormat format) {
-        List<Column> columns = discoverColumns(header, format);
-        return new LazyReader(columns);
+    static ColumnReader create(List<Column> columns) {
+        return new LazyColumnReader(columns);
     }
 
     private final Map<String, Column> columnMap;
@@ -50,7 +49,7 @@ final class LazyReader implements Reader, Reader.Columns {
 
     private SeparatedLine sl;
 
-    private LazyReader(List<Column> columnsList) {
+    private LazyColumnReader(List<Column> columnsList) {
         if (columnsList == null || columnsList.isEmpty()) {
             throw new IllegalStateException("No columns!");
         }

@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.PartitionResult;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.util.Objects;
@@ -22,21 +21,16 @@ final class ResultCollector<T> {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
     }
 
-    public void sync(CompletableFuture<PartitionResult<T>> future) {
-        consumerSpliterator.accept(future);
+    public void sync(PartitionResult<T> partitionResult) {
+        consumerSpliterator.accept(partitionResult);
     }
 
-    public Stream<PartitionResult<T>> streamCollected() {
-        return StreamSupport.stream(consumerSpliterator, false);
-    }
-
-    public void sync(Transfers<T> transfers) {
-        streamCollected()
-            .map(result -> {
-                System.out.println("Done: " + result);
-                return transfers.transfer(result.partition(), result.result())
-                    .in(executorService);
-            })
+    public void syncTo(Transfers<T> transfers) {
+        results()
+            .map(result ->
+                transfer(transfers, result))
+            .map(transfer ->
+                transfer.in(executorService))
             .toList()
             .forEach(CompletableFuture::join);
     }
@@ -44,5 +38,16 @@ final class ResultCollector<T> {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
+    }
+
+    private Stream<PartitionResult<T>> results() {
+        return StreamSupport.stream(consumerSpliterator, false);
+    }
+
+    private static <T> Transfer transfer(
+        Transfers<T> transfers,
+        PartitionResult<T> result
+    ) {
+        return transfers.transfer(result.partition(), result.result());
     }
 }

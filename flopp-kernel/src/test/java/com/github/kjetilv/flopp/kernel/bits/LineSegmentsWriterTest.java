@@ -13,12 +13,12 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MemorySegmentLinesWriterTest {
+class LineSegmentsWriterTest {
 
     @Test
     void writeSinmple() throws IOException {
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
-        try (LinesWriter<Stream<LineSegment>> writer = new MemorySegmentLinesWriter(tempFile, 100)) {
+        try (LinesWriter<Stream<LineSegment>> writer = new LineSegmentsWriter(tempFile, 100)) {
             writer.accept(Stream.of(LineSegments.of("foobar")));
         }
         assertThat(tempFile).hasContent("foobar");
@@ -27,7 +27,7 @@ class MemorySegmentLinesWriterTest {
     @Test
     void writeCyling() throws IOException {
         Path tempFile = Files.createTempFile(UUID.randomUUID().toString(), ".txt");
-        try (LinesWriter<Stream<LineSegment>> writer = new MemorySegmentLinesWriter(tempFile, 8)) {
+        try (LinesWriter<Stream<LineSegment>> writer = new LineSegmentsWriter(tempFile, 8)) {
             writer.accept(Stream.of(
                     "foobar\n",
                     "zotzip\n",

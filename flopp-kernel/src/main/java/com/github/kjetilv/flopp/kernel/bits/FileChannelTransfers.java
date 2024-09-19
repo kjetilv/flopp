@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.io.RandomAccessFile;
@@ -26,13 +25,11 @@ final class FileChannelTransfers implements Transfers<Path> {
 
     @Override
     public Transfer transfer(Partition partition, Path source) {
-        System.out.println("Init: " + source + " " + " " + partition + " " + Thread.currentThread().threadId());
         return new FileChannelTransfer(receivingChannel, partition, source);
     }
 
     @Override
     public void close() {
-        System.out.println("Done: " + target + " " + Shape.of(target).size() + " " + Thread.currentThread().threadId());
         try {
             receivingChannel.close();
         } catch (Exception e) {
@@ -55,6 +52,9 @@ final class FileChannelTransfers implements Transfers<Path> {
             throw new IllegalArgumentException("Not a file: " + file);
         }
         try {
+            if (!Files.exists(file)) {
+                Files.createFile(file);
+            }
             return new RandomAccessFile(file.toAbsolutePath().toFile(), READ_WRITE);
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed to open " + file, e);

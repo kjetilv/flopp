@@ -19,12 +19,15 @@ import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.readers.Column;
-import com.github.kjetilv.flopp.kernel.readers.Reader;
-import com.github.kjetilv.flopp.kernel.readers.Readers;
-import com.github.kjetilv.flopp.kernel.segments.*;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -44,10 +47,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) throws IOException {
-        Path path2 = Path.of(args[0]);
-        Path path = resolve(path2)
+        Path inputFile = pathArgument(args, 0)
+            .filter(Files::isRegularFile)
             .orElseThrow(() ->
-                new IllegalArgumentException("No path: " + path2));
+                new IllegalArgumentException("No path: " + args[0]));
+        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
+        Optional<Path> outFile = pathArgument(args, 2);
+
         Settings settings = new Settings(
             1,
             64,
@@ -55,34 +61,35 @@ public final class CalculateAverage_kjetilvlong {
             .001d,
             .0001d
         );
-        long size = Files.size(path);
+        long size = Files.size(inputFile);
         int cpus = Runtime.getRuntime().availableProcessors();
         System.out.println(
             size + " bytes on " + cpus + " cpus: " + settings
         );
         System.out.println(
-            "  " + partitioning(cpus, Shape.of(path), settings)
+            "  " + partitioning(cpus, Shape.of(inputFile), settings)
         );
 
         Instant start = Instant.now();
         CsvFormat simple = CsvFormat.simple(2, ';');
-        LineSegmentMap<Result> map = mapAverages(path, settings, simple);
+        LineSegmentMap<Result> map = mapAverages(inputFile, settings, simple);
         String mapStringSorted = map.toStringSorted();
         System.out.println(mapStringSorted);
         System.out.println(Duration.between(start, Instant.now()));
 
-        pathArgument(args, 1)
-            .flatMap(CalculateAverage_kjetilvlong::resolve)
+        truthFile
             .map(CalculateAverage_kjetilvlong::readString)
                 .ifPresent(contents ->
                 System.out.println(mapStringSorted.equals(contents.trim())));
 
-        if (args.length > 2) {
-            Path out = pathArgument(args, 2)
-                .flatMap(CalculateAverage_kjetilvlong::resolve)
-                .orElseGet(() -> Path.of(args[2]));
-            temper(map.freeze(), path, settings, simple, out);
-        }
+        outFile.ifPresent(out ->
+            temper(
+                map,
+                inputFile,
+                settings,
+                simple,
+                out
+            ));
     }
 
     static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, CsvFormat format, Path out) {
@@ -90,27 +97,28 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = partitioning(cpus, shape, settings);
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(originalPath, p, shape);
-            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+            Partitioned<Path> partitioned = Bitwise.partititioned(originalPath, p, shape);
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
-            PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor =
-                bitwisePartitioned.processor(out, format);
-            Charset charset = shape.charset();
-            processor.process(
-                separatedLine -> {
-                    Result result = map.get(separatedLine.segment(0));
-                    return Stream.of(
-                        separatedLine.segment(0),
-                        LineSegments.of(";"),
-                        separatedLine.segment(1),
-                        LineSegments.of(";"),
-                        result == null
-                            ? LineSegments.NIL
-                            : LineSegments.of(result.toString(), charset),
-                        LineSegments.of("\n")
-                    );
+            partitioned.processor(out, format).processFor(
+                partition -> {
+                    LineSegmentMap<Result> copy = map.freeze();
+                    return separatedLine -> {
+                        LineSegment city = separatedLine.segment(0);
+                        Result result = copy.get(city);
+                        String cityString = city.asString();
+                        String measurement = separatedLine.segment(1).asString();
+                        return Stream.of(LineSegments.of(
+                            cityString +
+                            ";" + measurement +
+                            ";" + result.min / 10.0 +
+                            ";" + result.perc(measurement) +
+                            ";" + result.max / 10.0 +
+                            "\n"
+                        ));
+                    };
                 },
-                workingExecutor
+                executor
             );
         }
     }
@@ -148,7 +156,16 @@ public final class CalculateAverage_kjetilvlong {
         return Arrays.stream(args)
             .skip(no)
             .findFirst()
-            .map(Path::of);
+            .flatMap(path ->
+                Optional.of(path)
+                    .filter(str ->
+                        str.contains("~"))
+                    .map(str ->
+                        str.replace("~", System.getProperty("user.home")))
+                            .map(Path::of)
+                    .or(() ->
+                        Optional.of(Path.of(path)))
+                    .map(Path::normalize));
     }
 
     private static Void print(Throwable throwable) {
@@ -161,20 +178,6 @@ public final class CalculateAverage_kjetilvlong {
             System.out.println("  Cause: " + cause);
         }
         return null;
-    }
-
-    private static Optional<Path> resolve(Path path) {
-        return Optional.of(path)
-            .filter(Files::isRegularFile)
-            .or(() ->
-                Optional.of(path.toString())
-                    .filter(str ->
-                        str.contains("~"))
-                    .map(str ->
-                        str.replace("~", System.getProperty("user.home")))
-                    .map(Path::of))
-            .filter(Files::isRegularFile)
-            .map(Path::normalize);
     }
 
     private static Partitioning partitioning(int cpus, Shape shape, Settings settings) {
@@ -192,14 +195,16 @@ public final class CalculateAverage_kjetilvlong {
 
     private static LineSegmentMap<Result> table(PartitionedSplitter splitter, int size) {
         LineSegmentMap<Result> table = LineSegmentMaps.create(size);
-        Reader reader = Readers.create(
+        ColumnReader columnReader = ColumnReaders.create(
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         );
-        reader.read(splitter, columns -> {
-            LineSegment segment = columns.getRaw(0);
-            Result result = table.get(segment, Result::new);
-            result.add(columns.getInt(1));
-        });
+        columnReader.read(
+            splitter, columns -> {
+                LineSegment segment = columns.getRaw(0);
+                Result result = table.get(segment, Result::new);
+                result.add(columns.getInt(1));
+            }
+        );
         return table;
     }
 
@@ -281,6 +286,13 @@ public final class CalculateAverage_kjetilvlong {
             sum += coll.sum;
             count += coll.count;
             return this;
+        }
+
+        public int perc(String measurement) {
+            double m = new BigDecimal(measurement).multiply(BigDecimal.TEN).doubleValue();
+            int range = max - min;
+            double normalizedM = m - min;
+            return Math.toIntExact(Math.round(100 * normalizedM / range));
         }
 
         void add(int value) {

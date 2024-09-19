@@ -20,8 +20,8 @@ import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.readers.Reader;
-import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -71,7 +71,7 @@ public final class Trolls {
             LongAdder failures = new LongAdder();
             LongAdder followersCount = new LongAdder();
 
-            Consumer<Reader.Columns> entryHandler = map -> {
+            Consumer<ColumnReader.Columns> entryHandler = map -> {
                 entryCount.increment();
                 Object followers = map.get("followers");
                 long x1 = 0;
@@ -87,7 +87,7 @@ public final class Trolls {
             Function<PartitionedSplitter, CompletableFuture<Void>> partitionFuture = splitter ->
                     CompletableFuture.runAsync(
                         () ->
-                            Readers.create(path, format).read(splitter, entryHandler),
+                            ColumnReaders.create(path, format).read(splitter, entryHandler),
                         executor
                     );
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();

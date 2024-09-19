@@ -29,7 +29,7 @@ public final class LineSegments {
     }
 
     public static int nextHash(int hash, long next) {
-        return hash * HASH_PRIME + Long.hashCode(next);
+        return hash * 31 + Long.hashCode(next);
     }
 
     @SuppressWarnings("ConstantValue")

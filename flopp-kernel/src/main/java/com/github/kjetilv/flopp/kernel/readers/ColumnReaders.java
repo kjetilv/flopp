@@ -8,21 +8,21 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-public final class Readers {
+public final class ColumnReaders {
 
-    public static Reader create(Column... columns) {
+    public static ColumnReader create(Column... columns) {
         return create(List.of(columns));
     }
 
-    public static Reader create(List<Column> columns) {
-        return LazyReader.create(columns);
+    public static ColumnReader create(List<Column> columns) {
+        return LazyColumnReader.create(columns);
     }
 
-    public static Reader create(Path file, CsvFormat format) {
-        return LazyReader.create(firstLine(file), format);
+    public static ColumnReader create(Path file, CsvFormat format) {
+        return LazyColumnReader.create(firstLine(file), format);
     }
 
-    private Readers() {
+    private ColumnReaders() {
     }
 
     private static String firstLine(Path file) {

@@ -27,11 +27,14 @@ public abstract sealed class LineSegmentTraverser
     }
 
     public static Reusable create(LineSegment segment) {
-        return new MultiModeSuppler().apply(segment);
+        return create(segment, false);
     }
 
     public static Reusable create(LineSegment segment, boolean align) {
-        return (align ? new AlignedTraverser() : new MultiModeSuppler()).apply(segment);
+        LineSegmentTraverser traverser = align
+            ? new AlignedTraverser()
+            : new MultiModeSuppler();
+        return traverser.apply(segment);
     }
 
     @SuppressWarnings("PackageVisibleField")

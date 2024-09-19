@@ -6,7 +6,7 @@ import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import java.util.function.Consumer;
 
 @FunctionalInterface
-public interface Reader {
+public interface ColumnReader {
 
     void read(PartitionedSplitter splitter, Consumer<Columns> values);
 

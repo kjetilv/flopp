@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,7 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
 final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterator<PartitionResult<T>>
-    implements Consumer<CompletableFuture<PartitionResult<T>>> {
+    implements Consumer<PartitionResult<T>> {
 
     private final int resultsCount;
 
@@ -44,8 +43,21 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
     }
 
     @Override
-    public void accept(CompletableFuture<PartitionResult<T>> future) {
-        future.whenComplete(this::recordCompletion);
+    public void accept(PartitionResult<T> partitionResult) {
+        Objects.requireNonNull(partitionResult, "future");
+        updateLock.lock();
+        try {
+            PartitionResult<T> duplicate =
+                completed.putIfAbsent(partitionResult.partition().partitionNo(), partitionResult);
+            if (duplicate == null) {
+                updated.signalAll();
+            } else {
+                throw new IllegalStateException(
+                    "Partition " + partitionResult.partition().partitionNo() + " already present: " + duplicate);
+            }
+        } finally {
+            updateLock.unlock();
+        }
     }
 
     @Override
@@ -76,25 +88,6 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + cachedSizes + ", completed: " + completed.keySet() + "]";
-    }
-
-    private void recordCompletion(PartitionResult<T> future, Throwable e) {
-        Objects.requireNonNull(future, "future");
-        updateLock.lock();
-        try {
-            PartitionResult<T> duplicate = completed.putIfAbsent(future.partition().partitionNo(), future);
-            if (duplicate == null) {
-                updated.signalAll();
-            } else {
-                throw new IllegalStateException(
-                    "Partition " + future.partition().partitionNo() + " already present: " + duplicate);
-            }
-        } finally {
-            updateLock.unlock();
-        }
-        if (e != null) {
-            failure.updateAndGet(existing -> existing == null ? e : existing);
-        }
     }
 
     private int nextIndex() {

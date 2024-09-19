@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
-class MemorySegmentLinesWriter implements LinesWriter<Stream<LineSegment>> {
+class LineSegmentsWriter implements LinesWriter<Stream<LineSegment>> {
 
     private final RandomAccessFile randomAccessFile;
 
@@ -29,7 +29,7 @@ class MemorySegmentLinesWriter implements LinesWriter<Stream<LineSegment>> {
 
     private MemorySegment memorySegment;
 
-    MemorySegmentLinesWriter(Path target, long inMemorySize) {
+    LineSegmentsWriter(Path target, long inMemorySize) {
         try {
             this.randomAccessFile = new RandomAccessFile(target.toFile(), "rw");
         } catch (Exception e) {
@@ -64,12 +64,6 @@ class MemorySegmentLinesWriter implements LinesWriter<Stream<LineSegment>> {
         });
     }
 
-    private void cycle() {
-        this.offset += this.inMemorySize;
-        this.memorySegment = nextSegment(this.offset);
-        this.segmentOffset = 0;
-    }
-
     @Override
     public void close() {
         try {
@@ -87,6 +81,12 @@ class MemorySegmentLinesWriter implements LinesWriter<Stream<LineSegment>> {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to close " + randomAccessFile, e);
         }
+    }
+
+    private void cycle() {
+        this.offset += this.inMemorySize;
+        this.memorySegment = nextSegment(this.offset);
+        this.segmentOffset = 0;
     }
 
     private void write(LineSegment lineSegment, long srcOffset, long length) {

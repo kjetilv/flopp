@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.Objects;
 
 class MemoryMappedByteArrayLinesWriter implements LinesWriter<String> {
 
@@ -20,7 +21,7 @@ class MemoryMappedByteArrayLinesWriter implements LinesWriter<String> {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to open " + target, e);
         }
-        this.charset = charset;
+        this.charset = Objects.requireNonNull(charset, "charset");
         byte[] bytes = new byte[bufferSize];
         this.bytesDumpingRingBuffer = new BytesDumpingRingBuffer(
             bytes,

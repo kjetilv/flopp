@@ -8,10 +8,11 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface PartitionedProcessor<I, O> extends Closeable {
 
-    void process(
-        Function<I, O> processor,
-        ExecutorService executorService
-    );
+    default void process(Function<I, O> processor, ExecutorService executorService) {
+        processFor(partition -> processor, executorService);
+    }
+
+    void processFor(Function<Partition, Function<I, O>> processor, ExecutorService executorService);
 
     @Override
     default void close() {

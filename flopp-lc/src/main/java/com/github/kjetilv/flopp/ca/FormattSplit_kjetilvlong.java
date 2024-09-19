@@ -21,8 +21,8 @@ import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
-import com.github.kjetilv.flopp.kernel.readers.Reader;
-import com.github.kjetilv.flopp.kernel.readers.Readers;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
+import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.nio.file.Path;
@@ -56,7 +56,7 @@ public final class FormattSplit_kjetilvlong {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        Reader reader = Readers.create(
+        ColumnReader columnReader = ColumnReaders.create(
             Column.ofString("station", 1),
             Column.ofType("temperature", 2, FormattSplit_kjetilvlong::parseValue)
         );
@@ -71,7 +71,7 @@ public final class FormattSplit_kjetilvlong {
         ) {
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
             partitionedSplitters.splitters(CsvFormat.Escape.DEFAULT)
-                .map(countFuture(reader, longAdder, executor))
+                .map(countFuture(columnReader, longAdder, executor))
                 .toList()
                 .forEach(CompletableFuture::join);
         }
@@ -104,14 +104,14 @@ public final class FormattSplit_kjetilvlong {
     }
 
     private static Function<PartitionedSplitter, CompletableFuture<Void>> countFuture(
-        Reader reader,
+        ColumnReader columnReader,
         LongAdder longAdder,
         ExecutorService executor
     ) {
         return splitsConsumer ->
             CompletableFuture.runAsync(
                 () ->
-                    reader.read(splitsConsumer, _ ->
+                    columnReader.read(splitsConsumer, _ ->
                         longAdder.increment()),
                 executor
             );

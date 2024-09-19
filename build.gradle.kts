@@ -1,5 +1,4 @@
-import org.gradle.api.JavaVersion.VERSION_22
-import org.gradle.jvm.toolchain.JvmVendorSpec.GRAAL_VM
+import org.gradle.api.JavaVersion.VERSION_23
 
 plugins {
     java
@@ -21,17 +20,20 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(22))
-            vendor.set(GRAAL_VM)
+            languageVersion.set(JavaLanguageVersion.of(23))
         }
         withSourcesJar()
         modularity.inferModulePath
-        sourceCompatibility = VERSION_22
-        targetCompatibility = VERSION_22
+        sourceCompatibility = VERSION_23
+        targetCompatibility = VERSION_23
     }
 
     tasks.named<Test>("test") {
         useJUnitPlatform()
+    }
+
+    tasks.withType<JavaExec>().configureEach {
+        jvmArgs("--enable-preview")
     }
 
     publishing {
