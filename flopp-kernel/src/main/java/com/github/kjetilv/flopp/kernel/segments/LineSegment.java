@@ -34,19 +34,17 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default long alignedLongsCount() {
         long startIndex = startIndex();
         long endIndex = endIndex();
-        if (startIndex == endIndex) {
+        long len = endIndex - startIndex;
+        if (len == 0L) {
             return 0L;
         }
-        long len = endIndex - startIndex;
-        long headStart = startIndex % ALIGNMENT_INT;
+        int headStart = (int) (startIndex % ALIGNMENT_INT);
+        int headLen = (ALIGNMENT_INT - headStart) % ALIGNMENT_INT;
         int tailLen = (int) endIndex % ALIGNMENT_INT;
-        if (len < ALIGNMENT_INT) {
-            return (headStart > 0 ? 1 : 0) + (tailLen > 0 ? 1 : 0);
-        }
-        int headLen = headStart == 0L ? 0 : ALIGNMENT_INT - (int) headStart;
-        long bytesCount = endIndex - tailLen - startIndex - headLen;
-        long count = bytesCount >> ALIGNMENT_POW;
-        return (headStart > 0 ? 1 : 0) + count + (tailLen > 0 ? 1 : 0);
+
+        return (endIndex - startIndex - (headLen + tailLen) >> ALIGNMENT_POW) +
+               (headLen == 0 ? 0 : 1) +
+               (tailLen == 0 ? 0 : 1);
     }
 
     default LongStream alignedLongStream() {

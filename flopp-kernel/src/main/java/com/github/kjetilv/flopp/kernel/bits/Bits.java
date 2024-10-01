@@ -236,7 +236,7 @@ public final class Bits {
 
     private static final long EIGHTIES = 0x8080808080808080L;
 
-    private static final long SEVEN_EFFS = 0x7F7F7F7F7F7F7F7FL;
+    private static final long F7 = 0x7F7F7F7F7F7F7F7FL;
 
     private static final long ONES = 0x0101010101010101L;
 
@@ -322,10 +322,6 @@ public final class Bits {
         long underflown = masked - ONES;
         long clearedHighBits = underflown & ~masked;
         return clearedHighBits & EIGHTIES;
-    }
-
-    private static boolean hasZero(long l) {
-        return ~((l & SEVEN_EFFS) + SEVEN_EFFS | l | SEVEN_EFFS) != 0x0L;
     }
 
     /**
@@ -459,9 +455,10 @@ public final class Bits {
         public int next(long data) {
             offset = 0;
             dists = data ^ mask;
-            return hasZero(dists)
-                ? next()
-                : (offset = ALIGNMENT_INT);
+            if (hasZero()) {
+                return next();
+            }
+            return ALIGNMENT_INT;
         }
 
         /**
@@ -497,7 +494,15 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "'/" + hex(mask) + " " + hex(dists) + "]";
+            return getClass().getSimpleName() +
+                   "['" + (char) (mask & 0xFF) + "'/" +
+                   hex(mask) + " " +
+                   hex(dists) +
+                   "]";
+        }
+
+        private boolean hasZero() {
+            return ~((dists & F7) + F7 | dists | F7) != 0x0L;
         }
     }
 

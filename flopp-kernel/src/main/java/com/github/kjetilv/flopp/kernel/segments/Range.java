@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.segments;
 public interface Range {
 
     static Range of(long start, long end) {
-        return new Immutable(start, end);
+        return new ImmutableRange(start, end);
     }
 
     long startIndex();
@@ -16,8 +16,5 @@ public interface Range {
 
     default boolean aligned(int alignment) {
         return length() % alignment == 0;
-    }
-
-    record Immutable(long startIndex, long endIndex) implements Range {
     }
 }

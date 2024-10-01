@@ -31,10 +31,10 @@ public abstract sealed class LineSegmentTraverser
     }
 
     public static Reusable create(LineSegment segment, boolean align) {
-        LineSegmentTraverser traverser = align
+        return (align
             ? new AlignedTraverser()
-            : new MultiModeSuppler();
-        return traverser.apply(segment);
+            : new MultiModeSuppler()
+        ).apply(segment);
     }
 
     @SuppressWarnings("PackageVisibleField")
@@ -61,7 +61,7 @@ public abstract sealed class LineSegmentTraverser
         if (length == 0) {
             return empty;
         }
-        int headLen = headStart == 0L ? 0 : ALIGNMENT_INT - headStart;
+        int headLen = (ALIGNMENT_INT - headStart) % ALIGNMENT_INT;
         return baseFor(headStart).initialize(segment, headLen, headStart, startIndex, endIndex, length);
     }
 
@@ -90,20 +90,6 @@ public abstract sealed class LineSegmentTraverser
             return LineSegmentTraverser.this.apply(lineSegment);
         }
 
-        protected Reusable initialize(
-            LineSegment segment,
-            int headLen,
-            int headStart,
-            long startIndex,
-            long endIndex,
-            int length
-        ) {
-            return null;
-        }
-    }
-
-    private final class Null extends ReusableBase {
-
         @Override
         public long getAsLong() {
             throw new UnsupportedOperationException();
@@ -123,6 +109,20 @@ public abstract sealed class LineSegmentTraverser
         public int toHashCode() {
             throw new UnsupportedOperationException();
         }
+
+        protected Reusable initialize(
+            LineSegment segment,
+            int headLen,
+            int headStart,
+            long startIndex,
+            long endIndex,
+            int length
+        ) {
+            return null;
+        }
+    }
+
+    private final class Null extends ReusableBase {
     }
 
     private final class Empty extends ReusableBase {
@@ -134,11 +134,6 @@ public abstract sealed class LineSegmentTraverser
 
         @Override
         public void forEach(IndexedLongConsumer consumer) {
-        }
-
-        @Override
-        public long getAsLong() {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -165,6 +160,36 @@ public abstract sealed class LineSegmentTraverser
         private long position;
 
         private long data;
+
+        @Override
+        public long getAsLong() {
+            if (headLen >= length) {
+                return Bits.truncate(data, length);
+            }
+            if (position < alignedEnd) {
+                long alignedData = segment.longAt(position);
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                long value = data;
+                data = alignedData >>> tailShift;
+                position += ALIGNMENT;
+                return value;
+            }
+            if (position == this.alignedEnd && tailLen > 0) {
+                long alignedData = segment.tail();
+                long shifted = alignedData << headShift;
+                data |= shifted;
+                position += ALIGNMENT_INT;
+                return data;
+            }
+            if (position == endIndex) {
+                return data;
+            }
+            if (tailLen > headStart) {
+                return segment.tail() >> headStart * ALIGNMENT;
+            }
+            return 0x0L;
+        }
 
         @Override
         public long size() {
@@ -235,36 +260,6 @@ public abstract sealed class LineSegmentTraverser
         }
 
         @Override
-        public long getAsLong() {
-            if (headLen >= length) {
-                return Bits.truncate(data, length);
-            }
-            if (position < alignedEnd) {
-                long alignedData = segment.longAt(position);
-                long shifted = alignedData << headShift;
-                data |= shifted;
-                long value = data;
-                data = alignedData >>> tailShift;
-                position += ALIGNMENT;
-                return value;
-            }
-            if (position == this.alignedEnd && tailLen > 0) {
-                long alignedData = segment.tail();
-                long shifted = alignedData << headShift;
-                data |= shifted;
-                position += ALIGNMENT_INT;
-                return data;
-            }
-            if (position == endIndex) {
-                return data;
-            }
-            if (tailLen > headStart) {
-                return segment.tail() >> headStart * ALIGNMENT;
-            }
-            return 0x0L;
-        }
-
-        @Override
         protected ReusableBase initialize(
             LineSegment segment,
             int headLen,
@@ -307,6 +302,24 @@ public abstract sealed class LineSegmentTraverser
         private long position;
 
         @Override
+        public long getAsLong() {
+            if (position == alignedStart && headLen > 0) {
+                long head = segment.head();
+                position += ALIGNMENT;
+                return head;
+            }
+            if (position < alignedEnd) {
+                long data = segment.longAt(position);
+                position += ALIGNMENT;
+                return data;
+            }
+            if (position == alignedEnd && tailLen > 0) {
+                return segment.tail();
+            }
+            return 0x0L;
+        }
+
+        @Override
         public long size() {
             return segment.alignedLongsCount();
         }
@@ -338,24 +351,6 @@ public abstract sealed class LineSegmentTraverser
                 hash = nextHash(hash, truncated);
             }
             return hash;
-        }
-
-        @Override
-        public long getAsLong() {
-            if (position == alignedStart && headLen > 0) {
-                long head = segment.head();
-                position += ALIGNMENT;
-                return head;
-            }
-            if (position < alignedEnd) {
-                long data = segment.longAt(position);
-                position += ALIGNMENT;
-                return data;
-            }
-            if (position == alignedEnd && tailLen > 0) {
-                return segment.tail();
-            }
-            return 0x0L;
         }
 
         @Override

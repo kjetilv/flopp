@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
@@ -20,6 +20,7 @@ final class FullMemorySegmentSource extends AbstractFileChannelMemorySegmentSour
 
     @Override
     protected LineSegment lineSegment(Partition partition, long length) {
-        return LineSegments.of(segment, partition.offset(), partition.offset() + length);
+        long offset = partition.offset();
+        return LineSegments.of(segment, offset, offset + length);
     }
 }

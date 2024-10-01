@@ -67,7 +67,7 @@ public final class CalculateAverage_kjetilvlong {
             size + " bytes on " + cpus + " cpus: " + settings
         );
         System.out.println(
-            "  " + partitioning(cpus, Shape.of(inputFile), settings)
+            "  " + readPartitioning(cpus, Shape.of(inputFile), settings)
         );
 
         Instant start = Instant.now();
@@ -95,13 +95,13 @@ public final class CalculateAverage_kjetilvlong {
     static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, CsvFormat format, Path out) {
         Shape shape = Shape.of(originalPath, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning p = partitioning(cpus, shape, settings);
+        Partitioning p = readPartitioning(cpus, shape, settings);
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(originalPath, p, shape);
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
             partitioned.processor(out, format).processFor(
-                partition -> {
+                _ -> {
                     LineSegmentMap<Result> copy = map.freeze();
                     return separatedLine -> {
                         LineSegment city = separatedLine.segment(0);
@@ -127,7 +127,7 @@ public final class CalculateAverage_kjetilvlong {
     static LineSegmentMap<Result> mapAverages(Path path, Settings settings, CsvFormat format) {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning p = partitioning(cpus, shape, settings);
+        Partitioning p = readPartitioning(cpus, shape, settings);
         Partitions partitions = p.of(shape.size());
         AtomicInteger threads = new AtomicInteger();
         int size = 32 * 1024;
@@ -180,7 +180,21 @@ public final class CalculateAverage_kjetilvlong {
         return null;
     }
 
-    private static Partitioning partitioning(int cpus, Shape shape, Settings settings) {
+    private static Partitioning readPartitioning(int cpus, Shape shape, Settings settings) {
+        Partitioning basic = Partitioning.create(cpus * settings.cpuMultiplier(), shape.longestLine());
+        if (shape.size() < 1_000_000) {
+            return basic;
+        }
+        return basic.fragment(
+            cpus * settings.tailMultiplier(),
+            settings.tailPerc(),
+            settings.partitionMaxPerc(),
+            settings.partitionMinPerc()
+        );
+    }
+
+    @SuppressWarnings("unused")
+    private static Partitioning writePartitioning(int cpus, Shape shape, Settings settings) {
         Partitioning basic = Partitioning.create(cpus * settings.cpuMultiplier(), shape.longestLine());
         if (shape.size() < 1_000_000) {
             return basic;
