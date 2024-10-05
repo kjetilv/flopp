@@ -396,6 +396,7 @@ class BitwiseCsvEscapeSplitterTest {
         assertSplit(partitioning, input, CSV_FORMAT, expected);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertSplit(
         Partitioning partitioning,
         String input,
