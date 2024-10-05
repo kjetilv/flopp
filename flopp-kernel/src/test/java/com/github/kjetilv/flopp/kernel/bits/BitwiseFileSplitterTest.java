@@ -3,10 +3,12 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import org.junit.jupiter.api.Disabled;
@@ -64,9 +66,10 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.escape(),
             line ->
-                airlines.add(line.column(1, UTF_8)), CsvFormat.escape()
+                airlines.add(line.column(1, UTF_8))
         );
 
         try (Stream<Path> list = Files.list(PATH)) {
@@ -89,10 +92,11 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.escape(),
             line ->
-                airlines.add(line.column(1, UTF_8)), CsvFormat.escape()
-        );
+                airlines.add(line.column(1, UTF_8))
+            );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
         ) {
@@ -157,7 +161,8 @@ class BitwiseFileSplitterTest {
             voids = list.filter(endsWith(".csv"))
                 .parallel()
                 .map(file ->
-                    CompletableFuture.runAsync(() -> {
+                    CompletableFuture.runAsync(
+                        () -> {
                             try (
                                 BufferedReader bufferedReader = Files.newBufferedReader(file);
                                 MappingIterator<String[]> iterator = mapper.readerFor(String[].class)
@@ -203,7 +208,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(new BitwiseCsvEscapeSplitter(lines, format)),
+                                        .forEach(LineSplitters.csvSink(format, lines)),
                                 executor
                             ));
                 })

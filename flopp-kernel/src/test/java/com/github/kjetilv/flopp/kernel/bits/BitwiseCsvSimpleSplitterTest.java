@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -30,8 +30,9 @@ class BitwiseCsvSimpleSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), CsvFormat.simple(';')
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.simple(';'),
+            adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -47,8 +48,8 @@ class BitwiseCsvSimpleSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), CsvFormat.simple(';')
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.simple(';'), adder(splits)
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -117,6 +118,7 @@ class BitwiseCsvSimpleSplitterTest {
                 """
         );
     }
+
     @Test
     void shorterStringUTF82() {
         assertSplit(
@@ -256,8 +258,8 @@ class BitwiseCsvSimpleSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), CSV_FORMAT
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
             "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;\\;';'\\;'", UTF_8));
@@ -283,9 +285,10 @@ class BitwiseCsvSimpleSplitterTest {
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
-        String[] expected = {"'foo 1'", "bar", "234", "'ab\\", " cd\\", "ef'", "'it is 'aight'", "", "234", "'\\", "'", "'\\", "'"};
-        BitwiseCsvSimpleSplitter splitter = new BitwiseCsvSimpleSplitter(
-            adder(splits), CSV_FORMAT
+        String[] expected =
+            {"'foo 1'", "bar", "234", "'ab\\", " cd\\", "ef'", "'it is 'aight'", "", "234", "'\\", "'", "'\\", "'"};
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
             input, UTF_8));
@@ -430,6 +433,7 @@ class BitwiseCsvSimpleSplitterTest {
         assertSplit(partitioning, input, CSV_FORMAT, expected);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertSplit(
         Partitioning partitioning,
         String input,
@@ -470,10 +474,11 @@ class BitwiseCsvSimpleSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        LineSplitter splitter = new BitwiseCsvSimpleSplitter(
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CSV_FORMAT,
             line ->
                 line.columns(UTF_8)
-                    .forEach(splits::add), CSV_FORMAT
+                    .forEach(splits::add)
         );
 
         try {

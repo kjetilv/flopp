@@ -23,12 +23,12 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    void inited() {
+    protected void inited() {
         state = STARTING_COLUMN;
     }
 
-    void findSeps(long offset, long data, long endOffset) {
-        int sep = sepFinder.next(data);
+    protected void findSeps(long offset, long data, long endOffset) {
+        int sep = nextSep(data);
         int quo = quoFinder.next(data);
         while (true) {
             int diff = sep - quo;
@@ -37,7 +37,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
             }
             if (diff < 0) {
                 handleSep(offset + sep);
-                sep = sepFinder.next();
+                sep = nextSep();
             } else {
                 handleQuo();
                 quo = quoFinder.next();

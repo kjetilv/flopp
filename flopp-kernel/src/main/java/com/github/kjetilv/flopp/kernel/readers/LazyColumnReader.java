@@ -126,8 +126,7 @@ final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
 
     @Override
     public Object get(int c) {
-        Obj obj = objs[c];
-        return obj.parse(sl, c);
+        return objs[c].parse(sl, c);
     }
 
     @Override

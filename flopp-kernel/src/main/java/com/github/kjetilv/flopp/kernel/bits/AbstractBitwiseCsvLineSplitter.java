@@ -16,13 +16,12 @@ import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_
 import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-@SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseCsvLineSplitter
     extends AbstractBitwiseLineSplitter
     implements LineSegment
     permits BitwiseCsvEscapeSplitter, BitwiseCsvQuotedSplitter, BitwiseCsvSimpleSplitter {
 
-    final Bits.Finder sepFinder;
+    private final Bits.Finder sepFinder;
 
     private int columnNo;
 
@@ -52,6 +51,34 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         this.columnBuffer = new byte[this.format.maxColumnWidth()];
     }
 
+
+    @Override
+    protected final void process(LineSegment lineSegment) {
+        inited();
+        long startOffset = lineSegment.startIndex();
+        long endOffset = lineSegment.endIndex();
+
+        this.columnNo = 0;
+        this.currentColumnStart = startOffset;
+
+        long headStart = startOffset % ALIGNMENT_INT;
+        long headLong = lineSegment.longAt(startOffset - headStart);
+        long headData = headLong >>> headStart * ALIGNMENT_INT;
+
+        long offset = startOffset + ALIGNMENT_INT - headStart;
+        findSeps(startOffset, headData, endOffset);
+        while (offset < endOffset) {
+            findSeps(offset, lineSegment.longAt(offset), endOffset);
+            offset += ALIGNMENT_INT;
+        }
+        mark(endOffset);
+    }
+
+    protected void inited() {
+    }
+
+    protected abstract void findSeps(long offset, long data, long endOffset);
+
     @Override
     public final int columnCount() {
         return columnNo;
@@ -77,7 +104,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     @Override
     public final String column(int column, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            segment,
+            memorySegment(),
             startPositions[column],
             endPositions[column],
             columnBuffer,
@@ -110,7 +137,7 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     @Override
     public final String asString(byte[] buffer, Charset charset) {
         return MemorySegments.fromLongsWithinBounds(
-            segment,
+            memorySegment(),
             startIndex,
             endIndex,
             buffer,
@@ -137,12 +164,12 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     public final long head() {
         long headOffset = startIndex % ALIGNMENT_INT;
         long offset = startIndex - headOffset;
-        return segment.get(JAVA_LONG, offset) >>> headOffset * ALIGNMENT_INT;
+        return memorySegment().get(JAVA_LONG, offset) >>> headOffset * ALIGNMENT_INT;
     }
 
     @Override
     public final long tail() {
-        return MemorySegments.tail(segment, endIndex);
+        return MemorySegments.tail(memorySegment(), endIndex);
     }
 
     @Override
@@ -155,54 +182,26 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         return obj instanceof LineSegment lineSegment && this.matches(lineSegment);
     }
 
-    @Override
-    final void init(LineSegment lineSegment) {
-    }
-
-    @Override
-    String substring() {
-        return formatString();
-    }
-
-    @Override
-    final void process(LineSegment lineSegment) {
-        inited();
-        long startOffset = lineSegment.startIndex();
-        long endOffset = lineSegment.endIndex();
-
-        this.columnNo = 0;
-        this.currentColumnStart = startOffset;
-
-        long headStart = startOffset % ALIGNMENT_INT;
-        long headLong = lineSegment.longAt(startOffset - headStart);
-        long headData = headLong >>> headStart * ALIGNMENT_INT;
-
-        long offset = startOffset + ALIGNMENT_INT - headStart;
-        findSeps(startOffset, headData, endOffset);
-        while (offset < endOffset) {
-            findSeps(offset, lineSegment.longAt(offset), endOffset);
-            offset += ALIGNMENT_INT;
-        }
-        mark(endOffset);
-    }
-
-    void inited() {
-    }
-
-    final String formatString() {
+    protected final String formatString() {
         return "format=" + format.toString();
     }
 
-    final void markSeparator(long index) {
-        mark(index);
-        currentColumnStart = index + 1;
+    protected final void markSeparator(long position) {
+        mark(position);
+        currentColumnStart = position + 1;
     }
 
-    abstract void findSeps(long offset, long data, long endOffset);
+    protected final int nextSep(long data) {
+        return sepFinder.next(data);
+    }
 
-    private void mark(long index) {
+    protected final int nextSep() {
+        return sepFinder.next();
+    }
+
+    private void mark(long position) {
         this.startPositions[columnNo] = currentColumnStart;
-        this.endPositions[columnNo] = index;
+        this.endPositions[columnNo] = position;
         this.columnNo++;
     }
 }

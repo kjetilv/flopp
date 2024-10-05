@@ -5,23 +5,28 @@ import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-@SuppressWarnings("PackageVisibleField")
 abstract sealed class AbstractBitwiseLineSplitter
-    implements LineSplitter, SeparatedLine, LineSegment
+    implements SeparatedLine, LineSegment, Function<LineSegment, SeparatedLine>, Consumer<LineSegment>
     permits AbstractBitwiseCsvLineSplitter, BitwiseFwLineSplitter {
 
-    MemorySegment segment;
-
     private final Consumer<SeparatedLine> lines;
+
+    private MemorySegment memorySegment;
 
     AbstractBitwiseLineSplitter(Consumer<SeparatedLine> lines) {
         this.lines = lines == null ? NONE : lines;
     }
 
     @Override
+    public void accept(LineSegment lineSegment) {
+        apply(lineSegment);
+    }
+
+    @Override
     public final SeparatedLine apply(LineSegment lineSegment) {
-        this.segment = lineSegment.memorySegment();
+        this.memorySegment = lineSegment.memorySegment();
         process(lineSegment);
         this.lines.accept(this);
         return this;
@@ -29,24 +34,19 @@ abstract sealed class AbstractBitwiseLineSplitter
 
     @Override
     public final MemorySegment memorySegment() {
-        return segment;
+        return memorySegment;
     }
 
     @Override
     public final String toString() {
         String sub = substring();
         boolean hasSub = sub == null || sub.isBlank();
-        return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + segment + "]";
+        return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + memorySegment + "]";
     }
 
-    abstract void init(LineSegment lineSegment);
+    protected abstract String substring();
 
-    String substring() {
-        return null;
-    }
-
-    void process(LineSegment segment) {
-    }
+    protected abstract void process(LineSegment segment);
 
     private static final Consumer<SeparatedLine> NONE = _ -> {
     };

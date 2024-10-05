@@ -1,9 +1,10 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.segments.Range;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.Range;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +45,7 @@ class BitwiseFwLineSplitterTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        LineSplitter splitter = LineSplitters.fw(
+        Consumer<LineSegment> splitter = LineSplitters.fwSink(
             format,
             line ->
                 line.columns(UTF_8)

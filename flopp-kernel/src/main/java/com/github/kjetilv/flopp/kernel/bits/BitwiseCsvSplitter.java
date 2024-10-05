@@ -10,6 +10,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static com.github.kjetilv.flopp.kernel.bits.LineSplitters.csvSink;
+import static com.github.kjetilv.flopp.kernel.bits.LineSplitters.csvTransform;
+
 final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final PartitionStreamer streamer;
@@ -31,14 +34,12 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     @Override
     public void forEach(Consumer<SeparatedLine> consumer) {
-        LineSplitter csv = LineSplitters.csv(format, consumer);
-        streamer.lines().forEach(csv);
+        streamer.lines().forEach(csvSink(format, consumer));
     }
 
     @Override
     public Stream<SeparatedLine> separatedLines() {
-        LineSplitter csv = LineSplitters.csv(format);
-        return streamer.lines().map(csv);
+        return streamer.lines().map(csvTransform(format));
     }
 
     @Override

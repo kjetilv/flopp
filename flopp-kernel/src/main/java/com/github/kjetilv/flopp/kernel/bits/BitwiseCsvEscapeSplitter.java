@@ -25,14 +25,14 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
     }
 
     @Override
-    void inited() {
+    protected void inited() {
         escaping = false;
         nextEscape = -1;
     }
 
     @Override
-    void findSeps(long offset, long data, long endOffset) {
-        int sep = sepFinder.next(data);
+    protected void findSeps(long offset, long data, long endOffset) {
+        int sep = nextSep(data);
         int esc = escFinder.next(data);
         while (true) {
             int diff = sep - esc;
@@ -42,7 +42,7 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
             if (diff < 0) {
                 long position = offset + sep;
                 handleSep(position);
-                sep = sepFinder.next();
+                sep = nextSep();
             } else {
                 long position = offset + esc;
                 handleEsc(position);

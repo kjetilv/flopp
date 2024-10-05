@@ -26,14 +26,16 @@ public final class ColumnReaders {
     }
 
     private static String firstLine(Path file) {
-        Optional<String> firstLine;
+        return firstLineOf(file)
+            .orElseThrow(() ->
+                new IllegalArgumentException("No line in " + file));
+    }
+
+    private static Optional<String> firstLineOf(Path file) {
         try (BufferedReader bufferedReader = Files.newBufferedReader(file)) {
-            firstLine = bufferedReader.lines()
-                .findFirst();
+            return Optional.ofNullable(bufferedReader.readLine());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to read file: " + file, e);
         }
-        return firstLine.orElseThrow(() ->
-            new IllegalArgumentException("No line in " + file));
     }
 }

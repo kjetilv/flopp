@@ -39,12 +39,12 @@ final class BitwiseCounter {
 
     private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
         LineSegment sourced = memorySegmentSource.get(partition);
-        MemorySegment segment = sourced.memorySegment();
+        MemorySegment memorySegment = sourced.memorySegment();
         return new BitwisePartitionLineFeeder(
             partition,
-            segment,
+            memorySegment,
             sourced.startIndex(),
-            segment.byteSize(),
+            memorySegment.byteSize(),
             action,
             next == null
                 ? null

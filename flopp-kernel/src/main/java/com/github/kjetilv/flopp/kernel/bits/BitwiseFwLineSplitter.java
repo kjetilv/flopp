@@ -32,6 +32,15 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     }
 
     @Override
+    protected String substring() {
+        return null;
+    }
+
+    @Override
+    protected void process(LineSegment segment) {
+    }
+
+    @Override
     public int columnCount() {
         return length;
     }
@@ -75,10 +84,5 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public long endIndex() {
         return end[column];
-    }
-
-    @Override
-    void init(LineSegment lineSegment) {
-        this.segment = lineSegment.memorySegment();
     }
 }

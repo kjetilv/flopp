@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -30,8 +30,8 @@ class BitwiseCsvEscapeSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits), CsvFormat.escape(';')
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.escape(';'), adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -47,8 +47,8 @@ class BitwiseCsvEscapeSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits),  CsvFormat.escape(';')
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CsvFormat.escape(';'), adder(splits)
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -243,8 +243,8 @@ class BitwiseCsvEscapeSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits), CSV_FORMAT
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
             "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;\\;';'\\;'", UTF_8));
@@ -266,13 +266,9 @@ class BitwiseCsvEscapeSplitterTest {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
         String[] expected = {"'foo 1'", "bar", "234", "'ab\\; cd\\;ef'", "'it is 'aight'", "", "234", "'\\;'", "'\\;'"};
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
-            adder(splits), CSV_FORMAT
-        );
-        splitter.accept(LineSegments.of(
-            input, UTF_8));
-        assertThat(splits).containsExactly(
-            expected);
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(CSV_FORMAT, adder(splits));
+        splitter.accept(LineSegments.of(input, UTF_8));
+        assertThat(splits).containsExactly(expected);
     }
 
     @Test
@@ -440,10 +436,11 @@ class BitwiseCsvEscapeSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        BitwiseCsvEscapeSplitter splitter = new BitwiseCsvEscapeSplitter(
+        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+            CSV_FORMAT,
             line ->
                 line.columns(UTF_8)
-                    .forEach(splits::add), CSV_FORMAT
+                    .forEach(splits::add)
         );
 
         try {

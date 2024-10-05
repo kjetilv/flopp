@@ -12,14 +12,18 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
     BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, CsvFormat format) {
         super(lines, format);
     }
+    @Override
+    protected String substring() {
+        return formatString();
+    }
 
     @Override
     protected void findSeps(long offset, long data, long endOffset) {
-        int dist = sepFinder.next(data);
+        int dist = nextSep(data);
         long index;
         while (dist < ALIGNMENT_INT && (index = offset + dist) < endOffset) {
             markSeparator(index);
-            dist = sepFinder.next();
+            dist = nextSep();
         }
     }
 }
