@@ -4,7 +4,7 @@ import com.github.kjetilv.flopp.kernel.segments.Range;
 
 import java.nio.charset.Charset;
 
-public sealed interface FwFormat permits DefaultFwFormat {
+public sealed interface FwFormat extends FlatFileFormat {
 
     static FwFormat fw(Range... ranges) {
         return fw(null, ranges);
@@ -18,5 +18,11 @@ public sealed interface FwFormat permits DefaultFwFormat {
 
     Range[] ranges();
 
-    Charset charset();
+    record DefaultFwFormat(Range[] ranges, Charset charset) implements FwFormat {
+
+        @Override
+        public FwFormat withCharset(Charset charset) {
+            return new DefaultFwFormat(ranges, charset);
+        }
+    }
 }

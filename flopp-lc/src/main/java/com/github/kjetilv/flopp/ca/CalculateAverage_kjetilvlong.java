@@ -133,13 +133,13 @@ public final class CalculateAverage_kjetilvlong {
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, p, shape);
+            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
             ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
         ) {
-            int chunks = bitwisePartitioned.partitions().size();
+            int chunks = partitioned.partitions().size();
             BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
             Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
-            bitwisePartitioned.splitters(format, workingExecutor)
+            partitioned.splitters(format, workingExecutor)
                 .forEach(future ->
                     future
                         .thenApply(splitter -> table(splitter, size))

@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.formats.FlatFileFormat;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
@@ -21,7 +20,7 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
 
-    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, CsvFormat format);
+    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, FlatFileFormat format);
 
     PartitionedMapper<LineSegment> mapper();
 
@@ -29,22 +28,14 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedSplitters splitters();
 
-    default Stream<PartitionedSplitter> splitters(CsvFormat format) {
+    default Stream<PartitionedSplitter> splitters(FlatFileFormat format) {
         return splitters().splitters(format);
     }
 
     default Stream<CompletableFuture<PartitionedSplitter>> splitters(
-        CsvFormat format,
+        FlatFileFormat format,
         ExecutorService executorService
     ) {
-        return splitters().splitters(format, executorService);
-    }
-
-    default Stream<PartitionedSplitter> splitters(FwFormat format) {
-        return splitters().splitters(format);
-    }
-
-    default Stream<CompletableFuture<PartitionedSplitter>> splitters(FwFormat format, ExecutorService executorService) {
         return splitters().splitters(format, executorService);
     }
 
