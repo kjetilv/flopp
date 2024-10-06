@@ -80,7 +80,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, FlatFileFormat format) {
+    public <F extends FlatFileFormat<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, F format) {
         return (processor, executor) -> {
             LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
                 new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
@@ -90,18 +90,17 @@ final class BitwisePartitioned implements Partitioned<Path> {
                 Transfers<Path> transfers = new FileChannelTransfers(target)
             ) {
                 try (StructuredTaskScope<PartitionResult<Path>> scope = new StructuredTaskScope<>()) {
-                    splitters().splitters(format)
-                        .forEach(splitter ->
-                            scope.fork(() -> {
-                                Path tempTarget = tempTargets.temp(splitter.partition());
-                                try (LinesWriter<Stream<LineSegment>> writer = writers.create(tempTarget)) {
-                                    splitter.separatedLines()
-                                        .map(processor.apply(splitter.partition()))
-                                        .forEach(writer);
-                                }
-                                collector.sync(new PartitionResult<>(splitter.partition(), tempTarget));
-                                return null;
-                            }));
+                    splitters().splitters(format).forEach(splitter ->
+                        scope.fork(() -> {
+                            Path tempTarget = tempTargets.temp(splitter.partition());
+                            try (LinesWriter<Stream<LineSegment>> writer = writers.create(tempTarget)) {
+                                splitter.separatedLines()
+                                    .map(processor.apply(splitter.partition()))
+                                    .forEach(writer);
+                            }
+                            collector.sync(new PartitionResult<>(splitter.partition(), tempTarget));
+                            return null;
+                        }));
                     try {
                         scope.join();
                     } catch (InterruptedException e) {

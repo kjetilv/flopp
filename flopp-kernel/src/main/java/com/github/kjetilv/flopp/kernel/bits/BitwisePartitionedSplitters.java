@@ -25,44 +25,31 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
     }
 
     @Override
-    public Stream<PartitionedSplitter> splitters(FlatFileFormat format) {
-        return switch (format) {
-            case CsvFormat csvFormat -> {
-                CsvFormat csv = csvFormat.withCharset(shape.charset());
-                yield streams.streamers()
-                    .map(streamer ->
-                        new BitwiseCsvSplitter(streamer, csv));
-            }
-            case FwFormat fwFormat -> {
-                FwFormat fw = fwFormat.withCharset(shape.charset());
-                yield streams.streamers()
-                    .map(streamer ->
-                        new BitwiseFwSplitter(streamer, fw));
-            }
+    public <F extends FlatFileFormat<F>> Stream<PartitionedSplitter> splitters(F format) {
+        return switch (format.withCharset(shape.charset())) {
+            case CsvFormat csv -> streams.streamers()
+                .map(streamer ->
+                    new BitwiseCsvSplitter(streamer, csv));
+            case FwFormat fw -> streams.streamers()
+                .map(streamer ->
+                    new BitwiseFwSplitter(streamer, fw));
         };
     }
 
     @Override
-    public Stream<CompletableFuture<PartitionedSplitter>> splitters(
-        FlatFileFormat format,
+    public <F extends FlatFileFormat<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
+        F format,
         ExecutorService executorService
     ) {
-        return switch (format) {
-            case CsvFormat csvFormat -> {
-                CsvFormat csv = csvFormat.withCharset(shape.charset());
-                yield streams.streamers(executorService)
-                    .map(future ->
-                        future.thenApply(streamer ->
-                            new BitwiseCsvSplitter(streamer, csv)));
-            }
-            case FwFormat fwFormat -> {
-                FwFormat fw = fwFormat.withCharset(shape.charset());
-                yield streams.streamers(executorService)
-                    .map(future ->
-                        future.thenApply(streamer ->
-                            new BitwiseFwSplitter(streamer, fw)));
-            }
+        return switch (format.withCharset(shape.charset())) {
+            case CsvFormat csv -> streams.streamers(executorService)
+                .map(future ->
+                    future.thenApply(streamer ->
+                        new BitwiseCsvSplitter(streamer, csv)));
+            case FwFormat fw -> streams.streamers(executorService)
+                .map(future ->
+                    future.thenApply(streamer ->
+                        new BitwiseFwSplitter(streamer, fw)));
         };
     }
-
 }
