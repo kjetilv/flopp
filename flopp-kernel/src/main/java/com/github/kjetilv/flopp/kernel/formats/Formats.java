@@ -12,15 +12,15 @@ public final class Formats {
 
     public static final char DEFAULT_ESCAPE_CHAR = '\\';
 
-    public static final char DEFAULT_SEPARATOR = ',';
+    public static final char DEFAULT_SEPARATOR_CHAR = ',';
 
-    public static final char DEFAULT_QUOTE = '"';
+    public static final char DEFAULT_QUOTE_CHAR = '"';
 
     public static final int DEFAULT_COLUMN_COUNT = 128;
 
-    public static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
-
     public static final int DEFAULT_MAX_COLUMN_WIDTH = 8192;
+
+    public static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
 
     public static final class Csv {
 
@@ -60,7 +60,7 @@ public final class Formats {
         public static Format.Csv.Quoted quoted(char separator) {
             return new QuotedImpl(
                 separator,
-                DEFAULT_QUOTE,
+                DEFAULT_QUOTE_CHAR,
                 DEFAULT_COLUMN_COUNT,
                 false,
                 DEFAULT_CHARSET
@@ -69,8 +69,8 @@ public final class Formats {
 
         public static Format.Csv.Quoted quoted(int columnCount) {
             return new QuotedImpl(
-                DEFAULT_SEPARATOR,
-                DEFAULT_QUOTE,
+                DEFAULT_SEPARATOR_CHAR,
+                DEFAULT_QUOTE_CHAR,
                 columnCount,
                 false,
                 DEFAULT_CHARSET
@@ -90,7 +90,7 @@ public final class Formats {
         public static Format.Csv.Quoted quoted(char separator, int columnCount) {
             return new QuotedImpl(
                 separator,
-                DEFAULT_QUOTE,
+                DEFAULT_QUOTE_CHAR,
                 columnCount,
                 false,
                 DEFAULT_CHARSET
@@ -115,7 +115,7 @@ public final class Formats {
 
         public static Format.Csv.Escape escape(boolean fast) {
             return new EscapeImpl(
-                DEFAULT_SEPARATOR,
+                DEFAULT_SEPARATOR_CHAR,
                 DEFAULT_ESCAPE_CHAR,
                 fast
             );
@@ -137,7 +137,7 @@ public final class Formats {
 
         public static Format.Csv.Escape escape(int columnCount) {
             return new EscapeImpl(
-                DEFAULT_SEPARATOR,
+                DEFAULT_SEPARATOR_CHAR,
                 DEFAULT_ESCAPE_CHAR,
                 false,
                 columnCount,

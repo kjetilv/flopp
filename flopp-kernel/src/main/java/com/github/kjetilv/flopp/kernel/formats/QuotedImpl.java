@@ -22,8 +22,8 @@ record QuotedImpl(
 
     QuotedImpl() {
         this(
-            DEFAULT_SEPARATOR,
-            DEFAULT_QUOTE,
+            DEFAULT_SEPARATOR_CHAR,
+            DEFAULT_QUOTE_CHAR,
             DEFAULT_COLUMN_COUNT,
             false,
             DEFAULT_CHARSET

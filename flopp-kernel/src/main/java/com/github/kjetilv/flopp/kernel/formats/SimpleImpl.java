@@ -18,7 +18,7 @@ record SimpleImpl(char separator, int columnCount, Charset charset)
     SimpleImpl() {
         this(
             DEFAULT_COLUMN_COUNT,
-            DEFAULT_SEPARATOR
+            DEFAULT_SEPARATOR_CHAR
         );
     }
 

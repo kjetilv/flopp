@@ -54,12 +54,12 @@ public final class JustSplit_kjetilvlong {
         int chunks = partitioning.of(shape.size()).size();
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            ExecutorService executor = new ThreadPoolExecutor(
-                chunks,
-                chunks,
-                0, TimeUnit.NANOSECONDS,
-                new LinkedBlockingQueue<>(chunks)
-            )
+//            ExecutorService executor = new ThreadPoolExecutor(
+//                chunks,
+//                chunks,
+//                0, TimeUnit.NANOSECONDS,
+//                new LinkedBlockingQueue<>(chunks)
+//            )
         ) {
             Format.Csv format = Formats.Csv.escape(';');
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();

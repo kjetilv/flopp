@@ -22,7 +22,7 @@ record EscapeImpl(
 
     EscapeImpl() {
         this(
-            DEFAULT_SEPARATOR,
+            DEFAULT_SEPARATOR_CHAR,
             DEFAULT_ESCAPE_CHAR,
             false,
             DEFAULT_COLUMN_COUNT,
