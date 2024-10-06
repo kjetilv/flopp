@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.formats.FlatFileFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
@@ -80,7 +80,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public <F extends FlatFileFormat<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, F format) {
+    public <F extends Format<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, F format) {
         return (processor, executor) -> {
             LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
                 new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);

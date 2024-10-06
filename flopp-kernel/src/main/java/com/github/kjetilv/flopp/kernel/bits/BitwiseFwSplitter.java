@@ -3,8 +3,8 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -14,11 +14,11 @@ final class BitwiseFwSplitter implements PartitionedSplitter {
 
     private final PartitionStreamer streamer;
 
-    private final FwFormat format;
+    private final Format.FwFormat format;
 
     private final Partition partition;
 
-    BitwiseFwSplitter(PartitionStreamer streamer, FwFormat format) {
+    BitwiseFwSplitter(PartitionStreamer streamer, Format.FwFormat format) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
         this.partition = this.streamer.partition();

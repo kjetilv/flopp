@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 
 import java.util.function.Consumer;
 
@@ -12,7 +12,7 @@ final class BitwiseCsvQuotedSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private int state;
 
-    BitwiseCsvQuotedSplitter(Consumer<SeparatedLine> lines, CsvFormat.Quoted format) {
+    BitwiseCsvQuotedSplitter(Consumer<SeparatedLine> lines, Format.Csv.Quoted format) {
         super(lines, format);
         this.quoFinder = Bits.finder(format.quote(), format.fast());
     }

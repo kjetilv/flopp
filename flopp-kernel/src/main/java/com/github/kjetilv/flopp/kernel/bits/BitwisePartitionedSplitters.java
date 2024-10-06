@@ -4,9 +4,7 @@ import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitters;
 import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.formats.FlatFileFormat;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -25,28 +23,28 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
     }
 
     @Override
-    public <F extends FlatFileFormat<F>> Stream<PartitionedSplitter> splitters(F format) {
+    public <F extends Format<F>> Stream<PartitionedSplitter> splitters(F format) {
         return switch (format.withCharset(shape.charset())) {
-            case CsvFormat csv -> streams.streamers()
+            case Format.Csv csv -> streams.streamers()
                 .map(streamer ->
                     new BitwiseCsvSplitter(streamer, csv));
-            case FwFormat fw -> streams.streamers()
+            case Format.FwFormat fw -> streams.streamers()
                 .map(streamer ->
                     new BitwiseFwSplitter(streamer, fw));
         };
     }
 
     @Override
-    public <F extends FlatFileFormat<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
+    public <F extends Format<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
         F format,
         ExecutorService executorService
     ) {
         return switch (format.withCharset(shape.charset())) {
-            case CsvFormat csv -> streams.streamers(executorService)
+            case Format.Csv csv -> streams.streamers(executorService)
                 .map(future ->
                     future.thenApply(streamer ->
                         new BitwiseCsvSplitter(streamer, csv)));
-            case FwFormat fw -> streams.streamers(executorService)
+            case Format.FwFormat fw -> streams.streamers(executorService)
                 .map(future ->
                     future.thenApply(streamer ->
                         new BitwiseFwSplitter(streamer, fw)));

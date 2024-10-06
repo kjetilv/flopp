@@ -17,9 +17,7 @@ package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
@@ -70,7 +68,7 @@ public final class FormattSplit_kjetilvlong {
             )
         ) {
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
-            partitionedSplitters.splitters(CsvFormat.Escape.DEFAULT)
+            partitionedSplitters.splitters(Formats.Csv.escape())
                 .map(countFuture(columnReader, longAdder, executor))
                 .toList()
                 .forEach(CompletableFuture::join);

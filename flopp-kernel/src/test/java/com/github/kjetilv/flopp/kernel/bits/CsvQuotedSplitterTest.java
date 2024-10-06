@@ -2,7 +2,8 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -21,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseCsvQuotedSplitterTest {
+class CsvQuotedSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -30,7 +31,7 @@ class BitwiseCsvQuotedSplitterTest {
     void splitLine() {
         List<String> splits = new ArrayList<>();
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.quoted(';', '"'),
+            Formats.Csv.quoted(';', '"'),
             adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
@@ -42,7 +43,7 @@ class BitwiseCsvQuotedSplitterTest {
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.quoted(';', '"'),
+            Formats.Csv.quoted(';', '"'),
             adder(splits)
         );
         splitter.accept(LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8));
@@ -121,7 +122,7 @@ class BitwiseCsvQuotedSplitterTest {
         List<String> splits1 = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
-                partitioned.splitters().splitters(CsvFormat.quoted(',', '"'))
+                partitioned.splitters().splitters(Formats.Csv.quoted(',', '"'))
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits1::add)));
             }
@@ -395,12 +396,12 @@ class BitwiseCsvQuotedSplitterTest {
 
     @SuppressWarnings("SameParameterValue")
     private void assertSplit(
-        Partitioning partitioning, String input, CsvFormat format, String... expected
+        Partitioning partitioning, String input, Format.Csv format, String... expected
     ) {
         assertThat(splits(partitioning, input, format)).containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input, CsvFormat format) {
+    private List<String> splits(Partitioning partitioning, String input, Format.Csv format) {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
@@ -414,7 +415,7 @@ class BitwiseCsvQuotedSplitterTest {
         return splits;
     }
 
-    public static final CsvFormat.Quoted DQ_FORMAT = CsvFormat.quoted(';', '\'');
+    public static final Format.Csv.Quoted DQ_FORMAT = Formats.Csv.quoted(';', '\'');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

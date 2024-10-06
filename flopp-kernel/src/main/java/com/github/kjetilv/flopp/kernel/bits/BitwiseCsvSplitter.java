@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.util.Objects;
@@ -17,11 +17,11 @@ final class BitwiseCsvSplitter implements PartitionedSplitter {
 
     private final PartitionStreamer streamer;
 
-    private final CsvFormat format;
+    private final Format.Csv format;
 
     private final Partition partition;
 
-    BitwiseCsvSplitter(PartitionStreamer streamer, CsvFormat format) {
+    BitwiseCsvSplitter(PartitionStreamer streamer, Format.Csv format) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.format = Objects.requireNonNull(format, "format");
         this.partition = this.streamer.partition();

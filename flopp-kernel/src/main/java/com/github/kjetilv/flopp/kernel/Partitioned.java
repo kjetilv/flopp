@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.formats.FlatFileFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
@@ -20,7 +20,7 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
 
-    <F extends FlatFileFormat<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(
+    <F extends Format<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(
         Path target,
         F format
     );
@@ -31,11 +31,11 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedSplitters splitters();
 
-    default <F extends FlatFileFormat<F>> Stream<PartitionedSplitter> splitters(F format) {
+    default <F extends Format<F>> Stream<PartitionedSplitter> splitters(F format) {
         return splitters().splitters(format);
     }
 
-    default <F extends FlatFileFormat<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
+    default <F extends Format<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
         F format,
         ExecutorService executorService
     ) {

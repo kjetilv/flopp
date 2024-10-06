@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.lang.reflect.Array;
@@ -17,7 +17,7 @@ import static com.github.kjetilv.flopp.kernel.readers.Column.Parser.*;
 
 final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
 
-    static ColumnReader create(String header, CsvFormat format) {
+    static ColumnReader create(String header, Format.Csv format) {
         return create(discoverColumns(header, format));
     }
 
@@ -179,7 +179,7 @@ final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
         return this;
     }
 
-    private static List<Column> discoverColumns(String header, CsvFormat format) {
+    private static List<Column> discoverColumns(String header, Format.Csv format) {
         String[] headers = format.split(header);
         return IntStream.range(0, headers.length)
             .mapToObj(i ->

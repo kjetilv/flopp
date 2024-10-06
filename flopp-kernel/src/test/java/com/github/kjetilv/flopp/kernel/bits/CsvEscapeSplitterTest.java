@@ -2,7 +2,8 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -22,7 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BitwiseCsvEscapeSplitterTest {
+class CsvEscapeSplitterTest {
 
     @TempDir
     private Path tempDir;
@@ -31,7 +32,7 @@ class BitwiseCsvEscapeSplitterTest {
     void splitLine() {
         List<String> splits = new ArrayList<>();
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.escape(';'), adder(splits)
+            Formats.Csv.escape(';'), adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(lineSegment);
@@ -48,7 +49,7 @@ class BitwiseCsvEscapeSplitterTest {
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.escape(';'), adder(splits)
+            Formats.Csv.escape(';'), adder(splits)
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
         splitter.accept(segment);
@@ -400,14 +401,14 @@ class BitwiseCsvEscapeSplitterTest {
     private void assertSplit(
         Partitioning partitioning,
         String input,
-        CsvFormat format,
+        Format.Csv format,
         String... expected
     ) {
         assertThat(splits(partitioning, input, format))
             .containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input, CsvFormat format) {
+    private List<String> splits(Partitioning partitioning, String input, Format.Csv format) {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
@@ -424,7 +425,7 @@ class BitwiseCsvEscapeSplitterTest {
         return splits;
     }
 
-    private static final CsvFormat.Escape CSV_FORMAT = CsvFormat.escape(';', '\\', true);
+    private static final Format.Csv.Escape CSV_FORMAT = Formats.Csv.escape(';', '\\', true);
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

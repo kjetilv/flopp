@@ -2,7 +2,8 @@ package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.Range;
 import org.junit.jupiter.api.Test;
@@ -20,18 +21,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-class BitwiseFwLineSplitterTest {
+class FwLineSplitterTest {
 
     @Test
     void test() {
         assertFileContents(
             "foobarzot",
-            FwFormat.fw(Range.of(3, 6)),
+            Formats.Fw.simple(Range.of(3, 6)),
             "bar"
         );
     }
 
-    private static void assertFileContents(String contents, FwFormat format, String... lines) {
+    private static void assertFileContents(String contents, Format.FwFormat format, String... lines) {
         List<String> splits = new ArrayList<>();
         Path path;
         try {

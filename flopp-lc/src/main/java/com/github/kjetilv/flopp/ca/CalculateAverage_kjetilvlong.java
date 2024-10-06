@@ -15,9 +15,13 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
@@ -38,7 +42,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -71,7 +74,14 @@ public final class CalculateAverage_kjetilvlong {
         );
 
         Instant start = Instant.now();
-        CsvFormat simple = CsvFormat.simple(2, ';');
+        Format.Csv simple = Formats.Csv.simple(2, ';');
+
+//        Result result = mapAverage(inputFile, settings, simple);
+//        System.out.println(result);
+//        System.out.println(Duration.between(start, Instant.now()));
+//
+//        start = Instant.now();
+
         LineSegmentMap<Result> map = mapAverages(inputFile, settings, simple);
         String mapStringSorted = map.toStringSorted();
         System.out.println(mapStringSorted);
@@ -92,7 +102,59 @@ public final class CalculateAverage_kjetilvlong {
             ));
     }
 
-    static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, CsvFormat format, Path out) {
+    static Result mapAverage(Path path, Settings settings, Format.Csv format) {
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
+        int cpus = Runtime.getRuntime().availableProcessors();
+        Partitioning p = readPartitioning(cpus, shape, settings);
+        int size = 32 * 1024;
+        try (
+            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
+            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+        ) {
+            int chunks = partitioned.partitions().size();
+            BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
+            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
+            partitioned.splitters(format, workingExecutor)
+                .forEach(future ->
+                    future
+                        .thenApply(splitter -> result(splitter, size))
+                        .thenAccept(queue::offer)
+                        .exceptionally(printException));
+            Result result = new Result();
+            for (int i = 0; i < chunks; i++) {
+                result.merge(take(queue));
+            }
+            return result;
+        }
+    }
+
+    static LineSegmentMap<Result> mapAverages(Path path, Settings settings, Format.Csv format) {
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
+        int cpus = Runtime.getRuntime().availableProcessors();
+        Partitioning p = readPartitioning(cpus, shape, settings);
+        int size = 32 * 1024;
+        LineSegmentMap<Result> map = LineSegmentMaps.create(size);
+        try (
+            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
+            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+        ) {
+            int chunks = partitioned.partitions().size();
+            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
+            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
+            partitioned.splitters(format, workingExecutor)
+                .forEach(future ->
+                    future
+                        .thenApply(splitter -> table(splitter, size))
+                        .thenAccept(queue::offer)
+                        .exceptionally(printException));
+            for (int i = 0; i < chunks; i++) {
+                map.merge(take(queue), Result::merge);
+            }
+            return map;
+        }
+    }
+
+    static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, Format.Csv format, Path out) {
         Shape shape = Shape.of(originalPath, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
@@ -120,35 +182,6 @@ public final class CalculateAverage_kjetilvlong {
                 },
                 executor
             );
-        }
-    }
-
-    @SuppressWarnings({"unused", "ResultOfMethodCallIgnored"})
-    static LineSegmentMap<Result> mapAverages(Path path, Settings settings, CsvFormat format) {
-        Shape shape = Shape.of(path, UTF_8).longestLine(128);
-        int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning p = readPartitioning(cpus, shape, settings);
-        Partitions partitions = p.of(shape.size());
-        AtomicInteger threads = new AtomicInteger();
-        int size = 32 * 1024;
-        LineSegmentMap<Result> map = LineSegmentMaps.create(size);
-        try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
-        ) {
-            int chunks = partitioned.partitions().size();
-            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
-            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
-            partitioned.splitters(format, workingExecutor)
-                .forEach(future ->
-                    future
-                        .thenApply(splitter -> table(splitter, size))
-                        .thenAccept(queue::offer)
-                        .exceptionally(printException));
-            for (int i = 0; i < chunks; i++) {
-                map.merge(take(queue), Result::merge);
-            }
-            return map;
         }
     }
 
@@ -220,6 +253,20 @@ public final class CalculateAverage_kjetilvlong {
             }
         );
         return table;
+    }
+
+    private static Result result(PartitionedSplitter splitter, int size) {
+        Result result = new Result();
+        ColumnReader columnReader = ColumnReaders.create(
+            Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
+        );
+        columnReader.read(
+            splitter, columns -> {
+                LineSegment segment = columns.getRaw(0);
+                result.add(columns.getInt(1));
+            }
+        );
+        return result;
     }
 
     private static int parseValue(LineSegment segment) {

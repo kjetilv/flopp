@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
@@ -18,7 +18,7 @@ public final class ColumnReaders {
         return LazyColumnReader.create(columns);
     }
 
-    public static ColumnReader create(Path file, CsvFormat format) {
+    public static ColumnReader create(Path file, Format.Csv format) {
         return LazyColumnReader.create(firstLine(file), format);
     }
 

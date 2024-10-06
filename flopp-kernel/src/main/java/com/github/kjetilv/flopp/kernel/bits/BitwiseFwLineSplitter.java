@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
+import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.Range;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.formats.FwFormat;
 
 import java.nio.charset.Charset;
 import java.util.function.Consumer;
@@ -18,7 +18,7 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
 
     private int column;
 
-    BitwiseFwLineSplitter(FwFormat format, Consumer<SeparatedLine> lines) {
+    BitwiseFwLineSplitter(Format.FwFormat format, Consumer<SeparatedLine> lines) {
         super(lines);
         Range[] ranges = format.ranges();
         this.length = ranges.length;

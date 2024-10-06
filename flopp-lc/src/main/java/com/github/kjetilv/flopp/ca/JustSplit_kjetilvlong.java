@@ -17,9 +17,10 @@ package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -60,7 +61,7 @@ public final class JustSplit_kjetilvlong {
                 new LinkedBlockingQueue<>(chunks)
             )
         ) {
-            CsvFormat format = CsvFormat.escape(';');
+            Format.Csv format = Formats.Csv.escape(';');
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
             List<Runnable> list1 =
                 partitionedSplitters.splitters(format)

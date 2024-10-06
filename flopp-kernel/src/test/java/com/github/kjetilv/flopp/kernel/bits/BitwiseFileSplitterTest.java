@@ -7,7 +7,8 @@ import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.formats.CsvFormat;
+import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
@@ -67,7 +68,7 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.escape(),
+            Formats.Csv.escape(),
             line ->
                 airlines.add(line.column(1, UTF_8))
         );
@@ -93,7 +94,7 @@ class BitwiseFileSplitterTest {
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
         Consumer<LineSegment> splitter = LineSplitters.csvSink(
-            CsvFormat.escape(),
+            Formats.Csv.escape(),
             line ->
                 airlines.add(line.column(1, UTF_8))
             );
@@ -191,7 +192,7 @@ class BitwiseFileSplitterTest {
     @Test
     void fasterStillParallel() {
         Set<String> airlines = new HashSet<>();
-        CsvFormat.Escape format = CsvFormat.escape(',', '\\');
+        Format.Csv.Escape format = Formats.Csv.escape(',', '\\');
         Consumer<SeparatedLine> lines = line -> airlines.add(line.column(1, UTF_8));
         Instant now = Instant.now();
         try (
