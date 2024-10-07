@@ -445,7 +445,11 @@ class CsvSimpleSplitterTest {
             .containsExactly(expected);
     }
 
-    private List<String> splits(Partitioning partitioning, String input, Format.Csv format) {
+    private List<String> splits(
+        Partitioning partitioning,
+        String input,
+        Format.Csv format
+    ) {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
@@ -462,7 +466,7 @@ class CsvSimpleSplitterTest {
         return splits;
     }
 
-    private static final Format.Csv CSV_FORMAT = Formats.Csv.simple(';');
+    private static final Format.Csv.Simple CSV_FORMAT = Formats.Csv.simple(';');
 
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();

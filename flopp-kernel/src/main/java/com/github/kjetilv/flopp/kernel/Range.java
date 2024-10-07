@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
 public interface Range {
 
@@ -16,5 +16,9 @@ public interface Range {
 
     default boolean aligned(int alignment) {
         return length() % alignment == 0;
+    }
+
+    record ImmutableRange(long startIndex, long endIndex)
+        implements Range {
     }
 }

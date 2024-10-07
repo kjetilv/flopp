@@ -9,7 +9,10 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public interface PartitionedSplitters {
 
-    <F extends Format<F>> Stream<PartitionedSplitter> splitters(F format);
+    Stream<PartitionedSplitter> splitters(Format format);
 
-    <F extends Format<F>>  Stream<CompletableFuture<PartitionedSplitter>> splitters(F format, ExecutorService executorService);
+    Stream<CompletableFuture<PartitionedSplitter>> splitters(
+        Format format,
+        ExecutorService executorService
+    );
 }

@@ -20,58 +20,6 @@ record EscapeImpl(
         Objects.requireNonNull(charset, "charset");
     }
 
-    EscapeImpl() {
-        this(
-            DEFAULT_SEPARATOR_CHAR,
-            DEFAULT_ESCAPE_CHAR,
-            false,
-            DEFAULT_COLUMN_COUNT,
-            DEFAULT_CHARSET
-        );
-    }
-
-    EscapeImpl(char separator, char escape, boolean fast) {
-        this(
-            separator,
-            escape,
-            fast,
-            DEFAULT_COLUMN_COUNT,
-            DEFAULT_CHARSET
-        );
-    }
-
-    @Override
-    public Escape withCharset(Charset charset) {
-        return new EscapeImpl(
-            separator,
-            escape,
-            fast,
-            columnCount,
-            charset
-        );
-    }
-
-    public Escape columns(int columnCount) {
-        return new EscapeImpl(
-            separator,
-            escape,
-            fast,
-            columnCount,
-            DEFAULT_CHARSET
-        );
-    }
-
-    @Override
-    public Escape fast(boolean fast) {
-        return new EscapeImpl(
-            separator,
-            escape,
-            fast,
-            columnCount,
-            DEFAULT_CHARSET
-        );
-    }
-
     @Override
     public String toString() {
         return getClass().getSimpleName() +
@@ -83,5 +31,6 @@ record EscapeImpl(
                "]";
     }
 
-    static final Escape DEFAULT_ESCAPE = new EscapeImpl();
+    static final Escape DEFAULT_ESCAPE =
+        new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
 }

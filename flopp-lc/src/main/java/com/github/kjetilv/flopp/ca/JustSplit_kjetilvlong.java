@@ -15,10 +15,11 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitters;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 
@@ -26,7 +27,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -51,9 +51,9 @@ public final class JustSplit_kjetilvlong {
 
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
-        int chunks = partitioning.of(shape.size()).size();
+//        int chunks = partitioning.of(shape.size()).size();
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape)
 //            ExecutorService executor = new ThreadPoolExecutor(
 //                chunks,
 //                chunks,
@@ -61,7 +61,7 @@ public final class JustSplit_kjetilvlong {
 //                new LinkedBlockingQueue<>(chunks)
 //            )
         ) {
-            Format.Csv format = Formats.Csv.escape(';');
+            Format.Csv.Escape format = Formats.Csv.escape(';');
             PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
             List<Runnable> list1 =
                 partitionedSplitters.splitters(format)

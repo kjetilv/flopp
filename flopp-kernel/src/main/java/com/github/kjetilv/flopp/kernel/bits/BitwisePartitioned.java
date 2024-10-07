@@ -80,40 +80,6 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     @Override
-    public <F extends Format<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, F format) {
-        return (processor, executor) -> {
-            LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
-                new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
-            ResultCollector<Path> collector = new ResultCollector<>(partitions.size(), sizer(), executor);
-            try (
-                TempTargets<Path> tempTargets = new TempDirTargets(path);
-                Transfers<Path> transfers = new FileChannelTransfers(target)
-            ) {
-                try (StructuredTaskScope<PartitionResult<Path>> scope = new StructuredTaskScope<>()) {
-                    splitters().splitters(format).forEach(splitter ->
-                        scope.fork(() -> {
-                            Path tempTarget = tempTargets.temp(splitter.partition());
-                            try (LinesWriter<Stream<LineSegment>> writer = writers.create(tempTarget)) {
-                                splitter.separatedLines()
-                                    .map(processor.apply(splitter.partition()))
-                                    .forEach(writer);
-                            }
-                            collector.sync(new PartitionResult<>(splitter.partition(), tempTarget));
-                            return null;
-                        }));
-                    try {
-                        scope.join();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException("Interrupted", e);
-                    }
-                }
-                collector.syncTo(transfers);
-            }
-        };
-    }
-
-    @Override
     public PartitionedMapper<LineSegment> mapper() {
         return new BitwisePartitionedMapper(streams());
     }
@@ -125,7 +91,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     @Override
     public PartitionedSplitters splitters() {
-        return new BitwisePartitionedSplitters(streams(), shape);
+        return new BitwisePartitionedSplitters(streams());
     }
 
     @Override
@@ -140,6 +106,41 @@ final class BitwisePartitioned implements Partitioned<Path> {
         } catch (Exception e) {
             throw new RuntimeException(this + " could not close", e);
         }
+    }
+
+    @Override
+    public PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, Format format) {
+        return (processor, executor) -> {
+            LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
+                new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
+            ResultCollector<Path> collector = new ResultCollector<>(partitions.size(), sizer(), executor);
+            try (
+                TempTargets<Path> tempTargets = new TempDirTargets(path);
+                Transfers<Path> transfers = new FileChannelTransfers(target)
+            ) {
+                try (StructuredTaskScope<PartitionResult<Path>> scope = new StructuredTaskScope<>()) {
+                    splitters().splitters(format)
+                        .forEach(splitter ->
+                            scope.fork(() -> {
+                                Path tempTarget = tempTargets.temp(splitter.partition());
+                                try (LinesWriter<Stream<LineSegment>> writer = writers.create(tempTarget)) {
+                                    splitter.separatedLines()
+                                        .map(processor.apply(splitter.partition()))
+                                        .forEach(writer);
+                                }
+                                collector.sync(new PartitionResult<>(splitter.partition(), tempTarget));
+                                return null;
+                            }));
+                    try {
+                        scope.join();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted", e);
+                    }
+                }
+                collector.syncTo(transfers);
+            }
+        };
     }
 
     private static final int BUFFER_SIZE = 8192;

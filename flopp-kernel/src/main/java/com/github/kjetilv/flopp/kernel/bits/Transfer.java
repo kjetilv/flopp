@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 public interface Transfer extends Runnable, Closeable, Supplier<Void> {
 
     default CompletableFuture<Void> in(ExecutorService executorService) {
-        return CompletableFuture.runAsync(this);
+        return CompletableFuture.runAsync(this, executorService);
     }
 
     @Override
@@ -21,5 +21,4 @@ public interface Transfer extends Runnable, Closeable, Supplier<Void> {
     @Override
     default void close() {
     }
-
 }

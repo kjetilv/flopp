@@ -10,11 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record Partitions(
-    long total,
-    List<Partition> partitions,
-    long tail
-) {
+public record Partitions(long total, List<Partition> partitions, long tail) {
 
     public Partitions(long total, List<Partition> partitions, long tail) {
         this.total = Non.negative(total, "total");

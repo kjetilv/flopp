@@ -20,9 +20,9 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
 
-    <F extends Format<F>> PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(
+    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(
         Path target,
-        F format
+        Format format
     );
 
     PartitionedMapper<LineSegment> mapper();
@@ -31,12 +31,12 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedSplitters splitters();
 
-    default <F extends Format<F>> Stream<PartitionedSplitter> splitters(F format) {
+    default Stream<PartitionedSplitter> splitters(Format format) {
         return splitters().splitters(format);
     }
 
-    default <F extends Format<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
-        F format,
+    default Stream<CompletableFuture<PartitionedSplitter>> splitters(
+        Format format,
         ExecutorService executorService
     ) {
         return splitters().splitters(format, executorService);

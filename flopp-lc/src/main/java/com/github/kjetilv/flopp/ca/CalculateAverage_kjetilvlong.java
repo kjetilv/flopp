@@ -128,7 +128,11 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    static LineSegmentMap<Result> mapAverages(Path path, Settings settings, Format.Csv format) {
+    static LineSegmentMap<Result> mapAverages(
+        Path path,
+        Settings settings,
+        Format.Csv format
+    ) {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
@@ -154,7 +158,13 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
-    static void temper(LineSegmentMap<Result> map, Path originalPath, Settings settings, Format.Csv format, Path out) {
+    static void temper(
+        LineSegmentMap<Result> map,
+        Path originalPath,
+        Settings settings,
+        Format.Csv format,
+        Path out
+    ) {
         Shape shape = Shape.of(originalPath, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);

@@ -20,48 +20,6 @@ record QuotedImpl(
         Objects.requireNonNull(charset, "charset");
     }
 
-    QuotedImpl() {
-        this(
-            DEFAULT_SEPARATOR_CHAR,
-            DEFAULT_QUOTE_CHAR,
-            DEFAULT_COLUMN_COUNT,
-            false,
-            DEFAULT_CHARSET
-        );
-    }
-
-    @Override
-    public Quoted withCharset(Charset charset) {
-        return new QuotedImpl(
-            separator,
-            quote,
-            columnCount,
-            fast,
-            charset
-        );
-    }
-
-    public Quoted columns(int columnCount) {
-        return new QuotedImpl(
-            separator,
-            quote,
-            columnCount,
-            fast,
-            DEFAULT_CHARSET
-        );
-    }
-
-    @Override
-    public Quoted fast(boolean fast) {
-        return new QuotedImpl(
-            separator,
-            quote,
-            columnCount,
-            fast,
-            DEFAULT_CHARSET
-        );
-    }
-
     @Override
     public String toString() {
         return getClass().getSimpleName() +
@@ -73,5 +31,6 @@ record QuotedImpl(
                "]";
     }
 
-    static final Quoted DEFAULT_QUOTED = new QuotedImpl();
+    static final Quoted DEFAULT_QUOTED =
+        new QuotedImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
 }

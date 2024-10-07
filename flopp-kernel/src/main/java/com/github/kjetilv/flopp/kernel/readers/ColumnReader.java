@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.readers;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.util.function.Consumer;
 
@@ -10,6 +10,7 @@ public interface ColumnReader {
 
     void read(PartitionedSplitter splitter, Consumer<Columns> values);
 
+    @SuppressWarnings("unused")
     interface Columns {
 
         Column column(String name);

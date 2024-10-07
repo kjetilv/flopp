@@ -7,13 +7,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 class TempDirTargets implements TempTargets<Path> {
 
-    private final AtomicReference<Path> tempDirectory = new AtomicReference<Path>();
+    private final AtomicReference<Path> tempDirectory = new AtomicReference<>();
 
     private final String sourceName;
 

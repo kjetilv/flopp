@@ -58,7 +58,7 @@ public final class Trolls {
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
         int chunks = partitioning.of(shape.size()).size();
-        Format.Csv format = Formats.Csv.quoted(',', '"');
+        Format.Csv.Quoted format = Formats.Csv.quoted(',', '"');
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(

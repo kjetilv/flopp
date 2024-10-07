@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.bits;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitters;
 import com.github.kjetilv.flopp.kernel.PartitionedStreams;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 
 import java.util.Objects;
@@ -15,16 +14,13 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
 
     private final PartitionedStreams streams;
 
-    private final Shape shape;
-
-    BitwisePartitionedSplitters(PartitionedStreams partitionedStreams, Shape shape) {
+    BitwisePartitionedSplitters(PartitionedStreams partitionedStreams) {
         this.streams = Objects.requireNonNull(partitionedStreams, "partitionedStreams");
-        this.shape = Objects.requireNonNull(shape, "shape");
     }
 
     @Override
-    public <F extends Format<F>> Stream<PartitionedSplitter> splitters(F format) {
-        return switch (format.withCharset(shape.charset())) {
+    public Stream<PartitionedSplitter> splitters(Format format) {
+        return switch (format) {
             case Format.Csv csv -> streams.streamers()
                 .map(streamer ->
                     new BitwiseCsvSplitter(streamer, csv));
@@ -35,11 +31,11 @@ final class BitwisePartitionedSplitters implements PartitionedSplitters {
     }
 
     @Override
-    public <F extends Format<F>> Stream<CompletableFuture<PartitionedSplitter>> splitters(
-        F format,
+    public Stream<CompletableFuture<PartitionedSplitter>> splitters(
+        Format format,
         ExecutorService executorService
     ) {
-        return switch (format.withCharset(shape.charset())) {
+        return switch (format) {
             case Format.Csv csv -> streams.streamers(executorService)
                 .map(future ->
                     future.thenApply(streamer ->

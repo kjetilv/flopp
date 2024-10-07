@@ -15,40 +15,6 @@ record SimpleImpl(char separator, int columnCount, Charset charset)
         Objects.requireNonNull(charset, "charset");
     }
 
-    SimpleImpl() {
-        this(
-            DEFAULT_COLUMN_COUNT,
-            DEFAULT_SEPARATOR_CHAR
-        );
-    }
-
-    SimpleImpl(int columnCount, char separator) {
-        this(separator, columnCount, DEFAULT_CHARSET);
-    }
-
-    @Override
-    public Simple withCharset(Charset charset) {
-        return new SimpleImpl(
-            separator,
-            columnCount,
-            charset
-        );
-    }
-
-    @Override
-    public Simple columns(int columnCount) {
-        return new SimpleImpl(
-            separator,
-            columnCount,
-            charset
-        );
-    }
-
-    @Override
-    public Simple fast(boolean fast) {
-        return this;
-    }
-
     @Override
     public boolean fast() {
         return true;
@@ -63,5 +29,6 @@ record SimpleImpl(char separator, int columnCount, Charset charset)
                "]";
     }
 
-    static final Simple DEFAULT_SIMPLE = new SimpleImpl();
+    static final Simple DEFAULT_SIMPLE =
+        new SimpleImpl(DEF_SEP_CHAR, DEF_COL_COUNT, DEF_CHARSET);
 }
