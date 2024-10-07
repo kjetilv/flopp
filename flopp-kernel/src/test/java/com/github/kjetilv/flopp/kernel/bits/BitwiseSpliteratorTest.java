@@ -66,7 +66,7 @@ public class BitwiseSpliteratorTest {
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {
-            bitwisePartitioned.streams().streamers()
+            bitwisePartitioned.streamers()
                 .forEach(streamer ->
                     streamer.lines()
                         .map(line -> {

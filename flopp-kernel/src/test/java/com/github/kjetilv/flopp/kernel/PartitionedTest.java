@@ -51,8 +51,7 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            PartitionedStreams partitionedStreams = pf1.streams();
-            partitionedStreams.streamers()
+            pf1.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
@@ -67,8 +66,7 @@ class PartitionedTest {
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
-            PartitionedStreams streams = pf2.streams();
-            streams.streamers()
+            pf2.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
@@ -116,8 +114,7 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            PartitionedStreams partitionedStreams = pf1.streams();
-            partitionedStreams.streamers()
+            pf1.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
@@ -130,8 +127,7 @@ class PartitionedTest {
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
-            PartitionedStreams partitionedStreams = pf2.streams();
-            partitionedStreams.streamers()
+            pf2.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->
@@ -173,8 +169,7 @@ class PartitionedTest {
         try (
             Partitioned<Path> pf1 = Bitwise.partititioned(pathWithHeaders, partitioning, shape)
         ) {
-            PartitionedStreams partitionedStreams = pf1.streams();
-            partitionedStreams.streamers()
+            pf1.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
@@ -188,8 +183,7 @@ class PartitionedTest {
             Partitioned<Path> pf2 = Bitwise.partititioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
-            PartitionedStreams partitionedStreams = pf2.streams();
-            partitionedStreams.streamers()
+            pf2.streamers()
                 .map(streamer ->
                     CompletableFuture.supplyAsync(streamer::lines, executorService))
                 .map(future ->

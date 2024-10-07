@@ -16,7 +16,6 @@
 package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedSplitters;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
@@ -62,9 +61,8 @@ public final class JustSplit_kjetilvlong {
 //            )
         ) {
             Format.Csv.Escape format = Formats.Csv.escape(';');
-            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
             List<Runnable> list1 =
-                partitionedSplitters.splitters(format)
+                bitwisePartitioned.splitters(format)
                     .map(splitsConsumer ->
 //                        CompletableFuture.runAsync(
                         (Runnable)

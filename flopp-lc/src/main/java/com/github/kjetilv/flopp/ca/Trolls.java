@@ -91,8 +91,7 @@ public final class Trolls {
                             ColumnReaders.create(path, format).read(splitter, entryHandler),
                         executor
                     );
-            PartitionedSplitters partitionedSplitters = bitwisePartitioned.splitters();
-            partitionedSplitters.splitters(format)
+            bitwisePartitioned.splitters(format)
                 .map(partitionFuture)
                 .toList()
                 .forEach(CompletableFuture::join);

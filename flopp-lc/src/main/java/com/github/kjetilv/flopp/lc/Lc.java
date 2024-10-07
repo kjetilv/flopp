@@ -58,8 +58,7 @@ public final class Lc {
         try (
             Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape)
         ) {
-            List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.streams()
-                .lineCounters()
+            List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.lineCounters()
                 .map(counter ->
                     CompletableFuture.supplyAsync(
                         counter::getAsLong,

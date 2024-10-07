@@ -1,9 +1,10 @@
 package com.github.kjetilv.flopp.kernel.test;
 
-import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
+import com.github.kjetilv.flopp.kernel.Partitions;
 import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.bits.Bitwise;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class UTF8Test {
         ) {
             sb = new StringBuilder();
             try {
-                extract(bitwisePartitioned.streams(), sb);
+                extract(bitwisePartitioned, sb);
             } catch (Exception e) {
                 System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -94,7 +95,7 @@ public class UTF8Test {
         ) {
             sb = new StringBuilder();
             try {
-                extract(partitioned.streams(), sb);
+                extract(partitioned, sb);
             } catch (Exception e) {
                 System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -120,7 +121,7 @@ public class UTF8Test {
         ) {
             sb = new StringBuilder();
             try {
-                extract(partititioned.streams(), sb);
+                extract(partititioned, sb);
             } catch (Exception e) {
                 System.err.println("\n\n###\n\n" + linesOf(path));
                 Thread.sleep(100);
@@ -145,7 +146,7 @@ public class UTF8Test {
             )
         ) {
             sb = new StringBuilder();
-            extract(bitwisePartitioned.streams(), sb);
+            extract(bitwisePartitioned, sb);
         }
     }
 
@@ -161,7 +162,7 @@ public class UTF8Test {
             )
         ) {
             sb = new StringBuilder();
-            extract(bitwisePartitioned.streams(), sb);
+            extract(bitwisePartitioned, sb);
         }
     }
 
@@ -178,7 +179,7 @@ public class UTF8Test {
         ) {
             sb = new StringBuilder();
             try {
-                extract(bitwisePartitioned.streams(), sb);
+                extract(bitwisePartitioned, sb);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -214,7 +215,7 @@ public class UTF8Test {
         try (
             Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
         ) {
-            partitioned.streams().streamers()
+            partitioned.streamers()
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .forEach(line -> {
@@ -245,7 +246,7 @@ public class UTF8Test {
     }
 
     private static void extract(
-        PartitionedStreams streams,
+        Partitioned<Path> streams,
         StringBuilder sb
     ) {
         List<String> strings = streams.streamers()

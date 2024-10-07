@@ -6,9 +6,11 @@ import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.io.Closeable;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
@@ -20,38 +22,30 @@ public interface Partitioned<P> extends Closeable {
 
     PartitionedProcessor<LineSegment, String> processor(Path target);
 
-    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(
-        Path target,
-        Format format
+    PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor(Path target, Format format);
+
+    Stream<CompletableFuture<PartitionResult<Void>>> forEachLine(
+        BiConsumer<Partition, Stream<LineSegment>> consumer
     );
 
-    PartitionedMapper<LineSegment> mapper();
+    <T> Stream<CompletableFuture<PartitionResult<T>>> map(
+        BiFunction<Partition, Stream<LineSegment>, T> processor,
+        ExecutorService executorService
+    );
 
-    PartitionedConsumer consumer();
+    Stream<LongSupplier> lineCounters();
 
-    PartitionedSplitters splitters();
+    Stream<? extends PartitionStreamer> streamers();
 
-    default Stream<PartitionedSplitter> splitters(Format format) {
-        return splitters().splitters(format);
-    }
+    Stream<? extends CompletableFuture<PartitionStreamer>> streamers(ExecutorService executorService);
 
-    default Stream<CompletableFuture<PartitionedSplitter>> splitters(
+    Stream<PartitionedSplitter> splitters(Format format);
+
+    Stream<CompletableFuture<PartitionedSplitter>> splitters(
         Format format,
         ExecutorService executorService
-    ) {
-        return splitters().splitters(format, executorService);
-    }
-
-    PartitionedStreams streams();
+    );
 
     @Override
     void close();
-
-    private static <T> List<T> awaitCompleted(Stream<CompletableFuture<T>> futures) {
-        return futures
-            .toList()
-            .stream()
-            .map(CompletableFuture::join)
-            .toList();
-    }
 }

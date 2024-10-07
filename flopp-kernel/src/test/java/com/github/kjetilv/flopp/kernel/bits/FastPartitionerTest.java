@@ -85,7 +85,7 @@ public class FastPartitionerTest {
                 shape
             )
         ) {
-            partitioned.streams().streamers()
+            partitioned.streamers()
                 .forEach(streamer ->
                     streamer.lines()
                         .forEach(_ ->
@@ -115,7 +115,7 @@ public class FastPartitionerTest {
             )
         ) {
             count = new LongAdder();
-            partitioned.consumer().forEachLine(
+            partitioned.forEachLine(
                     (_, entries) ->
                         entries.forEach(_ -> count.increment())
                 )
@@ -150,7 +150,7 @@ public class FastPartitionerTest {
             Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape)
         ) {
             LongAdder cont = new LongAdder();
-            partitioned.streams().streamers()
+            partitioned.streamers()
                 .forEach(bitwisePartitionStreamer ->
                     bitwisePartitionStreamer.lines()
                         .forEach(_ -> {

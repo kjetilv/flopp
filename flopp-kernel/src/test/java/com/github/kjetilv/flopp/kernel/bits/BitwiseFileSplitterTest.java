@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedStreams;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.formats.Format;
@@ -97,11 +96,11 @@ class BitwiseFileSplitterTest {
             Formats.Csv.escape(),
             line ->
                 airlines.add(line.column(1, UTF_8))
-            );
+        );
         try (
             Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
         ) {
-            partititioned.streams().streamers()
+            partititioned.streamers()
                 .forEach(streamer ->
                     streamer.lines()
                         .forEach(splitter));
@@ -202,17 +201,15 @@ class BitwiseFileSplitterTest {
             List<Partitioned<Path>> partitioneds = list.filter(endsWith(".csv"))
                 .map(BitwiseFileSplitterTest::partitioned)
                 .toList();
-            List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned -> {
-                    PartitionedStreams partitionedStreams = partititioned.streams();
-                    return partitionedStreams.streamers()
+            List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
+                    partititioned.streamers()
                         .map(partitionStreamer ->
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
                                         .forEach(LineSplitters.csvSink(format, lines)),
                                 executor
-                            ));
-                })
+                            )))
                 .toList();
             futures.forEach(CompletableFuture::join);
             partitioneds.forEach(Partitioned::close);

@@ -453,7 +453,7 @@ class CsvSimpleSplitterTest {
         List<String> splits = new ArrayList<>();
         try {
             try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
-                partitioned.splitters()
+                partitioned
                     .splitters(format)
                     .forEach(consumer ->
                         consumer.forEach(commaSeparatedLine ->
@@ -488,7 +488,7 @@ class CsvSimpleSplitterTest {
 
         try {
             try (Partitioned<Path> partititioned = Bitwise.partititioned(path, Partitioning.single())) {
-                partititioned.streams().streamers()
+                partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()
                             .forEach(splitter));
