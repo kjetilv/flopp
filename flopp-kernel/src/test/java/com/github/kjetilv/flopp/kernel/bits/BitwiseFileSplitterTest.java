@@ -98,7 +98,7 @@ class BitwiseFileSplitterTest {
                 airlines.add(line.column(1, UTF_8))
         );
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, Shape.of(path, UTF_8).header(2))
+            Partitioned<Path> partititioned = Bitwise.partitioned(path, Shape.of(path, UTF_8).header(2))
         ) {
             partititioned.streamers()
                 .forEach(streamer ->
@@ -226,7 +226,7 @@ class BitwiseFileSplitterTest {
     public static final Path PATH = Path.of(System.getProperty("csv.dir"));
 
     private static Partitioned<Path> partitioned(Path file) {
-        return Bitwise.partititioned(
+        return Bitwise.partitioned(
             file,
             Partitioning.create().scaled(2),
             Shape.of(file, UTF_8).longestLine(1024).header(2)

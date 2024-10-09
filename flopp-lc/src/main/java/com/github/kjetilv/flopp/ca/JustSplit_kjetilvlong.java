@@ -52,7 +52,7 @@ public final class JustSplit_kjetilvlong {
         LongAdder longAdder = new LongAdder();
 //        int chunks = partitioning.of(shape.size()).size();
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape)
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(path, partitioning, shape)
 //            ExecutorService executor = new ThreadPoolExecutor(
 //                chunks,
 //                chunks,

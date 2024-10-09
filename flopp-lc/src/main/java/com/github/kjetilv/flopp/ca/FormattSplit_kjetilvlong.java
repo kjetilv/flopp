@@ -59,7 +59,7 @@ public final class FormattSplit_kjetilvlong {
             Column.ofType("temperature", 2, FormattSplit_kjetilvlong::parseValue)
         );
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
                 chunks,
                 chunks,

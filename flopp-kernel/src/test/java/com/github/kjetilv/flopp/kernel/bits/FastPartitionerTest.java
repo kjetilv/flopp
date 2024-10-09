@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,7 +10,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 
@@ -79,7 +76,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file), UTF_8).headerFooter(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(
+            Partitioned<Path> partitioned = Bitwise.partitioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -108,7 +105,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(32).headerFooter(1, 1);
         LongAdder count;
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(
+            Partitioned<Path> partitioned = Bitwise.partitioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -120,7 +117,7 @@ public class FastPartitionerTest {
                         entries.forEach(_ -> count.increment())
                 )
                 .toList()
-                .forEach(CompletableFuture::join);
+                .forEach(PartitionResult::complete);
         }
         assertThat(count).hasValue(lineCount);
     }
@@ -147,7 +144,7 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(longestLine).headerFooter(1, 1);
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(file, partitioning, shape)
+            Partitioned<Path> partitioned = Bitwise.partitioned(file, partitioning, shape)
         ) {
             LongAdder cont = new LongAdder();
             partitioned.streamers()

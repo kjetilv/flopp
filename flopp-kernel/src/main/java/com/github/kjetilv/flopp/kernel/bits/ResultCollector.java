@@ -46,8 +46,8 @@ final class ResultCollector<T> {
 
     private static <T> Transfer transfer(
         Transfers<T> transfers,
-        PartitionResult<T> result
+        PartitionResult<T> partitionResult
     ) {
-        return transfers.transfer(result.partition(), result.result());
+        return transfers.transfer(partitionResult.partition(), partitionResult.result());
     }
 }

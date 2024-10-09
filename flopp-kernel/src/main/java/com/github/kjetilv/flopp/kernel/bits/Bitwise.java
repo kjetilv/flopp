@@ -8,19 +8,19 @@ import java.nio.file.Path;
 
 public final class Bitwise {
 
-    public static Partitioned<Path> partititioned(Path path) {
-        return partititioned(path, null, null);
+    public static Partitioned<Path> partitioned(Path path) {
+        return partitioned(path, null, null);
     }
 
-    public static Partitioned<Path> partititioned(Path path, Partitioning partitioning) {
-        return partititioned(path, partitioning, null);
+    public static Partitioned<Path> partitioned(Path path, Partitioning partitioning) {
+        return partitioned(path, partitioning, null);
     }
 
-    public static Partitioned<Path> partititioned(Path path, Shape shape) {
-        return partititioned(path, null, shape);
+    public static Partitioned<Path> partitioned(Path path, Shape shape) {
+        return partitioned(path, null, shape);
     }
 
-    public static Partitioned<Path> partititioned(Path path, Partitioning partitioning, Shape shape) {
+    public static Partitioned<Path> partitioned(Path path, Partitioning partitioning, Shape shape) {
         return new BitwisePartitioned(path, partitioning, shape);
     }
 

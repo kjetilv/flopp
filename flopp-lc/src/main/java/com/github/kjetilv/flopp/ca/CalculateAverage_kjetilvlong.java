@@ -20,6 +20,7 @@ import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.FormatPartitionedProcessor;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
@@ -40,13 +41,14 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.StructuredTaskScope;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@SuppressWarnings("preview")
 public final class CalculateAverage_kjetilvlong {
 
     public static void main(String[] args) throws IOException {
@@ -108,16 +110,14 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning p = readPartitioning(cpus, shape, settings);
         int size = 32 * 1024;
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, p, shape);
         ) {
             int chunks = partitioned.partitions().size();
             BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
             Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
-            partitioned.splitters(format, workingExecutor)
-                .forEach(future ->
-                    future
-                        .thenApply(splitter -> result(splitter, size))
+            partitioned.splitters(format)
+                .forEach(splitter ->
+                    CompletableFuture.supplyAsync(() -> result(splitter, size))
                         .thenAccept(queue::offer)
                         .exceptionally(printException));
             Result result = new Result();
@@ -134,27 +134,38 @@ public final class CalculateAverage_kjetilvlong {
         Format.Csv format
     ) {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
-        int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning p = readPartitioning(cpus, shape, settings);
+        Partitioning partitioning = readPartitioning(
+            Runtime.getRuntime().availableProcessors(),
+            shape,
+            settings
+        );
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path, p, shape);
-            ExecutorService workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
+            StructuredTaskScope<Void> scope = new StructuredTaskScope<>()
         ) {
             int chunks = partitioned.partitions().size();
             BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
-            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
-            partitioned.splitters(format, workingExecutor)
-                .forEach(future ->
-                    future
-                        .thenApply(splitter -> table(splitter, size))
-                        .thenAccept(queue::offer)
-                        .exceptionally(printException));
-            for (int i = 0; i < chunks; i++) {
-                map.merge(take(queue), Result::merge);
-            }
+            partitioned.splitters(format)
+                .forEach(splitter ->
+                    scope.fork(() -> {
+                        if (!queue.offer(table(splitter, size))) {
+                            throw new IllegalStateException("Failed to offer");
+                        }
+                        return null;
+                    }));
+            scope.fork(() -> {
+                for (int i = 0; i < chunks; i++) {
+                    map.merge(take(queue), Result::merge);
+                }
+                return null;
+            });
+            scope.join();
             return map;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 
@@ -169,11 +180,12 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(originalPath, p, shape);
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
+            Partitioned<Path> partitioned = Bitwise.partitioned(originalPath, p, shape);
+            FormatPartitionedProcessor formatPartitionedProcessor =
+                new FormatPartitionedProcessor(partitioned, format, out);
         ) {
-            partitioned.processor(out, format).processFor(
-                _ -> {
+            formatPartitionedProcessor.processFor(
+                partition -> {
                     LineSegmentMap<Result> copy = map.freeze();
                     return separatedLine -> {
                         LineSegment city = separatedLine.segment(0);
@@ -189,8 +201,7 @@ public final class CalculateAverage_kjetilvlong {
                             "\n"
                         ));
                     };
-                },
-                executor
+                }
             );
         }
     }

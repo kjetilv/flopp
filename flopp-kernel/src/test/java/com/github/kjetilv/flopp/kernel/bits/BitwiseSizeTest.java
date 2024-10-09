@@ -1,8 +1,6 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
@@ -91,11 +89,13 @@ public class BitwiseSizeTest {
         linesCount = 1_000_000;
         columnCount = 10;
         ioQueueSize = 10;
-        readerExec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10, r -> {
-            Thread thread = new Thread(r);
-            thread.setUncaughtExceptionHandler((_, e) -> e.printStackTrace(System.err));
-            return thread;
-        });
+        readerExec = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors() * 10, r -> {
+                Thread thread = new Thread(r);
+                thread.setUncaughtExceptionHandler((_, e) -> e.printStackTrace(System.err));
+                return thread;
+            }
+        );
 
         int header = 3;
         int footer = 2;
@@ -130,8 +130,9 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions);
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment, String> processor = partititioned.processor(tmp)
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
+                new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
             processor.process(fun, readerExec);
         }
@@ -149,10 +150,11 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions, bufferSize);
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment, String> partitioned = partititioned.processor(tmp)
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> lineProcessor =
+                new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
-            partitioned.process(processor, readerExec);
+            lineProcessor.process(processor, readerExec);
         }
         return log(testInfo, start);
     }
@@ -162,8 +164,9 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, 8192);
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment, String> processor = bitwisePartitioned.processor(tmp)
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
+                new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
             processor.process(fun, readerExec);
         } catch (Exception e) {
@@ -174,17 +177,18 @@ public class BitwiseSizeTest {
 
     private Duration doRealStuffVerified(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         Path verified = straightUp(testInfo, OPS, "verified");
-        Path tmp = out(path, testInfo, qual);
+        Path out = out(path, testInfo, qual);
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path, partitioning, shape);
-            PartitionedProcessor<LineSegment, String> processor = partitioned.processor(tmp)
+            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
+                new LinePartitionedProcessor(partitioned, shape, out)
         ) {
             processor.process(fun, readerExec);
         }
         Duration time = log(testInfo, start);
-        assertThat(tmp).hasSameTextualContentAs(verified);
+        assertThat(out).hasSameTextualContentAs(verified);
         return time;
     }
 

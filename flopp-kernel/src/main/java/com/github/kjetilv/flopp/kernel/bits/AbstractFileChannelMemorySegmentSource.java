@@ -13,7 +13,9 @@ import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-public abstract class AbstractFileChannelMemorySegmentSource implements MemorySegmentSource {
+public sealed abstract class AbstractFileChannelMemorySegmentSource
+    implements MemorySegmentSource
+    permits FullMemorySegmentSource, PartialMemorySegmentSource {
 
     private final Path path;
 

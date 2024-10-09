@@ -65,7 +65,7 @@ public class UTF8Test {
         StringBuilder sb;
         Partitioning partitioning = Partitioning.create(6, 20);
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(
                 path,
                 partitioning,
                 Shape.of(path, UTF_8).longestLine(20)
@@ -91,7 +91,7 @@ public class UTF8Test {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(path)
+            Partitioned<Path> partitioned = Bitwise.partitioned(path)
         ) {
             sb = new StringBuilder();
             try {
@@ -113,7 +113,7 @@ public class UTF8Test {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> partititioned = Bitwise.partititioned(
+            Partitioned<Path> partititioned = Bitwise.partitioned(
                 path,
                 Partitioning.create(3, 112),
                 Shape.of(path, UTF_8).longestLine(110)
@@ -139,7 +139,7 @@ public class UTF8Test {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(
                 path,
                 Partitioning.create(2, 20),
                 Shape.of(path, UTF_8).longestLine(512)
@@ -155,7 +155,7 @@ public class UTF8Test {
         Path path = path("measurements-complex-utf8.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(
                 path,
                 Partitioning.create(2, 0),
                 Shape.of(path, UTF_8).longestLine(30)
@@ -171,7 +171,7 @@ public class UTF8Test {
         Path path = path("a.txt");
         StringBuilder sb;
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partititioned(
+            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(
                 path,
                 Partitioning.create(3, 40),
                 Shape.of(path, UTF_8).longestLine(40)
@@ -213,7 +213,7 @@ public class UTF8Test {
         Shape shape = Shape.of(tmp, UTF_8).longestLine(longestLine);
         Partitions partitions = partitioning.of(shape.size());
         try (
-            Partitioned<Path> partitioned = Bitwise.partititioned(tmp, partitioning)
+            Partitioned<Path> partitioned = Bitwise.partitioned(tmp, partitioning)
         ) {
             partitioned.streamers()
                 .forEach(partitionStreamer ->

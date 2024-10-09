@@ -1,20 +1,36 @@
 package com.github.kjetilv.flopp.kernel;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
-public record PartitionResult<T>(Partition partition, T result) implements Comparable<PartitionResult<T>> {
+public record PartitionResult<T>(Partition partition, Supplier<T> completer, T result, boolean done)
+    implements Comparable<PartitionResult<T>> {
 
     public PartitionResult(Partition partition, T result) {
-        this.partition = Objects.requireNonNull(partition, "partition");
-        this.result = result;
+        this(partition, null, result, true);
+    }
+
+    public PartitionResult(Partition partition, Supplier<T> completer) {
+        this(partition, completer, null, false);
+    }
+
+    public PartitionResult<T> complete() {
+        return done
+            ? this
+            : new PartitionResult<>(partition, null, completer.get(), true);
+    }
+
+    public PartitionResult<T> withAdjustedPartition(Partition adjusted) {
+        return new PartitionResult<>(adjusted, completer, result, done);
+    }
+
+    @Override
+    public T result() {
+        return done ? result : completer().get();
     }
 
     @Override
     public int compareTo(PartitionResult o) {
         return partition.compareTo(o.partition());
-    }
-
-    public PartitionResult<T> withAdjustedPartition(Partition adjusted) {
-        return new PartitionResult<>(adjusted, result);
     }
 }

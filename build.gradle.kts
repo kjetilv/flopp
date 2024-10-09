@@ -28,8 +28,17 @@ subprojects {
         targetCompatibility = VERSION_23
     }
 
+
     tasks.named<Test>("test") {
         useJUnitPlatform()
+    }
+
+    tasks.withType<JavaCompile>().all {
+        options.compilerArgs.add("--enable-preview")
+    }
+
+    tasks.withType<Test>().all {
+        jvmArgs("--enable-preview")
     }
 
     tasks.withType<JavaExec>().configureEach {

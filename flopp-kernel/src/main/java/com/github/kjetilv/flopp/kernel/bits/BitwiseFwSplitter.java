@@ -1,41 +1,33 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
-import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
-final class BitwiseFwSplitter implements PartitionedSplitter {
+import static com.github.kjetilv.flopp.kernel.bits.LineSplitters.fwSink;
+import static com.github.kjetilv.flopp.kernel.bits.LineSplitters.fwTransform;
 
-    private final PartitionStreamer streamer;
+final class BitwiseFwSplitter extends AbstractPartitionedSplitter {
 
     private final Format.FwFormat format;
 
-    private final Partition partition;
-
     BitwiseFwSplitter(PartitionStreamer streamer, Format.FwFormat format) {
-        this.streamer = Objects.requireNonNull(streamer, "streamer");
+        super(streamer);
         this.format = Objects.requireNonNull(format, "format");
-        this.partition = this.streamer.partition();
     }
 
     @Override
-    public Partition partition() {
-        return partition;
+    protected Consumer<LineSegment> consumer(Consumer<SeparatedLine> consumer) {
+        return fwSink(format, consumer);
     }
 
     @Override
-    public void forEach(Consumer<SeparatedLine> consumer) {
-        streamer.lines().forEach(LineSplitters.fwSink(format, consumer));
-    }
-
-    @Override
-    public Stream<SeparatedLine> separatedLines() {
-        return streamer.lines().map(LineSplitters.fwTransform(format, null));
+    protected Function<LineSegment, SeparatedLine> transform() {
+        return fwTransform(format, null);
     }
 }
