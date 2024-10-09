@@ -134,7 +134,7 @@ public class BitwiseSizeTest {
             PartitionedProcessor<LineSegment, String> processor =
                 new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
-            processor.process(fun, readerExec);
+            processor.process(fun);
         }
         return log(testInfo, start);
     }
@@ -154,7 +154,7 @@ public class BitwiseSizeTest {
             PartitionedProcessor<LineSegment, String> lineProcessor =
                 new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
-            lineProcessor.process(processor, readerExec);
+            lineProcessor.process(processor);
         }
         return log(testInfo, start);
     }
@@ -168,7 +168,7 @@ public class BitwiseSizeTest {
             PartitionedProcessor<LineSegment, String> processor =
                 new LinePartitionedProcessor(partitioned, shape, tmp)
         ) {
-            processor.process(fun, readerExec);
+            processor.process(fun);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -185,7 +185,7 @@ public class BitwiseSizeTest {
             PartitionedProcessor<LineSegment, String> processor =
                 new LinePartitionedProcessor(partitioned, shape, out)
         ) {
-            processor.process(fun, readerExec);
+            processor.process(fun);
         }
         Duration time = log(testInfo, start);
         assertThat(out).hasSameTextualContentAs(verified);
