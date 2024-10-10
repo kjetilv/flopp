@@ -5,7 +5,7 @@ import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.Range;
+import com.github.kjetilv.flopp.kernel.segments.Range;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
