@@ -4,7 +4,7 @@ import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Partitions;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
+import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

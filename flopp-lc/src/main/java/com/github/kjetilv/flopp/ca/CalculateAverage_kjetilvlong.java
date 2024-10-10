@@ -16,7 +16,7 @@
 package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
+import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
@@ -183,14 +183,15 @@ public final class CalculateAverage_kjetilvlong {
                         Result result = copy.get(city);
                         String cityString = city.asString();
                         String measurement = separatedLine.segment(1).asString();
-                        return Stream.of(LineSegments.of(
-                            cityString +
-                            ";" + measurement +
-                            ";" + result.min / 10.0 +
-                            ";" + result.perc(measurement) +
-                            ";" + result.max / 10.0 +
-                            "\n"
-                        ));
+                        String formatted = "%s;%s;%s;%d;%s\n"
+                            .formatted(
+                                cityString,
+                                measurement,
+                                result.min / 10.0,
+                                result.perc(measurement),
+                                result.max / 10.0
+                            );
+                        return Stream.of(LineSegments.of(formatted));
                     };
                 }
             );

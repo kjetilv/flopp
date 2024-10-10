@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.lc;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
+import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 
 import java.nio.file.Path;
 import java.time.Duration;

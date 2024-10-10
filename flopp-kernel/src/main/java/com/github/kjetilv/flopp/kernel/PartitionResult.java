@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public record PartitionResult<T>(Partition partition, Supplier<T> completer, T result, boolean done)
@@ -14,6 +13,7 @@ public record PartitionResult<T>(Partition partition, Supplier<T> completer, T r
         this(partition, completer, null, false);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public PartitionResult<T> complete() {
         return done
             ? this
