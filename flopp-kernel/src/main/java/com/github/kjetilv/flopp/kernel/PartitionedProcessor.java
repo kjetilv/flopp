@@ -5,13 +5,13 @@ import java.util.function.Function;
 
 @SuppressWarnings("unused")
 @FunctionalInterface
-public interface PartitionedProcessor<I, O> extends Closeable {
+public interface PartitionedProcessor<T, I, O> extends Closeable {
 
-    default void process(Function<I, O> processor) {
-        processFor(partition -> processor);
+    default void process(T target, Function<I, O> processor) {
+        processFor(target, partition -> processor);
     }
 
-    void processFor(Function<Partition, Function<I, O>> processor);
+    void processFor(T target, Function<Partition, Function<I, O>> processor);
 
     @Override
     default void close() {

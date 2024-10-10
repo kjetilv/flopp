@@ -18,7 +18,7 @@ package com.github.kjetilv.flopp.ca;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 
@@ -52,7 +52,7 @@ public final class JustSplit_kjetilvlong {
         LongAdder longAdder = new LongAdder();
 //        int chunks = partitioning.of(shape.size()).size();
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(path, partitioning, shape)
+            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)
 //            ExecutorService executor = new ThreadPoolExecutor(
 //                chunks,
 //                chunks,

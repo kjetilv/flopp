@@ -15,18 +15,19 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 @SuppressWarnings("preview")
-public final class FormatPartitionedProcessor extends AbstractPartitionedProcessor<SeparatedLine, Stream<LineSegment>> {
+final class FormatPartitionedProcessor
+    extends AbstractPartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> {
 
     private final Format format;
 
-    public FormatPartitionedProcessor(Partitioned<Path> partitioned, Format format, Path target) {
-        super(partitioned, target);
+    FormatPartitionedProcessor(Partitioned<Path> partitioned, Format format) {
+        super(partitioned);
         this.format = Objects.requireNonNull(format, "format");
     }
 
     @SuppressWarnings("resource")
     @Override
-    public void processFor(Function<Partition, Function<SeparatedLine, Stream<LineSegment>>> processor) {
+    public void processFor(Path target, Function<Partition, Function<SeparatedLine, Stream<LineSegment>>> processor) {
         LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
             new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
         ResultCollector<Path> collector = new ResultCollector<>(
@@ -35,8 +36,8 @@ public final class FormatPartitionedProcessor extends AbstractPartitionedProcess
             Executors.newVirtualThreadPerTaskExecutor()
         );
         try (
-            TempTargets<Path> tempTargets = new TempDirTargets(target());
-            Transfers<Path> transfers = new FileChannelTransfers(target());
+            TempTargets<Path> tempTargets = new TempDirTargets(target);
+            Transfers<Path> transfers = new FileChannelTransfers(target);
             StructuredTaskScope<PartitionResult<Path>> scope = new StructuredTaskScope<>()
         ) {
             partitioned().splitters(format)

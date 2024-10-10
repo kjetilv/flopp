@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.bits.BitwisePartitioned.Action;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPath.Action;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.lang.foreign.MemorySegment;

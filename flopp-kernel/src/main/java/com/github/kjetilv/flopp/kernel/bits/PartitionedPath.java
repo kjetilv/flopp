@@ -15,7 +15,7 @@ import java.util.function.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-final class BitwisePartitioned implements Partitioned<Path> {
+final class PartitionedPath implements Partitioned<Path> {
 
     private final Path path;
 
@@ -25,7 +25,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    BitwisePartitioned(Path path, Partitioning partitioning, Shape shape) {
+    PartitionedPath(Path path, Partitioning partitioning, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.shape = shape == null ? Shape.of(path) : shape;
         this.partitions = partitioning(partitioning, this.shape).of(this.shape.size());
@@ -80,8 +80,7 @@ final class BitwisePartitioned implements Partitioned<Path> {
         int count = partitions.size();
         AtomicArray<BitwisePartitionStreamer> array = new AtomicArray<>(count);
         return IntStream.range(0, count)
-            .mapToObj(index ->
-                streamerFor(index, array));
+            .mapToObj(lazyStreamer(array));
     }
 
     @Override
@@ -105,6 +104,22 @@ final class BitwisePartitioned implements Partitioned<Path> {
         }
     }
 
+    private Supplier<BitwisePartitionStreamer> nextLookup(
+        int index,
+        AtomicArray<BitwisePartitionStreamer> array
+    ) {
+        int nextIndex = index + 1;
+        return nextIndex < partitions.size()
+            ? () -> streamerFor(nextIndex, array)
+            : null;
+    }
+
+    private IntFunction<BitwisePartitionStreamer> lazyStreamer(
+        AtomicArray<BitwisePartitionStreamer> array
+    ) {
+        return index -> streamerFor(index, array);
+    }
+
     private BitwisePartitionStreamer streamerFor(
         int index,
         AtomicArray<BitwisePartitionStreamer> array
@@ -115,16 +130,6 @@ final class BitwisePartitioned implements Partitioned<Path> {
                 return new BitwisePartitionStreamer(partition, shape, memorySegmentSource, nextLookup(index, array));
             }
         );
-    }
-
-    private Supplier<BitwisePartitionStreamer> nextLookup(
-        int index,
-        AtomicArray<BitwisePartitionStreamer> array
-    ) {
-        int nextIndex = index + 1;
-        return nextIndex < partitions.size()
-            ? () -> streamerFor(nextIndex, array)
-            : null;
     }
 
     private BitwiseCounter counterFor(
@@ -151,10 +156,9 @@ final class BitwisePartitioned implements Partitioned<Path> {
     }
 
     private static Partitioning withTail(Partitioning partitioning, Shape shape) {
-        if (partitioning.tail() == 0 && shape.limitsLineLength()) {
-            return partitioning.tail(shape.longestLine());
-        }
-        return partitioning;
+        return partitioning.tail() == 0 && shape.limitsLineLength()
+            ? partitioning.tail(shape.longestLine())
+            : partitioning;
     }
 
     @FunctionalInterface

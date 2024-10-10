@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 
-public sealed abstract class AbstractFileChannelMemorySegmentSource
+sealed abstract class AbstractFileChannelMemorySegmentSource
     implements MemorySegmentSource
     permits FullMemorySegmentSource, PartialMemorySegmentSource {
 
@@ -27,7 +27,7 @@ public sealed abstract class AbstractFileChannelMemorySegmentSource
 
     private final Arena arena;
 
-    public AbstractFileChannelMemorySegmentSource(Path path, Shape shape) {
+    AbstractFileChannelMemorySegmentSource(Path path, Shape shape) {
         this.path = Objects.requireNonNull(path, "path");
         this.randomAccessFile = openRandomAccess(path);
         this.shape = Objects.requireNonNull(shape, "shape");

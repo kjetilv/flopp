@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.Transfer;
-
 import java.io.Closeable;
 
 @FunctionalInterface

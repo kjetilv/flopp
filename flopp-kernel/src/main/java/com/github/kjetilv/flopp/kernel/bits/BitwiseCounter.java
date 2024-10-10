@@ -52,7 +52,7 @@ final class BitwiseCounter {
         );
     }
 
-    private static final class Counter implements BitwisePartitioned.Action {
+    private static final class Counter implements PartitionedPath.Action {
 
         private long lc;
 

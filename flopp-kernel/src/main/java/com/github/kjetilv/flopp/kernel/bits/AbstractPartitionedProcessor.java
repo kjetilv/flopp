@@ -11,25 +11,18 @@ import java.util.concurrent.StructuredTaskScope;
 import java.util.function.ToLongFunction;
 
 @SuppressWarnings("preview")
-public abstract sealed class AbstractPartitionedProcessor<I, O>
-    implements PartitionedProcessor<I, O>
+abstract sealed class AbstractPartitionedProcessor<T, I, O>
+    implements PartitionedProcessor<T, I, O>
     permits FormatPartitionedProcessor, LinePartitionedProcessor {
 
-    private final Partitioned<Path> partitioned;
+    private final Partitioned<T> partitioned;
 
-    private final Path target;
-
-    public AbstractPartitionedProcessor(Partitioned<Path> partitioned, Path target) {
+    protected AbstractPartitionedProcessor(Partitioned<T> partitioned) {
         this.partitioned = Objects.requireNonNull(partitioned, "partitioned");
-        this.target = Objects.requireNonNull(target, "target");
     }
 
-    protected final Partitioned<Path> partitioned() {
+    protected final Partitioned<T> partitioned() {
         return partitioned;
-    }
-
-    protected final Path target() {
-        return target;
     }
 
     protected static ToLongFunction<Path> sizer() {

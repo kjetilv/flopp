@@ -23,14 +23,10 @@ class TempDirTargets implements TempTargets<Path> {
     private final String prefix;
 
     TempDirTargets(Path base) {
-        this(Objects.requireNonNull(base, "base").getFileName().toString());
-    }
-
-    TempDirTargets(String fileName) {
-        this.sourceName = fileName;
-        this.suffixIndex = sourceName.lastIndexOf('.');
-        this.suffix = suffixIndex < 0 ? "" : sourceName.substring(suffixIndex + 1);
-        this.prefix = "workdir-" + fileName + "-tmp";
+        this.sourceName = Objects.requireNonNull(base, "base").getFileName().toString();
+        this.suffixIndex = this.sourceName.lastIndexOf('.');
+        this.suffix = suffixIndex < 0 ? "" : this.sourceName.substring(suffixIndex + 1);
+        this.prefix = "workdir-" + this.sourceName + "-tmp";
     }
 
     @Override

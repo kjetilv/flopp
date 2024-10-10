@@ -11,9 +11,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-final class HeadersAndFooters implements Function<Consumer<LineSegment>, BitwisePartitioned.Action> {
+final class HeadersAndFooters implements Function<Consumer<LineSegment>, PartitionedPath.Action> {
 
-    static Function<Consumer<LineSegment>, BitwisePartitioned.Action> headersAndFooters(
+    static Function<Consumer<LineSegment>, PartitionedPath.Action> headersAndFooters(
         Partition partition,
         Shape shape
     ) {
@@ -41,7 +41,7 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Bitwise
     }
 
     @Override
-    public BitwisePartitioned.Action apply(Consumer<LineSegment> consumer) {
+    public PartitionedPath.Action apply(Consumer<LineSegment> consumer) {
         return header == 0 && footer == 0 ? consumer::accept
             : header > 0 && footer > 0 ? new HeaderAndFooter(consumer, header, footer)
                 : header > 0 ? new HeaderOnly(consumer, header)
@@ -75,7 +75,7 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Bitwise
         }
     }
 
-    private static final class HeaderOnly implements BitwisePartitioned.Action {
+    private static final class HeaderOnly implements PartitionedPath.Action {
 
         private final Consumer<LineSegment> delegate;
 
@@ -109,7 +109,7 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Bitwise
         }
     }
 
-    private static final class HeaderAndFooter implements BitwisePartitioned.Action {
+    private static final class HeaderAndFooter implements PartitionedPath.Action {
 
         private final Consumer<LineSegment> delegate;
 
@@ -150,7 +150,7 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Bitwise
         }
     }
 
-    private static final class FooterOnly implements BitwisePartitioned.Action {
+    private static final class FooterOnly implements PartitionedPath.Action {
 
         private final Consumer<LineSegment> delegate;
 

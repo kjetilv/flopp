@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.bits;
 
 import com.github.kjetilv.flopp.kernel.PartitionResult;
+import com.github.kjetilv.flopp.kernel.Transfer;
 import com.github.kjetilv.flopp.kernel.Transfers;
 
 import java.util.Objects;
@@ -30,7 +31,7 @@ final class ResultCollector<T> {
             .map(result ->
                 transfer(transfers, result))
             .map(transfer ->
-                transfer.in(executorService))
+                CompletableFuture.runAsync(transfer, executorService))
             .toList()
             .forEach(CompletableFuture::join);
     }

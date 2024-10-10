@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.lc;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -56,7 +56,7 @@ public final class Lc {
             .scaled(2);
 
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(path, partitioning, shape)
+            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)
         ) {
             List<CompletableFuture<Long>> longSuppliers = bitwisePartitioned.lineCounters()
                 .map(counter ->

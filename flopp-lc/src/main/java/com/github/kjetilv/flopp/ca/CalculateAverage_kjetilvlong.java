@@ -15,21 +15,14 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
-import com.github.kjetilv.flopp.kernel.Partitioning;
-import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
-import com.github.kjetilv.flopp.kernel.bits.FormatPartitionedProcessor;
+import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.segments.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -110,16 +103,19 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning p = readPartitioning(cpus, shape, settings);
         int size = 32 * 1024;
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(path, p, shape);
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, p, shape);
         ) {
             int chunks = partitioned.partitions().size();
             BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
-            Function<Throwable, Void> printException = CalculateAverage_kjetilvlong::print;
-            partitioned.splitters(format)
-                .forEach(splitter ->
+            Function<Throwable, Boolean> printException = CalculateAverage_kjetilvlong::print;
+            boolean done = partitioned.splitters(format)
+                .map(splitter ->
                     CompletableFuture.supplyAsync(() -> result(splitter, size))
-                        .thenAccept(queue::offer)
-                        .exceptionally(printException));
+                        .thenApply(queue::offer)
+                        .exceptionally(printException))
+                .map(CompletableFuture::join)
+                .reduce((aBoolean, aBoolean2) -> aBoolean & aBoolean2)
+                .orElse(false);
             Result result = new Result();
             for (int i = 0; i < chunks; i++) {
                 result.merge(take(queue));
@@ -142,31 +138,26 @@ public final class CalculateAverage_kjetilvlong {
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(path, partitioning, shape);
-            StructuredTaskScope<Void> scope = new StructuredTaskScope<>()
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
+            StructuredTaskScope<Boolean> scope = new StructuredTaskScope<>()
         ) {
-            int chunks = partitioned.partitions().size();
-            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(chunks);
+            int partitionCount = partitioned.partitions().size();
+            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(partitionCount);
             partitioned.splitters(format)
                 .forEach(splitter ->
-                    scope.fork(() -> {
-                        if (!queue.offer(table(splitter, size))) {
-                            throw new IllegalStateException("Failed to offer");
-                        }
-                        return null;
-                    }));
-            scope.fork(() -> {
-                for (int i = 0; i < chunks; i++) {
-                    map.merge(take(queue), Result::merge);
-                }
-                return null;
-            });
+                    scope.fork(() -> queue.offer(table(splitter, size)))
+                );
+            for (int i = 0; i < partitionCount; i++) {
+                map.merge(take(queue), Result::merge);
+            }
             scope.join();
-            return map;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+        return map;
     }
 
     static void temper(
@@ -180,12 +171,12 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(originalPath, p, shape);
-            FormatPartitionedProcessor formatPartitionedProcessor =
-                new FormatPartitionedProcessor(partitioned, format, out);
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(originalPath, p, shape);
+            PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processor =
+                PartitionedPaths.processor(partitioned, format);
         ) {
-            formatPartitionedProcessor.processFor(
-                partition -> {
+            processor.processFor(
+                out, partition -> {
                     LineSegmentMap<Result> copy = map.freeze();
                     return separatedLine -> {
                         LineSegment city = separatedLine.segment(0);
@@ -222,7 +213,7 @@ public final class CalculateAverage_kjetilvlong {
                     .map(Path::normalize));
     }
 
-    private static Void print(Throwable throwable) {
+    private static boolean print(Throwable throwable) {
         System.out.println("Error: " + throwable.getMessage());
         for (
             Throwable cause = throwable.getCause();
@@ -231,7 +222,7 @@ public final class CalculateAverage_kjetilvlong {
         ) {
             System.out.println("  Cause: " + cause);
         }
-        return null;
+        return false;
     }
 
     private static Partitioning readPartitioning(int cpus, Shape shape, Settings settings) {

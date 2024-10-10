@@ -16,7 +16,7 @@
 package com.github.kjetilv.flopp.ca;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
@@ -59,7 +59,7 @@ public final class FormattSplit_kjetilvlong {
             Column.ofType("temperature", 2, FormattSplit_kjetilvlong::parseValue)
         );
         try (
-            Partitioned<Path> bitwisePartitioned = Bitwise.partitioned(path, partitioning, shape);
+            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
                 chunks,
                 chunks,

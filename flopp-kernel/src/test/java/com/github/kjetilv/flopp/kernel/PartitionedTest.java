@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.bits.Bitwise;
+import com.github.kjetilv.flopp.kernel.bits.PartitionedPaths;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ class PartitionedTest {
 
         Partitioning partitioning = Partitioning.create(4, 16);
         try (
-            Partitioned<Path> pf1 = Bitwise.partitioned(pathWithHeaders, partitioning, shape)
+            Partitioned<Path> pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {
             pf1.streamers()
                 .forEach(partitionStreamer ->
@@ -63,7 +63,7 @@ class PartitionedTest {
         List<String> asyncLines = new ArrayList<>();
 
         try (
-            Partitioned<Path> pf2 = Bitwise.partitioned(pathWithHeaders, partitioning, shape);
+            Partitioned<Path> pf2 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
             pf2.streamers()
@@ -112,7 +112,7 @@ class PartitionedTest {
         Partitioning partitioning = Partitioning.create(partitionCount, 16);
 
         try (
-            Partitioned<Path> pf1 = Bitwise.partitioned(pathWithHeaders, partitioning, shape)
+            Partitioned<Path> pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {
             pf1.streamers()
                 .forEach(partitionStreamer ->
@@ -124,7 +124,7 @@ class PartitionedTest {
 
         List<String> asyncLines = new ArrayList<>();
         try (
-            Partitioned<Path> pf2 = Bitwise.partitioned(pathWithHeaders, partitioning, shape);
+            Partitioned<Path> pf2 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
             pf2.streamers()
@@ -167,7 +167,7 @@ class PartitionedTest {
 
         Partitioning partitioning = Partitioning.create(4, 16);
         try (
-            Partitioned<Path> pf1 = Bitwise.partitioned(pathWithHeaders, partitioning, shape)
+            Partitioned<Path> pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {
             pf1.streamers()
                 .forEach(partitionStreamer ->
@@ -180,7 +180,7 @@ class PartitionedTest {
 
         List<String> asyncLines = new ArrayList<>();
         try (
-            Partitioned<Path> pf2 = Bitwise.partitioned(pathWithHeaders, partitioning, shape);
+            Partitioned<Path> pf2 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape);
             ExecutorService executorService = Executors.newFixedThreadPool(10)
         ) {
             pf2.streamers()

@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -12,28 +13,28 @@ import java.util.concurrent.StructuredTaskScope;
 import java.util.function.Function;
 
 @SuppressWarnings("preview")
-public final class LinePartitionedProcessor extends AbstractPartitionedProcessor<LineSegment, String> {
+final class LinePartitionedProcessor extends AbstractPartitionedProcessor<Path, LineSegment, String> {
 
-    private final Shape shape;
+    private final Charset charset;
 
-    public LinePartitionedProcessor(Partitioned<Path> partitioned, Shape shape, Path target) {
-        super(partitioned, target);
-        this.shape = Objects.requireNonNull(shape, "shape");
+    LinePartitionedProcessor(Partitioned<Path> partitioned, Charset charset) {
+        super(partitioned);
+        this.charset = Objects.requireNonNull(charset, "shape");
     }
 
     @SuppressWarnings("resource")
     @Override
-    public void processFor(Function<Partition, Function<LineSegment, String>> processor) {
+    public void processFor(Path target, Function<Partition, Function<LineSegment, String>> processor) {
         LinesWriterFactory<Path, String> writers = path ->
-            new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, shape.charset());
+            new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, charset);
         ResultCollector<Path> collector = new ResultCollector<>(
             partitioned().partitions().size(),
             sizer(),
             Executors.newVirtualThreadPerTaskExecutor()
         );
         try (
-            TempTargets<Path> tempTargets = new TempDirTargets(target());
-            Transfers<Path> transfers = new FileChannelTransfers(target());
+            TempTargets<Path> tempTargets = new TempDirTargets(target);
+            Transfers<Path> transfers = new FileChannelTransfers(target);
             StructuredTaskScope<PartitionResult<Path>> scope = new StructuredTaskScope<>()
         ) {
             partitioned().streamers()
@@ -56,5 +57,4 @@ public final class LinePartitionedProcessor extends AbstractPartitionedProcessor
     }
 
     private static final int BUFFER_SIZE = 8192;
-
 }

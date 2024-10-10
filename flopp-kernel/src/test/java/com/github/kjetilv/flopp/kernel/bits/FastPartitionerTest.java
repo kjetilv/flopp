@@ -76,7 +76,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file), UTF_8).headerFooter(1, 1).longestLine(128);
         LongAdder cont = new LongAdder();
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -105,7 +105,7 @@ public class FastPartitionerTest {
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(32).headerFooter(1, 1);
         LongAdder count;
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(
                 file,
                 Partitioning.create(partitionCount, 10),
                 shape
@@ -144,7 +144,7 @@ public class FastPartitionerTest {
         Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(longestLine).headerFooter(1, 1);
         try (
-            Partitioned<Path> partitioned = Bitwise.partitioned(file, partitioning, shape)
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(file, partitioning, shape)
         ) {
             LongAdder cont = new LongAdder();
             partitioned.streamers()

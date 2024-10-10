@@ -406,7 +406,7 @@ class CsvSimpleSplitterTest {
 
     private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
         try {
-            return Bitwise.partitioned(fileWith(contents), partitioning);
+            return PartitionedPaths.partitioned(fileWith(contents), partitioning);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -487,7 +487,7 @@ class CsvSimpleSplitterTest {
         );
 
         try {
-            try (Partitioned<Path> partititioned = Bitwise.partitioned(path, Partitioning.single())) {
+            try (Partitioned<Path> partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
                 partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()
