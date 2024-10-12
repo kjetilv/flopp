@@ -3,7 +3,7 @@ package com.github.kjetilv.flopp.kernel.test;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Partitioning;
 import com.github.kjetilv.flopp.kernel.Partitions;
-import com.github.kjetilv.flopp.kernel.Shape;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import org.junit.jupiter.api.Test;
 

@@ -15,16 +15,19 @@ import java.util.function.Function;
 @SuppressWarnings("preview")
 final class LinePartitionedProcessor extends AbstractPartitionedProcessor<Path, LineSegment, String> {
 
+    private final Path target;
+
     private final Charset charset;
 
-    LinePartitionedProcessor(Partitioned<Path> partitioned, Charset charset) {
+    LinePartitionedProcessor(Partitioned<Path> partitioned, Path target, Charset charset) {
         super(partitioned);
-        this.charset = Objects.requireNonNull(charset, "shape");
+        this.target = target;
+        this.charset = Objects.requireNonNull(charset, "charset");
     }
 
     @SuppressWarnings("resource")
     @Override
-    public void processFor(Path target, Function<Partition, Function<LineSegment, String>> processor) {
+    public void forEachPartition(Function<Partition, Function<LineSegment, String>> processor) {
         LinesWriterFactory<Path, String> writers = path ->
             new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, charset);
         ResultCollector<Path> collector = new ResultCollector<>(

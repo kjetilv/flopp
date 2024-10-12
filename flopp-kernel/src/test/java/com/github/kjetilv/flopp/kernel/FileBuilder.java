@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.formats.Shape;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;

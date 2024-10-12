@@ -22,11 +22,16 @@ final class ResultCollector<T> {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
     }
 
-    public void sync(PartitionResult<T> partitionResult) {
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
+    }
+
+    void sync(PartitionResult<T> partitionResult) {
         consumerSpliterator.accept(partitionResult);
     }
 
-    public void syncTo(Transfers<T> transfers) {
+    void syncTo(Transfers<T> transfers) {
         results()
             .map(result ->
                 transfer(transfers, result))
@@ -34,11 +39,6 @@ final class ResultCollector<T> {
                 CompletableFuture.runAsync(transfer, executorService))
             .toList()
             .forEach(CompletableFuture::join);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
     }
 
     private Stream<PartitionResult<T>> results() {

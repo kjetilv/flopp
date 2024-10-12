@@ -18,16 +18,19 @@ import java.util.stream.Stream;
 final class FormatPartitionedProcessor
     extends AbstractPartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> {
 
+    private final Path target;
+
     private final Format format;
 
-    FormatPartitionedProcessor(Partitioned<Path> partitioned, Format format) {
+    FormatPartitionedProcessor(Partitioned<Path> partitioned, Path target, Format format) {
         super(partitioned);
+        this.target = target;
         this.format = Objects.requireNonNull(format, "format");
     }
 
     @SuppressWarnings("resource")
     @Override
-    public void processFor(Path target, Function<Partition, Function<SeparatedLine, Stream<LineSegment>>> processor) {
+    public void forEachPartition(Function<Partition, Function<SeparatedLine, Stream<LineSegment>>> processor) {
         LinesWriterFactory<Path, Stream<LineSegment>> writers = path ->
             new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
         ResultCollector<Path> collector = new ResultCollector<>(

@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

@@ -2,16 +2,20 @@ package com.github.kjetilv.flopp.kernel;
 
 import java.io.Closeable;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
-@FunctionalInterface
 public interface PartitionedProcessor<T, I, O> extends Closeable {
 
-    default void process(T target, Function<I, O> processor) {
-        processFor(target, partition -> processor);
+    default void forEach(Function<I, O> processor) {
+        forEachPartition(partition -> processor);
     }
 
-    void processFor(T target, Function<Partition, Function<I, O>> processor);
+    default void forEachPartition(Supplier<Function<I, O>> processor) {
+        forEachPartition(_ -> processor.get());
+    }
+
+    void forEachPartition(Function<Partition, Function<I, O>> processor);
 
     @Override
     default void close() {

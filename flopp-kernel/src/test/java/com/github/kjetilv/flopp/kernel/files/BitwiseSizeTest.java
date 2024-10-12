@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
@@ -132,9 +133,9 @@ public class BitwiseSizeTest {
         try (
             Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             PartitionedProcessor<Path, LineSegment, String> processor =
-                PartitionedPaths.processor(partitioned, shape.charset())
+                partitioned.processTo(tmp, shape.charset())
         ) {
-            processor.process(tmp, fun);
+            processor.forEach(fun);
         }
         return log(testInfo, start);
     }
@@ -152,9 +153,9 @@ public class BitwiseSizeTest {
         try (
             Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             PartitionedProcessor<Path, LineSegment, String> lineProcessor =
-                PartitionedPaths.processor(partitioned, shape.charset())
+                partitioned.processTo(tmp, shape.charset())
         ) {
-            lineProcessor.process(tmp, processor);
+            lineProcessor.forEach(processor);
         }
         return log(testInfo, start);
     }
@@ -166,9 +167,9 @@ public class BitwiseSizeTest {
         try (
             Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             PartitionedProcessor<Path, LineSegment, String> processor =
-                PartitionedPaths.processor(partitioned, shape.charset())
+                partitioned.processTo(tmp, shape.charset())
         ) {
-            processor.process(tmp, fun);
+            processor.forEach(fun);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -183,9 +184,9 @@ public class BitwiseSizeTest {
         try (
             Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             PartitionedProcessor<Path, LineSegment, String> processor =
-                PartitionedPaths.processor(partitioned, shape.charset())
+                partitioned.processTo(out, shape.charset())
         ) {
-            processor.process(out, fun);
+            processor.forEach(fun);
         }
         Duration time = log(testInfo, start);
         assertThat(out).hasSameTextualContentAs(verified);

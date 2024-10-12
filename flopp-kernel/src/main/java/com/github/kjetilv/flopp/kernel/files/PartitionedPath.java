@@ -2,11 +2,13 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.AtomicArray;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
-import java.io.Closeable;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
@@ -96,6 +98,16 @@ final class PartitionedPath implements Partitioned<Path> {
     }
 
     @Override
+    public PartitionedProcessor<Path, LineSegment, String> processTo(Path target, Charset charSet) {
+        return new LinePartitionedProcessor(this, target, charSet);
+    }
+
+    @Override
+    public PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processTo(Path target, Format format) {
+        return new FormatPartitionedProcessor(this, target, format);
+    }
+
+    @Override
     public void close() {
         try {
             memorySegmentSource.close();
@@ -159,12 +171,5 @@ final class PartitionedPath implements Partitioned<Path> {
         return partitioning.tail() == 0 && shape.limitsLineLength()
             ? partitioning.tail(shape.longestLine())
             : partitioning;
-    }
-
-    @FunctionalInterface
-    public interface Action extends Closeable, Consumer<LineSegment> {
-
-        default void close() {
-        }
     }
 }

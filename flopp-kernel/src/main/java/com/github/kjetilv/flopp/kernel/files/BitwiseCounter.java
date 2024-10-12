@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
@@ -24,7 +25,7 @@ final class BitwiseCounter {
 
     public long count() {
         try {
-            Counter action = new Counter();
+            Counter<LineSegment> action = new Counter<>();
             feeder(action).run();
             return action.lc;
         } catch (Exception e) {
@@ -52,12 +53,12 @@ final class BitwiseCounter {
         );
     }
 
-    private static final class Counter implements PartitionedPath.Action {
+    private static final class Counter<T> implements CloseableConsumer<T> {
 
         private long lc;
 
         @Override
-        public void accept(LineSegment lineSegment) {
+        public void accept(T lineSegment) {
             lc++;
         }
     }

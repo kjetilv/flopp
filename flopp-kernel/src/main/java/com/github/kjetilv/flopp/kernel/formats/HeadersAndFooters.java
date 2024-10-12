@@ -1,8 +1,7 @@
-package com.github.kjetilv.flopp.kernel.files;
+package com.github.kjetilv.flopp.kernel.formats;
 
+import com.github.kjetilv.flopp.kernel.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayDeque;
@@ -11,21 +10,22 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-final class HeadersAndFooters implements Function<Consumer<LineSegment>, PartitionedPath.Action> {
+public final class HeadersAndFooters<T> implements Function<Consumer<T>, CloseableConsumer<T>> {
 
-    static Function<Consumer<LineSegment>, PartitionedPath.Action> headersAndFooters(
+    public static <T> Function<Consumer<T>, CloseableConsumer<T>> headersAndFooters(
         Partition partition,
-        Shape shape
+        Shape shape,
+        Function<T, T> packer
     ) {
         if (shape != null && shape.hasOverhead()) {
             if (partition.single() && shape.hasOverhead()) {
-                return new HeadersAndFooters(shape.header(), shape.footer());
+                return new HeadersAndFooters<>(shape.header(), shape.footer(), packer);
             }
             if (partition.first()) {
-                return new HeadersAndFooters(shape.header(), 0);
+                return new HeadersAndFooters<>(shape.header(), 0, packer);
             }
             if (partition.last() && shape.footer() > 0) {
-                return new HeadersAndFooters(0, shape.footer());
+                return new HeadersAndFooters<>(0, shape.footer(), packer);
             }
         }
         return null;
@@ -35,29 +35,33 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Partiti
 
     private final int footer;
 
-    private HeadersAndFooters(int header, int footer) {
+    private final Function<T, T> packer;
+
+    private HeadersAndFooters(int header, int footer, Function<T, T> packer) {
         this.header = Non.negative(header, "header");
         this.footer = Non.negative(footer, "footer");
+        this.packer = packer;
     }
 
     @Override
-    public PartitionedPath.Action apply(Consumer<LineSegment> consumer) {
+    public CloseableConsumer<T> apply(Consumer<T> consumer) {
         return header == 0 && footer == 0 ? consumer::accept
-            : header > 0 && footer > 0 ? new HeaderAndFooter(consumer, header, footer)
-                : header > 0 ? new HeaderOnly(consumer, header)
-                    : new FooterOnly(consumer, footer);
+            : header > 0 && footer > 0 ? new HeaderAndFooter<>(consumer, header, footer, packer)
+                : header > 0 ? new HeaderOnly<>(consumer, header)
+                    : new FooterOnly<>(consumer, footer, packer);
     }
 
-    private static void cycle(
-        LineSegment lineSegment,
+    private static <T> void cycle(
+        T lineSegment,
         Deque<Runnable> deq,
-        Consumer<LineSegment> delegate,
-        int footer
+        Consumer<T> delegate,
+        int footer,
+        Function<T, T> packer
     ) {
         if (deq.size() == footer) {
             Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
         }
-        LineSegment immutable = lineSegment.immutable();
+        T immutable = packer.apply(lineSegment);
         deq.offerFirst(() -> delegate.accept(immutable));
     }
 
@@ -75,22 +79,22 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Partiti
         }
     }
 
-    private static final class HeaderOnly implements PartitionedPath.Action {
+    private static final class HeaderOnly<T> implements CloseableConsumer<T> {
 
-        private final Consumer<LineSegment> delegate;
+        private final Consumer<T> delegate;
 
         private final int header;
 
         private int headersLeft;
 
-        private HeaderOnly(Consumer<LineSegment> delegate, int header) {
+        private HeaderOnly(Consumer<T> delegate, int header) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = header;
             this.headersLeft = header;
         }
 
         @Override
-        public void accept(LineSegment lineSegment) {
+        public void accept(T lineSegment) {
             if (headersLeft == 0) {
                 delegate.accept(lineSegment);
             } else {
@@ -109,9 +113,9 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Partiti
         }
     }
 
-    private static final class HeaderAndFooter implements PartitionedPath.Action {
+    private static final class HeaderAndFooter<T> implements CloseableConsumer<T> {
 
-        private final Consumer<LineSegment> delegate;
+        private final Consumer<T> delegate;
 
         private final int header;
 
@@ -121,18 +125,21 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Partiti
 
         private int headersLeft;
 
-        private HeaderAndFooter(Consumer<LineSegment> delegate, int header, int footer) {
+        private final Function<T, T> packer;
+
+        private HeaderAndFooter(Consumer<T> delegate, int header, int footer, Function<T, T> packer) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = Non.negativeOrZero(header, "header");
             this.footer = Non.negativeOrZero(footer, "footer");
             this.deque = new ArrayDeque<>(footer);
             this.headersLeft = header;
+            this.packer = packer;
         }
 
         @Override
-        public void accept(LineSegment lineSegment) {
+        public void accept(T lineSegment) {
             if (headersLeft == 0) {
-                cycle(lineSegment, deque, delegate, footer);
+                cycle(lineSegment, deque, delegate, footer, packer);
             } else {
                 headersLeft--;
             }
@@ -150,23 +157,26 @@ final class HeadersAndFooters implements Function<Consumer<LineSegment>, Partiti
         }
     }
 
-    private static final class FooterOnly implements PartitionedPath.Action {
+    private static final class FooterOnly<T> implements CloseableConsumer<T> {
 
-        private final Consumer<LineSegment> delegate;
+        private final Consumer<T> delegate;
 
         private final Deque<Runnable> deque;
 
         private final int footer;
 
-        private FooterOnly(Consumer<LineSegment> delegate, int footer) {
+        private final Function<T, T> packer;
+
+        private FooterOnly(Consumer<T> delegate, int footer, Function<T, T> packer) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.footer = Non.negativeOrZero(footer, "footer");
+            this.packer = packer;
             this.deque = new ArrayDeque<>(this.footer);
         }
 
         @Override
-        public void accept(LineSegment lineSegment) {
-            cycle(lineSegment, deque, delegate, footer);
+        public void accept(T lineSegment) {
+            cycle(lineSegment, deque, delegate, footer, packer);
         }
 
         @Override

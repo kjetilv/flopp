@@ -19,6 +19,7 @@ import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.readers.Column;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReader;
 import com.github.kjetilv.flopp.kernel.readers.ColumnReaders;
@@ -101,20 +102,19 @@ public final class CalculateAverage_kjetilvlong {
         Shape shape = Shape.of(path, UTF_8).longestLine(128);
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
-        int size = 32 * 1024;
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, p, shape);
+            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, p, shape)
         ) {
             int chunks = partitioned.partitions().size();
             BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
             Function<Throwable, Boolean> printException = CalculateAverage_kjetilvlong::print;
-            boolean done = partitioned.splitters(format)
+            partitioned.splitters(format)
                 .map(splitter ->
-                    CompletableFuture.supplyAsync(() -> result(splitter, size))
+                    CompletableFuture.supplyAsync(() -> result(splitter))
                         .thenApply(queue::offer)
                         .exceptionally(printException))
                 .map(CompletableFuture::join)
-                .reduce((aBoolean, aBoolean2) -> aBoolean & aBoolean2)
+                .reduce((b1, b2) -> b1 & b2)
                 .orElse(false);
             Result result = new Result();
             for (int i = 0; i < chunks; i++) {
@@ -172,11 +172,12 @@ public final class CalculateAverage_kjetilvlong {
         Partitioning p = readPartitioning(cpus, shape, settings);
         try (
             Partitioned<Path> partitioned = PartitionedPaths.partitioned(originalPath, p, shape);
-            PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processor =
-                PartitionedPaths.processor(partitioned, format);
+            PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processor = partitioned.processTo(
+                out,
+                format
+            )
         ) {
-            processor.processFor(
-                out, partition -> {
+            processor.forEachPartition(() -> {
                     LineSegmentMap<Result> copy = map.freeze();
                     return separatedLine -> {
                         LineSegment city = separatedLine.segment(0);
@@ -268,7 +269,7 @@ public final class CalculateAverage_kjetilvlong {
         return table;
     }
 
-    private static Result result(PartitionedSplitter splitter, int size) {
+    private static Result result(PartitionedSplitter splitter) {
         Result result = new Result();
         ColumnReader columnReader = ColumnReaders.create(
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)

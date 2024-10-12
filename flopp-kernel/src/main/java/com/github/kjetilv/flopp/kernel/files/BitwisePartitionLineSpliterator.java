@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.files.PartitionedPath.Action;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.lang.foreign.MemorySegment;
@@ -15,7 +15,7 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
 
     private final Partition partition;
 
-    private final Function<Consumer<LineSegment>, Action> headersAndFooters;
+    private final Function<Consumer<LineSegment>, CloseableConsumer<LineSegment>> headersAndFooters;
 
     private final Supplier<BitwisePartitionLineSpliterator> next;
 
@@ -30,7 +30,7 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
         MemorySegment segment,
         long offset,
         long logicalSize,
-        Function<Consumer<LineSegment>, Action> headersAndFooters,
+        Function<Consumer<LineSegment>, CloseableConsumer<LineSegment>> headersAndFooters,
         Supplier<BitwisePartitionLineSpliterator> next
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
@@ -49,7 +49,10 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
             if (headersAndFooters == null) {
                 feeder((Consumer<LineSegment>) action).run();
             } else {
-                try (Action wrapped = headersAndFooters.apply((Consumer<LineSegment>) action)) {
+                try (
+                    CloseableConsumer<LineSegment> wrapped =
+                        headersAndFooters.apply((Consumer<LineSegment>) action)
+                ) {
                     feeder(wrapped).run();
                 }
             }
