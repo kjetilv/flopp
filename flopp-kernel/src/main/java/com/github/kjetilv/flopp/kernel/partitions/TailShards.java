@@ -1,13 +1,13 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.partitions;
 
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
+record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
 
-    public TailShards(
+    TailShards(
         int shardCount,
         double tailPerc,
         double partitionMaxPerc,

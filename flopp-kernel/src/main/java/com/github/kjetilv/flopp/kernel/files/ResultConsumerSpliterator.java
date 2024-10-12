@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionResult;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.partitions;
 
 import com.github.kjetilv.flopp.kernel.util.Combine;
 import com.github.kjetilv.flopp.kernel.util.Non;

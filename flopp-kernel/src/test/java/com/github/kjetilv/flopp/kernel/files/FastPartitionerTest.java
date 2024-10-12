@@ -1,7 +1,11 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.FileBuilder;
+import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -113,10 +118,16 @@ public class FastPartitionerTest {
             )
         ) {
             count = new LongAdder();
-            partitioned.forEachLine(
-                    (_, entries) ->
-                        entries.forEach(_ -> count.increment())
-                )
+            BiConsumer<Partition, Stream<LineSegment>> consumer = (_, entries) ->
+                entries.forEach(_ -> count.increment());
+            partitioned.streamers()
+                .map(partitionStreamer ->
+                    new PartitionResult<>(
+                        partitionStreamer.partition(), () -> {
+                        consumer.accept(partitionStreamer.partition(), partitionStreamer.lines());
+                        return null;
+                    }
+                    ))
                 .toList()
                 .forEach(PartitionResult::complete);
         }

@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.nio.charset.Charset;

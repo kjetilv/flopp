@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.PartitionResult;
 import com.github.kjetilv.flopp.kernel.Transfer;
 import com.github.kjetilv.flopp.kernel.Transfers;
 

@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.partitions;
 
 import com.github.kjetilv.flopp.kernel.util.Non;
 
@@ -21,11 +21,7 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
     }
 
     public static Partitioning create(int count, long tail) {
-        return new Partitioning(
-            Non.negativeOrZero(count, "count"),
-            Non.negative(tail, "tail"),
-            null
-        );
+        return new Partitioning(count, tail, null);
     }
 
     public static Partitioning tail(int tail) {
@@ -37,7 +33,8 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
     }
 
     public Partitioning {
-        Non.negativeOrZero(count, "partitionCount");
+        Non.negativeOrZero(count, "count");
+        Non.negative(tail, "tail");
     }
 
     public Partitioning scaled(double scale) {
@@ -52,18 +49,8 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return new Partitioning(count, tail, fragmentation);
     }
 
-    public Partitioning fragment(
-        int shardCount,
-        double tailPerc,
-        double partitionMaxPerc,
-        double partitionMinPerc
-    ) {
-        return fragment(new TailShards(
-            shardCount,
-            tailPerc,
-            partitionMaxPerc,
-            partitionMinPerc
-        ));
+    public Partitioning fragment(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
+        return fragment(new TailShards(shardCount, tailPerc, partitionMaxPerc, partitionMinPerc));
     }
 
     public Partitions of(long total) {

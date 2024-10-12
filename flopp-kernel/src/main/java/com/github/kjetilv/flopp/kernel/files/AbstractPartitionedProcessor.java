@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.PartitionResult;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.PartitionedProcessor;
 import com.github.kjetilv.flopp.kernel.formats.Shape;

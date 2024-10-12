@@ -1,15 +1,17 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.files;
+
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.util.function.Supplier;
 
-public record PartitionResult<T>(Partition partition, Supplier<T> completer, T result, boolean done)
+record PartitionResult<T>(Partition partition, Supplier<T> completer, T result, boolean done)
     implements Comparable<PartitionResult<T>> {
 
-    public PartitionResult(Partition partition, T result) {
+    PartitionResult(Partition partition, T result) {
         this(partition, null, result, true);
     }
 
-    public PartitionResult(Partition partition, Supplier<T> completer) {
+    PartitionResult(Partition partition, Supplier<T> completer) {
         this(partition, completer, null, false);
     }
 

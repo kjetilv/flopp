@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel;
+package com.github.kjetilv.flopp.kernel.util;
 
 import java.io.Closeable;
 import java.util.function.Consumer;

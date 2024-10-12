@@ -2,6 +2,8 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;

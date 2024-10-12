@@ -1,8 +1,14 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.PartitionStreamer;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.PartitionedProcessor;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitions;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.AtomicArray;
@@ -13,7 +19,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.*;
+import java.util.function.IntFunction;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -45,28 +53,6 @@ final class PartitionedPath implements Partitioned<Path> {
     }
 
     @Override
-    public Stream<PartitionResult<Void>> forEachLine(
-        BiConsumer<Partition, Stream<LineSegment>> consumer
-    ) {
-        return streamers().map(partitionStreamer ->
-            new PartitionResult<>(
-                partitionStreamer.partition(), () -> {
-                consumer.accept(partitionStreamer.partition(), partitionStreamer.lines());
-                return null;
-            }
-            ));
-    }
-
-    @Override
-    public <T> Stream<PartitionResult<T>> map(BiFunction<Partition, Stream<LineSegment>, T> processor) {
-        return streamers().map(streamer ->
-            new PartitionResult<>(
-                streamer.partition(), () ->
-                processor.apply(streamer.partition(), streamer.lines())
-            ));
-    }
-
-    @Override
     public Stream<LongSupplier> lineCounters() {
         int count = partitions.size();
         Map<Integer, BitwiseCounter> map = new ConcurrentHashMap<>(Maps.mapCapacity(count));
@@ -78,7 +64,7 @@ final class PartitionedPath implements Partitioned<Path> {
     }
 
     @Override
-    public Stream<? extends PartitionStreamer> streamers() {
+    public Stream<PartitionStreamer> streamers() {
         int count = partitions.size();
         AtomicArray<BitwisePartitionStreamer> array = new AtomicArray<>(count);
         return IntStream.range(0, count)

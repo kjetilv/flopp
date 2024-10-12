@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
@@ -30,8 +30,7 @@ sealed abstract class AbstractPartitionedSplitter implements PartitionedSplitter
 
     @Override
     public final void forEach(Consumer<SeparatedLine> consumer) {
-        streamer().lines()
-            .forEach(consumer(consumer));
+        streamer().lines().forEach(consumer(consumer));
     }
 
     @Override
