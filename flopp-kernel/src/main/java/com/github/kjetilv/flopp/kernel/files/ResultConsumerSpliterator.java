@@ -81,11 +81,6 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + cachedSizes + ", completed: " + completed.keySet() + "]";
-    }
-
     private int nextIndex() {
         return lastServed.get() + 1;
     }
@@ -115,5 +110,10 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
 
     private long size(T path) {
         return cachedSizes.computeIfAbsent(path, sizer::applyAsLong);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + cachedSizes + ", completed: " + completed.keySet() + "]";
     }
 }

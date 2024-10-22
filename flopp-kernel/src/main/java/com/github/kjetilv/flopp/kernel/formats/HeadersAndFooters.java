@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
-import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayDeque;

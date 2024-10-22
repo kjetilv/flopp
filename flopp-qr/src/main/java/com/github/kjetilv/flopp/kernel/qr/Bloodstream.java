@@ -112,15 +112,6 @@ final class Bloodstream<T> implements Vein<T> {
         }
     }
 
-    private static void await(Condition condition) {
-        try {
-            condition.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted", e);
-        }
-    }
-
     @Override
     public void close() {
         if (poisoned.compareAndSet(false, true)) {
@@ -163,10 +154,19 @@ final class Bloodstream<T> implements Vein<T> {
         }
     }
 
+    private static void await(Condition condition) {
+        try {
+            condition.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted", e);
+        }
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" +
-            (name == null ? hashCode() : name) + ":" + capacity + (poisoned.get() ? ", shutdown" : "") +
-            "]";
+               (name == null ? hashCode() : name) + ":" + capacity + (poisoned.get() ? ", shutdown" : "") +
+               "]";
     }
 }

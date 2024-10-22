@@ -33,16 +33,16 @@ public final class AtomicBitSet {
         } while (true);
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[ints:" + ints.length() + "]";
-    }
-
     private static int index(long n) {
         return (int) (n >>> 5);
     }
 
     private static int bit(long n) {
         return 1 << n;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[ints:" + ints.length() + "]";
     }
 }

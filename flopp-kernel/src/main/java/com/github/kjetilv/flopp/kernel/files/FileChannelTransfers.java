@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.Transfer;
 import com.github.kjetilv.flopp.kernel.Transfers;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -43,11 +43,6 @@ final class FileChannelTransfers implements Transfers<Path> {
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + target + "]";
-    }
-
     private RandomAccessFile randomAccess(Path file) {
         if (Files.isDirectory(file)) {
             throw new IllegalArgumentException("Not a file: " + file);
@@ -63,4 +58,9 @@ final class FileChannelTransfers implements Transfers<Path> {
     }
 
     private static final String READ_WRITE = "rw";
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + target + "]";
+    }
 }

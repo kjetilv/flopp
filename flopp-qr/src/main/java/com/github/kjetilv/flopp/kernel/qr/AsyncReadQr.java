@@ -99,7 +99,8 @@ final class AsyncReadQr implements ReadQr {
                 throw new IllegalStateException("Stream failed in reading thread: " + failure);
             }
             try (Vial<T> vial = vein.tap()) {
-                vial.contents().forEach(consumer);
+                vial.contents()
+                    .forEach(consumer);
                 return !vial.done();
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to tap " + vein, e);

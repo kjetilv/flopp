@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
@@ -62,15 +62,15 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[@" + partition + "]";
-    }
-
     private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
         Supplier<BitwisePartitionLineFeeder> supplier = next == null
             ? null
             : () -> next.get().feeder(action);
         return new BitwisePartitionLineFeeder(partition, segment, offset, logicalSize, action, supplier);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[@" + partition + "]";
     }
 }

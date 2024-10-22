@@ -87,12 +87,6 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     }
 
     @Override
-    public String toString() {
-        String segmentString = LineSegments.toString(this);
-        return getClass().getSimpleName() + "[" + partition + " " + segmentString + "]";
-    }
-
-    @Override
     public long startIndex() {
         return startIndex;
     }
@@ -368,5 +362,11 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        String segmentString = LineSegments.toString(this);
+        return getClass().getSimpleName() + "[" + partition + " " + segmentString + "]";
     }
 }

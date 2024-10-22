@@ -11,7 +11,7 @@ public final class Print {
             : NUMBER_INSTANCE.format(i);
     }
 
-    private Print(){
+    private Print() {
     }
 
     private static final NumberFormat NUMBER_INSTANCE =

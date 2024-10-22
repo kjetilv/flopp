@@ -21,6 +21,11 @@ record TableEntry<T>(
         );
     }
 
+    @Override
+    public int compareTo(TableEntry<T> other) {
+        return segment.compareTo(other.segment());
+    }
+
     TableEntry<T> merge(T value) {
         return new TableEntry<>(segment, hash, value, cachedString);
     }
@@ -39,10 +44,5 @@ record TableEntry<T>(
 
     private TableEntry<T> frozen(LineSegment copied) {
         return new TableEntry<>(copied, hash(), value, cachedString);
-    }
-
-    @Override
-    public int compareTo(TableEntry<T> other) {
-        return segment.compareTo(other.segment());
     }
 }

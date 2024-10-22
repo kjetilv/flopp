@@ -20,6 +20,9 @@ record SimpleImpl(char separator, int columnCount, Charset charset)
         return true;
     }
 
+    static final Simple DEFAULT_SIMPLE =
+        new SimpleImpl(DEF_SEP_CHAR, DEF_COL_COUNT, DEF_CHARSET);
+
     @Override
     public String toString() {
         return getClass().getSimpleName() +
@@ -28,7 +31,4 @@ record SimpleImpl(char separator, int columnCount, Charset charset)
                " charset:" + charset +
                "]";
     }
-
-    static final Simple DEFAULT_SIMPLE =
-        new SimpleImpl(DEF_SEP_CHAR, DEF_COL_COUNT, DEF_CHARSET);
 }

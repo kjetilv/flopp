@@ -233,6 +233,10 @@ public final class LineSegments {
         );
     }
 
+    static LineSegment segmentOfSize(long size) {
+        return of(MemorySegments.createAligned(size), 0, size);
+    }
+
     private LineSegments() {
     }
 
@@ -249,8 +253,4 @@ public final class LineSegments {
     private static final long[] NO_LONGS = new long[0];
 
     private static final byte[] NO_BYTES = new byte[0];
-
-    static LineSegment segmentOfSize(long size) {
-        return of(MemorySegments.createAligned(size), 0, size);
-    }
 }

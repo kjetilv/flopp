@@ -12,6 +12,7 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
     BitwiseCsvSimpleSplitter(Consumer<SeparatedLine> lines, Format.Csv format) {
         super(lines, format);
     }
+
     @Override
     protected String substring() {
         return formatString();

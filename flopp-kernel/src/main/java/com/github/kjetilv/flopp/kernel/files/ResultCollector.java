@@ -21,11 +21,6 @@ final class ResultCollector<T> {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
-    }
-
     void sync(PartitionResult<T> partitionResult) {
         consumerSpliterator.accept(partitionResult);
     }
@@ -49,5 +44,10 @@ final class ResultCollector<T> {
         PartitionResult<T> partitionResult
     ) {
         return transfers.transfer(partitionResult.partition(), partitionResult.result());
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + consumerSpliterator + "]";
     }
 }

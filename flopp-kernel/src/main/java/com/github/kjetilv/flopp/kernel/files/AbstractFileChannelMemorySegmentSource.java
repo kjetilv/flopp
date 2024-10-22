@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.io.RandomAccessFile;
@@ -54,11 +54,6 @@ sealed abstract class AbstractFileChannelMemorySegmentSource
         }
     }
 
-    @Override
-    public final String toString() {
-        return getClass().getSimpleName() + "[" + path + "]";
-    }
-
     protected final Arena arena() {
         return arena;
     }
@@ -66,8 +61,6 @@ sealed abstract class AbstractFileChannelMemorySegmentSource
     protected final FileChannel channel() {
         return channel;
     }
-
-    protected abstract LineSegment lineSegment(Partition partition, long length);
 
     @SuppressWarnings("resource")
     protected MemorySegment memorySegment(long offset, long length) {
@@ -78,11 +71,18 @@ sealed abstract class AbstractFileChannelMemorySegmentSource
         }
     }
 
+    protected abstract LineSegment lineSegment(Partition partition, long length);
+
     private RandomAccessFile openRandomAccess(Path path) {
         try {
             return new RandomAccessFile(path.toFile(), "r");
         } catch (Exception e) {
             throw new IllegalStateException(this + " could not access file", e);
         }
+    }
+
+    @Override
+    public final String toString() {
+        return getClass().getSimpleName() + "[" + path + "]";
     }
 }

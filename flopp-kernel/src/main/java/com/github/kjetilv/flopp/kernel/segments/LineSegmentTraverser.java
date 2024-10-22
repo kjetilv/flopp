@@ -375,10 +375,6 @@ public abstract sealed class LineSegmentTraverser
 
     public sealed interface Reusable extends LongSupplier, Function<LineSegment, Reusable> {
 
-        long size();
-
-        void forEach(IndexedLongConsumer consumer);
-
         default int toHashCode(LineSegment lineSegment) {
             return apply(lineSegment).toHashCode();
         }
@@ -391,6 +387,10 @@ public abstract sealed class LineSegmentTraverser
             }
             return hash;
         }
+
+        long size();
+
+        void forEach(IndexedLongConsumer consumer);
     }
 
     @FunctionalInterface

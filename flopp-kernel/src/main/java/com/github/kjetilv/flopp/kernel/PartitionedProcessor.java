@@ -17,9 +17,9 @@ public interface PartitionedProcessor<T, I, O> extends Closeable {
         forEachPartition(_ -> processor.get());
     }
 
-    void forEachPartition(Function<Partition, Function<I, O>> processor);
-
     @Override
     default void close() {
     }
+
+    void forEachPartition(Function<Partition, Function<I, O>> processor);
 }

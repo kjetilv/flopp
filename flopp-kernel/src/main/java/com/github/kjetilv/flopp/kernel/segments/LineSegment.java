@@ -14,8 +14,6 @@ import static java.lang.foreign.ValueLayout.*;
 @SuppressWarnings("unused")
 public interface LineSegment extends Range, Comparable<LineSegment> {
 
-    MemorySegment memorySegment();
-
     default long longsCount() {
         return longsCount(false);
     }
@@ -275,6 +273,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     default int compareTo(LineSegment o) {
         return LineSegments.compare(this, o);
     }
+
+    MemorySegment memorySegment();
 
     interface Immutable {
     }

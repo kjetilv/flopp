@@ -102,18 +102,6 @@ final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + sl + "]";
-    }
-
-    private static int maxColumnNo(List<Column> columns) {
-        return columns.stream().mapToInt(Column::colunmNo)
-            .max()
-            .orElseThrow(() ->
-                new IllegalStateException("Unepxected missing max"));
-    }
-
-    @Override
     public void read(PartitionedSplitter splitter, Consumer<Columns> values) {
         splitter.forEach(separatedLine ->
             values.accept(columns(separatedLine)));
@@ -179,6 +167,13 @@ final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
         return this;
     }
 
+    private static int maxColumnNo(List<Column> columns) {
+        return columns.stream().mapToInt(Column::colunmNo)
+            .max()
+            .orElseThrow(() ->
+                new IllegalStateException("Unepxected missing max"));
+    }
+
     private static List<Column> discoverColumns(String header, Format.Csv format) {
         String[] headers = format.split(header);
         return IntStream.range(0, headers.length)
@@ -199,5 +194,10 @@ final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
             }
         }
         return Map.copyOf(map);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + sl + "]";
     }
 }

@@ -1,7 +1,10 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.TempTargets;
+import com.github.kjetilv.flopp.kernel.Transfers;
 import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
@@ -36,7 +39,7 @@ final class FormatPartitionedProcessor
             new LineSegmentsWriter(path, MEMORY_SEGMENT_SIZE);
         ResultCollector<Path> collector = new ResultCollector<>(
             partitioned().partitions().size(),
-            sizer(),
+            path -> Shape.of(path).size(),
             Executors.newVirtualThreadPerTaskExecutor()
         );
         try (

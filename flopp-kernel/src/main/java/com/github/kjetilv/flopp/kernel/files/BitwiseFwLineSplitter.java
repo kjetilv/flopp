@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.segments.Range;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.Range;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.nio.charset.Charset;
@@ -29,15 +29,6 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
             this.start[i] = range.startIndex();
             this.end[i] = range.endIndex();
         }
-    }
-
-    @Override
-    protected String substring() {
-        return null;
-    }
-
-    @Override
-    protected void process(LineSegment segment) {
     }
 
     @Override
@@ -84,5 +75,14 @@ final class BitwiseFwLineSplitter extends AbstractBitwiseLineSplitter {
     @Override
     public long endIndex() {
         return end[column];
+    }
+
+    @Override
+    protected String substring() {
+        return null;
+    }
+
+    @Override
+    protected void process(LineSegment segment) {
     }
 }

@@ -37,17 +37,17 @@ abstract sealed class AbstractBitwiseLineSplitter
         return memorySegment;
     }
 
-    @Override
-    public final String toString() {
-        String sub = substring();
-        boolean hasSub = sub == null || sub.isBlank();
-        return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + memorySegment + "]";
-    }
-
     protected abstract String substring();
 
     protected abstract void process(LineSegment segment);
 
     private static final Consumer<SeparatedLine> NONE = _ -> {
     };
+
+    @Override
+    public final String toString() {
+        String sub = substring();
+        boolean hasSub = sub == null || sub.isBlank();
+        return getClass().getSimpleName() + "[" + (hasSub ? "" : sub + " ") + memorySegment + "]";
+    }
 }

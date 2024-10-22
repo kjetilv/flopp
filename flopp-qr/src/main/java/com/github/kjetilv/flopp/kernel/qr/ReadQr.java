@@ -22,7 +22,7 @@ public interface ReadQr {
         return stream(name, ioStream, 0, queueSize, poisonPill);
     }
 
-    default<T> Stream<T> stream(Stream<T> ioStream, long count, int queueSize, T poisonPill) {
+    default <T> Stream<T> stream(Stream<T> ioStream, long count, int queueSize, T poisonPill) {
         return stream(null, ioStream, count, queueSize, poisonPill);
     }
 

@@ -8,8 +8,9 @@ import java.io.Closeable;
 @FunctionalInterface
 interface MemorySegmentSource extends Closeable {
 
-    LineSegment get(Partition partition);
-
     @Override
-    default void close() {}
+    default void close() {
+    }
+
+    LineSegment get(Partition partition);
 }

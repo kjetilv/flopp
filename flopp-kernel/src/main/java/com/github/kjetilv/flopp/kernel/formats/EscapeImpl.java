@@ -20,6 +20,9 @@ record EscapeImpl(
         Objects.requireNonNull(charset, "charset");
     }
 
+    static final Escape DEFAULT_ESCAPE =
+        new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
+
     @Override
     public String toString() {
         return getClass().getSimpleName() +
@@ -30,7 +33,4 @@ record EscapeImpl(
                " charset:" + charset +
                "]";
     }
-
-    static final Escape DEFAULT_ESCAPE =
-        new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
 }

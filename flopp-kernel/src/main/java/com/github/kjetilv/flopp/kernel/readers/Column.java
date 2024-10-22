@@ -21,8 +21,10 @@ public record Column(String name, int colunmNo, Parser parser) {
     }
 
     public static Column ofString(String name, int col, byte[] buffer, Charset charset) {
-        return ofType(name, col, segment ->
-            segment.asString(buffer, charset));
+        return ofType(
+            name, col, segment ->
+                segment.asString(buffer, charset)
+        );
     }
 
     public static Column ofType(String name, int col, Parser.Obj parser) {
@@ -138,83 +140,83 @@ public record Column(String name, int colunmNo, Parser parser) {
 
         non-sealed interface Obj extends Parser {
 
-            Object parse(LineSegment lineSegment);
-
             default Object parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            Object parse(LineSegment lineSegment);
         }
 
         non-sealed interface Bo extends Parser {
 
-            boolean parse(LineSegment segment);
-
             default boolean parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            boolean parse(LineSegment segment);
         }
 
         non-sealed interface I extends Parser {
 
-            int parse(LineSegment segment);
-
             default int parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            int parse(LineSegment segment);
         }
 
         non-sealed interface L extends Parser {
 
-            long parse(LineSegment segment);
-
             default long parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            long parse(LineSegment segment);
         }
 
         non-sealed interface By extends Parser {
 
-            byte parse(LineSegment segment);
-
             default byte parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            byte parse(LineSegment segment);
         }
 
         non-sealed interface S extends Parser {
 
-            short parse(LineSegment segment);
-
             default short parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            short parse(LineSegment segment);
         }
 
         non-sealed interface C extends Parser {
 
-            char parse(LineSegment segment);
-
             default char parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            char parse(LineSegment segment);
         }
 
         non-sealed interface D extends Parser {
 
-            double parse(LineSegment segment);
-
             default double parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            double parse(LineSegment segment);
         }
 
         non-sealed interface F extends Parser {
 
-            float parse(LineSegment segment);
-
             default float parse(SeparatedLine line, int column) {
                 return parse(line.segment(column));
             }
+
+            float parse(LineSegment segment);
         }
     }
 }

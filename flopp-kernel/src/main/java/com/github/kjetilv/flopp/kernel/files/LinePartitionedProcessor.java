@@ -1,6 +1,9 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.Partitioned;
+import com.github.kjetilv.flopp.kernel.TempTargets;
+import com.github.kjetilv.flopp.kernel.Transfers;
+import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
@@ -33,7 +36,7 @@ final class LinePartitionedProcessor extends AbstractPartitionedProcessor<Path, 
             new MemoryMappedByteArrayLinesWriter(path, BUFFER_SIZE, charset);
         ResultCollector<Path> collector = new ResultCollector<>(
             partitioned().partitions().size(),
-            sizer(),
+            path -> Shape.of(path).size(),
             Executors.newVirtualThreadPerTaskExecutor()
         );
         try (

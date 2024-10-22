@@ -182,17 +182,6 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return str(tableEntries());
-    }
-
-    public String toString(boolean sorted) {
-        return str(sorted
-            ? tableEntries().sorted()
-            : tableEntries());
-    }
-
     private IntStream lengths() {
         return Arrays.stream(table)
             .filter(Objects::nonNull)
@@ -287,5 +276,16 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
                 Stream.of("}")
             ).flatMap(Function.identity())
             .collect(Collectors.joining());
+    }
+
+    @Override
+    public String toString() {
+        return str(tableEntries());
+    }
+
+    public String toString(boolean sorted) {
+        return str(sorted
+            ? tableEntries().sorted()
+            : tableEntries());
     }
 }

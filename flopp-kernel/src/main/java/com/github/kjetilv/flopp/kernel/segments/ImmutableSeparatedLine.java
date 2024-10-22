@@ -10,11 +10,6 @@ record ImmutableSeparatedLine(
 ) implements SeparatedLine {
 
     @Override
-    public SeparatedLine immutableSeparatedLine() {
-        return this;
-    }
-
-    @Override
     public long start(int column) {
         return start[column];
     }
@@ -22,5 +17,10 @@ record ImmutableSeparatedLine(
     @Override
     public long end(int column) {
         return end[column];
+    }
+
+    @Override
+    public SeparatedLine immutableSeparatedLine() {
+        return this;
     }
 }

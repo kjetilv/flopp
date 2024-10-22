@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
@@ -33,11 +33,6 @@ final class BitwiseCounter {
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[@" + partition + "]";
-    }
-
     private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
         LineSegment sourced = memorySegmentSource.get(partition);
         MemorySegment memorySegment = sourced.memorySegment();
@@ -61,5 +56,10 @@ final class BitwiseCounter {
         public void accept(T lineSegment) {
             lc++;
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[@" + partition + "]";
     }
 }

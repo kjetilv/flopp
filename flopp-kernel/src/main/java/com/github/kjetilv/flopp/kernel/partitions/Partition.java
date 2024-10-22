@@ -57,11 +57,6 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         return offset() + length();
     }
 
-    @Override
-    public String toString() {
-        return "P[" + str() + ":" + Print.bigInt(offset) + "+" + Print.bigInt(length) + "]";
-    }
-
     public long bufferedTo(long size) {
         long simpleBuffer = length + size;
         if (simpleBuffer % MemorySegments.ALIGNMENT == 0) {
@@ -87,5 +82,10 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         String pos = f ? "<" : l ? ">" : "";
         Object no = f || l ? "" : partitionNo;
         return pos + no + "/" + (partitionCount - 1);
+    }
+
+    @Override
+    public String toString() {
+        return "P[" + str() + ":" + Print.bigInt(offset) + "+" + Print.bigInt(length) + "]";
     }
 }

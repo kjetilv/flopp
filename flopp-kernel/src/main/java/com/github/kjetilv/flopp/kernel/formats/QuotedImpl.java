@@ -20,6 +20,9 @@ record QuotedImpl(
         Objects.requireNonNull(charset, "charset");
     }
 
+    static final Quoted DEFAULT_QUOTED =
+        new QuotedImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
+
     @Override
     public String toString() {
         return getClass().getSimpleName() +
@@ -30,7 +33,4 @@ record QuotedImpl(
                " charset:" + charset +
                "]";
     }
-
-    static final Quoted DEFAULT_QUOTED =
-        new QuotedImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
 }

@@ -6,10 +6,6 @@ public interface Range {
         return new ImmutableRange(start, end);
     }
 
-    long startIndex();
-
-    long endIndex();
-
     default long length() {
         return endIndex() - startIndex();
     }
@@ -17,6 +13,10 @@ public interface Range {
     default boolean aligned(int alignment) {
         return length() % alignment == 0;
     }
+
+    long startIndex();
+
+    long endIndex();
 
     record ImmutableRange(long startIndex, long endIndex)
         implements Range {

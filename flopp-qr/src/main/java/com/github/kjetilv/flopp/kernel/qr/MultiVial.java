@@ -51,12 +51,12 @@ final class MultiVial<T> implements Vial<T> {
         return Stream.empty();
     }
 
-    private boolean hasResults() {
-        return size > 0;
-    }
-
     @Override
     public boolean done() {
         return done;
+    }
+
+    private boolean hasResults() {
+        return size > 0;
     }
 }

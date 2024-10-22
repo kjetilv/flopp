@@ -9,14 +9,6 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public interface SeparatedLine {
 
-    MemorySegment memorySegment();
-
-    int columnCount();
-
-    long[] start();
-
-    long[] end();
-
     default Stream<String> columns(Charset charset) {
         return columns(null, charset);
     }
@@ -71,6 +63,14 @@ public interface SeparatedLine {
             .max()
             .orElse(0);
     }
+
+    MemorySegment memorySegment();
+
+    int columnCount();
+
+    long[] start();
+
+    long[] end();
 
     private IntFunction<String> toColumn(Charset charset) {
         long[] start = start();

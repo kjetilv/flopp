@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.Transfer;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -46,11 +46,6 @@ final class FileChannelTransfer implements Transfer {
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + partition + "]";
-    }
-
-    @Override
     public void close() {
         try {
             receivingChannel.close();
@@ -65,5 +60,10 @@ final class FileChannelTransfer implements Transfer {
         } catch (Exception e) {
             throw new IllegalStateException(this + " failed to open rw: " + path, e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + partition + "]";
     }
 }

@@ -13,8 +13,6 @@ public interface ColumnReader {
     @SuppressWarnings("unused")
     interface Columns {
 
-        Column column(String name);
-
         default int col(String name) {
             return column(name).colunmNo();
         }
@@ -23,59 +21,61 @@ public interface ColumnReader {
             return get(column(name).colunmNo());
         }
 
-        Object get(int c);
-
         default LineSegment getRaw(String n) {
             return getRaw(column(n).colunmNo());
         }
-
-        LineSegment getRaw(int c);
 
         default int getInt(String n) {
             return getInt(col(n));
         }
 
-        int getInt(int c);
-
         default long getLong(String n) {
             return getLong(col(n));
         }
-
-        long getLong(int c);
 
         default boolean getBoolean(String n) {
             return getBoolean(col(n));
         }
 
-        boolean getBoolean(int c);
-
         default short getShort(String n) {
             return getShort(col(n));
         }
-
-        short getShort(int c);
 
         default byte getByte(String string) {
             return getByte(col(string));
         }
 
-        byte getByte(int c);
-
         default char getChar(String n) {
             return getChar(col(n));
         }
-
-        char getChar(int c);
 
         default float getFloat(String n) {
             return getFloat(col(n));
         }
 
-        float getFloat(int c);
-
         default double getDouble(String n) {
             return getDouble(col(n));
         }
+
+        Column column(String name);
+
+        Object get(int c);
+
+        LineSegment getRaw(int c);
+
+        int getInt(int c);
+
+        long getLong(int c);
+
+        boolean getBoolean(int c);
+
+        short getShort(int c);
+
+        byte getByte(int c);
+
+        char getChar(int c);
+
+        float getFloat(int c);
 
         double getDouble(int c);
     }

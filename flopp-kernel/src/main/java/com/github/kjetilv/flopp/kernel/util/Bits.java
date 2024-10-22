@@ -492,6 +492,10 @@ public final class Bits {
             return false;
         }
 
+        private boolean hasZero() {
+            return ~((dists & F7) + F7 | dists | F7) != 0x0L;
+        }
+
         @Override
         public String toString() {
             return getClass().getSimpleName() +
@@ -499,10 +503,6 @@ public final class Bits {
                    hex(mask) + " " +
                    hex(dists) +
                    "]";
-        }
-
-        private boolean hasZero() {
-            return ~((dists & F7) + F7 | dists | F7) != 0x0L;
         }
     }
 

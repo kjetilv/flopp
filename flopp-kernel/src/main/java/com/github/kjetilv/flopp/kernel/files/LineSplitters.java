@@ -30,6 +30,9 @@ final class LineSplitters {
         return csvLineSplitter(format, lines);
     }
 
+    private LineSplitters() {
+    }
+
     private static BitwiseFwLineSplitter fwLineSplitter(Format.FwFormat format, Consumer<SeparatedLine> lines) {
         return new BitwiseFwLineSplitter(format, lines);
     }
@@ -43,8 +46,5 @@ final class LineSplitters {
             case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);
             default -> new BitwiseCsvSimpleSplitter(lines, format);
         };
-    }
-
-    private LineSplitters() {
     }
 }

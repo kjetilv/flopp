@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 
@@ -53,13 +53,13 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
     }
 
     @Override
-    public Stream<LineSegment> lines() {
-        return StreamSupport.stream(spliterator, false);
+    public Partition partition() {
+        return partition;
     }
 
     @Override
-    public Partition partition() {
-        return partition;
+    public Stream<LineSegment> lines() {
+        return StreamSupport.stream(spliterator, false);
     }
 
     @Override

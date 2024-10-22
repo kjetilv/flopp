@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.TempTargets;
+import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,11 +60,6 @@ class TempDirTargets implements TempTargets<Path> {
         }
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + tempDirectory.get() + "]";
-    }
-
     private Path tempDirectory() {
         return tempDirectory.updateAndGet(tmp -> {
             if (tmp == null) {
@@ -76,5 +71,10 @@ class TempDirTargets implements TempTargets<Path> {
             }
             return tmp;
         });
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + tempDirectory.get() + "]";
     }
 }

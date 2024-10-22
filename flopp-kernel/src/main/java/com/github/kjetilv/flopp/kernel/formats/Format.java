@@ -11,15 +11,9 @@ public sealed interface Format {
     @SuppressWarnings("unused")
     sealed interface Csv extends Format {
 
-        char separator();
-
-        int columnCount();
-
         default int maxColumnWidth() {
             return Formats.DEF_MAX_COL_WIDTH;
         }
-
-        boolean fast();
 
         default String[] split(String header) {
             return header.split(separatorString());
@@ -28,6 +22,12 @@ public sealed interface Format {
         default String separatorString() {
             return Character.toString(separator());
         }
+
+        char separator();
+
+        int columnCount();
+
+        boolean fast();
 
         sealed interface Quoted extends Csv permits QuotedImpl {
 

@@ -92,6 +92,14 @@ public record Shape(long size, long longestLine, Charset charset, Decor decor) {
         return decor().size() > 0;
     }
 
+    private static long sizeOf(Path file) {
+        try {
+            return Files.size(file);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Bad file:" + file, e);
+        }
+    }
+
     public record Decor(int header, int footer) {
 
         public Decor() {
@@ -109,14 +117,6 @@ public record Shape(long size, long longestLine, Charset charset, Decor decor) {
 
         public int size() {
             return header + footer;
-        }
-    }
-
-    private static long sizeOf(Path file) {
-        try {
-            return Files.size(file);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Bad file:" + file, e);
         }
     }
 }

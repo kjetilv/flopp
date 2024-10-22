@@ -52,34 +52,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         this.columnBuffer = new byte[this.format.maxColumnWidth()];
     }
 
-
-    @Override
-    protected final void process(LineSegment lineSegment) {
-        inited();
-        long startOffset = lineSegment.startIndex();
-        long endOffset = lineSegment.endIndex();
-
-        this.columnNo = 0;
-        this.currentColumnStart = startOffset;
-
-        long headStart = startOffset % ALIGNMENT_INT;
-        long headLong = lineSegment.longAt(startOffset - headStart);
-        long headData = headLong >>> headStart * ALIGNMENT_INT;
-
-        long offset = startOffset + ALIGNMENT_INT - headStart;
-        findSeps(startOffset, headData, endOffset);
-        while (offset < endOffset) {
-            findSeps(offset, lineSegment.longAt(offset), endOffset);
-            offset += ALIGNMENT_INT;
-        }
-        mark(endOffset);
-    }
-
-    protected void inited() {
-    }
-
-    protected abstract void findSeps(long offset, long data, long endOffset);
-
     @Override
     public final int columnCount() {
         return columnNo;
@@ -174,13 +146,28 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     }
 
     @Override
-    public final int hashCode() {
-        return LineSegments.hashCode(this);
+    protected final void process(LineSegment lineSegment) {
+        inited();
+        long startOffset = lineSegment.startIndex();
+        long endOffset = lineSegment.endIndex();
+
+        this.columnNo = 0;
+        this.currentColumnStart = startOffset;
+
+        long headStart = startOffset % ALIGNMENT_INT;
+        long headLong = lineSegment.longAt(startOffset - headStart);
+        long headData = headLong >>> headStart * ALIGNMENT_INT;
+
+        long offset = startOffset + ALIGNMENT_INT - headStart;
+        findSeps(startOffset, headData, endOffset);
+        while (offset < endOffset) {
+            findSeps(offset, lineSegment.longAt(offset), endOffset);
+            offset += ALIGNMENT_INT;
+        }
+        mark(endOffset);
     }
 
-    @Override
-    public final boolean equals(Object obj) {
-        return obj instanceof LineSegment lineSegment && this.matches(lineSegment);
+    protected void inited() {
     }
 
     protected final String formatString() {
@@ -200,9 +187,21 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
         return sepFinder.next();
     }
 
+    protected abstract void findSeps(long offset, long data, long endOffset);
+
     private void mark(long position) {
         this.startPositions[columnNo] = currentColumnStart;
         this.endPositions[columnNo] = position;
         this.columnNo++;
+    }
+
+    @Override
+    public final boolean equals(Object obj) {
+        return obj instanceof LineSegment lineSegment && this.matches(lineSegment);
+    }
+
+    @Override
+    public final int hashCode() {
+        return LineSegments.hashCode(this);
     }
 }
