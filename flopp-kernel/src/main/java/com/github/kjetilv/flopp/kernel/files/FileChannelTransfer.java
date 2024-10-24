@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.Transfer;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
 
 import java.io.IOException;

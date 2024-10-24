@@ -7,7 +7,6 @@ import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 
 import java.io.Closeable;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
@@ -24,7 +23,7 @@ public interface Partitioned<P> extends Closeable {
 
     Stream<PartitionedSplitter> splitters(Format format);
 
-    PartitionedProcessor<Path, LineSegment, String> processTo(P target, Charset charSet);
+    PartitionedProcessor<P, LineSegment, String> processTo(P target, Charset charSet);
 
     PartitionedProcessor<P, SeparatedLine, Stream<LineSegment>> processTo(P target, Format format);
 
