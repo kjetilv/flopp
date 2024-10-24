@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.util.Bits;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.util.Bits;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;

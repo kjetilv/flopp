@@ -22,9 +22,9 @@ final class LineSegmentHashtable<T> implements LineSegmentMap<T> {
 
     private final TableEntry<?>[] table;
 
-    private final LineSegmentTraverser.Reusable reusable;
+    private final AbstractLineSegmentTraverser.Reusable reusable;
 
-    LineSegmentHashtable(int limit, LineSegmentTraverser.Reusable reusable) {
+    LineSegmentHashtable(int limit, AbstractLineSegmentTraverser.Reusable reusable) {
         this.limit = Non.negativeOrZero(limit, "limit");
         this.table = new TableEntry<?>[this.limit];
         this.reusable = reusable == null ? LineSegmentTraverser.create() : reusable;

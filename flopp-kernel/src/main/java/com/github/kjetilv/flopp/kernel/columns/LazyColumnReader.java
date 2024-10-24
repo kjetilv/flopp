@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.readers;
+package com.github.kjetilv.flopp.kernel.columns;
 
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
 import com.github.kjetilv.flopp.kernel.formats.Format;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import static com.github.kjetilv.flopp.kernel.readers.Column.Parser.*;
+import static com.github.kjetilv.flopp.kernel.columns.Column.Parser.*;
 
 final class LazyColumnReader implements ColumnReader, ColumnReader.Columns {
 

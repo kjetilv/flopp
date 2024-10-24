@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.io.LinesWriter;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.util.Non;
 

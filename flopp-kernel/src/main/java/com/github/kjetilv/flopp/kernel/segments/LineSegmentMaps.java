@@ -6,7 +6,7 @@ public final class LineSegmentMaps {
         return create(size, null);
     }
 
-    public static <T> LineSegmentMap<T> create(int size, LineSegmentTraverser.Reusable reusable) {
+    public static <T> LineSegmentMap<T> create(int size, AbstractLineSegmentTraverser.Reusable reusable) {
         return new LineSegmentHashtable<>(size, reusable);
     }
 

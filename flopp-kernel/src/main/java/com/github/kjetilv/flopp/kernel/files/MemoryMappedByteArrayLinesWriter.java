@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.io.LinesWriter;
-
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;

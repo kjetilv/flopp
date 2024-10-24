@@ -15,7 +15,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public final class LineSegments {
 
     public static int hashCode(LineSegment segment) {
-        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
+        AbstractLineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         return hashCode(reusable, reusable.size());
     }
 
@@ -97,7 +97,7 @@ public final class LineSegments {
     }
 
     public static long[] asLongs(LineSegment segment, long[] buffer) {
-        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
+        AbstractLineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         long[] ls = buffer == null ? new long[(int) reusable.size()] : buffer;
         reusable.forEach((i, l) -> ls[i] = l);
         return ls;

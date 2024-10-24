@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.readers;
+package com.github.kjetilv.flopp.kernel.columns;
 
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;

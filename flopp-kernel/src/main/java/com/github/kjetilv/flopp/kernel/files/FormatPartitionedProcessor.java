@@ -3,8 +3,6 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Shape;
-import com.github.kjetilv.flopp.kernel.io.LinesWriter;
-import com.github.kjetilv.flopp.kernel.io.LinesWriterFactory;
 import com.github.kjetilv.flopp.kernel.partitions.Partition;
 import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
