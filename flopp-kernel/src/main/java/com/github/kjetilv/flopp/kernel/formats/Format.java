@@ -29,17 +29,17 @@ public sealed interface Format {
 
         boolean fast();
 
-        sealed interface Quoted extends Csv permits QuotedImpl {
+        sealed interface Quoted extends Csv permits QuotedCsvImpl {
 
             char quote();
         }
 
-        sealed interface Escape extends Csv permits EscapeImpl {
+        sealed interface Escape extends Csv permits EscapeCsvImpl {
 
             char escape();
         }
 
-        sealed interface Simple extends Csv permits SimpleImpl {
+        sealed interface Simple extends Csv permits SimpleCsvImpl {
         }
     }
 

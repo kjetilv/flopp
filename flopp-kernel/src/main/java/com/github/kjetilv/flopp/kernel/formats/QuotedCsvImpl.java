@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-record QuotedImpl(
+record QuotedCsvImpl(
     char separator,
     char quote,
     int columnCount,
@@ -15,13 +15,13 @@ record QuotedImpl(
     Charset charset
 ) implements Format.Csv.Quoted {
 
-    QuotedImpl {
+    QuotedCsvImpl {
         Non.negativeOrZero(columnCount, "column count");
         Objects.requireNonNull(charset, "charset");
     }
 
     static final Quoted DEFAULT_QUOTED =
-        new QuotedImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
+        new QuotedCsvImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
 
     @Override
     public String toString() {

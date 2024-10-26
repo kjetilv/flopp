@@ -19,7 +19,7 @@ abstract sealed class AbstractLineSegmentTraverser
     @SuppressWarnings("PackageVisibleField")
     final ReusableBase empty = new Empty();
 
-    private final ReusableBase none = new Null();
+    final ReusableBase none = new Null();
 
     @Override
     public Reusable apply(LineSegment segment) {
@@ -34,7 +34,7 @@ abstract sealed class AbstractLineSegmentTraverser
         return baseFor(headStart).initialize(segment, headLen, headStart, startIndex, endIndex, length);
     }
 
-    Reusable blank() {
+    Reusable initial() {
         return none;
     }
 

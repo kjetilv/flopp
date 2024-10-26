@@ -7,28 +7,26 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-record EscapeImpl(
-    char separator,
-    char escape,
-    boolean fast,
-    int columnCount,
-    Charset charset
-) implements Format.Csv.Escape {
+record SimpleCsvImpl(char separator, int columnCount, Charset charset)
+    implements Format.Csv.Simple {
 
-    EscapeImpl {
+    SimpleCsvImpl {
         Non.negativeOrZero(columnCount, "column count");
         Objects.requireNonNull(charset, "charset");
     }
 
-    static final Escape DEFAULT_ESCAPE =
-        new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
+    @Override
+    public boolean fast() {
+        return true;
+    }
+
+    static final Simple DEFAULT_SIMPLE =
+        new SimpleCsvImpl(DEF_SEP_CHAR, DEF_COL_COUNT, DEF_CHARSET);
 
     @Override
     public String toString() {
         return getClass().getSimpleName() +
                "[separator:" + separator +
-               " escape:" + escape +
-               " fast:" + fast +
                " columnCount:" + columnCount +
                " charset:" + charset +
                "]";

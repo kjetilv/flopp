@@ -25,39 +25,39 @@ public final class Formats {
     public static final class Csv {
 
         public static Format.Csv.Simple simple() {
-            return SimpleImpl.DEFAULT_SIMPLE;
+            return SimpleCsvImpl.DEFAULT_SIMPLE;
         }
 
         public static Format.Csv.Simple simple(char separator) {
-            return new SimpleImpl(separator, DEF_COL_COUNT, DEF_CHARSET);
+            return new SimpleCsvImpl(separator, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         public static Format.Csv.Simple simple(int columnCount, char separator) {
-            return new SimpleImpl(separator, columnCount, DEF_CHARSET);
+            return new SimpleCsvImpl(separator, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(int columnCount, char quote, char separator) {
-            return new QuotedImpl(separator, quote, columnCount, false, DEF_CHARSET);
+            return new QuotedCsvImpl(separator, quote, columnCount, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted() {
-            return QuotedImpl.DEFAULT_QUOTED;
+            return QuotedCsvImpl.DEFAULT_QUOTED;
         }
 
         public static Format.Csv.Quoted quoted(char separator) {
-            return new QuotedImpl(separator, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
+            return new QuotedCsvImpl(separator, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(int columnCount) {
-            return new QuotedImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, columnCount, false, DEF_CHARSET);
+            return new QuotedCsvImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, columnCount, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(char separator, char quote) {
-            return new QuotedImpl(separator, quote, DEF_COL_COUNT, false, DEF_CHARSET);
+            return new QuotedCsvImpl(separator, quote, DEF_COL_COUNT, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(char separator, int columnCount) {
-            return new QuotedImpl(separator, DEF_QUO_CHAR, columnCount, false, DEF_CHARSET);
+            return new QuotedCsvImpl(separator, DEF_QUO_CHAR, columnCount, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(
@@ -67,39 +67,39 @@ public final class Formats {
             boolean fast,
             Charset charset
         ) {
-            return new QuotedImpl(separator, quote, columnCount, false, charset);
+            return new QuotedCsvImpl(separator, quote, columnCount, false, charset);
         }
 
         public static Format.Csv.Escape escape(boolean fast) {
-            return new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, fast, DEF_COL_COUNT, DEF_CHARSET);
+            return new EscapeCsvImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, fast, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape() {
-            return EscapeImpl.DEFAULT_ESCAPE;
+            return EscapeCsvImpl.DEFAULT_ESCAPE;
         }
 
         public static Format.Csv.Escape escape(char separator) {
-            return new EscapeImpl(separator, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
+            return new EscapeCsvImpl(separator, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(int columnCount) {
-            return new EscapeImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, columnCount, DEF_CHARSET);
+            return new EscapeCsvImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, int columnCount) {
-            return new EscapeImpl(separator, DEF_ESC_CHAR, false, columnCount, DEF_CHARSET);
+            return new EscapeCsvImpl(separator, DEF_ESC_CHAR, false, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape) {
-            return new EscapeImpl(separator, escape, false, DEF_COL_COUNT, DEF_CHARSET);
+            return new EscapeCsvImpl(separator, escape, false, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape, int columnCount) {
-            return new EscapeImpl(separator, escape, false, columnCount, DEF_CHARSET);
+            return new EscapeCsvImpl(separator, escape, false, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape, boolean fast) {
-            return new EscapeImpl(separator, escape, fast, DEF_COL_COUNT, DEF_CHARSET);
+            return new EscapeCsvImpl(separator, escape, fast, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         private Csv() {

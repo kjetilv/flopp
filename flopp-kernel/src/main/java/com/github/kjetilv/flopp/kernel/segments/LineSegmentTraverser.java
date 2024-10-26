@@ -1,5 +1,8 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.AlignedTraverser;
+import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.MultiModeSuppler;
+
 import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
@@ -9,17 +12,18 @@ import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
 public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentTraverser.Reusable> {
 
     static Reusable create() {
-        return new AbstractLineSegmentTraverser.MultiModeSuppler().blank();
+        return new MultiModeSuppler().initial();
     }
 
     static Reusable createAligned() {
-        return new AbstractLineSegmentTraverser.AlignedTraverser().blank();
+        return new AlignedTraverser().initial();
     }
 
     static Reusable create(boolean align) {
-        return (align
-            ? new AbstractLineSegmentTraverser.AlignedTraverser()
-            : new AbstractLineSegmentTraverser.MultiModeSuppler()).blank();
+        AbstractLineSegmentTraverser traverser = align
+            ? new AlignedTraverser()
+            : new MultiModeSuppler();
+        return traverser.initial();
     }
 
     static Reusable create(LineSegment segment) {
@@ -28,8 +32,8 @@ public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentT
 
     static Reusable create(LineSegment segment, boolean align) {
         return (align
-            ? new AbstractLineSegmentTraverser.AlignedTraverser()
-            : new AbstractLineSegmentTraverser.MultiModeSuppler()
+            ? new AlignedTraverser()
+            : new MultiModeSuppler()
         ).apply(segment);
     }
 
