@@ -47,6 +47,18 @@ subprojects {
 
     publishing {
         publications {
+            repositories {
+                mavenLocal()
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/kjetilv/uplift")
+                    credentials {
+                        username = resolveProperty("githubUser", "GITHUB_ACTOR")
+                        password = resolveProperty("githubToken", "GITHUB_TOKEN")
+                    }
+                }
+            }
+
             register<MavenPublication>("floppPublication") {
                 pom {
                     name.set("Flopp")
@@ -71,3 +83,10 @@ subprojects {
         }
     }
 }
+
+fun resolveProperty(property: String, variable: String? = null, defValue: String? = null) =
+    System.getProperty(property)
+        ?: variable?.let { System.getenv(it) }
+        ?: project.property(property)?.toString()
+        ?: defValue
+        ?: throw IllegalStateException("No variable $property found, no default value provided")
