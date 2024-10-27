@@ -35,6 +35,9 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build --stacktrace
+      env:
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_TOKEN: ${{ github.token }}
 
       # The GITHUB_ACTOR and GITHUB_TOKEN need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
