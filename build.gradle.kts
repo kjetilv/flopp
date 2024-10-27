@@ -89,7 +89,7 @@ fun resolveProperty(property: String, variable: String? = null, defValue: String
         ?: variable?.let { System.getenv(it) }
         ?: project.ifProperty(property)
         ?: defValue
-        ?: throw IllegalStateException("No variable $property found, no default value provided")
+        ?: throw IllegalStateException("No variable $property${variable?.let { "/$it" } ?: ""} found, no default value provided")
 
 private fun Project.ifProperty(name: String) =
-    takeIf { it.hasProperty(name) }?.property(name)?.toString()
+    takeIf { this.hasProperty(name) }?.property(name)?.toString()
