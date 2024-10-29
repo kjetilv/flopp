@@ -85,12 +85,15 @@ subprojects {
 }
 
 fun resolveProperty(property: String, variable: String? = null, defValue: String? = null) =
-    System.getProperty(property)
+    (System.getProperty(property)
         ?: variable?.let { System.getenv(it) }
         ?: project.ifProperty(property)
         ?: defValue
-            ?.also { logger.info("Resolved $property${variable?.let { "/$it" }}: ${it.length} chars") }
-        ?: throw IllegalStateException("No variable $property${variable?.let { "/$it" } ?: ""} found, no default value provided")
+        ?: throw IllegalStateException("No variable $property${variable?.let { "/$it" } ?: ""} found, no default value provided"))
+        .also {
+            logger.info("Resolved $property${variable?.let { "/$it" }}: ${it.length} chars")
+        }
+
 
 private fun Project.ifProperty(name: String) =
     takeIf { this.hasProperty(name) }?.property(name)?.toString()
