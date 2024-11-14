@@ -1,5 +1,8 @@
 package com.github.kjetilv.flopp.kernel.partitions;
 
+import com.github.kjetilv.flopp.kernel.Partition;
+import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.TailShards;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayList;

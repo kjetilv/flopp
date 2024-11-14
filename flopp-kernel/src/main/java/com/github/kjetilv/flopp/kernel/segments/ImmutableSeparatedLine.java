@@ -1,8 +1,10 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
+
 import java.lang.foreign.MemorySegment;
 
-record ImmutableSeparatedLine(
+public record ImmutableSeparatedLine(
     MemorySegment memorySegment,
     int columnCount,
     long[] start,

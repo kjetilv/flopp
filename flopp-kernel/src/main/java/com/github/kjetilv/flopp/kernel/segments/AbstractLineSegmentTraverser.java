@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
@@ -19,7 +20,7 @@ abstract sealed class AbstractLineSegmentTraverser
     @SuppressWarnings("PackageVisibleField")
     final ReusableBase empty = new Empty();
 
-    final ReusableBase none = new Null();
+    private final ReusableBase none = new Null();
 
     @Override
     public Reusable apply(LineSegment segment) {

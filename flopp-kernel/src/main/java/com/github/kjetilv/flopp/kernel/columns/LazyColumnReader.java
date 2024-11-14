@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.columns;
 
+import com.github.kjetilv.flopp.kernel.Format;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
-import com.github.kjetilv.flopp.kernel.formats.Format;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.lang.reflect.Array;

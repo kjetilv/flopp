@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
+import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;
@@ -7,7 +8,7 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-record QuotedCsvImpl(
+public record QuotedCsvImpl(
     char separator,
     char quote,
     int columnCount,
@@ -15,7 +16,7 @@ record QuotedCsvImpl(
     Charset charset
 ) implements Format.Csv.Quoted {
 
-    QuotedCsvImpl {
+    public QuotedCsvImpl {
         Non.negativeOrZero(columnCount, "column count");
         Objects.requireNonNull(charset, "charset");
     }

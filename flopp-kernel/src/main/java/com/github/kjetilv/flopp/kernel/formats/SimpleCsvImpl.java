@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
+import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;
@@ -7,10 +8,10 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-record SimpleCsvImpl(char separator, int columnCount, Charset charset)
+public record SimpleCsvImpl(char separator, int columnCount, Charset charset)
     implements Format.Csv.Simple {
 
-    SimpleCsvImpl {
+    public SimpleCsvImpl {
         Non.negativeOrZero(columnCount, "column count");
         Objects.requireNonNull(charset, "charset");
     }

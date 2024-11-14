@@ -1,10 +1,10 @@
 package com.github.kjetilv.flopp.kernel.test;
 
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.partitions.Partitions;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

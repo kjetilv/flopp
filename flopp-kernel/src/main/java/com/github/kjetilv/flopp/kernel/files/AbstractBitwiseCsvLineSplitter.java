@@ -1,10 +1,10 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.formats.Format;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.Format;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.nio.charset.Charset;

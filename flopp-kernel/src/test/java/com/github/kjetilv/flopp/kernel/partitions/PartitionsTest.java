@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.partitions;
 
+import com.github.kjetilv.flopp.kernel.Partitions;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

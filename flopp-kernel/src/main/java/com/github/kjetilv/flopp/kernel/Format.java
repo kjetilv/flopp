@@ -1,6 +1,6 @@
-package com.github.kjetilv.flopp.kernel.formats;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.segments.Range;
+import com.github.kjetilv.flopp.kernel.formats.*;
 
 import java.nio.charset.Charset;
 

@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.function.BiConsumer;

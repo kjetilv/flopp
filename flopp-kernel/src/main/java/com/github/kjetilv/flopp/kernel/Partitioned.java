@@ -1,10 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.formats.Format;
-import com.github.kjetilv.flopp.kernel.partitions.Partitions;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-
 import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.util.function.LongSupplier;

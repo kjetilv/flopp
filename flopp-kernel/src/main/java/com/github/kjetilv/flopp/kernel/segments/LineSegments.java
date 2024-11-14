@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;

@@ -15,14 +15,14 @@
  */
 package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReader;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
-import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 
 import java.nio.file.Path;

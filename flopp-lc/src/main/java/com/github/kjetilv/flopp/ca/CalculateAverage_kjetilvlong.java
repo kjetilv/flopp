@@ -15,18 +15,16 @@
  */
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.PartitionedProcessor;
-import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.columns.Column;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReader;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
-import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.segments.*;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 
 import java.io.IOException;
 import java.math.BigDecimal;

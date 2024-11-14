@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.Format;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.formats.Format;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.Objects;
 import java.util.function.Consumer;

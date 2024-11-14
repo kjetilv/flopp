@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.util.CloseableConsumer;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
@@ -14,7 +14,7 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
 
     public static <T> Function<Consumer<T>, CloseableConsumer<T>> headersAndFooters(
         Partition partition,
-        Shape shape,
+        com.github.kjetilv.flopp.kernel.Shape shape,
         Function<T, T> packer
     ) {
         if (shape != null && shape.hasOverhead()) {

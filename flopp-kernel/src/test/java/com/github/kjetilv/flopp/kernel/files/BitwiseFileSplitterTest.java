@@ -3,14 +3,10 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
-import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import com.github.kjetilv.flopp.kernel.segments.LineSegments;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

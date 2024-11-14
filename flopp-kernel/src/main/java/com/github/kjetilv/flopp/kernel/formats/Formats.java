@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
-import com.github.kjetilv.flopp.kernel.segments.Range;
+import com.github.kjetilv.flopp.kernel.Format;
+import com.github.kjetilv.flopp.kernel.Range;
 
 import java.nio.charset.Charset;
 
@@ -10,17 +11,17 @@ public final class Formats {
     private Formats() {
     }
 
-    static final char DEF_ESC_CHAR = '\\';
+    public static final char DEF_ESC_CHAR = '\\';
 
-    static final char DEF_SEP_CHAR = ',';
+    public static final char DEF_SEP_CHAR = ',';
 
-    static final char DEF_QUO_CHAR = '"';
+    public static final char DEF_QUO_CHAR = '"';
 
-    static final int DEF_COL_COUNT = 128;
+    public static final int DEF_COL_COUNT = 128;
 
-    static final int DEF_MAX_COL_WIDTH = 8192;
+    public static final int DEF_MAX_COL_WIDTH = 8192;
 
-    static final Charset DEF_CHARSET = Charset.defaultCharset();
+    public static final Charset DEF_CHARSET = Charset.defaultCharset();
 
     public static final class Csv {
 

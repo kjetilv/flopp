@@ -1,8 +1,10 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+
 import java.lang.foreign.MemorySegment;
 
-record ImmutableLineSegment(MemorySegment memorySegment, long startIndex, long endIndex)
+public record ImmutableLineSegment(MemorySegment memorySegment, long startIndex, long endIndex)
     implements LineSegment, LineSegment.Immutable {
 
     @Override

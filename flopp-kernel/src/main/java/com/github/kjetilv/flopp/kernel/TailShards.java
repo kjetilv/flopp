@@ -1,13 +1,13 @@
-package com.github.kjetilv.flopp.kernel.partitions;
+package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.util.ArrayList;
 import java.util.List;
 
-record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
+public record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
 
-    TailShards(
+    public TailShards(
         int shardCount,
         double tailPerc,
         double partitionMaxPerc,
@@ -22,7 +22,7 @@ record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, doub
         this.partitionMaxPerc = Non.negativeOrZero(partitionMaxPerc, "partitionMaxPercentage");
     }
 
-    Partitions create(long total, int count, long tail) {
+    public Partitions create(long total, int count, long tail) {
         long approxTailSize = Math.round(tailPerc / 100 * total);
         long approxMainSize = (total - approxTailSize) / count;
 

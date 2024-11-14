@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.columns;
 
-import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.Format;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;

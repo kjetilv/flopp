@@ -1,8 +1,6 @@
-package com.github.kjetilv.flopp.kernel.partitions;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
-import com.github.kjetilv.flopp.kernel.segments.Range;
 import com.github.kjetilv.flopp.kernel.util.Non;
 import com.github.kjetilv.flopp.kernel.util.Print;
 

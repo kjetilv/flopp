@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.AlignedTraverser;
 import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.MultiModeSuppler;
 
@@ -9,6 +10,7 @@ import java.util.function.LongSupplier;
 
 import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
 
+@SuppressWarnings("unused")
 public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentTraverser.Reusable> {
 
     static Reusable create() {

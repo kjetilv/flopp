@@ -1,5 +1,6 @@
 package com.github.kjetilv.flopp.kernel.formats;
 
+import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.nio.charset.Charset;
@@ -7,7 +8,7 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-record EscapeCsvImpl(
+public record EscapeCsvImpl(
     char separator,
     char escape,
     boolean fast,
@@ -15,7 +16,7 @@ record EscapeCsvImpl(
     Charset charset
 ) implements Format.Csv.Escape {
 
-    EscapeCsvImpl {
+    public EscapeCsvImpl {
         Non.negativeOrZero(columnCount, "column count");
         Objects.requireNonNull(charset, "charset");
     }

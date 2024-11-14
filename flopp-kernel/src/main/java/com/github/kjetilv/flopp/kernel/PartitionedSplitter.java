@@ -1,8 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
-
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 

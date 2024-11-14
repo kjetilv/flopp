@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;

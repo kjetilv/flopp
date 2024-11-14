@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.ca;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

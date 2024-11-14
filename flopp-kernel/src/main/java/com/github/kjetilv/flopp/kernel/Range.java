@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
 public interface Range {
 

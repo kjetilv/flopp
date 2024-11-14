@@ -1,7 +1,7 @@
 package com.github.kjetilv.flopp.kernel.columns;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.util.function.Consumer;
 

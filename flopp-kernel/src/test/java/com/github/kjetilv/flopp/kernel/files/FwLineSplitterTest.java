@@ -1,11 +1,11 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.Format;
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Format;
+import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
-import com.github.kjetilv.flopp.kernel.segments.Range;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

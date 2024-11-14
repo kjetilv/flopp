@@ -15,22 +15,25 @@
  */
 package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
+import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
-import com.github.kjetilv.flopp.kernel.formats.Format;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
+import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.LongConsumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class JustSplit_kjetilvlong {
+
     public static void main(String[] args) {
         for (String arg : args) {
             Instant start = Instant.now();
@@ -50,33 +53,23 @@ public final class JustSplit_kjetilvlong {
 
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
-//        int chunks = partitioning.of(shape.size()).size();
-        try (
-            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)
-//            ExecutorService executor = new ThreadPoolExecutor(
-//                chunks,
-//                chunks,
-//                0, TimeUnit.NANOSECONDS,
-//                new LinkedBlockingQueue<>(chunks)
-//            )
-        ) {
+        try (Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)) {
             Format.Csv.Escape format = Formats.Csv.escape(';');
             List<Runnable> list1 =
                 bitwisePartitioned.splitters(format)
                     .map(splitsConsumer ->
-//                        CompletableFuture.runAsync(
-                        (Runnable)
-                            () ->
-                                splitsConsumer.forEach(line ->
-                                    longAdder.add(line.columnCount()))
-//                        ,
-//                            executor
-                        )
-//                    .map(cf -> (Runnable) cf::join)
+                        consume(splitsConsumer, longAdder::add)
+                    )
                     .toList();
             list1.forEach(Runnable::run);
         }
         return longAdder;
+    }
+
+    private static Runnable consume(PartitionedSplitter splitsConsumer, LongConsumer longAdder) {
+        return () ->
+            splitsConsumer.forEach(line ->
+                longAdder.accept(line.columnCount()));
     }
 
     private JustSplit_kjetilvlong() {

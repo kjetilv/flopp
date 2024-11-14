@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
+
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 

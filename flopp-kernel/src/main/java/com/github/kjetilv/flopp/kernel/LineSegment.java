@@ -1,5 +1,8 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
+import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegments;
+import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;

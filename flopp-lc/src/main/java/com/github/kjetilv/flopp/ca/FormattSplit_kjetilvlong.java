@@ -15,16 +15,16 @@
  */
 package com.github.kjetilv.flopp.ca;
 
+import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.PartitionedSplitter;
+import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.columns.Column;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReader;
 import com.github.kjetilv.flopp.kernel.columns.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.formats.Shape;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.segments.LineSegment;
 
 import java.nio.file.Path;
 import java.time.Duration;

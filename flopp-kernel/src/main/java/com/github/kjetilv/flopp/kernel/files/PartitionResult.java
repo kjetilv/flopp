@@ -1,6 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.partitions.Partition;
+import com.github.kjetilv.flopp.kernel.Partition;
 
 import java.util.function.Supplier;
 
