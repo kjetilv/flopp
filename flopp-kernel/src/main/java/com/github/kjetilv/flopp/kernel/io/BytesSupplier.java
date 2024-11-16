@@ -1,6 +1,7 @@
-package com.github.kjetilv.flopp.kernel.util;
+package com.github.kjetilv.flopp.kernel.io;
 
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
+import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.util.Objects;
 import java.util.function.IntSupplier;

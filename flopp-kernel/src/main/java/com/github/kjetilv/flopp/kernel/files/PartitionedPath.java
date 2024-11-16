@@ -149,4 +149,9 @@ final class PartitionedPath implements Partitioned<Path> {
             ? partitioning.tail(shape.longestLine())
             : partitioning;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + path + " " + shape + "/" + partitions + "]";
+    }
 }
