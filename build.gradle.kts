@@ -53,8 +53,8 @@ subprojects {
                     name = "GitHubPackages"
                     url = uri("https://maven.pkg.github.com/kjetilv/uplift")
                     credentials {
-                        username = resolveProperty("githubUser", "GITHUB_ACTOR")
-                        password = resolveProperty("githubToken", "GITHUB_TOKEN")
+                        username = "githubUser".or("GITHUB_ACTOR")
+                        password = "githubToken".or("GITHUB_TOKEN")
                     }
                 }
             }
@@ -84,16 +84,13 @@ subprojects {
     }
 }
 
-fun resolveProperty(property: String, variable: String? = null, defValue: String? = null) =
-    (System.getProperty(property)
-        ?: variable?.let { System.getenv(it) }
-        ?: project.ifProperty(property)
-        ?: defValue
-        ?: throw IllegalStateException("No variable $property${variable?.let { "/$it" } ?: ""} found, no default value provided"))
-        .also {
-            logger.info("Resolved $property${variable?.let { "/$it" }}: ${it.length} chars")
-        }
+fun String.or(envVar: String) = resolveProperty(this, envVar).also {
+    logger.info("Resolved $name${envVar?.let { "/$it" }}: ${it.length} chars")
+}
 
+fun resolveProperty(name: String, envVar: String? = null, defValue: String? = null) =
+    System.getProperty(name) ?: envVar?.let { System.getenv(it) }
+    ?: project.takeIf { project.hasProperty(name) }?.property(name)?.toString()
+    ?: defValue
+    ?: throw IllegalStateException("No variable $name${envVar?.let { "/$it" } ?: ""} found, no default value provided")
 
-private fun Project.ifProperty(name: String) =
-    takeIf { this.hasProperty(name) }?.property(name)?.toString()

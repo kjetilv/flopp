@@ -1,5 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.LineSegments;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 

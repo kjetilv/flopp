@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
-import static com.github.kjetilv.flopp.kernel.segments.LineSegments.nextHash;
+import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
 
 @SuppressWarnings("unused")
 public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentTraverser.Reusable> {

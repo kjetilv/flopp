@@ -1,9 +1,9 @@
 package com.github.kjetilv.flopp.kernel.util;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

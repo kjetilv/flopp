@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.segments.ImmutableSeparatedLine;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;

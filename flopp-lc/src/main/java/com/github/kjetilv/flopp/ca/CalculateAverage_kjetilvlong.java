@@ -24,7 +24,6 @@ import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 
 import java.io.IOException;
 import java.math.BigDecimal;

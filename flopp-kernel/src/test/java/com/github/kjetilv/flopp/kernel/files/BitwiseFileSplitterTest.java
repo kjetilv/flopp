@@ -6,7 +6,6 @@ import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

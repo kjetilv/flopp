@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 import org.junit.jupiter.api.Test;
 

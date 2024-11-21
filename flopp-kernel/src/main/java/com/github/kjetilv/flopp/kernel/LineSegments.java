@@ -1,7 +1,9 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.Range;
+import com.github.kjetilv.flopp.kernel.io.SuppliedLongSpliterator;
+import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
+import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
+import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
@@ -17,7 +19,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 public final class LineSegments {
 
     public static int hashCode(LineSegment segment) {
-        AbstractLineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
+        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         return hashCode(reusable, reusable.size());
     }
 
@@ -99,7 +101,7 @@ public final class LineSegments {
     }
 
     public static long[] asLongs(LineSegment segment, long[] buffer) {
-        AbstractLineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
+        LineSegmentTraverser.Reusable reusable = LineSegmentTraverser.create(segment);
         long[] ls = buffer == null ? new long[(int) reusable.size()] : buffer;
         reusable.forEach((i, l) -> ls[i] = l);
         return ls;
@@ -235,7 +237,7 @@ public final class LineSegments {
         );
     }
 
-    static LineSegment segmentOfSize(long size) {
+    public static LineSegment segmentOfSize(long size) {
         return of(MemorySegments.createAligned(size), 0, size);
     }
 

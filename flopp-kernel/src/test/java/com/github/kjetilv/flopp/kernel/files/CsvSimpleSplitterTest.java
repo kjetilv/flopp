@@ -1,12 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.Format;
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.Partitioned;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

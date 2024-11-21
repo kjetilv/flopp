@@ -2,8 +2,8 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.segments.LineSegments;
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
