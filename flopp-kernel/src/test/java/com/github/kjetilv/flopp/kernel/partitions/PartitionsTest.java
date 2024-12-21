@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.partitions;
 
 import com.github.kjetilv.flopp.kernel.Partitions;
+import com.github.kjetilv.flopp.kernel.TailShards;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +43,7 @@ class PartitionsTest {
     void fragment() {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitions partitions = Partitioning.create(cpus, 250)
-            .fragment(cpus * 3, 1.0d, 0.1d, 0.01d)
+            .fragment(new TailShards(cpus * 3, 1, 2, 3))
             .of(1_000_000_000);
         System.out.println(partitions);
     }

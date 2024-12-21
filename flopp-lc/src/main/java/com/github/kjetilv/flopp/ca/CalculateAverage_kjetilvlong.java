@@ -50,24 +50,13 @@ public final class CalculateAverage_kjetilvlong {
             .filter(Files::isRegularFile)
             .orElseThrow(() ->
                 new IllegalArgumentException("No path: " + args[0]));
-        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
-        Optional<Path> outFile = pathArgument(args, 2);
+//        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
+//        Optional<Path> outFile = pathArgument(args, 2);
 
-        Settings settings = new Settings(
-            1,
-            64,
-            .5d,
-            .001d,
-            .0001d
-        );
+        Settings settings = new Settings(1, 8, 6, 7, 8);
         long size = Files.size(inputFile);
         int cpus = Runtime.getRuntime().availableProcessors();
-        System.out.println(
-            size + " bytes on " + cpus + " cpus: " + settings
-        );
-        System.out.println(
-            "  " + readPartitioning(cpus, Shape.of(inputFile), settings)
-        );
+        System.out.println(size + " bytes on " + cpus + " cpus: " + settings);
 
         Instant start = Instant.now();
         Format.Csv simple = Formats.Csv.simple(2, ';');
@@ -83,19 +72,19 @@ public final class CalculateAverage_kjetilvlong {
         System.out.println(mapStringSorted);
         System.out.println(Duration.between(start, Instant.now()));
 
-        truthFile
-            .map(CalculateAverage_kjetilvlong::readString)
-                .ifPresent(contents ->
-                System.out.println(mapStringSorted.equals(contents.trim())));
-
-        outFile.ifPresent(out ->
-            temper(
-                map,
-                inputFile,
-                settings,
-                simple,
-                out
-            ));
+//        truthFile
+//            .map(CalculateAverage_kjetilvlong::readString)
+//                .ifPresent(contents ->
+//                System.out.println(mapStringSorted.equals(contents.trim())));
+//
+//        outFile.ifPresent(out ->
+//            temper(
+//                map,
+//                inputFile,
+//                settings,
+//                simple,
+//                out
+//            ));
     }
 
     static Result mapAverage(Path path, Settings settings, Format.Csv format) {
@@ -232,12 +221,8 @@ public final class CalculateAverage_kjetilvlong {
         if (shape.size() < 1_000_000) {
             return basic;
         }
-        return basic.fragment(
-            cpus * settings.tailMultiplier(),
-            settings.tailPerc(),
-            settings.partitionMaxPerc(),
-            settings.partitionMinPerc()
-        );
+        TailShards tailShards = tailShards(cpus, settings);
+        return basic.fragment(tailShards);
     }
 
     @SuppressWarnings("unused")
@@ -246,11 +231,15 @@ public final class CalculateAverage_kjetilvlong {
         if (shape.size() < 1_000_000) {
             return basic;
         }
-        return basic.fragment(
+        return basic.fragment(tailShards(cpus, settings));
+    }
+
+    private static TailShards tailShards(int cpus, Settings settings) {
+        return new TailShards(
             cpus * settings.tailMultiplier(),
-            settings.tailPerc(),
-            settings.partitionMaxPerc(),
-            settings.partitionMinPerc()
+            settings.tailDim(),
+            settings.maxDim(),
+            settings.minDim()
         );
     }
 
@@ -324,10 +313,16 @@ public final class CalculateAverage_kjetilvlong {
     public record Settings(
         int cpuMultiplier,
         int tailMultiplier,
-        double tailPerc,
-        double partitionMaxPerc,
-        double partitionMinPerc
+        int tailDim,
+        int maxDim,
+        int minDim
     ) {
+
+        public Settings {
+            if (!(tailDim <= maxDim && maxDim <= minDim)) {
+                throw new IllegalStateException(this + " has wrong sizes");
+            }
+        }
     }
 
     public static final class Result {
@@ -343,10 +338,6 @@ public final class CalculateAverage_kjetilvlong {
         private Result() {
             this.min = Integer.MAX_VALUE;
             this.max = Integer.MIN_VALUE;
-        }
-
-        public String toString() {
-            return round(min) + "/" + round(1.0 * sum / count) + "/" + round(max);
         }
 
         public Result merge(Result coll) {
@@ -379,6 +370,10 @@ public final class CalculateAverage_kjetilvlong {
 
         private static double round(double value) {
             return Math.round(value) / 10.0;
+        }
+
+        public String toString() {
+            return round(min) + "/" + round(1.0 * sum / count) + "/" + round(max);
         }
     }
 }

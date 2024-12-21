@@ -52,10 +52,6 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return new Partitioning(count, tail, fragmentation);
     }
 
-    public Partitioning fragment(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
-        return fragment(new TailShards(shardCount, tailPerc, partitionMaxPerc, partitionMinPerc));
-    }
-
     public Partitions of(long total) {
         checkSize(total);
         if (fragmentation == null) {

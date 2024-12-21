@@ -1,11 +1,12 @@
 package com.github.kjetilv.flopp.kernel.io;
 
 import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
-import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.util.Objects;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
+
+import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("unused")
 public final class BytesSupplier implements IntSupplier {
@@ -24,7 +25,7 @@ public final class BytesSupplier implements IntSupplier {
     @Override
     public int getAsInt() {
         try {
-            return Bits.getByte(data, index);
+            return (byte) (data >> ALIGNMENT_INT * index & 0xFF);
         } finally {
             index++;
             if (index == MemorySegments.ALIGNMENT_INT) {

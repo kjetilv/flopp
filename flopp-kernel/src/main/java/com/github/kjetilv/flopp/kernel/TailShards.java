@@ -5,30 +5,32 @@ import com.github.kjetilv.flopp.kernel.util.Non;
 import java.util.ArrayList;
 import java.util.List;
 
-public record TailShards(int shardCount, double tailPerc, double partitionMaxPerc, double partitionMinPerc) {
+public record TailShards(
+    int shardCount,
+    int tailDim,
+    int maxDim,
+    int minDim
+) {
 
-    public TailShards(
-        int shardCount,
-        double tailPerc,
-        double partitionMaxPerc,
-        double partitionMinPerc
-    ) {
-        if (tailPerc > 10) {
-            throw new IllegalStateException("Tail too big: %" + tailPerc);
+    public TailShards {
+        if (tailDim == 0 && maxDim == 0 && minDim == 0) {
+        } else if (tailDim < maxDim && maxDim < minDim) {
+            Non.negativeOrZero(shardCount, "shardCount");
+            Non.negativeOrZero(tailDim, "tailDim");
+            Non.negativeOrZero(minDim, "minDim");
+            Non.negativeOrZero(maxDim, "maxDim");
+        } else {
+            throw new IllegalStateException(this + " has wrong sizes");
         }
-        this.shardCount = Non.negativeOrZero(shardCount, "shardCount");
-        this.tailPerc = Non.negativeOrZero(tailPerc, "tailPercentage");
-        this.partitionMinPerc = Non.negativeOrZero(partitionMinPerc, "partitionMinPercentage");
-        this.partitionMaxPerc = Non.negativeOrZero(partitionMaxPerc, "partitionMaxPercentage");
     }
 
     public Partitions create(long total, int count, long tail) {
-        long approxTailSize = Math.round(tailPerc / 100 * total);
+        long approxTailSize = Math.round(total / Math.pow(10, tailDim));
         long approxMainSize = (total - approxTailSize) / count;
 
-        long percentageMinSize = Math.round(partitionMinPerc / 100 * approxMainSize);
-        long tailAdjustedSize = Math.min(tail * 5, approxMainSize / 10);
-        long minSize = tail > 0 ? tailAdjustedSize : percentageMinSize;
+        long minSize = tail > 0
+            ? Math.min(tail * 5, approxMainSize / 10)
+            : Math.round(approxMainSize / Math.pow(10, minDim));
 
         List<Partition> list = partitions(approxTailSize, minSize);
         long sum = list.stream().mapToLong(Partition::length).sum();

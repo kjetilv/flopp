@@ -124,7 +124,7 @@ class CalculateAverageTest {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
         LineSegmentMap<CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.mapAverages(
             smaple,
-            new CalculateAverage_kjetilvlong.Settings(1, 50, 1.0d, 0.01d, 0.00001d), Formats.Csv.simple(2, ';')
+            new CalculateAverage_kjetilvlong.Settings(1, 50, 1, 2, 6), Formats.Csv.simple(2, ';')
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).hasContent(map + "\n")
