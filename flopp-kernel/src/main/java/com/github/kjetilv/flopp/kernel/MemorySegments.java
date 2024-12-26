@@ -1,4 +1,4 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
@@ -25,6 +25,10 @@ public final class MemorySegments {
 
     public static MemorySegment of(byte[] bytes) {
         return MemorySegment.ofBuffer(alignedByteBuffer(bytes));
+    }
+
+    public static MemorySegment of(byte[] bytes, int offset, int length) {
+        return MemorySegment.ofBuffer(alignedByteBuffer(bytes, offset, length));
     }
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
@@ -188,10 +192,13 @@ public final class MemorySegments {
     public static final int ALIGNMENT_POW = 3;
 
     private static ByteBuffer alignedByteBuffer(byte[] bytes) {
-        int length = bytes.length;
+        return alignedByteBuffer(bytes, bytes.length, 0);
+    }
+
+    private static ByteBuffer alignedByteBuffer(byte[] bytes, int length, int offset) {
         int alignedSize = alignedSize(length);
         ByteBuffer bb = ByteBuffer.allocateDirect(Math.max(ALIGNMENT_INT, alignedSize));
-        bb.put(bytes);
+        bb.put(bytes, offset, length);
         bb.put(new byte[alignedSize - length]);
         bb.flip();
         return bb;

@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
 import static java.lang.Integer.MAX_VALUE;
 
 public record Partitioning(int count, long tail, TailShards fragmentation) {

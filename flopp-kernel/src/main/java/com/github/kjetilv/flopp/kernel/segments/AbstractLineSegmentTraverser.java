@@ -4,8 +4,8 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("unused")
 abstract sealed class AbstractLineSegmentTraverser

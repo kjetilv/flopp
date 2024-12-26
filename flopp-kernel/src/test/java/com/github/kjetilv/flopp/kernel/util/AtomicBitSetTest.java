@@ -9,9 +9,11 @@ class AtomicBitSetTest {
     @Test
     void testBitSet(){
         AtomicBitSet set = new AtomicBitSet(35);
+        assertThat(set.get(23)).isFalse();
         assertThat(set.set(23)).isTrue();
         assertThat(set.set(23)).isFalse();
-        assertThat(set.get(22)).isFalse();
         assertThat(set.get(23)).isTrue();
+
+        assertThat(set.get(22)).isFalse();
     }
 }

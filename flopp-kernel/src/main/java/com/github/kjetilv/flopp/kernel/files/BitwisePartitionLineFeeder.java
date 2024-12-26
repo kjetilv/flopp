@@ -2,8 +2,8 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
@@ -14,8 +14,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 

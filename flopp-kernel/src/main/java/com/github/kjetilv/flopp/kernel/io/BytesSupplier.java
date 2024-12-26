@@ -1,12 +1,12 @@
 package com.github.kjetilv.flopp.kernel.io;
 
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 
 import java.util.Objects;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("unused")
 public final class BytesSupplier implements IntSupplier {

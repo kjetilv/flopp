@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel;
 import com.github.kjetilv.flopp.kernel.io.SuppliedLongSpliterator;
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
@@ -12,7 +11,7 @@ import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.fromEdgeLong;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.fromEdgeLong;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
@@ -187,6 +186,10 @@ public final class LineSegments {
 
     public static LineSegment of(byte[] bytes) {
         return of(MemorySegments.of(bytes), 0, bytes.length);
+    }
+
+    public static LineSegment of(byte[] bytes, int offset, int length) {
+        return of(MemorySegments.of(bytes), offset, length);
     }
 
     public static LineSegment of(long[] ls, int length) {

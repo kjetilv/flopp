@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
@@ -9,8 +8,8 @@ import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 
+import static com.github.kjetilv.flopp.kernel.MemorySegments.*;
 import static com.github.kjetilv.flopp.kernel.segments.HashedLineSegment.*;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.*;
 import static java.lang.foreign.ValueLayout.*;
 
 @SuppressWarnings("unused")
@@ -239,6 +238,14 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default byte byteAt(long i) {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
+    }
+
+    default int unaligedIntAt(long i) {
+        return memorySegment().get(JAVA_INT_UNALIGNED, startIndex() + i);
+    }
+
+    default short unalignedShortAt(long i) {
+        return memorySegment().get(JAVA_SHORT_UNALIGNED, startIndex() + i);
     }
 
     default long bytesAt(long offset, long count) {

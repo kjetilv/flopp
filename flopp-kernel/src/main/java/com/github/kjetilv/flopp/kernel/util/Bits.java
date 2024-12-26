@@ -4,8 +4,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.StringJoiner;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
 
 @SuppressWarnings("unused")
 public final class Bits {
@@ -229,6 +229,24 @@ public final class Bits {
      */
     public static long truncate(long l, int length) {
         return l & KEEP[length];
+    }
+
+    /**
+     * @param l      Long
+     * @param length How many bytes to clear in the long
+     * @return Cleared long
+     */
+    public static long clear(long l, long length) {
+        return truncate(l, (int) length);
+    }
+
+    /**
+     * @param l      Long
+     * @param length How many bytes to clear in the long
+     * @return Cleared long
+     */
+    public static long clear(long l, int length) {
+        return l & CLEAR[length];
     }
 
     private Bits() {

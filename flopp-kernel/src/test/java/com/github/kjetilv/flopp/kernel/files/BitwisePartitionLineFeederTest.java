@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.MemorySegments;
 import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.MemorySegment;

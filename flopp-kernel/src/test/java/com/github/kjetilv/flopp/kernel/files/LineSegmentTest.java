@@ -27,13 +27,30 @@ class LineSegmentTest {
     private Path dir;
 
     @Test
+    void testLookups() {
+        LineSegment ls = LineSegments.of(
+            """
+                foo bar zot
+                """, UTF_8
+        );
+        int i = ls.unaligedIntAt(3);
+        assertThat(i).isEqualTo(
+            ' ' +
+            ('b' << 8) +
+            ('a' << 16) +
+            ('r' << 24)
+        );
+    }
+
+    @Test
     void testAligned() {
         LineSegment ls = LineSegments.of(
             """
                 foo bar zot
                 foo bar zot
                 foo bar zot
-                """, UTF_8);
+                """, UTF_8
+        );
         assertThat(ls.length()).isEqualTo(36L);
         assertThat(ls.isAlignedAtEnd()).isFalse();
         assertThat(ls.alignedEnd()).isEqualTo(32L);

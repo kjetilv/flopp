@@ -1,10 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.Format;
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.LineSegments;
-import com.github.kjetilv.flopp.kernel.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
+import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.nio.charset.Charset;
@@ -13,8 +9,8 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_INT;
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.ALIGNMENT_POW;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 abstract sealed class AbstractBitwiseCsvLineSplitter

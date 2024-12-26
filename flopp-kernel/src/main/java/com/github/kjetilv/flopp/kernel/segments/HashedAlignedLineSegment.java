@@ -5,7 +5,7 @@ import com.github.kjetilv.flopp.kernel.LineSegments;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
 
-import static com.github.kjetilv.flopp.kernel.segments.MemorySegments.fromLongsWithinBounds;
+import static com.github.kjetilv.flopp.kernel.MemorySegments.fromLongsWithinBounds;
 
 record HashedAlignedLineSegment(int hash, MemorySegment memorySegment, long startIndex, long endIndex)
     implements HashedLineSegment {

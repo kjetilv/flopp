@@ -1,10 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
-import com.github.kjetilv.flopp.kernel.Partition;
-import com.github.kjetilv.flopp.kernel.PartitionStreamer;
-import com.github.kjetilv.flopp.kernel.Shape;
-import com.github.kjetilv.flopp.kernel.segments.MemorySegments;
+import com.github.kjetilv.flopp.kernel.*;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
