@@ -16,19 +16,38 @@ public final class MemorySegments {
     }
 
     public static MemorySegment ofLength(long length) {
-        return of(ByteBuffer.allocateDirect(alignedSize(length)));
+        return ofLength(length, false);
+    }
+
+    public static MemorySegment ofLength(long length, boolean direct) {
+        int capacity = alignedSize(length);
+        return of(direct
+            ? ByteBuffer.allocateDirect(capacity)
+            : ByteBuffer.allocate(capacity));
     }
 
     public static MemorySegment of(String string, Charset charset) {
-        return of(string.getBytes(charset));
+        return of(string, charset, false);
+    }
+
+    public static MemorySegment of(String string, Charset charset, boolean direct) {
+        return of(string.getBytes(charset), direct);
     }
 
     public static MemorySegment of(byte[] bytes) {
-        return MemorySegment.ofBuffer(alignedByteBuffer(bytes));
+        return of(bytes, false);
     }
 
     public static MemorySegment of(byte[] bytes, int offset, int length) {
-        return MemorySegment.ofBuffer(alignedByteBuffer(bytes, offset, length));
+        return of(bytes, offset, length, false);
+    }
+
+    public static MemorySegment of(byte[] bytes, boolean direct) {
+        return MemorySegment.ofBuffer(alignedByteBuffer(bytes, direct));
+    }
+
+    public static MemorySegment of(byte[] bytes, int offset, int length, boolean direct) {
+        return MemorySegment.ofBuffer(alignedByteBuffer(bytes, offset, length, direct));
     }
 
     public static long bytesAt(MemorySegment memorySegment, long offset, long count) {
@@ -191,13 +210,16 @@ public final class MemorySegments {
 
     public static final int ALIGNMENT_POW = 3;
 
-    private static ByteBuffer alignedByteBuffer(byte[] bytes) {
-        return alignedByteBuffer(bytes, bytes.length, 0);
+    private static ByteBuffer alignedByteBuffer(byte[] bytes, boolean direct) {
+        return alignedByteBuffer(bytes, bytes.length, 0, direct);
     }
 
-    private static ByteBuffer alignedByteBuffer(byte[] bytes, int length, int offset) {
+    private static ByteBuffer alignedByteBuffer(byte[] bytes, int length, int offset, boolean direct) {
         int alignedSize = alignedSize(length);
-        ByteBuffer bb = ByteBuffer.allocateDirect(Math.max(ALIGNMENT_INT, alignedSize));
+        int max = Math.max(ALIGNMENT_INT, alignedSize);
+        ByteBuffer bb = direct
+            ? ByteBuffer.allocateDirect(max)
+            : ByteBuffer.allocate(max);
         bb.put(bytes, offset, length);
         bb.put(new byte[alignedSize - length]);
         bb.flip();
