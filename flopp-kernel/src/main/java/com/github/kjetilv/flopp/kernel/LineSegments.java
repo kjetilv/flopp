@@ -80,17 +80,17 @@ public final class LineSegments {
         return longSupplier(segment, false);
     }
 
-    public static LongSupplier longSupplier(LineSegment segment, boolean align) {
-        return LineSegmentTraverser.create(segment, align);
+    public static LongSupplier longSupplier(LineSegment segment, boolean aligned) {
+        return LineSegmentTraverser.create(segment, aligned);
     }
 
-    public static LongStream longs(LineSegment segment, boolean align) {
-        long length = align ? segment.alignedLongsCount() : segment.shiftedLongsCount();
+    public static LongStream longs(LineSegment segment, boolean aligned) {
+        long length = aligned ? segment.alignedLongsCount() : segment.shiftedLongsCount();
         if (length == 0) {
             return LongStream.empty();
         }
         return StreamSupport.longStream(
-            new SuppliedLongSpliterator(longSupplier(segment, align), length),
+            new SuppliedLongSpliterator(longSupplier(segment, aligned), length),
             false
         );
     }

@@ -78,6 +78,20 @@ class LineSegmentsTest {
     }
 
     @Test
+    void shortOnes() {
+        assertHead("f");
+        assertHead("fo");
+        assertHead("foo");
+        assertHead("foobar");
+        assertHead("foobarz");
+        assertTail("f");
+        assertTail("fo");
+        assertTail("foo");
+        assertTail("foobar");
+        assertTail("foobarz");
+    }
+
+    @Test
     void copyTo() {
         LineSegment donor1 = LineSegments.of("foo");
         LineSegment donor2 = LineSegments.of("bar");

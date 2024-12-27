@@ -19,8 +19,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return longsCount(false);
     }
 
-    default long longsCount(boolean align) {
-        return align ? alignedLongsCount() : shiftedLongsCount();
+    default long longsCount(boolean aligned) {
+        return aligned ? alignedLongsCount() : shiftedLongsCount();
     }
 
     default long shiftedLongsCount() {
@@ -58,8 +58,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return longStream(false);
     }
 
-    default LongStream longStream(boolean align) {
-        return LineSegments.longs(this, align);
+    default LongStream longStream(boolean aligned) {
+        return LineSegments.longs(this, aligned);
     }
 
     default LongSupplier alignedLongSupplier() {
@@ -74,8 +74,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return longSupplier(false);
     }
 
-    default LongSupplier longSupplier(boolean align) {
-        return LineSegments.longSupplier(this, align);
+    default LongSupplier longSupplier(boolean aligned) {
+        return LineSegments.longSupplier(this, aligned);
     }
 
     default LineSegment unalignedHashedWith(int hash) {
