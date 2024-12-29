@@ -49,11 +49,8 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
             if (headersAndFooters == null) {
                 feeder((Consumer<LineSegment>) action).run();
             } else {
-                try (
-                    CloseableConsumer<LineSegment> wrapped =
-                        headersAndFooters.apply((Consumer<LineSegment>) action)
-                ) {
-                    feeder(wrapped).run();
+                try (CloseableConsumer<LineSegment> hf = headersAndFooters.apply((Consumer<LineSegment>) action)) {
+                    feeder(hf).run();
                 }
             }
             return false;
@@ -63,9 +60,7 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
     }
 
     private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
-        Supplier<BitwisePartitionLineFeeder> supplier = next == null
-            ? null
-            : () -> next.get().feeder(action);
+        Supplier<BitwisePartitionLineFeeder> supplier = next == null ? null : () -> next.get().feeder(action);
         return new BitwisePartitionLineFeeder(partition, segment, offset, logicalSize, action, supplier);
     }
 

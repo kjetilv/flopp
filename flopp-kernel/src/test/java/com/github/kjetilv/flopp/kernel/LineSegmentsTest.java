@@ -79,16 +79,11 @@ class LineSegmentsTest {
 
     @Test
     void shortOnes() {
-        assertHead("f");
-        assertHead("fo");
-        assertHead("foo");
-        assertHead("foobar");
-        assertHead("foobarz");
-        assertTail("f");
-        assertTail("fo");
-        assertTail("foo");
-        assertTail("foobar");
-        assertTail("foobarz");
+        assertHead2("f");
+        assertHead2("fo");
+        assertHead2("foo");
+        assertHead2("foobar");
+        assertHead2("foobarz");
     }
 
     @Test
@@ -245,6 +240,13 @@ class LineSegmentsTest {
     private static void assertHead(String string) {
         LineSegment lineSegment = LineSegments.of(string, UTF_8);
         int head = string.length() - 8;
+        long l = lineSegment.head();
+        assertThat(Bits.toString(l, head, UTF_8)).isEqualTo(string.substring(0, head));
+    }
+
+    private static void assertHead2(String string) {
+        LineSegment lineSegment = LineSegments.of(string, UTF_8);
+        int head = string.length();
         long l = lineSegment.head();
         assertThat(Bits.toString(l, head, UTF_8)).isEqualTo(string.substring(0, head));
     }

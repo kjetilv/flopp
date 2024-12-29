@@ -11,6 +11,13 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class MemorySegments {
 
+    public static MemorySegment ofLength(long length, boolean direct) {
+        int capacity = alignedSize(length);
+        return of(ALLOW_INDIRECT && !direct
+            ? ByteBuffer.allocate(capacity)
+            : ByteBuffer.allocateDirect(capacity));
+    }
+
     public static MemorySegment of(ByteBuffer byteBuffer) {
         return MemorySegment.ofBuffer(byteBuffer);
     }
@@ -19,12 +26,7 @@ public final class MemorySegments {
         return ofLength(length, false);
     }
 
-    public static MemorySegment ofLength(long length, boolean direct) {
-        int capacity = alignedSize(length);
-        return of(direct
-            ? ByteBuffer.allocateDirect(capacity)
-            : ByteBuffer.allocate(capacity));
-    }
+    private static final boolean ALLOW_INDIRECT = false;
 
     public static MemorySegment of(String string, Charset charset) {
         return of(string, charset, false);
@@ -217,9 +219,9 @@ public final class MemorySegments {
     private static ByteBuffer alignedByteBuffer(byte[] bytes, int length, int offset, boolean direct) {
         int alignedSize = alignedSize(length);
         int max = Math.max(ALIGNMENT_INT, alignedSize);
-        ByteBuffer bb = direct
-            ? ByteBuffer.allocateDirect(max)
-            : ByteBuffer.allocate(max);
+        ByteBuffer bb = ALLOW_INDIRECT && !direct
+            ? ByteBuffer.allocate(max)
+            : ByteBuffer.allocateDirect(max);
         bb.put(bytes, offset, length);
         bb.put(new byte[alignedSize - length]);
         bb.flip();

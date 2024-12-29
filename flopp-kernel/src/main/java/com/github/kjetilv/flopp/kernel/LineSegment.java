@@ -240,7 +240,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return memorySegment().get(JAVA_BYTE, startIndex() + i);
     }
 
-    default int unaligedIntAt(long i) {
+    default int unalignedIntAt(long i) {
         return memorySegment().get(JAVA_INT_UNALIGNED, startIndex() + i);
     }
 

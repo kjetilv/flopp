@@ -33,7 +33,7 @@ class LineSegmentTest {
                 foo bar zot
                 """, UTF_8
         );
-        int i = ls.unaligedIntAt(3);
+        int i = ls.unalignedIntAt(3);
         assertThat(i).isEqualTo(
             ' ' +
             ('b' << 8) +

@@ -45,47 +45,54 @@ subprojects {
         jvmArgs("--enable-preview")
     }
 
-    publishing {
-        publications {
-            repositories {
-                mavenLocal()
-                maven {
-                    name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/kjetilv/uplift")
-                    credentials {
-                        username = "githubUser".or("GITHUB_ACTOR")
-                        password = "githubToken".or("GITHUB_TOKEN")
-                    }
-                }
-            }
+    if (project.name in listOf(
+            "flopp-kernel"
+        )
+    ) {
+        logger.info("Configuring ${project.name} for publishing")
 
-            register<MavenPublication>("floppPublication") {
-                pom {
-                    name.set("Flopp")
-                    description.set("Flopp")
-                    url.set("https://github.com/kjetilv/flopp")
-
-                    licenses {
-                        license {
-                            name.set("GNU General Public License v3.0")
-                            url.set("https://github.com/kjetilv/flopp/blob/main/LICENSE")
+        publishing {
+            publications {
+                repositories {
+                    mavenLocal()
+                    maven {
+                        name = "GitHubPackages"
+                        url = uri("https://maven.pkg.github.com/kjetilv/uplift")
+                        credentials {
+                            username = "githubUser".or("GITHUB_ACTOR")
+                            password = "githubToken".or("GITHUB_TOKEN")
                         }
                     }
-
-                    scm {
-                        connection.set("scm:git:https://github.com/kjetilv/flopp")
-                        developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
-                        url.set("https://github.com/kjetilv/flopp")
-                    }
                 }
-                from(components["java"])
+
+                register<MavenPublication>("floppPublication") {
+                    pom {
+                        name.set("Flopp")
+                        description.set("Flopp")
+                        url.set("https://github.com/kjetilv/flopp")
+
+                        licenses {
+                            license {
+                                name.set("GNU General Public License v3.0")
+                                url.set("https://github.com/kjetilv/flopp/blob/main/LICENSE")
+                            }
+                        }
+
+                        scm {
+                            connection.set("scm:git:https://github.com/kjetilv/flopp")
+                            developerConnection.set("scm:git:https://github.com/kjetilv/flopp")
+                            url.set("https://github.com/kjetilv/flopp")
+                        }
+                    }
+                    from(components["java"])
+                }
             }
         }
     }
 }
 
 fun String.or(envVar: String) = resolveProperty(this, envVar).also {
-    logger.info("Resolved $name${envVar?.let { "/$it" }}: ${it.length} chars")
+    logger.info("Resolved $name$/$envVar : ${it.length} chars")
 }
 
 fun resolveProperty(name: String, envVar: String? = null, defValue: String? = null) =
