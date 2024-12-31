@@ -106,15 +106,23 @@ public final class LineSegments {
         return ls;
     }
 
+    public static MemorySegments.Chars asChars(LineSegment segment) {
+        return asChars(segment, null);
+    }
+
+    public static MemorySegments.Chars asChars(LineSegment segment, char[] chars) {
+        long startIndex = segment.startIndex();
+        long endIndex = segment.endIndex();
+        MemorySegment memorySegment = segment.memorySegment();
+        return fromEdgeLong(memorySegment, startIndex, endIndex, chars);
+    }
+
     public static String asString(LineSegment segment) {
         return asString(segment, Charset.defaultCharset());
     }
 
     public static String asString(LineSegment segment, Charset charset) {
-        long startIndex = segment.startIndex();
-        long endIndex = segment.endIndex();
-        MemorySegment memorySegment = segment.memorySegment();
-        return fromEdgeLong(memorySegment, startIndex, endIndex, null, charset);
+        return asString(segment, null, charset);
     }
 
     public static String asString(LineSegment segment, byte[] buffer) {

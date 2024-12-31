@@ -10,7 +10,6 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class MemorySegments {
-
     public static MemorySegment ofLength(long length, boolean direct) {
         int capacity = alignedSize(length);
         return of(ALLOW_INDIRECT && !direct
@@ -25,8 +24,6 @@ public final class MemorySegments {
     public static MemorySegment ofLength(long length) {
         return ofLength(length, false);
     }
-
-    private static final boolean ALLOW_INDIRECT = false;
 
     public static MemorySegment of(String string, Charset charset) {
         return of(string, charset, false);
@@ -92,6 +89,7 @@ public final class MemorySegments {
         return resizedCopy;
     }
 
+    @SuppressWarnings("DuplicatedCode")
     public static String fromEdgeLong(
         MemorySegment memorySegment,
         long startIndex,
@@ -99,12 +97,23 @@ public final class MemorySegments {
         byte[] target,
         Charset charset
     ) {
+        int headOffset = (int) startIndex % ALIGNMENT_INT;
         int tailLength = (int) endIndex % ALIGNMENT_INT;
+        int length = (int) (endIndex - startIndex);
+        long alignedStart = startIndex - headOffset;
         if (tailLength == 0) {
-            return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
+            return fromLongsWithinBoundsInternal(
+                memorySegment,
+                endIndex,
+                target,
+                charset,
+                length,
+                headOffset,
+                tailLength,
+                alignedStart
+            );
         }
         long underlyingSize = memorySegment.byteSize();
-        int length = (int) (endIndex - startIndex);
         if (underlyingSize < ALIGNMENT_INT) {
             byte[] bytes = target == null ? new byte[length] : target;
             long data = bytesAt(memorySegment, 0, length);
@@ -113,12 +122,18 @@ public final class MemorySegments {
         }
         int tailStart = (int) (endIndex - tailLength);
         if (tailStart + ALIGNMENT <= underlyingSize) {
-            return fromLongsWithinBounds(memorySegment, startIndex, endIndex, target, charset);
+            return fromLongsWithinBoundsInternal(
+                memorySegment,
+                endIndex,
+                target,
+                charset,
+                length,
+                headOffset,
+                tailLength,
+                alignedStart
+            );
         }
 
-        int headOffset = (int) startIndex % ALIGNMENT_INT;
-
-        long alignedStart = startIndex - headOffset;
         int size = (int) (tailStart - alignedStart);
 
         byte[] bytes = target == null
@@ -136,6 +151,65 @@ public final class MemorySegments {
         return new String(bytes, headOffset, length, charset);
     }
 
+    @SuppressWarnings("DuplicatedCode")
+    public static Chars fromEdgeLong(
+        MemorySegment memorySegment,
+        long startIndex,
+        long endIndex,
+        char[] target
+    ) {
+        int headOffset = (int) startIndex % ALIGNMENT_INT;
+        int tailLength = (int) endIndex % ALIGNMENT_INT;
+        int length = (int) (endIndex - startIndex);
+        long alignedStart = startIndex - headOffset;
+        if (tailLength == 0) {
+            return fromLongsWithinBoundsInternal(
+                memorySegment,
+                endIndex,
+                target,
+                length,
+                headOffset,
+                tailLength,
+                alignedStart
+            );
+        }
+        long underlyingSize = memorySegment.byteSize();
+        if (underlyingSize < ALIGNMENT_INT) {
+            char[] bytes = target == null ? new char[length] : target;
+            long data = bytesAt(memorySegment, 0, length);
+            Bits.transferLimitedDataTo(data, 0, length, bytes);
+            return new Chars(bytes, 0, length);
+        }
+        int tailStart = (int) (endIndex - tailLength);
+        if (tailStart + ALIGNMENT <= underlyingSize) {
+            return fromLongsWithinBoundsInternal(
+                memorySegment,
+                endIndex,
+                target,
+                length,
+                headOffset,
+                tailLength,
+                alignedStart
+            );
+        }
+
+        int size = (int) (tailStart - alignedStart);
+
+        char[] bytes = target == null
+            ? new char[(headOffset > 0 ? 0 : ALIGNMENT_INT) + size + ALIGNMENT_INT]
+            : target;
+
+        for (int index = 0; index < size; index += ALIGNMENT_INT) {
+            long body = memorySegment.get(JAVA_LONG, alignedStart + index);
+            Bits.transferDataTo(body, index, bytes);
+        }
+
+        long tailLong = tail(memorySegment, endIndex);
+        long adjustedTail = tailLong >> ALIGNMENT * (ALIGNMENT - tailLength);
+        Bits.transferLimitedDataTo(adjustedTail, size, tailLength, bytes);
+        return new Chars(bytes, headOffset, length);
+    }
+
     public static String fromLongsWithinBounds(
         MemorySegment segment,
         long startIndex,
@@ -143,24 +217,35 @@ public final class MemorySegments {
         byte[] target,
         Charset charset
     ) {
-        long length = Math.max(0, endIndex - startIndex);
+        int headOffset = (int) startIndex % ALIGNMENT_INT;
+        return fromLongsWithinBoundsInternal(
+            segment,
+            endIndex,
+            target,
+            charset,
+            (int) Math.max(0, endIndex - startIndex),
+            headOffset,
+            endIndex % ALIGNMENT_INT,
+            startIndex - headOffset
+        );
+    }
 
-        long headOffset = startIndex % ALIGNMENT_INT;
-        long tailLength = endIndex % ALIGNMENT_INT;
-
-        long alignedStart = startIndex - headOffset;
-        long alignedEnd = tailLength == 0
-            ? endIndex
-            : endIndex + ALIGNMENT - tailLength;
-
-        long size = alignedEnd - alignedStart;
-
-        byte[] bytes = target == null ? new byte[(int) size] : target;
-        for (int index = 0; index < size; index += ALIGNMENT_INT) {
-            long data = segment.get(JAVA_LONG, alignedStart + index);
-            Bits.transferDataTo(data, index, bytes);
-        }
-        return new String(bytes, (int) headOffset, (int) length, charset);
+    public static Chars fromLongsWithinBounds(
+        MemorySegment segment,
+        long startIndex,
+        long endIndex,
+        char[] target
+    ) {
+        int headOffset = (int) startIndex % ALIGNMENT_INT;
+        return fromLongsWithinBoundsInternal(
+            segment,
+            endIndex,
+            target,
+            (int) Math.max(0, endIndex - startIndex),
+            headOffset,
+            endIndex % ALIGNMENT_INT,
+            startIndex - headOffset
+        );
     }
 
     public static void copyBytes(
@@ -212,6 +297,55 @@ public final class MemorySegments {
 
     public static final int ALIGNMENT_POW = 3;
 
+    private static final boolean ALLOW_INDIRECT = false;
+
+    private static String fromLongsWithinBoundsInternal(
+        MemorySegment segment,
+        long endIndex,
+        byte[] target,
+        Charset charset,
+        int length,
+        int headOffset,
+        long tailLength,
+        long alignedStart
+    ) {
+        long alignedEnd = tailLength == 0
+            ? endIndex
+            : endIndex + ALIGNMENT - tailLength;
+
+        long size = alignedEnd - alignedStart;
+
+        byte[] bytes = target == null ? new byte[(int) size] : target;
+        for (int index = 0; index < size; index += ALIGNMENT_INT) {
+            long data = segment.get(JAVA_LONG, alignedStart + index);
+            Bits.transferDataTo(data, index, bytes);
+        }
+        return new String(bytes, headOffset, length, charset);
+    }
+
+    private static Chars fromLongsWithinBoundsInternal(
+        MemorySegment segment,
+        long endIndex,
+        char[] target,
+        int length,
+        int headOffset,
+        long tailLength,
+        long alignedStart
+    ) {
+        long alignedEnd = tailLength == 0
+            ? endIndex
+            : endIndex + ALIGNMENT - tailLength;
+
+        long size = alignedEnd - alignedStart;
+
+        char[] bytes = target == null ? new char[(int) size] : target;
+        for (int index = 0; index < size; index += ALIGNMENT_INT) {
+            long data = segment.get(JAVA_LONG, alignedStart + index);
+            Bits.transferDataTo(data, index, bytes);
+        }
+        return new Chars(bytes, headOffset, length);
+    }
+
     private static ByteBuffer alignedByteBuffer(byte[] bytes, boolean direct) {
         return alignedByteBuffer(bytes, bytes.length, 0, direct);
     }
@@ -226,6 +360,14 @@ public final class MemorySegments {
         bb.put(new byte[alignedSize - length]);
         bb.flip();
         return bb;
+    }
+
+    public record Chars(char[] chars, int offset, int length) {
+
+        @Override
+        public String toString() {
+            return new String(chars, offset, length);
+        }
     }
 }
 

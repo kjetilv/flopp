@@ -107,6 +107,17 @@ public final class Bits {
     }
 
     /**
+     * @param data long array
+     * @param n    Length of byte array
+     * @return n-length byte array
+     */
+    public static char[] toChars(long[] data, int n) {
+        char[] chars = new char[n];
+        transferMultipleDataTo(data, chars);
+        return chars;
+    }
+
+    /**
      * @param l     Long
      * @param index Index, 0-7
      * @return Byte at index
@@ -150,6 +161,23 @@ public final class Bits {
     }
 
     /**
+     * @param l Long
+     * @return Long as eigth-byte array
+     */
+    public static char[] toChars(long l) {
+        return new char[] {
+            (char) (l & 0xFF),
+            (char) (l >> 8L & 0xFF),
+            (char) (l >> 16L & 0xFF),
+            (char) (l >> 24L & 0xFF),
+            (char) (l >> 32L & 0xFF),
+            (char) (l >> 40L & 0xFF),
+            (char) (l >> 48L & 0xFF),
+            (char) (l >> 56L)
+        };
+    }
+
+    /**
      * Copies long into byte array from a given offset
      *
      * @param l      Long
@@ -168,6 +196,24 @@ public final class Bits {
     }
 
     /**
+     * Copies long into byte array from a given offset
+     *
+     * @param l      Long
+     * @param offset Offset in array
+     * @param target Target array
+     */
+    public static void transferDataTo(long l, int offset, char[] target) {
+        target[offset] = (char) (l & 0xFF);
+        target[offset + 1] = (char) (l >> 8 & 0xFF);
+        target[offset + 2] = (char) (l >> 16 & 0xFF);
+        target[offset + 3] = (char) (l >> 24 & 0xFF);
+        target[offset + 4] = (char) (l >> 32 & 0xFF);
+        target[offset + 5] = (char) (l >> 40 & 0xFF);
+        target[offset + 6] = (char) (l >> 48 & 0xFF);
+        target[offset + 7] = (char) (l >> 56);
+    }
+
+    /**
      * Copies a number of bytes from long into byte array, from a given offset
      *
      * @param l      Long
@@ -178,6 +224,20 @@ public final class Bits {
     public static void transferLimitedDataTo(long l, int offset, int length, byte[] target) {
         for (int i = 0; i < length; i++) {
             target[offset + i] = (byte) (l >> ALIGNMENT_INT * i & 0xFF);
+        }
+    }
+
+    /**
+     * Copies a number of bytes from long into byte array, from a given offset
+     *
+     * @param l      Long
+     * @param offset Start position in target array
+     * @param length How many bytes to move from long into array
+     * @param target Target array
+     */
+    public static void transferLimitedDataTo(long l, int offset, int length, char[] target) {
+        for (int i = 0; i < length; i++) {
+            target[offset + i] = (char) (l >> ALIGNMENT_INT * i & 0xFF);
         }
     }
 
@@ -293,7 +353,23 @@ public final class Bits {
         0xFF00000000000000L
     };
 
+    @SuppressWarnings("DuplicatedCode")
     private static void transferMultipleDataTo(long[] data, byte[] target) {
+        int length = target.length;
+        int position = 0;
+        int longCount = length >> ALIGNMENT_POW;
+        for (int l = 0; l < longCount; l++) {
+            transferDataTo(data[l], position, target);
+            position += ALIGNMENT_INT;
+        }
+        int remainder = length - position;
+        if (remainder > 0) {
+            transferLimitedDataTo(data[longCount], position, remainder, target);
+        }
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    private static void transferMultipleDataTo(long[] data, char[] target) {
         int length = target.length;
         int position = 0;
         int longCount = length >> ALIGNMENT_POW;
