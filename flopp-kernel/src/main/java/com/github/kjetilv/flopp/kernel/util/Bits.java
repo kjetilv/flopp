@@ -119,10 +119,19 @@ public final class Bits {
 
     /**
      * @param l     Long
-     * @param index Index, 0-7
+     * @param index Index, [0-8)
      * @return Byte at index
      */
     public static byte getByte(long l, int index) {
+        return (byte) (l >> ALIGNMENT_INT * index & 0xFF);
+    }
+
+    /**
+     * @param l     Long
+     * @param index Index, [0-8)
+     * @return Byte at index
+     */
+    public static byte getByte(long l, long index) {
         return (byte) (l >> ALIGNMENT_INT * index & 0xFF);
     }
 
