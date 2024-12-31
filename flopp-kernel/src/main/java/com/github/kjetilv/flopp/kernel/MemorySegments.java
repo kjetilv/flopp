@@ -380,7 +380,7 @@ public final class MemorySegments {
                 trimRight = true;
                 do {
                     last--;
-                } while (last != first && Character.isWhitespace(chars[last]));
+                } while (Character.isWhitespace(chars[last]));
             }
             return !(trimLeft || trimRight) ? this
                 : first == last ? NULL
