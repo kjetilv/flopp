@@ -364,6 +364,31 @@ public final class MemorySegments {
 
     public record Chars(char[] chars, int offset, int length) {
 
+        public Chars trim() {
+            boolean trimLeft = false;
+            boolean trimRight = false;
+            int first = offset;
+            if (Character.isWhitespace(chars[first])) {
+                trimLeft = true;
+                do {
+                    first++;
+                } while (Character.isWhitespace(chars[first]));
+
+            }
+            int last = offset + length - 1;
+            if (Character.isWhitespace(chars[last])) {
+                trimRight = true;
+                do {
+                    last--;
+                } while (last != first && Character.isWhitespace(chars[last]));
+            }
+            return !(trimLeft || trimRight) ? this
+                : first == last ? NULL
+                    : new Chars(chars, first, last + 1 - first);
+        }
+
+        public static final Chars NULL = new Chars(new char[0], 0, 0);
+
         @Override
         public String toString() {
             return new String(chars, offset, length);

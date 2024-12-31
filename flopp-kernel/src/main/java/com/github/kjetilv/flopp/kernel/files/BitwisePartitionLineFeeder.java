@@ -16,8 +16,7 @@ import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
@@ -129,6 +128,21 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     @Override
     public boolean isAlignedAtEnd() {
         return endIndex % ALIGNMENT_INT == 0;
+    }
+
+    @Override
+    public byte byteAt(long i) {
+        return segment.get(JAVA_BYTE, startIndex + i);
+    }
+
+    @Override
+    public int unalignedIntAt(long i) {
+        return segment.get(JAVA_INT_UNALIGNED, startIndex + i);
+    }
+
+    @Override
+    public short unalignedShortAt(long i) {
+        return segment.get(JAVA_SHORT_UNALIGNED, startIndex + i);
     }
 
     @Override

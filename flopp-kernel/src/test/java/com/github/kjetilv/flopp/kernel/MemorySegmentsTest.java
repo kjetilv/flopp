@@ -38,4 +38,27 @@ class MemorySegmentsTest {
         assertThat(target2).isEqualTo(string.substring(5, 26));
     }
 
+    @Test
+    void charsTrimSelf() {
+        MemorySegments.Chars chars = new MemorySegments.Chars("foo".toCharArray(), 0, 3);
+        assertThat(chars.trim()).isSameAs(chars).hasToString("foo");
+    }
+
+    @Test
+    void charsTrimFront() {
+        MemorySegments.Chars chars = new MemorySegments.Chars("   foo".toCharArray(), 0, 6);
+        assertThat(chars.trim()).hasToString("foo");
+    }
+
+    @Test
+    void charsTrimBack() {
+        MemorySegments.Chars chars = new MemorySegments.Chars("foo  ".toCharArray(), 0, 5);
+        assertThat(chars.trim()).hasToString("foo");
+    }
+
+    @Test
+    void charsTrimBoth() {
+        MemorySegments.Chars chars = new MemorySegments.Chars("   foo  ".toCharArray(), 0, 8);
+        assertThat(chars.trim()).hasToString("foo");
+    }
 }
