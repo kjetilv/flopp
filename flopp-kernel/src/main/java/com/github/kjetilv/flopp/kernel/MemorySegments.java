@@ -365,19 +365,16 @@ public final class MemorySegments {
     public record Chars(char[] chars, int offset, int length) {
 
         public Chars trim() {
-            boolean trimLeft = false;
-            boolean trimRight = false;
             int first = offset;
-            if (Character.isWhitespace(chars[first])) {
-                trimLeft = true;
+            boolean trimLeft = Character.isWhitespace(chars[first]);
+            if (trimLeft) {
                 do {
                     first++;
                 } while (Character.isWhitespace(chars[first]));
-
             }
             int last = offset + length - 1;
-            if (Character.isWhitespace(chars[last])) {
-                trimRight = true;
+            boolean trimRight = Character.isWhitespace(chars[last]);
+            if (trimRight) {
                 do {
                     last--;
                 } while (Character.isWhitespace(chars[last]));
