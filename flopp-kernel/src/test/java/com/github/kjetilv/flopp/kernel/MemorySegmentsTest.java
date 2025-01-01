@@ -52,8 +52,9 @@ class MemorySegmentsTest {
 
     @Test
     void charsTrimBack() {
-        MemorySegments.Chars chars = new MemorySegments.Chars("foo  ".toCharArray(), 0, 5);
-        assertThat(chars.trim()).hasToString("foo");
+        MemorySegments.Chars org = new MemorySegments.Chars("  foo  ".toCharArray(), 2, 5);
+        assertThat(org).hasToString("foo  ");
+        assertThat(org.trim()).hasToString("foo");
     }
 
     @Test

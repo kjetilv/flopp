@@ -32,8 +32,8 @@ public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentT
         return create(segment, false);
     }
 
-    static Reusable create(LineSegment segment, boolean align) {
-        return (align
+    static Reusable create(LineSegment segment, boolean aligned) {
+        return (aligned
             ? new AlignedTraverser()
             : new MultiModeSuppler()
         ).apply(segment);

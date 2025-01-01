@@ -122,8 +122,8 @@ public final class Bits {
      * @param index Index, [0-8)
      * @return Byte at index
      */
-    public static byte getByte(long l, int index) {
-        return (byte) (l >> ALIGNMENT_INT * index & 0xFF);
+    public static int getByte(long l, int index) {
+        return (int) (l >> ALIGNMENT_INT * index & 0xFF);
     }
 
     /**
@@ -131,8 +131,8 @@ public final class Bits {
      * @param index Index, [0-8)
      * @return Byte at index
      */
-    public static byte getByte(long l, long index) {
-        return (byte) (l >> ALIGNMENT_INT * index & 0xFF);
+    public static int getByte(long l, long index) {
+        return (int) (l >> ALIGNMENT_INT * index & 0xFF);
     }
 
     /**
