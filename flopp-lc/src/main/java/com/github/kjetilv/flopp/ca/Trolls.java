@@ -61,7 +61,7 @@ public final class Trolls {
         int chunks = partitioning.of(shape.size()).size();
         Format.Csv.Quoted format = Formats.Csv.quoted(',', '"');
         try (
-            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape);
+            Partitioned bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             ExecutorService executor = new ThreadPoolExecutor(
                 chunks,
                 chunks,

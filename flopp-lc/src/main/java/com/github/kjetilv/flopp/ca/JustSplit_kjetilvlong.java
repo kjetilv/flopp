@@ -53,7 +53,7 @@ public final class JustSplit_kjetilvlong {
 
     public static LongAdder add(Partitioning partitioning, Shape shape, Path path) {
         LongAdder longAdder = new LongAdder();
-        try (Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)) {
+        try (Partitioned bitwisePartitioned = PartitionedPaths.partitioned(path, partitioning, shape)) {
             Format.Csv.Escape format = Formats.Csv.escape(';');
             List<Runnable> list1 =
                 bitwisePartitioned.splitters(format)

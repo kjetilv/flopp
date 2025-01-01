@@ -363,7 +363,7 @@ class CsvEscapeSplitterTest {
         );
     }
 
-    private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
+    private Partitioned partitioned(Partitioning partitioning, String contents) {
         try {
             return PartitionedPaths.partitioned(fileWith(contents), partitioning);
         } catch (IOException e) {
@@ -407,7 +407,7 @@ class CsvEscapeSplitterTest {
     private List<String> splits(Partitioning partitioning, String input, Format.Csv format) {
         List<String> splits = new ArrayList<>();
         try {
-            try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
+            try (Partitioned partitioned = partitioned(partitioning, input.trim() + "\n")) {
                 partitioned
                     .splitters(format)
                     .forEach(consumer ->
@@ -442,7 +442,7 @@ class CsvEscapeSplitterTest {
         );
 
         try {
-            try (Partitioned<Path> partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
                 partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()

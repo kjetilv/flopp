@@ -11,13 +11,13 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("preview")
 final class FormatPartitionedProcessor
-    extends AbstractPartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> {
+    extends AbstractPartitionedProcessor<SeparatedLine, Stream<LineSegment>> {
 
     private final Path target;
 
     private final Format format;
 
-    FormatPartitionedProcessor(Partitioned<Path> partitioned, Path target, Format format) {
+    FormatPartitionedProcessor(Partitioned partitioned, Path target, Format format) {
         super(partitioned);
         this.target = target;
         this.format = Objects.requireNonNull(format, "format");

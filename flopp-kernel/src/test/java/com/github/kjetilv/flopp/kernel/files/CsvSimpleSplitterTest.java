@@ -400,7 +400,7 @@ class CsvSimpleSplitterTest {
         );
     }
 
-    private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
+    private Partitioned partitioned(Partitioning partitioning, String contents) {
         try {
             return PartitionedPaths.partitioned(fileWith(contents), partitioning);
         } catch (IOException e) {
@@ -448,7 +448,7 @@ class CsvSimpleSplitterTest {
     ) {
         List<String> splits = new ArrayList<>();
         try {
-            try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
+            try (Partitioned partitioned = partitioned(partitioning, input.trim() + "\n")) {
                 partitioned
                     .splitters(format)
                     .forEach(consumer ->
@@ -483,7 +483,7 @@ class CsvSimpleSplitterTest {
         );
 
         try {
-            try (Partitioned<Path> partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
                 partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()

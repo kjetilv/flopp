@@ -13,13 +13,13 @@ import java.util.concurrent.StructuredTaskScope;
 import java.util.function.Function;
 
 @SuppressWarnings("preview")
-final class LinePartitionedProcessor extends AbstractPartitionedProcessor<Path, LineSegment, String> {
+final class LinePartitionedProcessor extends AbstractPartitionedProcessor<LineSegment, String> {
 
     private final Path target;
 
     private final Charset charset;
 
-    LinePartitionedProcessor(Partitioned<Path> partitioned, Path target, Charset charset) {
+    LinePartitionedProcessor(Partitioned partitioned, Path target, Charset charset) {
         super(partitioned);
         this.target = target;
         this.charset = Objects.requireNonNull(charset, "charset");

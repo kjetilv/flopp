@@ -8,17 +8,17 @@ import java.util.Objects;
 import java.util.concurrent.StructuredTaskScope;
 
 @SuppressWarnings("preview")
-abstract sealed class AbstractPartitionedProcessor<T, I, O>
-    implements PartitionedProcessor<T, I, O>
+abstract sealed class AbstractPartitionedProcessor<I, O>
+    implements PartitionedProcessor<I, O>
     permits FormatPartitionedProcessor, LinePartitionedProcessor {
 
-    private final Partitioned<T> partitioned;
+    private final Partitioned partitioned;
 
-    protected AbstractPartitionedProcessor(Partitioned<T> partitioned) {
+    protected AbstractPartitionedProcessor(Partitioned partitioned) {
         this.partitioned = Objects.requireNonNull(partitioned, "partitioned");
     }
 
-    protected final Partitioned<T> partitioned() {
+    protected final Partitioned partitioned() {
         return partitioned;
     }
 

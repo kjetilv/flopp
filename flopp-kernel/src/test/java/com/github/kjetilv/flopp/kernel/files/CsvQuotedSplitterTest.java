@@ -117,7 +117,7 @@ class CsvQuotedSplitterTest {
             """;
         List<String> splits1 = new ArrayList<>();
         try {
-            try (Partitioned<Path> partitioned = partitioned(partitioning, input2)) {
+            try (Partitioned partitioned = partitioned(partitioning, input2)) {
                 partitioned.splitters(Formats.Csv.quoted(',', '"'))
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits1::add)));
@@ -360,7 +360,7 @@ class CsvQuotedSplitterTest {
         );
     }
 
-    private Partitioned<Path> partitioned(Partitioning partitioning, String contents) {
+    private Partitioned partitioned(Partitioning partitioning, String contents) {
         try {
             return PartitionedPaths.partitioned(fileWith(contents), partitioning);
         } catch (Exception e) {
@@ -400,7 +400,7 @@ class CsvQuotedSplitterTest {
     private List<String> splits(Partitioning partitioning, String input, Format.Csv format) {
         List<String> splits = new ArrayList<>();
         try {
-            try (Partitioned<Path> partitioned = partitioned(partitioning, input.trim() + "\n")) {
+            try (Partitioned partitioned = partitioned(partitioning, input.trim() + "\n")) {
                 partitioned.splitters(format)
                     .forEach(consumer -> consumer.forEach(commaSeparatedLine -> commaSeparatedLine.columns(UTF_8)
                         .forEach(splits::add)));
@@ -430,7 +430,7 @@ class CsvQuotedSplitterTest {
         );
 
         try {
-            try (Partitioned<Path> partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
                 partititioned.streamers()
                     .forEach(streamer -> streamer.lines()
                         .forEach(splitter));

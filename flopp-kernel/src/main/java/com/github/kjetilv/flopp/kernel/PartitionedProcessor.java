@@ -5,7 +5,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
-public interface PartitionedProcessor<T, I, O> extends Closeable {
+public interface PartitionedProcessor<I, O> extends Closeable {
 
     default void forEach(Function<I, O> processor) {
         forEachPartition(partition -> processor);

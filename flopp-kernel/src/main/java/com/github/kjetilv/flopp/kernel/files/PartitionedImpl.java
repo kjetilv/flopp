@@ -5,8 +5,6 @@ import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 import com.github.kjetilv.flopp.kernel.util.AtomicArray;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
-import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,9 +14,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-final class PartitionedPath implements Partitioned<Path> {
-
-    private final Path path;
+final class PartitionedImpl implements Partitioned {
 
     private final Shape shape;
 
@@ -26,16 +22,10 @@ final class PartitionedPath implements Partitioned<Path> {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    PartitionedPath(Path path, Partitioning partitioning, Shape shape) {
-        this.path = Objects.requireNonNull(path, "path");
-        this.shape = shape == null ? Shape.of(path) : shape;
+    PartitionedImpl(Partitioning partitioning, Shape shape, MemorySegmentSource segmentSource) {
+        this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = partitioning(partitioning, this.shape).of(this.shape.size());
-        this.memorySegmentSource = new PartialMemorySegmentSource(this.path, this.shape);
-    }
-
-    @Override
-    public Path partitioned() {
-        return path;
+        this.memorySegmentSource = segmentSource;
     }
 
     @Override
@@ -72,16 +62,6 @@ final class PartitionedPath implements Partitioned<Path> {
                 .map(streamer ->
                     new BitwiseFwSplitter(streamer, fw));
         };
-    }
-
-    @Override
-    public PartitionedProcessor<Path, LineSegment, String> processTo(Path target, Charset charSet) {
-        return new LinePartitionedProcessor(this, target, charSet);
-    }
-
-    @Override
-    public PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processTo(Path target, Format format) {
-        return new FormatPartitionedProcessor(this, target, format);
     }
 
     @Override
@@ -152,6 +132,6 @@ final class PartitionedPath implements Partitioned<Path> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + path + " " + shape + "/" + partitions + "]";
+        return getClass().getSimpleName() + "[" + shape + "/" + partitions + " <- " + memorySegmentSource + "]";
     }
 }

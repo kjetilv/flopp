@@ -93,7 +93,7 @@ class BitwiseFileSplitterTest {
                 airlines.add(line.column(1, UTF_8))
         );
         try (
-            Partitioned<Path> partititioned = PartitionedPaths.partitioned(path, Shape.of(path, UTF_8).header(2))
+            Partitioned partititioned = PartitionedPaths.partitioned(path, Shape.of(path, UTF_8).header(2))
         ) {
             partititioned.streamers()
                 .forEach(streamer ->
@@ -193,7 +193,7 @@ class BitwiseFileSplitterTest {
             Stream<Path> list = Files.list(PATH);
             ExecutorService executor = new ForkJoinPool()
         ) {
-            List<Partitioned<Path>> partitioneds = list.filter(endsWith(".csv"))
+            List<Partitioned> partitioneds = list.filter(endsWith(".csv"))
                 .map(BitwiseFileSplitterTest::partitioned)
                 .toList();
             List<CompletableFuture<Void>> futures = partitioneds.stream().flatMap(partititioned ->
@@ -220,7 +220,7 @@ class BitwiseFileSplitterTest {
 
     public static final Path PATH = Path.of(System.getProperty("csv.dir"));
 
-    private static Partitioned<Path> partitioned(Path file) {
+    private static Partitioned partitioned(Path file) {
         return PartitionedPaths.partitioned(
             file,
             Partitioning.create().scaled(2),

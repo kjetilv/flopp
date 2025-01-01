@@ -54,18 +54,9 @@ sealed abstract class AbstractFileChannelMemorySegmentSource
         }
     }
 
-    protected final Arena arena() {
-        return arena;
-    }
-
-    protected final FileChannel channel() {
-        return channel;
-    }
-
-    @SuppressWarnings("resource")
     protected MemorySegment memorySegment(long offset, long length) {
         try {
-            return channel().map(READ_ONLY, offset, length, arena());
+            return channel.map(READ_ONLY, offset, length, arena);
         } catch (Exception e) {
             throw new IllegalStateException(this + " could not open " + offset + "+" + length, e);
         }

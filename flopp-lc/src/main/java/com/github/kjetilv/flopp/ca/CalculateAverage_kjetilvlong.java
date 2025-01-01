@@ -92,7 +92,7 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, p, shape)
+            Partitioned partitioned = PartitionedPaths.partitioned(path, p, shape)
         ) {
             int chunks = partitioned.partitions().size();
             BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
@@ -127,7 +127,7 @@ public final class CalculateAverage_kjetilvlong {
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
+            Partitioned partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
             StructuredTaskScope<Boolean> scope = new StructuredTaskScope<>()
         ) {
             int partitionCount = partitioned.partitions().size();
@@ -160,11 +160,9 @@ public final class CalculateAverage_kjetilvlong {
         int cpus = Runtime.getRuntime().availableProcessors();
         Partitioning p = readPartitioning(cpus, shape, settings);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(originalPath, p, shape);
-            PartitionedProcessor<Path, SeparatedLine, Stream<LineSegment>> processor = partitioned.processTo(
-                out,
-                format
-            )
+            PartitionedProcessors<Path> partitioned = PartitionedPaths.partitionedProcessors(originalPath, p, shape);
+            PartitionedProcessor<SeparatedLine, Stream<LineSegment>> processor =
+                partitioned.processTo(out, format)
         ) {
             processor.forEachPartition(() -> {
                     LineSegmentMap<Result> copy = map.freeze();

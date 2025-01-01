@@ -64,7 +64,7 @@ public class BitwiseSpliteratorTest {
 
         List<String> convs = new ArrayList<>();
         try (
-            Partitioned<Path> bitwisePartitioned = PartitionedPaths.partitioned(file, partitioning, shape)
+            Partitioned bitwisePartitioned = PartitionedPaths.partitioned(file, partitioning, shape)
         ) {
             bitwisePartitioned.streamers()
                 .forEach(streamer ->

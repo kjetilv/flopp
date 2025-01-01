@@ -130,8 +130,9 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
-            PartitionedProcessor<Path, LineSegment, String> processor =
+            PartitionedProcessors<Path> partitioned =
+                PartitionedPaths.partitionedProcessors(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
                 partitioned.processTo(tmp, shape.charset())
         ) {
             processor.forEach(fun);
@@ -150,8 +151,9 @@ public class BitwiseSizeTest {
         Path tmp = out(path, testInfo, qual);
         Partitioning partitioning = Partitioning.create(partitions, bufferSize);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
-            PartitionedProcessor<Path, LineSegment, String> lineProcessor =
+            PartitionedProcessors<Path> partitioned =
+                PartitionedPaths.partitionedProcessors(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> lineProcessor =
                 partitioned.processTo(tmp, shape.charset())
         ) {
             lineProcessor.forEach(processor);
@@ -164,8 +166,9 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, 8192);
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
-            PartitionedProcessor<Path, LineSegment, String> processor =
+            PartitionedProcessors<Path> partitioned =
+                PartitionedPaths.partitionedProcessors(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
                 partitioned.processTo(tmp, shape.charset())
         ) {
             processor.forEach(fun);
@@ -181,8 +184,9 @@ public class BitwiseSizeTest {
         long start = System.nanoTime();
         Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
         try (
-            Partitioned<Path> partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
-            PartitionedProcessor<Path, LineSegment, String> processor =
+            PartitionedProcessors<Path> partitioned =
+                PartitionedPaths.partitionedProcessors(path, partitioning, shape);
+            PartitionedProcessor<LineSegment, String> processor =
                 partitioned.processTo(out, shape.charset())
         ) {
             processor.forEach(fun);
