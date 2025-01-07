@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
@@ -8,7 +9,7 @@ import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
 
 @SuppressWarnings("unused")
-abstract sealed class AbstractLineSegmentTraverser
+public abstract sealed class AbstractLineSegmentTraverser
     implements LineSegmentTraverser {
 
     @SuppressWarnings("PackageVisibleField")
@@ -35,13 +36,13 @@ abstract sealed class AbstractLineSegmentTraverser
         return baseFor(headStart).initialize(segment, headLen, headStart, startIndex, endIndex, length);
     }
 
-    Reusable initial() {
+    public Reusable initial() {
         return none;
     }
 
     abstract ReusableBase baseFor(int headStart);
 
-    static final class AlignedTraverser extends AbstractLineSegmentTraverser {
+    public static final class AlignedTraverser extends AbstractLineSegmentTraverser {
 
         @Override
         ReusableBase baseFor(int headStart) {
@@ -49,7 +50,7 @@ abstract sealed class AbstractLineSegmentTraverser
         }
     }
 
-    static final class MultiModeSuppler extends AbstractLineSegmentTraverser {
+    public static final class MultiModeSuppler extends AbstractLineSegmentTraverser {
 
         @Override
         ReusableBase baseFor(int headStart) {
@@ -57,7 +58,7 @@ abstract sealed class AbstractLineSegmentTraverser
         }
     }
 
-    abstract sealed class ReusableBase implements Reusable {
+    public abstract sealed class ReusableBase implements Reusable {
 
         @Override
         public final Reusable apply(LineSegment lineSegment) {
@@ -138,7 +139,7 @@ abstract sealed class AbstractLineSegmentTraverser
         @Override
         public long getAsLong() {
             if (headLen >= length) {
-                return Bits.truncate(data, length);
+                return Bits.clearHigh(data, length);
             }
             if (position < alignedEnd) {
                 long alignedData = segment.longAt(position);
@@ -173,7 +174,7 @@ abstract sealed class AbstractLineSegmentTraverser
         @Override
         public void forEach(IndexedLongConsumer consumer) {
             if (headLen >= length) {
-                consumer.accept(0, Bits.truncate(data, length));
+                consumer.accept(0, Bits.clearHigh(data, length));
                 return;
             }
             int index = 0;
@@ -206,7 +207,7 @@ abstract sealed class AbstractLineSegmentTraverser
             int hash = 17;
             long data = segment.head();
             if (headLen >= length) {
-                return nextHash(hash, Bits.truncate(data, length));
+                return nextHash(hash, Bits.clearHigh(data, length));
             }
             while (position < alignedEnd) {
                 long alignedData = segment.longAt(position);
@@ -307,7 +308,7 @@ abstract sealed class AbstractLineSegmentTraverser
             }
             if (endIndex % ALIGNMENT > 0L) {
                 long data = segment.tail();
-                long truncated = Bits.truncate(data, tailLen);
+                long truncated = Bits.clearHigh(data, tailLen);
                 consumer.accept(index, truncated);
             }
         }
@@ -321,7 +322,7 @@ abstract sealed class AbstractLineSegmentTraverser
             }
             if (endIndex % ALIGNMENT > 0L) {
                 long data = segment.tail();
-                long truncated = Bits.truncate(data, tailLen);
+                long truncated = Bits.clearHigh(data, tailLen);
                 hash = nextHash(hash, truncated);
             }
             return hash;

@@ -291,6 +291,10 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.compare(this, o);
     }
 
+    default void write(long pos, long data, int length) {
+        set(memorySegment(), pos, data, length);
+    }
+
     MemorySegment memorySegment();
 
     interface Immutable {

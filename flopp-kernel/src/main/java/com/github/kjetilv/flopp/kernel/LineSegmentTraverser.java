@@ -1,6 +1,6 @@
-package com.github.kjetilv.flopp.kernel.segments;
+package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.AlignedTraverser;
 import com.github.kjetilv.flopp.kernel.segments.AbstractLineSegmentTraverser.MultiModeSuppler;
 

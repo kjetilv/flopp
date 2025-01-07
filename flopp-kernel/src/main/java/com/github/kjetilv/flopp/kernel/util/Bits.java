@@ -287,35 +287,20 @@ public final class Bits {
      * @param length How many bytes to retain in the long
      * @return Truncated long
      */
-    public static long truncate(long l, long length) {
-        return truncate(l, (int) length);
+    public static long clearHigh(long l, int length) {
+        return l & KEEP_0[length];
     }
 
-    /**
-     * @param l      Long
-     * @param length How many bytes to retain in the long
-     * @return Truncated long
-     */
-    public static long truncate(long l, int length) {
-        return l & KEEP[length];
+    public static long clearLow(long l, int bytes) {
+        return l & CLEAR_0[bytes];
     }
 
-    /**
-     * @param l      Long
-     * @param length How many bytes to clear in the long
-     * @return Cleared long
-     */
-    public static long clear(long l, long length) {
-        return truncate(l, (int) length);
-    }
-
-    /**
-     * @param l      Long
-     * @param length How many bytes to clear in the long
-     * @return Cleared long
-     */
-    public static long clear(long l, int length) {
-        return l & CLEAR[length];
+    public static long toLong(byte[] bytes) {
+        long l = 0L;
+        for (int i = 0; i < bytes.length; i++) {
+            l |= ((long) bytes[i] & 0xFF) << ALIGNMENT_INT * i;
+        }
+        return l;
     }
 
     private Bits() {
@@ -327,7 +312,19 @@ public final class Bits {
 
     private static final long ONES = 0x0101010101010101L;
 
-    private static final long[] CLEAR = {
+    private static final long[] CLEAR_0 = {
+        0xFFFFFFFFFFFFFFFFL,
+        0xFFFFFFFFFFFFFF00L,
+        0xFFFFFFFFFFFF0000L,
+        0xFFFFFFFFFF000000L,
+        0xFFFFFFFF00000000L,
+        0xFFFFFF0000000000L,
+        0xFFFF000000000000L,
+        0xFF00000000000000L,
+        0x0000000000000000L,
+    };
+
+    private static final long[] CLEAR_1 = {
         0xFFFFFFFFFFFFFF00L,
         0xFFFFFFFFFFFF0000L,
         0xFFFFFFFFFF000000L,
@@ -339,7 +336,7 @@ public final class Bits {
         0x0000000000000000L
     };
 
-    private static final long[] KEEP = {
+    private static final long[] KEEP_0 = {
         0x0000000000000000L,
         0x00000000000000FFL,
         0x000000000000FFFFL,
@@ -460,7 +457,7 @@ public final class Bits {
         @Override
         public int next() {
             int trail = trailingBytes(dists);
-            dists &= CLEAR[trail];
+            dists &= CLEAR_1[trail];
             return trail;
         }
 
@@ -516,7 +513,7 @@ public final class Bits {
                 return ALIGNMENT_INT;
             }
             trail = trailingBytes(dists);
-            dists &= CLEAR[trail];
+            dists &= CLEAR_1[trail];
             return trail;
         }
 
@@ -625,7 +622,7 @@ public final class Bits {
             int count = 0;
             long find = findInstances(data, mask);
             while (find != 0) {
-                find &= CLEAR[trailingBytes(find)];
+                find &= CLEAR_1[trailingBytes(find)];
                 count++;
             }
             return count;

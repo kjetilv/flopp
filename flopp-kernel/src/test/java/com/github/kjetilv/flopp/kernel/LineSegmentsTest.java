@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +12,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LineSegmentsTest {
+
+    @Test
+    void writes() {
+        LineSegment workarea = LineSegments.ofLength(128);
+        LineSegmentAppender appender = LineSegmentAppender.create(workarea);
+        appender.accept(Bits.toLong("foo".getBytes()), 3);
+        appender.accept(Bits.toLong("bar".getBytes()), 3);
+        assertThat(workarea.asString()).startsWith("foobar");
+        appender.accept(Bits.toLong("zot".getBytes()), 3);
+        assertThat(workarea.asString()).startsWith("foobarzot");
+    }
 
     @Test
     void longs() {

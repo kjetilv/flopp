@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.io.SuppliedLongSpliterator;
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
-import com.github.kjetilv.flopp.kernel.segments.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
@@ -218,6 +217,10 @@ public final class LineSegments {
 
     public static LineSegment of(long l) {
         return of(Bits.toBytes(l));
+    }
+
+    public static LineSegment ofLength(long length) {
+        return of(MemorySegments.ofLength(length), length);
     }
 
     public static String toString(LineSegment lineSegment) {

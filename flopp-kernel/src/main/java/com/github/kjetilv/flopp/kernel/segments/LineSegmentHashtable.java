@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
 import com.github.kjetilv.flopp.kernel.LineSegment;
+import com.github.kjetilv.flopp.kernel.LineSegmentTraverser;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.util.Non;
 

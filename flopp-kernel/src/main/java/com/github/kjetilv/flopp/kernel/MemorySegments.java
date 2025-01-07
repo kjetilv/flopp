@@ -288,6 +288,12 @@ public final class MemorySegments {
         return (int) (size + ALIGNMENT_INT - size % ALIGNMENT);
     }
 
+    public static void set(MemorySegment segment, long pos, long data, int length) {
+        for (int i = 0; i < length; i++) {
+            segment.set(JAVA_BYTE, pos + i, (byte) Bits.getByte(data, i));
+        }
+    }
+
     private MemorySegments() {
     }
 
