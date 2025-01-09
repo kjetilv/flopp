@@ -2,8 +2,11 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
 import com.github.kjetilv.flopp.kernel.util.Bits;
+import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.VectorMask;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
@@ -11,6 +14,7 @@ import java.util.stream.LongStream;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.*;
 import static com.github.kjetilv.flopp.kernel.segments.HashedLineSegment.*;
 import static java.lang.foreign.ValueLayout.*;
+import static jdk.incubator.vector.LongVector.SPECIES_PREFERRED;
 
 @SuppressWarnings("unused")
 public interface LineSegment extends Range, Comparable<LineSegment> {
@@ -106,15 +110,20 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     @SuppressWarnings("unused")
     default LineSegment copy() {
-        MemorySegment buffer = MemorySegments.createAligned(length());
-        copyBytes(memorySegment(), startIndex(), buffer, length());
-        return new ImmutableLineSegment(buffer, 0, length());
+        return copy(length());
+    }
+
+    @SuppressWarnings("unused")
+    default LineSegment copy(long copyLength) {
+        MemorySegment buffer = createAligned(copyLength);
+        copyBytes(memorySegment(), startIndex(), buffer, copyLength);
+        return new ImmutableLineSegment(buffer, 0, copyLength);
     }
 
     @SuppressWarnings("unused")
     default LineSegment copyTo(LineSegment receiver, long offset) {
         long length = length();
-        MemorySegments.copyBytes(
+        copyBytes(
             this.memorySegment(), startIndex(),
             receiver.memorySegment(), offset, length
         );
@@ -293,6 +302,23 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     default void write(long pos, long data, int length) {
         set(memorySegment(), pos, data, length);
+    }
+
+    default LongVector asLongVector() {
+        return asLongVector(null);
+    }
+
+    default LongVector asLongVector(VectorMask<Long> mask) {
+        VectorMask<Long> m = mask == null
+            ? SPECIES_PREFERRED.maskAll(true)
+            : mask;
+        return LongVector.fromMemorySegment(
+            SPECIES_PREFERRED,
+            memorySegment(),
+            alignedStart(),
+            ByteOrder.nativeOrder(),
+            m
+        );
     }
 
     MemorySegment memorySegment();
