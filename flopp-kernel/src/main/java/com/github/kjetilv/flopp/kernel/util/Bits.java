@@ -123,7 +123,7 @@ public final class Bits {
      * @return Byte at index
      */
     public static int getByte(long l, int index) {
-        return (int) (l >> ALIGNMENT_INT * index & 0xFF);
+        return ffi(l >> ALIGNMENT_INT * index);
     }
 
     /**
@@ -132,7 +132,7 @@ public final class Bits {
      * @return Byte at index
      */
     public static int getByte(long l, long index) {
-        return (int) (l >> ALIGNMENT_INT * index & 0xFF);
+        return ffi(l >> ALIGNMENT_INT * index);
     }
 
     /**
@@ -144,7 +144,7 @@ public final class Bits {
     public static int indexOf(int b, long data) {
         long l = data;
         for (int i = 0; i < ALIGNMENT_INT; i++) {
-            if (b == (l & 0xFF)) {
+            if (ff(l) == b) {
                 return i;
             }
             l >>= ALIGNMENT_INT;
@@ -158,13 +158,7 @@ public final class Bits {
      */
     public static byte[] toBytes(long l) {
         return new byte[] {
-            (byte) (l & 0xFF),
-            (byte) (l >> 8L & 0xFF),
-            (byte) (l >> 16L & 0xFF),
-            (byte) (l >> 24L & 0xFF),
-            (byte) (l >> 32L & 0xFF),
-            (byte) (l >> 40L & 0xFF),
-            (byte) (l >> 48L & 0xFF),
+            ffb(l), ffb(l >> 8L), ffb(l >> 16L), ffb(l >> 24L), ffb(l >> 32L), ffb(l >> 40L), ffb(l >> 48L),
             (byte) (l >> 56L)
         };
     }
@@ -175,13 +169,7 @@ public final class Bits {
      */
     public static char[] toChars(long l) {
         return new char[] {
-            (char) (l & 0xFF),
-            (char) (l >> 8L & 0xFF),
-            (char) (l >> 16L & 0xFF),
-            (char) (l >> 24L & 0xFF),
-            (char) (l >> 32L & 0xFF),
-            (char) (l >> 40L & 0xFF),
-            (char) (l >> 48L & 0xFF),
+            ffc(l), ffc(l >> 8L), ffc(l >> 16L), ffc(l >> 24L), ffc(l >> 32L), ffc(l >> 40L), ffc(l >> 48L),
             (char) (l >> 56L)
         };
     }
@@ -194,13 +182,13 @@ public final class Bits {
      * @param target Target array
      */
     public static void transferDataTo(long l, int offset, byte[] target) {
-        target[offset] = (byte) (l & 0xFF);
-        target[offset + 1] = (byte) (l >> 8 & 0xFF);
-        target[offset + 2] = (byte) (l >> 16 & 0xFF);
-        target[offset + 3] = (byte) (l >> 24 & 0xFF);
-        target[offset + 4] = (byte) (l >> 32 & 0xFF);
-        target[offset + 5] = (byte) (l >> 40 & 0xFF);
-        target[offset + 6] = (byte) (l >> 48 & 0xFF);
+        target[offset] = ffb(l);
+        target[offset + 1] = ffb(l >> 8);
+        target[offset + 2] = ffb(l >> 16);
+        target[offset + 3] = ffb(l >> 24);
+        target[offset + 4] = ffb(l >> 32);
+        target[offset + 5] = ffb(l >> 40);
+        target[offset + 6] = ffb(l >> 48);
         target[offset + 7] = (byte) (l >> 56);
     }
 
@@ -212,13 +200,13 @@ public final class Bits {
      * @param target Target array
      */
     public static void transferDataTo(long l, int offset, char[] target) {
-        target[offset] = (char) (l & 0xFF);
-        target[offset + 1] = (char) (l >> 8 & 0xFF);
-        target[offset + 2] = (char) (l >> 16 & 0xFF);
-        target[offset + 3] = (char) (l >> 24 & 0xFF);
-        target[offset + 4] = (char) (l >> 32 & 0xFF);
-        target[offset + 5] = (char) (l >> 40 & 0xFF);
-        target[offset + 6] = (char) (l >> 48 & 0xFF);
+        target[offset] = ffc(l);
+        target[offset + 1] = ffc(l >> 8);
+        target[offset + 2] = ffc(l >> 16);
+        target[offset + 3] = ffc(l >> 24);
+        target[offset + 4] = ffc(l >> 32);
+        target[offset + 5] = ffc(l >> 40);
+        target[offset + 6] = ffc(l >> 48);
         target[offset + 7] = (char) (l >> 56);
     }
 
@@ -232,7 +220,7 @@ public final class Bits {
      */
     public static void transferLimitedDataTo(long l, int offset, int length, byte[] target) {
         for (int i = 0; i < length; i++) {
-            target[offset + i] = (byte) (l >> ALIGNMENT_INT * i & 0xFF);
+            target[offset + i] = ffb(l >> ALIGNMENT_INT * i);
         }
     }
 
@@ -246,7 +234,7 @@ public final class Bits {
      */
     public static void transferLimitedDataTo(long l, int offset, int length, char[] target) {
         for (int i = 0; i < length; i++) {
-            target[offset + i] = (char) (l >> ALIGNMENT_INT * i & 0xFF);
+            target[offset + i] = ffc(l >> ALIGNMENT_INT * i);
         }
     }
 
@@ -298,13 +286,15 @@ public final class Bits {
     public static long toLong(byte[] bytes) {
         long l = 0L;
         for (int i = 0; i < bytes.length; i++) {
-            l |= ((long) bytes[i] & 0xFF) << ALIGNMENT_INT * i;
+            l |= ff(bytes[i]) << ALIGNMENT_INT * i;
         }
         return l;
     }
 
     private Bits() {
     }
+
+    private static final int FF = 0xFF;
 
     private static final long EIGHTIES = 0x8080808080808080L;
 
@@ -358,6 +348,22 @@ public final class Bits {
         0x00FF000000000000L,
         0xFF00000000000000L
     };
+
+    private static char ffc(long l) {
+        return (char) ff(l);
+    }
+
+    private static int ffi(long l) {
+        return (int) ff(l);
+    }
+
+    private static byte ffb(long l) {
+        return (byte) ff(l);
+    }
+
+    private static long ff(long l) {
+        return l & FF;
+    }
 
     @SuppressWarnings("DuplicatedCode")
     private static void transferMultipleDataTo(long[] data, byte[] target) {
@@ -468,7 +474,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "' / " + hex(dists) + "]";
+            return getClass().getSimpleName() + "['" + ffc(mask) + "' / " + hex(dists) + "]";
         }
     }
 
@@ -524,7 +530,7 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "['" + (char) (mask & 0xFF) + "' / " +
+            return getClass().getSimpleName() + "['" + ffc(mask) + "' / " +
                    trail + "@" + hxD(data) + "/'" + Bits.toString(data, StandardCharsets.UTF_8) + "' : " +
                    hxD(dists) + "]";
         }
@@ -598,12 +604,12 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() +
-                   "['" + (char) (mask & 0xFF) + "'/" +
+            return getClass().getSimpleName() + "['" + ffc(mask) + "'/" +
                    hex(mask) + " " +
                    hex(dists) +
                    "]";
         }
+
     }
 
     /**
@@ -630,8 +636,9 @@ public final class Bits {
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[" + (char) (mask & 0xFF) + "]";
+            return getClass().getSimpleName() + "[" + ffc(mask) + "]";
         }
+
     }
 
     public interface Finder {

@@ -166,6 +166,8 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     protected void inited() {
     }
 
+    protected abstract void findSeps(long offset, long data, long endOffset);
+
     protected final String formatString() {
         return "format=" + format.toString();
     }
@@ -182,8 +184,6 @@ abstract sealed class AbstractBitwiseCsvLineSplitter
     protected final int nextSep() {
         return sepFinder.next();
     }
-
-    protected abstract void findSeps(long offset, long data, long endOffset);
 
     private void mark(long position) {
         this.startPositions[columnNo] = currentColumnStart;
