@@ -144,7 +144,7 @@ public final class Bits {
     public static int indexOf(int b, long data) {
         long l = data;
         for (int i = 0; i < ALIGNMENT_INT; i++) {
-            if (ff(l) == b) {
+            if (ffl(l) == b) {
                 return i;
             }
             l >>= ALIGNMENT_INT;
@@ -286,15 +286,13 @@ public final class Bits {
     public static long toLong(byte[] bytes) {
         long l = 0L;
         for (int i = 0; i < bytes.length; i++) {
-            l |= ff(bytes[i]) << ALIGNMENT_INT * i;
+            l |= ffl(bytes[i]) << ALIGNMENT_INT * i;
         }
         return l;
     }
 
     private Bits() {
     }
-
-    private static final int FF = 0xFF;
 
     private static final long EIGHTIES = 0x8080808080808080L;
 
@@ -350,19 +348,19 @@ public final class Bits {
     };
 
     private static char ffc(long l) {
-        return (char) ff(l);
+        return (char) ffl(l);
     }
 
     private static int ffi(long l) {
-        return (int) ff(l);
+        return (int) ffl(l);
     }
 
     private static byte ffb(long l) {
-        return (byte) ff(l);
+        return (byte) ffl(l);
     }
 
-    private static long ff(long l) {
-        return l & FF;
+    private static long ffl(long l) {
+        return l & 0xFFL;
     }
 
     @SuppressWarnings("DuplicatedCode")
@@ -642,7 +640,6 @@ public final class Bits {
     }
 
     public interface Finder {
-
         int next(long data);
 
         int next();
@@ -651,7 +648,6 @@ public final class Bits {
     }
 
     public interface Counter {
-
         int count(long data);
     }
 }
