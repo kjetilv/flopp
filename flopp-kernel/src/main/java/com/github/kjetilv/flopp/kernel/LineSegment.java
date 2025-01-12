@@ -300,6 +300,13 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return LineSegments.compare(this, o);
     }
 
+    default long mismatch(LineSegment ls) {
+        return MemorySegment.mismatch(
+            memorySegment(), startIndex(), endIndex(),
+            ls.memorySegment(), ls.startIndex(), ls.endIndex()
+        );
+    }
+
     default void write(long pos, long data, int length) {
         set(memorySegment(), pos, data, length);
     }

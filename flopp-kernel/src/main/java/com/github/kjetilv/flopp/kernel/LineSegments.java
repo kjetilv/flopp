@@ -34,26 +34,12 @@ public final class LineSegments {
         return hash * 31 + Long.hashCode(next);
     }
 
-    @SuppressWarnings("ConstantValue")
     public static int compare(LineSegment segment1, LineSegment segment2) {
-        LongSupplier longSupplier1 = segment1.longSupplier(false);
-        LongSupplier longSupplier2 = segment2.longSupplier(false);
-        long length1 = segment1.shiftedLongsCount();
-        long length2 = segment2.shiftedLongsCount();
-        long length = Math.min(length1, length2);
-        for (int i = 0; i < length; i++) {
-            long l1 = longSupplier1.getAsLong();
-            long l2 = longSupplier2.getAsLong();
-            if (l1 < l2) {
-                return -1;
-            }
-            if (l1 > l2) {
-                return 1;
-            }
-        }
-        return length1 < length2 ? -1
-            : length2 > length1 ? 1
-                : 0;
+        long mismatch = segment1.mismatch(segment2);
+        return mismatch == -1 ? 0
+            : mismatch == segment1.length() ? -1
+                : mismatch == segment2.length() ? 1
+                    : Byte.compare(segment1.byteAt(mismatch), segment2.byteAt(mismatch));
     }
 
     public static LineSegment cat(LineSegment... segments) {
