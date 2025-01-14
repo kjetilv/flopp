@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.segments;
 
+import com.github.kjetilv.flopp.kernel.Bits;
 import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegmentTraverser;
-import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT;

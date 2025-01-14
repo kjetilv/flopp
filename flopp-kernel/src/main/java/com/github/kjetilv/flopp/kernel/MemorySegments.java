@@ -1,7 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.util.Bits;
-
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

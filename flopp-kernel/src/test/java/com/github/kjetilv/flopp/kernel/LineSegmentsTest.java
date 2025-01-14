@@ -1,6 +1,5 @@
 package com.github.kjetilv.flopp.kernel;
 
-import com.github.kjetilv.flopp.kernel.util.Bits;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;

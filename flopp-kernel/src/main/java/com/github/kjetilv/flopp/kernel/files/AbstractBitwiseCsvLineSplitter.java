@@ -1,7 +1,6 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
-import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.nio.charset.Charset;
 import java.util.Objects;

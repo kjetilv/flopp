@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import static com.github.kjetilv.flopp.kernel.util.Bits.hex;
+import static com.github.kjetilv.flopp.kernel.Bits.hex;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 public class LongTest {

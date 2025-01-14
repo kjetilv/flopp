@@ -2,7 +2,6 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.io.SuppliedLongSpliterator;
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
-import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;

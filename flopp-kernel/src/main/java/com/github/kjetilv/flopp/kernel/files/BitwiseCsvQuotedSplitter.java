@@ -1,8 +1,8 @@
 package com.github.kjetilv.flopp.kernel.files;
 
+import com.github.kjetilv.flopp.kernel.Bits;
 import com.github.kjetilv.flopp.kernel.Format;
 import com.github.kjetilv.flopp.kernel.SeparatedLine;
-import com.github.kjetilv.flopp.kernel.util.Bits;
 
 import java.util.function.Consumer;
 
