@@ -15,12 +15,17 @@ class LineSegmentsTest {
     @Test
     void writes() {
         LineSegment workarea = LineSegments.ofLength(128);
-        LineSegmentAppender appender = LineSegmentAppender.create(workarea);
+        LineSegmentBuilder appender = LineSegmentBuilder.create(workarea);
+
         appender.accept(Bits.toLong("foo".getBytes()), 3);
         appender.accept(Bits.toLong("bar".getBytes()), 3);
-        assertThat(workarea.asString()).startsWith("foobar");
+        assertThat(appender.build().asString()).isEqualTo("foobar");
+
         appender.accept(Bits.toLong("zot".getBytes()), 3);
-        assertThat(workarea.asString()).startsWith("foobarzot");
+        assertThat(appender.build().asString()).isEqualTo("foobarzot");
+
+        appender.accept(LineSegments.of("__zip"));
+        assertThat(appender.build().asString()).isEqualTo("foobarzot__zip");
     }
 
     @Test
@@ -106,6 +111,21 @@ class LineSegmentsTest {
         assertThat(donor2).hasSameHashCodeAs(copied2);
         assertThat(receiver.slice(0, donor1.length() + donor2.length()))
             .isEqualTo(LineSegments.of("foobar"));
+    }
+
+    @Test
+    void strings() {
+        String str = "this is a\"foobarzot\"string";
+        LineSegment orig = LineSegments.of(str);
+        assertThat(orig.asString()).isEqualTo("this is a\"foobarzot\"string");
+        int z1 = str.indexOf("\"");
+        int z2 = str.indexOf("\"", z1 + 1);
+        LineSegment segment = orig.slice(z1, z2 + 1);
+        assertThat(segment.asString()).isEqualTo("\"foobarzot\"");
+        String quotedString = segment.asTerminatedString(1);
+        assertThat(quotedString).isEqualTo("foobarzot");
+        assertThat(orig.asString()).isEqualTo("this is a\"foobarzot\u0000string");
+        assertThat(segment.asString()).isEqualTo("\"foobarzot\u0000");
     }
 
     private static final LineSegmentTraverser.Reusable REUSABLE = LineSegmentTraverser.create();

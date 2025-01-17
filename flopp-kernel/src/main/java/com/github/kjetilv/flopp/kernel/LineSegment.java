@@ -149,6 +149,15 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return asString(null, charset);
     }
 
+    default String asTerminatedString() {
+        return asTerminatedString(0);
+    }
+
+    default String asTerminatedString(int quoteLength) {
+        memorySegment().set(JAVA_BYTE, endIndex() - quoteLength, (byte) 0);
+        return memorySegment().getString(startIndex() + quoteLength);
+    }
+
     default String asString(byte[] buffer) {
         return asString(buffer, Charset.defaultCharset());
     }
