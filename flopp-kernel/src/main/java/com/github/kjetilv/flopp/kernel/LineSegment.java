@@ -154,8 +154,19 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default String asTerminatedString(int quoteLength) {
-        memorySegment().set(JAVA_BYTE, endIndex() - quoteLength, (byte) 0);
-        return memorySegment().getString(startIndex() + quoteLength);
+        MemorySegment memorySegment = memorySegment();
+        terminate(memorySegment, quoteLength);
+        return memorySegment.getString(startIndex() + quoteLength);
+    }
+
+    default String asTerminatedString(Charset charset) {
+        return asTerminatedString(0, charset);
+    }
+
+    default String asTerminatedString(int quoteLength, Charset charset) {
+        MemorySegment memorySegment = memorySegment();
+        terminate(memorySegment, quoteLength);
+        return memorySegment.getString(startIndex() + quoteLength, charset);
     }
 
     default String asString(byte[] buffer) {
@@ -338,9 +349,16 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
 
     MemorySegment memorySegment();
 
+    private void terminate(MemorySegment memorySegment, int quoteLength) {
+        memorySegment.set(JAVA_BYTE, endIndex() - quoteLength, NULL);
+    }
+
+    byte NULL = (byte) 0;
     interface Immutable {
+
     }
 
     interface Hashed {
+
     }
 }

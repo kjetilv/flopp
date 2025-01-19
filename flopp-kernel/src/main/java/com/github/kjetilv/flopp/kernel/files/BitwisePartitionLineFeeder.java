@@ -218,9 +218,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
                 long lineOffset = offset + dist;
                 cycle(lineOffset);
                 return true;
-            } else {
-                offset += ALIGNMENT_INT;
             }
+            offset += ALIGNMENT_INT;
         }
         if (tail > 0) {
             long data = loadTail();

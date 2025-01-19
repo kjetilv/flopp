@@ -169,8 +169,8 @@ public final class CalculateAverage_kjetilvlong {
                     return separatedLine -> {
                         LineSegment city = separatedLine.segment(0);
                         Result result = copy.get(city);
-                        String cityString = city.asString();
-                        String measurement = separatedLine.segment(1).asString();
+                        String cityString = city.asTerminatedString();
+                        String measurement = separatedLine.segment(1).asTerminatedString();
                         String formatted = "%s;%s;%s;%d;%s\n"
                             .formatted(
                                 cityString,
