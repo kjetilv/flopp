@@ -92,6 +92,7 @@ public record Partitions(long total, List<Partition> partitions, long tail) {
         return new Partition(list.size(), count, nextOffset, partition.length());
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + Print.bigInt(total) +

@@ -154,7 +154,7 @@ public final class Bits {
 
     /**
      * @param l Long
-     * @return Long as eigth-byte array
+     * @return Long as eight-byte array
      */
     public static byte[] toBytes(long l) {
         return new byte[] {
@@ -165,7 +165,7 @@ public final class Bits {
 
     /**
      * @param l Long
-     * @return Long as eigth-byte array
+     * @return Long as eight-byte array
      */
     public static char[] toChars(long l) {
         return new char[] {
@@ -454,7 +454,7 @@ public final class Bits {
         }
 
         /**
-         * Retuns the next occurrence.  Mutates this finder.
+         * Returns the next occurrence.  Mutates this finder.
          *
          * @return Next occurrence, or the number of bytes in a long (ie. 8) if done
          */
@@ -507,7 +507,7 @@ public final class Bits {
         }
 
         /**
-         * Retuns the next occurrence.  Mutates this finder.
+         * Returns the next occurrence.  Mutates this finder.
          *
          * @return Next occurrence, or the number of bytes in a long (ie. 8) if done
          */

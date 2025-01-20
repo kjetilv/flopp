@@ -6,7 +6,6 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 
 import java.util.function.Consumer;
 
-@SuppressWarnings("DuplicatedCode")
 final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
 
     private final Bits.Finder escFinder;

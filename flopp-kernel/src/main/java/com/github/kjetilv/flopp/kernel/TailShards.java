@@ -13,14 +13,15 @@ public record TailShards(
 ) {
 
     public TailShards {
-        if (tailDim == 0 && maxDim == 0 && minDim == 0) {
-        } else if (tailDim < maxDim && maxDim < minDim) {
-            Non.negativeOrZero(shardCount, "shardCount");
-            Non.negativeOrZero(tailDim, "tailDim");
-            Non.negativeOrZero(minDim, "minDim");
-            Non.negativeOrZero(maxDim, "maxDim");
-        } else {
-            throw new IllegalStateException(this + " has wrong sizes");
+        if (tailDim != 0 || maxDim != 0 || minDim != 0) {
+            if (tailDim < maxDim && maxDim < minDim) {
+                Non.negativeOrZero(shardCount, "shardCount");
+                Non.negativeOrZero(tailDim, "tailDim");
+                Non.negativeOrZero(minDim, "minDim");
+                Non.negativeOrZero(maxDim, "maxDim");
+            } else {
+                throw new IllegalStateException(this + " has wrong sizes");
+            }
         }
     }
 

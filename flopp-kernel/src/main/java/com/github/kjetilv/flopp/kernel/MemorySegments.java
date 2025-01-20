@@ -390,6 +390,7 @@ public final class MemorySegments {
 
         public static final Chars NULL = new Chars(new char[0], 0, 0);
 
+        @SuppressWarnings("NullableProblems")
         @Override
         public String toString() {
             return new String(chars, offset, length);

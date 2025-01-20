@@ -24,6 +24,7 @@ public record EscapeCsvImpl(
     static final Escape DEFAULT_ESCAPE =
         new EscapeCsvImpl(DEF_SEP_CHAR, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return getClass().getSimpleName() +

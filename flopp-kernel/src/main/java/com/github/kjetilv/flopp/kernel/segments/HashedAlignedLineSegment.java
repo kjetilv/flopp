@@ -27,6 +27,7 @@ record HashedAlignedLineSegment(int hash, MemorySegment memorySegment, long star
         return hash;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return LineSegments.toString(this);

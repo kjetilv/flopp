@@ -12,7 +12,7 @@ import java.util.stream.StreamSupport;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.fromEdgeLong;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-@SuppressWarnings({"DuplicatedCode", "unused"})
+@SuppressWarnings("unused")
 public final class LineSegments {
 
     public static int hashCode(LineSegment segment) {

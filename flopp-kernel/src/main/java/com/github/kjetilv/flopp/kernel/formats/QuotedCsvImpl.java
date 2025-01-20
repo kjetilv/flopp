@@ -24,6 +24,7 @@ public record QuotedCsvImpl(
     static final Quoted DEFAULT_QUOTED =
         new QuotedCsvImpl(DEF_SEP_CHAR, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return getClass().getSimpleName() +

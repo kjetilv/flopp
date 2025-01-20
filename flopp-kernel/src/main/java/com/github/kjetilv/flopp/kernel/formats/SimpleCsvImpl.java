@@ -24,6 +24,7 @@ public record SimpleCsvImpl(char separator, int columnCount, Charset charset)
     static final Simple DEFAULT_SIMPLE =
         new SimpleCsvImpl(DEF_SEP_CHAR, DEF_COL_COUNT, DEF_CHARSET);
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return getClass().getSimpleName() +
