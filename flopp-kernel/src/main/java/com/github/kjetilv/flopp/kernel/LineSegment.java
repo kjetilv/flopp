@@ -137,12 +137,8 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return asString(Charset.defaultCharset());
     }
 
-    default Chars asChars() {
-        return asChars(null);
-    }
-
-    default Chars asChars(char[] buffer) {
-        return LineSegments.asChars(this, buffer);
+    default Chars asChars(char[] target) {
+        return LineSegments.asChars(this, target);
     }
 
     default String asString(Charset charset) {

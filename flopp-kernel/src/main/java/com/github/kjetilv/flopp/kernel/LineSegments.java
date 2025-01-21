@@ -90,11 +90,10 @@ public final class LineSegments {
         return ls;
     }
 
-    public static MemorySegments.Chars asChars(LineSegment segment) {
-        return asChars(segment, null);
-    }
-
-    public static MemorySegments.Chars asChars(LineSegment segment, char[] chars) {
+    public static MemorySegments.Chars asChars(
+        LineSegment segment,
+        char[] chars
+    ) {
         long startIndex = segment.startIndex();
         long endIndex = segment.endIndex();
         MemorySegment memorySegment = segment.memorySegment();
