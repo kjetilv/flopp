@@ -165,14 +165,13 @@ public final class MemorySegments {
             ? endIndex
             : endIndex + ALIGNMENT - tailLength;
         if (tailLength == 0) {
-            return fromLongsWithinBoundsInternal(
+            fromLongsWithinBoundsInternal(
                 memorySegment,
-                target,
-                length,
-                headOffset,
+                headOffset, length, target,
                 alignedStart,
                 alignedEnd
             );
+            return new Chars(target, headOffset, length);
         }
         long underlyingSize = memorySegment.byteSize();
         if (underlyingSize < ALIGNMENT_INT) {
@@ -183,14 +182,13 @@ public final class MemorySegments {
         }
         int tailStart = (int) (endIndex - tailLength);
         if (tailStart + ALIGNMENT <= underlyingSize) {
-            return fromLongsWithinBoundsInternal(
+            fromLongsWithinBoundsInternal(
                 memorySegment,
-                target,
-                length,
-                headOffset,
+                headOffset, length, target,
                 alignedStart,
                 alignedEnd
             );
+            return new Chars(target, headOffset, length);
         }
 
         int size = (int) (tailStart - alignedStart);
@@ -237,15 +235,20 @@ public final class MemorySegments {
         char[] target
     ) {
         int headOffset = (int) startIndex % ALIGNMENT_INT;
-        return fromLongsWithinBoundsInternal(
+        int length = (int) Math.max(0, endIndex - startIndex);
+        long alignedStart = startIndex - headOffset;
+        long alignedEnd = endIndex % ALIGNMENT_INT == 0
+            ? endIndex
+            : endIndex + ALIGNMENT - endIndex % ALIGNMENT_INT;
+        fromLongsWithinBoundsInternal(
             segment,
-            target,
-            (int) Math.max(0, endIndex - startIndex),
             headOffset,
-            startIndex - headOffset, endIndex % ALIGNMENT_INT == 0
-                ? endIndex
-                : endIndex + ALIGNMENT - endIndex % ALIGNMENT_INT
+            length,
+            target,
+            alignedStart,
+            alignedEnd
         );
+        return new Chars(target, headOffset, length);
     }
 
     public static void copyBytes(
@@ -325,9 +328,7 @@ public final class MemorySegments {
 
     private static Chars fromLongsWithinBoundsInternal(
         MemorySegment segment,
-        char[] target,
-        int length,
-        int headOffset,
+        int headOffset, int length, char[] target,
         long alignedStart,
         long alignedEnd
     ) {
