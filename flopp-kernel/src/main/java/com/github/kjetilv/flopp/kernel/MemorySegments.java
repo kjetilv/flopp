@@ -167,7 +167,7 @@ public final class MemorySegments {
         if (tailLength == 0) {
             fromLongsWithinBoundsInternal(
                 memorySegment,
-                headOffset, length, target,
+                target,
                 alignedStart,
                 alignedEnd
             );
@@ -184,7 +184,7 @@ public final class MemorySegments {
         if (tailStart + ALIGNMENT <= underlyingSize) {
             fromLongsWithinBoundsInternal(
                 memorySegment,
-                headOffset, length, target,
+                target,
                 alignedStart,
                 alignedEnd
             );
@@ -242,8 +242,6 @@ public final class MemorySegments {
             : endIndex + ALIGNMENT - endIndex % ALIGNMENT_INT;
         fromLongsWithinBoundsInternal(
             segment,
-            headOffset,
-            length,
             target,
             alignedStart,
             alignedEnd
@@ -326,9 +324,9 @@ public final class MemorySegments {
         return new String(bytes, headOffset, length, charset);
     }
 
-    private static Chars fromLongsWithinBoundsInternal(
+    private static void fromLongsWithinBoundsInternal(
         MemorySegment segment,
-        int headOffset, int length, char[] target,
+        char[] target,
         long alignedStart,
         long alignedEnd
     ) {
@@ -337,7 +335,6 @@ public final class MemorySegments {
             long data = segment.get(JAVA_LONG, alignedStart + index);
             Bits.transferDataTo(data, index, target);
         }
-        return new Chars(target, headOffset, length);
     }
 
     private static ByteBuffer alignedByteBuffer(byte[] bytes, boolean direct) {
@@ -380,7 +377,6 @@ public final class MemorySegments {
 
         public static final Chars NULL = new Chars(new char[0], 0, 0);
 
-        @SuppressWarnings("NullableProblems")
         @Override
         public String toString() {
             return new String(chars, offset, length);
