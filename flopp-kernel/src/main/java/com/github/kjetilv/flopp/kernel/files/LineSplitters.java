@@ -37,10 +37,7 @@ final class LineSplitters {
         return new BitwiseFwLineSplitter(format, lines);
     }
 
-    private static AbstractBitwiseCsvLineSplitter csvLineSplitter(
-        Format.Csv format,
-        Consumer<SeparatedLine> lines
-    ) {
+    private static AbstractBitwiseCsvLineSplitter csvLineSplitter(Format.Csv format, Consumer<SeparatedLine> lines) {
         return switch (format) {
             case Format.Csv.Escape esc -> new BitwiseCsvEscapeSplitter(lines, esc);
             case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);

@@ -23,7 +23,6 @@ public record ImmutableLineSegment(MemorySegment memorySegment, long startIndex,
         return LineSegments.hashCode(this);
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
         return LineSegments.toString(this);

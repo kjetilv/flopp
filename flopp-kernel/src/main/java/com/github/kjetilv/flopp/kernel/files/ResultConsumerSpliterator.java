@@ -25,9 +25,9 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
 
     private final ToLongFunction<T> sizer;
 
-    private final Lock updateLock = new ReentrantLock();
+    private final Lock updatedLock = new ReentrantLock();
 
-    private final Condition updated = updateLock.newCondition();
+    private final Condition updatedCondition = updatedLock.newCondition();
 
     private final Map<T, Long> cachedSizes = new ConcurrentHashMap<>();
 
@@ -41,18 +41,17 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
     @Override
     public void accept(PartitionResult<T> partitionResult) {
         Objects.requireNonNull(partitionResult, "future");
-        updateLock.lock();
+        updatedLock.lock();
         try {
             PartitionResult<T> duplicate =
                 completed.putIfAbsent(partitionResult.partition().partitionNo(), partitionResult);
-            if (duplicate == null) {
-                updated.signalAll();
-            } else {
+            if (duplicate != null) {
                 throw new IllegalStateException(
                     "Partition " + partitionResult.partition().partitionNo() + " already present: " + duplicate);
             }
+            updatedCondition.signalAll();
         } finally {
-            updateLock.unlock();
+            updatedLock.unlock();
         }
     }
 
@@ -61,15 +60,20 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
         if (done()) {
             return false;
         }
-        updateLock.lock();
+        updatedLock.lock();
         try {
             PartitionResult<T> next = completed.get(nextIndex());
             if (next == null) {
-                awaitNextUpdate();
-                return true;
+                try {
+                    updatedCondition.await();
+                    return true;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted", e);
+                }
             }
             Partition adjustedPartition = next.partition().at(
-                sizeOfPrevious(next),
+                sumOfPreceding(next),
                 size(next.result())
             );
             PartitionResult<T> result = next.withAdjustedPartition(adjustedPartition);
@@ -77,7 +81,7 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
             lastServed.incrementAndGet();
             return !done();
         } finally {
-            updateLock.unlock();
+            updatedLock.unlock();
         }
     }
 
@@ -89,16 +93,7 @@ final class ResultConsumerSpliterator<T> extends Spliterators.AbstractSpliterato
         return lastServed.get() == resultsCount - 1;
     }
 
-    private void awaitNextUpdate() {
-        try {
-            updated.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted", e);
-        }
-    }
-
-    private long sizeOfPrevious(PartitionResult<T> partitionResult) {
+    private long sumOfPreceding(PartitionResult<T> partitionResult) {
         return completed.values()
             .stream()
             .filter(completedResult ->

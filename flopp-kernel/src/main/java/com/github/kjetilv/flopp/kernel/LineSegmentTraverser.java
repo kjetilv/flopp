@@ -13,6 +13,14 @@ import static com.github.kjetilv.flopp.kernel.LineSegments.nextHash;
 @SuppressWarnings("unused")
 public interface LineSegmentTraverser extends Function<LineSegment, LineSegmentTraverser.Reusable> {
 
+    static LongSupplier supplier(LineSegment segment) {
+        return create(segment);
+    }
+
+    static LongSupplier supplier(LineSegment segment, boolean aligned) {
+        return create(segment, aligned);
+    }
+
     static Reusable create() {
         return new MultiModeSuppler().initial();
     }
