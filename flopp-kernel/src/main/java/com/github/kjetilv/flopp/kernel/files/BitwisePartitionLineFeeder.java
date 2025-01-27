@@ -164,18 +164,19 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
             try {
                 long data = segment.get(JAVA_LONG, offset);
                 int dist = finder.next(data);
-                if (dist != ALIGNMENT_INT) { // Found newline
-                    long start = offset + dist;
-                    this.startIndex = start + 1; // Mark position of new line
-                    this.firstLine = (int) this.startIndex;
-                    if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
-                        return false;
-                    }
-                    while ((dist = finder.next()) != ALIGNMENT_INT) {
-                        cycle(offset + dist);
-                    }
-                    return true;
+                if (dist == ALIGNMENT_INT) {
+                    continue;
+                } // Found newline
+                long start = offset + dist;
+                this.startIndex = start + 1; // Mark position of new line
+                this.firstLine = (int) this.startIndex;
+                if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
+                    return false;
                 }
+                while ((dist = finder.next()) != ALIGNMENT_INT) {
+                    cycle(offset + dist);
+                }
+                return true;
             } finally {
                 offset += ALIGNMENT_INT;
             }

@@ -100,26 +100,22 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         ) == -1;
     }
 
-    @SuppressWarnings("unused")
     default LineSegment immutable() {
         return this instanceof Immutable
             ? this
             : new ImmutableLineSegment(memorySegment(), startIndex(), endIndex());
     }
 
-    @SuppressWarnings("unused")
     default LineSegment copy() {
         return copy(length());
     }
 
-    @SuppressWarnings("unused")
     default LineSegment copy(long copyLength) {
         MemorySegment buffer = createAligned(copyLength);
         copyBytes(memorySegment(), startIndex(), buffer, copyLength);
         return new ImmutableLineSegment(buffer, 0, copyLength);
     }
 
-    @SuppressWarnings("unused")
     default LineSegment copyTo(LineSegment receiver, long offset) {
         long length = length();
         copyBytes(
@@ -309,7 +305,6 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return -1;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     default int compareTo(LineSegment o) {
         return LineSegments.compare(this, o);
@@ -331,7 +326,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default LongVector asLongVector(VectorMask<Long> mask) {
-        VectorMask<Long> m = mask == null
+        VectorMask<Long> longMask = mask == null
             ? SPECIES_PREFERRED.maskAll(true)
             : mask;
         return LongVector.fromMemorySegment(
@@ -339,7 +334,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
             memorySegment(),
             alignedStart(),
             ByteOrder.nativeOrder(),
-            m
+            longMask
         );
     }
 

@@ -1,6 +1,7 @@
 package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
+import com.github.kjetilv.flopp.kernel.formats.HeadersAndFooters;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
@@ -8,7 +9,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.github.kjetilv.flopp.kernel.formats.HeadersAndFooters.headersAndFooters;
+import static com.github.kjetilv.flopp.kernel.formats.HeadersAndFooters.create;
 
 final class BitwisePartitionStreamer implements PartitionStreamer {
 
@@ -38,12 +39,14 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
             ? null
             : () -> next.get().spliterator;
 
+        HeadersAndFooters<LineSegment> headersAndFooters =
+            create(partition, shape, LineSegment::immutable);
         this.spliterator = new BitwisePartitionLineSpliterator(
             partition,
             safeSegment,
             offset,
             logicalSize,
-            headersAndFooters(partition, shape, LineSegment::immutable),
+            headersAndFooters,
             nextSupplier
         );
     }

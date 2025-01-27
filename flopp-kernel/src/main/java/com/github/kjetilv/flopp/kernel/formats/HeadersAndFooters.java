@@ -12,7 +12,7 @@ import java.util.function.Function;
 
 public final class HeadersAndFooters<T> implements Function<Consumer<T>, CloseableConsumer<T>> {
 
-    public static <T> Function<Consumer<T>, CloseableConsumer<T>> headersAndFooters(
+    public static <T> HeadersAndFooters<T> create(
         Partition partition,
         com.github.kjetilv.flopp.kernel.Shape shape,
         Function<T, T> packer
