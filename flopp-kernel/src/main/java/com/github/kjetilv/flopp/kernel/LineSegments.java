@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
@@ -33,19 +34,23 @@ public final class LineSegments {
         return hash * 31 + Long.hashCode(next);
     }
 
-    public static int compare(LineSegment segment1, LineSegment segment2) {
-        long mismatch = segment1.mismatch(segment2);
-        return mismatch == -1 ? 0
-            : mismatch == segment1.length() ? -1
-                : mismatch == segment2.length() ? 1
-                    : Byte.compare(segment1.byteAt(mismatch), segment2.byteAt(mismatch));
+    public static int compare(LineSegment s1, LineSegment s2) {
+        long mismatch = s1.mismatch(s2);
+        // No mismatch
+        if (mismatch == -1) {
+            return 0;
+        }
+        // Compare lengths, shortest comes first
+        int lengthComparison = Long.compare(s1.length(), s2.length());
+        if (lengthComparison != 0) {
+            return lengthComparison;
+        }
+        // Compare bytes at mismatch position
+        return Byte.compare(s1.byteAt(mismatch), s2.byteAt(mismatch));
     }
 
     public static LineSegment cat(LineSegment... segments) {
-        long length = 0;
-        for (LineSegment segment : segments) {
-            length += segment.length();
-        }
+        long length = Arrays.stream(segments).mapToLong(Range::length).sum();
         MemorySegment memorySegment = MemorySegments.ofLength(length);
         long offset = 0;
         for (LineSegment segment : segments) {

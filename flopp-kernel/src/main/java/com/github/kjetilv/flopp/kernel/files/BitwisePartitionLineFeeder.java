@@ -197,7 +197,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private void processMainBody(long lastOffset) {
         long steps = lastOffset - offset >> ALIGNMENT_POW;
-        for (long l = 0; l < steps; l++) {
+        for (int i = 0; i < steps; i++) {
             long data = segment.get(JAVA_LONG, offset);
             int dist = finder.next(data);
             while (dist != ALIGNMENT_INT) {

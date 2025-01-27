@@ -302,8 +302,9 @@ public abstract sealed class AbstractLineSegmentTraverser
         @Override
         public void forEach(IndexedLongConsumer consumer) {
             int index = 0;
-            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
-                long data = segment.longAt(pos);
+            int length = (int) (alignedEnd - alignedStart);
+            for (int i = 0; i < length; i += ALIGNMENT_INT) {
+                long data = segment.longAt(alignedStart + i);
                 consumer.accept(index++, data);
             }
             if (endIndex % ALIGNMENT > 0L) {
@@ -316,8 +317,9 @@ public abstract sealed class AbstractLineSegmentTraverser
         @Override
         public int toHashCode() {
             int hash = 17;
-            for (long pos = alignedStart; pos < alignedEnd; pos += ALIGNMENT) {
-                long data = segment.longAt(pos);
+            int length = (int) (alignedStart - alignedEnd);
+            for (int i = 0; i < length; i += ALIGNMENT_INT) {
+                long data = segment.longAt(alignedStart + i);
                 hash = nextHash(hash, data);
             }
             if (endIndex % ALIGNMENT > 0L) {

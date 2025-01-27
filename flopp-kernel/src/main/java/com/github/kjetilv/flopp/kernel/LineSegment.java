@@ -298,7 +298,7 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         LongSupplier longSupplier = longSupplier();
         long count = shiftedLongsCount();
         long index = 0;
-        for (long l = 0; l < count; l++) {
+        for (int i = 0; i < count; i++) {
             long data = longSupplier.getAsLong();
             int longIndex = Bits.indexOf(b, data);
             if (longIndex >= 0) {
