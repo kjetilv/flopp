@@ -30,7 +30,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
     private final long logicalLimit;
 
-    private volatile int firstLine = -1;
+    private volatile long firstLine = -1;
 
     private long startIndex;
 
@@ -166,17 +166,9 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
                 int dist = finder.next(data);
                 if (dist == ALIGNMENT_INT) {
                     continue;
-                } // Found newline
-                long start = offset + dist;
-                this.startIndex = start + 1; // Mark position of new line
-                this.firstLine = (int) this.startIndex;
-                if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
-                    return false;
                 }
-                while ((dist = finder.next()) != ALIGNMENT_INT) {
-                    cycle(offset + dist);
-                }
-                return true;
+                // Found newline
+                return processInitialLineAt(offset + dist);
             } finally {
                 offset += ALIGNMENT_INT;
             }
@@ -207,6 +199,19 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
             }
             offset += ALIGNMENT_INT;
         }
+    }
+
+    private boolean processInitialLineAt(long start) {
+        this.startIndex = start + 1; // Mark position of new line
+        this.firstLine = this.startIndex;
+        if (last && start + 1 == logicalLimit) { // First linebreak was also EOF
+            return false;
+        }
+        int next;
+        while ((next = finder.next()) != ALIGNMENT_INT) {
+            cycle(offset + next);
+        }
+        return true;
     }
 
     private boolean processedOverflow() {
