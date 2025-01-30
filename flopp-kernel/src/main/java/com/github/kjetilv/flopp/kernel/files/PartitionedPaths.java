@@ -8,6 +8,7 @@ import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
 
 import java.nio.file.Path;
 
+@SuppressWarnings("unused")
 public final class PartitionedPaths {
 
     public static Partitioned partitioned(Path path) {

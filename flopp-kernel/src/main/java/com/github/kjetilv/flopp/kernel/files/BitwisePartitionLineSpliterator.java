@@ -49,7 +49,7 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
             if (headersAndFooters == null) {
                 feeder((Consumer<LineSegment>) action).run();
             } else {
-                try (CloseableConsumer<LineSegment> hf = headersAndFooters.apply((Consumer<LineSegment>) action)) {
+                try (CloseableConsumer<LineSegment> hf = headersAndFooters.wrap((Consumer<LineSegment>) action)) {
                     feeder(hf).run();
                 }
             }

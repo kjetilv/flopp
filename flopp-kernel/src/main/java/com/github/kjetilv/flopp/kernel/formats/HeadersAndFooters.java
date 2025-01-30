@@ -10,22 +10,22 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class HeadersAndFooters<T> implements Function<Consumer<T>, CloseableConsumer<T>> {
+public final class HeadersAndFooters<T> {
 
     public static <T> HeadersAndFooters<T> create(
         Partition partition,
         com.github.kjetilv.flopp.kernel.Shape shape,
-        Function<T, T> packer
+        Function<T, T> immutableCopier
     ) {
         if (shape != null && shape.hasOverhead()) {
             if (partition.single() && shape.hasOverhead()) {
-                return new HeadersAndFooters<>(shape.header(), shape.footer(), packer);
+                return new HeadersAndFooters<>(shape.header(), shape.footer(), immutableCopier);
             }
             if (partition.first()) {
-                return new HeadersAndFooters<>(shape.header(), 0, packer);
+                return new HeadersAndFooters<>(shape.header(), 0, immutableCopier);
             }
             if (partition.last() && shape.footer() > 0) {
-                return new HeadersAndFooters<>(0, shape.footer(), packer);
+                return new HeadersAndFooters<>(0, shape.footer(), immutableCopier);
             }
         }
         return null;
@@ -35,20 +35,21 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
 
     private final int footer;
 
-    private final Function<T, T> packer;
+    private final Function<T, T> immutableCopier;
 
-    private HeadersAndFooters(int header, int footer, Function<T, T> packer) {
+    private HeadersAndFooters(int header, int footer, Function<T, T> immutableCopier) {
         this.header = Non.negative(header, "header");
         this.footer = Non.negative(footer, "footer");
-        this.packer = packer;
+        this.immutableCopier = immutableCopier;
     }
 
-    @Override
-    public CloseableConsumer<T> apply(Consumer<T> consumer) {
+    public CloseableConsumer<T> wrap(Consumer<T> consumer) {
         return header == 0 && footer == 0 ? consumer::accept
-            : header > 0 && footer > 0 ? new HeaderAndFooter<>(consumer, header, footer, packer)
-                : header > 0 ? new HeaderOnly<>(consumer, header)
-                    : new FooterOnly<>(consumer, footer, packer);
+            : header > 0 && footer == 1 ? new HF1<>(consumer, header, footer, immutableCopier)
+                : header > 0 && footer > 0 ? new HF<>(consumer, header, footer, immutableCopier)
+                    : header > 0 ? new HO<>(consumer, header)
+                        : footer == 1 ? new F1O<>(consumer, immutableCopier)
+                            : new FO<>(consumer, footer, immutableCopier);
     }
 
     private static <T> void cycle(
@@ -59,7 +60,7 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
         Function<T, T> packer
     ) {
         if (deq.size() == footer) {
-            Objects.requireNonNull(deq.pollLast(), "deq.pollLast()").run();
+            deq.pollLast().run();
         }
         T immutable = packer.apply(lineSegment);
         deq.offerFirst(() -> delegate.accept(immutable));
@@ -79,7 +80,14 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
         }
     }
 
-    private static final class HeaderOnly<T> implements CloseableConsumer<T> {
+    private static void verifyFooter(Runnable runnable) {
+        if (runnable == null) {
+            throw new IllegalStateException(
+                "Last partition not big enough to hold footer of 1. Increase tail size");
+        }
+    }
+
+    private static final class HO<T> implements CloseableConsumer<T> {
 
         private final Consumer<T> delegate;
 
@@ -87,7 +95,7 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
 
         private int headersLeft;
 
-        private HeaderOnly(Consumer<T> delegate, int header) {
+        private HO(Consumer<T> delegate, int header) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = header;
             this.headersLeft = header;
@@ -113,7 +121,7 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
         }
     }
 
-    private static final class HeaderAndFooter<T> implements CloseableConsumer<T> {
+    private static final class HF<T> implements CloseableConsumer<T> {
 
         private final Consumer<T> delegate;
 
@@ -125,21 +133,21 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
 
         private int headersLeft;
 
-        private final Function<T, T> packer;
+        private final Function<T, T> immutableCopier;
 
-        private HeaderAndFooter(Consumer<T> delegate, int header, int footer, Function<T, T> packer) {
+        private HF(Consumer<T> delegate, int header, int footer, Function<T, T> immutableCopier) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = Non.negativeOrZero(header, "header");
             this.footer = Non.negativeOrZero(footer, "footer");
             this.deque = new ArrayDeque<>(footer);
             this.headersLeft = header;
-            this.packer = packer;
+            this.immutableCopier = immutableCopier;
         }
 
         @Override
         public void accept(T lineSegment) {
             if (headersLeft == 0) {
-                cycle(lineSegment, deque, delegate, footer, packer);
+                cycle(lineSegment, deque, delegate, footer, immutableCopier);
             } else {
                 headersLeft--;
             }
@@ -157,36 +165,119 @@ public final class HeadersAndFooters<T> implements Function<Consumer<T>, Closeab
         }
     }
 
-    private static final class FooterOnly<T> implements CloseableConsumer<T> {
+    private static final class HF1<T> implements CloseableConsumer<T> {
 
         private final Consumer<T> delegate;
 
-        private final Deque<Runnable> deque;
+        private final int header;
 
-        private final int footer;
+        private int headersLeft;
 
-        private final Function<T, T> packer;
+        private final Function<T, T> immutableCopier;
 
-        private FooterOnly(Consumer<T> delegate, int footer, Function<T, T> packer) {
+        private Runnable queued;
+
+        private HF1(Consumer<T> delegate, int header, int footer, Function<T, T> immutableCopier) {
             this.delegate = Objects.requireNonNull(delegate, "action");
-            this.footer = Non.negativeOrZero(footer, "footer");
-            this.packer = packer;
-            this.deque = new ArrayDeque<>(this.footer);
+            this.header = Non.negativeOrZero(header, "header");
+            this.headersLeft = header;
+            this.immutableCopier = immutableCopier;
         }
 
         @Override
         public void accept(T lineSegment) {
-            cycle(lineSegment, deque, delegate, footer, packer);
+            if (headersLeft == 0) {
+                Runnable runnable = queued;
+                if (runnable != null) {
+                    queued = null;
+                    runnable.run();
+                }
+                T immutable = immutableCopier.apply(lineSegment);
+                queued = () -> delegate.accept(immutable);
+            } else {
+                headersLeft--;
+            }
         }
 
         @Override
         public void close() {
-            verifyFooter(deque, footer);
+            verifyHeader(headersLeft, header);
+            verifyFooter(queued);
         }
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[q:" + deque.size() + "]";
+            return getClass().getSimpleName() + "[" +
+                   headersLeft + "/" + header + " q:" + (queued == null ? 0 : 1) +
+                   "]";
+        }
+    }
+
+    private static final class FO<T> implements CloseableConsumer<T> {
+
+        private final Consumer<T> delegate;
+
+        private final Deque<Runnable> queued;
+
+        private final int footer;
+
+        private final Function<T, T> immutableCopier;
+
+        private FO(Consumer<T> delegate, int footer, Function<T, T> immutableCopier) {
+            this.delegate = Objects.requireNonNull(delegate, "action");
+            this.footer = Non.negativeOrZero(footer, "footer");
+            this.immutableCopier = immutableCopier;
+            this.queued = new ArrayDeque<>(this.footer);
+        }
+
+        @Override
+        public void accept(T lineSegment) {
+            cycle(lineSegment, queued, delegate, footer, immutableCopier);
+        }
+
+        @Override
+        public void close() {
+            verifyFooter(queued, footer);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "[q:" + queued.size() + "]";
+        }
+    }
+
+    private static final class F1O<T> implements CloseableConsumer<T> {
+
+        private final Consumer<T> delegate;
+
+        private final Function<T, T> immutableCopier;
+
+        private Runnable queued;
+
+        private F1O(Consumer<T> delegate, Function<T, T> immutableCopier) {
+            this.delegate = Objects.requireNonNull(delegate, "action");
+            this.immutableCopier = immutableCopier;
+        }
+
+        @Override
+        public void accept(T lineSegment) {
+            Runnable runnable = queued;
+            if (runnable != null) {
+                queued = null;
+                runnable.run();
+            }
+            T immutable = immutableCopier.apply(lineSegment);
+            queued = () -> delegate.accept(immutable);
+        }
+
+        @Override
+        public void close() {
+            verifyFooter(queued);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "[q:" + (queued == null ? 0 : 1) + "]";
         }
     }
 }

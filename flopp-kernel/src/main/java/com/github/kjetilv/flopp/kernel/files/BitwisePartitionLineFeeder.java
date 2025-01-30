@@ -3,7 +3,6 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.github.kjetilv.flopp.kernel.*;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +11,8 @@ import java.util.function.Supplier;
 
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_INT;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
 
@@ -92,71 +92,8 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     }
 
     @Override
-    public long length() {
-        return endIndex - startIndex;
-    }
-
-    @Override
     public MemorySegment memorySegment() {
         return segment;
-    }
-
-    @Override
-    public String asString(Charset charset) {
-        return asString(null, charset);
-    }
-
-    @Override
-    public String asString(byte[] buffer, Charset charset) {
-        return MemorySegments.fromLongsWithinBounds(segment, startIndex(), endIndex(), buffer, charset);
-    }
-
-    @Override
-    public long headStart() {
-        return startIndex % ALIGNMENT_INT;
-    }
-
-    @Override
-    public boolean isAlignedAtStart() {
-        return startIndex % ALIGNMENT_INT == 0L;
-    }
-
-    @Override
-    public boolean isAlignedAtEnd() {
-        return endIndex % ALIGNMENT_INT == 0;
-    }
-
-    @Override
-    public byte byteAt(long i) {
-        return segment.get(JAVA_BYTE, startIndex + i);
-    }
-
-    @Override
-    public int unalignedIntAt(long i) {
-        return segment.get(JAVA_INT_UNALIGNED, startIndex + i);
-    }
-
-    @Override
-    public short unalignedShortAt(long i) {
-        return segment.get(JAVA_SHORT_UNALIGNED, startIndex + i);
-    }
-
-    @Override
-    public long head(long head) {
-        long offset = startIndex - startIndex % ALIGNMENT_INT;
-        long shift = head * ALIGNMENT_INT;
-        return segment.get(JAVA_LONG, offset) >> shift;
-    }
-
-    @Override
-    public long longNo(long longNo) {
-        long offset = startIndex - startIndex % ALIGNMENT_INT + longNo * ALIGNMENT_INT;
-        return segment.get(JAVA_LONG, offset);
-    }
-
-    @Override
-    public long bytesAt(long offset, long count) {
-        return MemorySegments.bytesAt(memorySegment(), startIndex + offset, count);
     }
 
     private boolean processedHead() {

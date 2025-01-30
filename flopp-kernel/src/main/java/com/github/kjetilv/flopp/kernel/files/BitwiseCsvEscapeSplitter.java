@@ -40,12 +40,10 @@ final class BitwiseCsvEscapeSplitter extends AbstractBitwiseCsvLineSplitter {
                 return;
             }
             if (diff < 0) {
-                long position = offset + sep;
-                handleSep(position);
+                handleSep(offset + sep);
                 sep = nextSep();
             } else {
-                long position = offset + esc;
-                handleEsc(position);
+                handleEsc(offset + esc);
                 esc = escFinder.next();
             }
         }

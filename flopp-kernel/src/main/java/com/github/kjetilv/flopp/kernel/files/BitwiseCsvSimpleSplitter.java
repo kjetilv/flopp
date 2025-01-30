@@ -20,10 +20,10 @@ final class BitwiseCsvSimpleSplitter extends AbstractBitwiseCsvLineSplitter {
 
     @Override
     protected void findSeps(long offset, long data, long endOffset) {
+        int range = (int) (endOffset - offset);
         int dist = nextSep(data);
-        long index;
-        while (dist < ALIGNMENT_INT && (index = offset + dist) < endOffset) {
-            markSeparator(index);
+        while (dist < ALIGNMENT_INT && dist < range) {
+            markSeparator(offset + dist);
             dist = nextSep();
         }
     }
