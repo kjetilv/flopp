@@ -46,11 +46,12 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
     @Override
     public boolean tryAdvance(Consumer<? super LineSegment> action) {
         try {
+            Consumer<LineSegment> consumer = (Consumer<LineSegment>) action;
             if (headersAndFooters == null) {
-                feeder((Consumer<LineSegment>) action).run();
+                feeder(consumer).run();
             } else {
-                try (CloseableConsumer<LineSegment> hf = headersAndFooters.wrap((Consumer<LineSegment>) action)) {
-                    feeder(hf).run();
+                try (CloseableConsumer<LineSegment> hf = headersAndFooters.wrap(consumer)) {
+                    feeder(hf == null ? consumer : hf).run();
                 }
             }
             return false;

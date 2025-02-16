@@ -44,8 +44,8 @@ public final class HeadersAndFooters<T> {
     }
 
     public CloseableConsumer<T> wrap(Consumer<T> consumer) {
-        return header == 0 && footer == 0 ? consumer::accept
-            : header > 0 && footer == 1 ? new HF1<>(consumer, header, footer, immutableCopier)
+        return header == 0 && footer == 0 ? null
+            : header > 0 && footer == 1 ? new HF1<>(consumer, header, immutableCopier)
                 : header > 0 && footer > 0 ? new HF<>(consumer, header, footer, immutableCopier)
                     : header > 0 ? new HO<>(consumer, header)
                         : footer == 1 ? new F1O<>(consumer, immutableCopier)
@@ -177,7 +177,7 @@ public final class HeadersAndFooters<T> {
 
         private Runnable queued;
 
-        private HF1(Consumer<T> delegate, int header, int footer, Function<T, T> immutableCopier) {
+        private HF1(Consumer<T> delegate, int header, Function<T, T> immutableCopier) {
             this.delegate = Objects.requireNonNull(delegate, "action");
             this.header = Non.negativeOrZero(header, "header");
             this.headersLeft = header;

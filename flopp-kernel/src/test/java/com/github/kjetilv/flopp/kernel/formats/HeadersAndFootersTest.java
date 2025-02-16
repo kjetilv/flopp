@@ -78,9 +78,9 @@ class HeadersAndFootersTest {
         CloseableConsumer<Integer> add = is::add;
 
         try (
-            CloseableConsumer<Integer> cc0 = if0 == null ? add : if0.wrap(add);
-            CloseableConsumer<Integer> cc1 = if1 == null ? add : if1.wrap(add);
-            CloseableConsumer<Integer> cc2 = if2 == null ? add : if2.wrap(add)
+            CloseableConsumer<Integer> cc0 = if0 == null ? add : wrap(if0, add);
+            CloseableConsumer<Integer> cc1 = if1 == null ? add : wrap(if1, add);
+            CloseableConsumer<Integer> cc2 = if2 == null ? add : wrap(if2, add)
         ) {
             for (int i = 0; i < 10; i++) {
                 cc0.accept(i);
@@ -100,4 +100,8 @@ class HeadersAndFootersTest {
                 .toList());
     }
 
+    private static CloseableConsumer<Integer> wrap(HeadersAndFooters<Integer> hf, CloseableConsumer<Integer> add) {
+        CloseableConsumer<Integer> wrap = hf.wrap(add);
+        return wrap == null ? add : wrap;
+    }
 }

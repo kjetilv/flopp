@@ -41,7 +41,7 @@ record TableEntry<T>(
     }
 
     TableEntry<T> freezeTo(LineSegment segment, long offset) {
-        return frozen(this.segment.copyTo(segment, offset));
+        return frozen(this.segment.plus(segment, offset));
     }
 
     private TableEntry<T> frozen(LineSegment copied) {

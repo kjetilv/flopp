@@ -105,8 +105,8 @@ class LineSegmentsTest {
         LineSegment donor1 = LineSegments.of("foo");
         LineSegment donor2 = LineSegments.of("bar");
         LineSegment receiver = LineSegments.of(128);
-        LineSegment copied1 = donor1.copyTo(receiver, 0L);
-        LineSegment copied2 = donor2.copyTo(receiver, donor1.length());
+        LineSegment copied1 = donor1.plus(receiver, 0L);
+        LineSegment copied2 = donor2.plus(receiver, donor1.length());
         assertThat(donor1).hasSameHashCodeAs(copied1);
         assertThat(donor2).hasSameHashCodeAs(copied2);
         assertThat(receiver.slice(0, donor1.length() + donor2.length()))

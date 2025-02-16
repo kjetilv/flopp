@@ -12,11 +12,11 @@ public interface LineSegmentBuilder extends LineSegment {
         accept(data, MemorySegments.ALIGNMENT_INT);
     }
 
-    void accept(long data, int length);
-
     default LineSegment build() {
         return this;
     }
+
+    void accept(long data, int length);
 
     void accept(LineSegment lineSegment);
 
@@ -60,9 +60,8 @@ public interface LineSegmentBuilder extends LineSegment {
 
         @Override
         public void accept(LineSegment ls) {
-            long length = ls.length();
-            MemorySegments.copyBytes(ls.memorySegment(), vessel.memorySegment(), endIndex, length);
-            endIndex += length;
+            long added = ls.copyTo(vessel, endIndex);
+            endIndex += added;
         }
     }
 }
