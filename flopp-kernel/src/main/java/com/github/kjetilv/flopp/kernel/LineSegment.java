@@ -116,13 +116,18 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
         return new ImmutableLineSegment(buffer, 0, copyLength);
     }
 
-    default LineSegment copyTo(LineSegment receiver, long offset) {
+    default LineSegment plus(LineSegment receiver, long offset) {
+        long added = copyTo(receiver, offset);
+        return LineSegments.of(receiver.memorySegment(), offset, offset + added);
+    }
+
+    default long copyTo(LineSegment receiver, long offset) {
         long length = length();
         copyBytes(
             this.memorySegment(), startIndex(),
             receiver.memorySegment(), offset, length
         );
-        return LineSegments.of(receiver.memorySegment(), offset, offset + length);
+        return length;
     }
 
     default boolean hasRange(int startIndex, int endIndex) {
