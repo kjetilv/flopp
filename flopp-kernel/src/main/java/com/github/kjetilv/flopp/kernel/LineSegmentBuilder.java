@@ -60,8 +60,7 @@ public interface LineSegmentBuilder extends LineSegment {
 
         @Override
         public void accept(LineSegment ls) {
-            long added = ls.copyTo(vessel, endIndex);
-            endIndex += added;
+            endIndex += ls.copyTo(vessel, endIndex);
         }
     }
 }
