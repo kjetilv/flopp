@@ -54,6 +54,13 @@ public final class Non {
         return i;
     }
 
+    public static byte negative(byte i, String name) {
+        if (i < 0) {
+            throw new IllegalStateException("Expected non-negative " + name + ": " + i);
+        }
+        return i;
+    }
+
     public static long negative(long l, String name) {
         if (l < 0) {
             throw new IllegalStateException("Expected non-negative " + name + ": " + l);

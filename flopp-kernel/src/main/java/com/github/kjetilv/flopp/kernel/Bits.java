@@ -291,6 +291,18 @@ public final class Bits {
         return l;
     }
 
+    public static long repeatByte(int i) {
+        return
+            (ffl(i) << 56L) +
+            (ffl(i) << 48L) +
+            (ffl(i) << 40L) +
+            (ffl(i) << 32L) +
+            (ffl(i) << 24L) +
+            (ffl(i) << 16L) +
+            (ffl(i) << 8L) +
+            ffl(i);
+    }
+
     private Bits() {
     }
 
@@ -640,6 +652,7 @@ public final class Bits {
     }
 
     public interface Finder {
+
         int next(long data);
 
         int next();

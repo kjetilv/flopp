@@ -4,3 +4,4 @@ out
 .idea/**
 !.idea/inspectionProfiles
 gradle.properties
+.aider*

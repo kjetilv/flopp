@@ -2,19 +2,16 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
-import com.github.kjetilv.flopp.kernel.util.AtomicArray;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.IntFunction;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-final class PartitionedImpl implements Partitioned {
+final class VectorPartitioned implements Partitioned {
 
     private final Shape shape;
 
@@ -22,7 +19,7 @@ final class PartitionedImpl implements Partitioned {
 
     private final MemorySegmentSource memorySegmentSource;
 
-    PartitionedImpl(Partitioning partitioning, Shape shape, MemorySegmentSource segmentSource) {
+    VectorPartitioned(Partitioning partitioning, Shape shape, MemorySegmentSource segmentSource) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.partitions = partitioning(partitioning, this.shape).of(this.shape.size());
         this.memorySegmentSource = segmentSource;
@@ -47,9 +44,8 @@ final class PartitionedImpl implements Partitioned {
     @Override
     public Stream<PartitionStreamer> streamers() {
         int count = partitions.size();
-        AtomicArray<BitwisePartitionStreamer> array = new AtomicArray<>(count);
-        return IntStream.range(0, count)
-            .mapToObj(lazyStreamer(array));
+        return IntStream.range(0, count).mapToObj(index ->
+            new VectorPartitionStreamer(partitions.get(index), shape, memorySegmentSource));
     }
 
     @Override
@@ -73,38 +69,7 @@ final class PartitionedImpl implements Partitioned {
         }
     }
 
-    private Supplier<BitwisePartitionStreamer> nextLookup(
-        int index,
-        AtomicArray<BitwisePartitionStreamer> array
-    ) {
-        int nextIndex = index + 1;
-        return nextIndex < partitions.size()
-            ? () -> streamerFor(nextIndex, array)
-            : null;
-    }
-
-    private IntFunction<BitwisePartitionStreamer> lazyStreamer(
-        AtomicArray<BitwisePartitionStreamer> array
-    ) {
-        return index -> streamerFor(index, array);
-    }
-
-    private BitwisePartitionStreamer streamerFor(
-        int index,
-        AtomicArray<BitwisePartitionStreamer> array
-    ) {
-        return array.computeIfAbsent(
-            index, () -> {
-                Partition partition = partitions.get(index);
-                return new BitwisePartitionStreamer(partition, shape, memorySegmentSource, nextLookup(index, array));
-            }
-        );
-    }
-
-    private BitwiseCounter counterFor(
-        Map<Integer, BitwiseCounter> map,
-        int index
-    ) {
+    private BitwiseCounter counterFor(Map<Integer, BitwiseCounter> map, int index) {
         return map.computeIfAbsent(
             index, _ ->
                 new BitwiseCounter(

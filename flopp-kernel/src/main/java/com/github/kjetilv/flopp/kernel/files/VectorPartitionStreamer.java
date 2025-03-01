@@ -5,23 +5,22 @@ import com.github.kjetilv.flopp.kernel.formats.HeadersAndFooters;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.Spliterator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.github.kjetilv.flopp.kernel.formats.HeadersAndFooters.create;
 
-final class BitwisePartitionStreamer implements PartitionStreamer {
+final class VectorPartitionStreamer implements PartitionStreamer {
 
     private final Partition partition;
 
-    private final BitwisePartitionLineSpliterator spliterator;
+    private final Spliterator<LineSegment> spliterator;
 
-    BitwisePartitionStreamer(
+    VectorPartitionStreamer(
         Partition partition,
         Shape shape,
-        MemorySegmentSource memorySegmentSource,
-        Supplier<BitwisePartitionStreamer> next
+        MemorySegmentSource memorySegmentSource
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         LineSegment sourced = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource")
@@ -34,19 +33,14 @@ final class BitwisePartitionStreamer implements PartitionStreamer {
             ? MemorySegments.alignmentPadded(sourced.memorySegment(), sourced.startIndex())
             : sourced.memorySegment();
 
-        Supplier<BitwisePartitionLineSpliterator> nextSupplier = next == null
-            ? null
-            : () -> next.get().spliterator;
-
         HeadersAndFooters<LineSegment> headersAndFooters = create(partition, shape, LineSegment::immutable);
 
-        this.spliterator = new BitwisePartitionLineSpliterator(
+        this.spliterator = new VectorPartitionLineSpliterator(
             partition,
             paddedMemorySegment,
             misalignedTail ? 0L : sourced.startIndex(),
             logicalLimit,
-            headersAndFooters,
-            nextSupplier
+            headersAndFooters
         );
     }
 

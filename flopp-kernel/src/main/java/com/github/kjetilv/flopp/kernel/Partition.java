@@ -66,7 +66,7 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
         return partitionCount == 1;
     }
 
-    public boolean troubledTail() {
+    public boolean hasMisalignedTail() {
         return last() && !aligned(ALIGNMENT_INT);
     }
 

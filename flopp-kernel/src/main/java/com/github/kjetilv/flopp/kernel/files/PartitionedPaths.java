@@ -32,6 +32,15 @@ public final class PartitionedPaths {
         );
     }
 
+    public static Partitioned vectorPartitioned(Path path, Partitioning partitioning, Shape shape) {
+        Shape resolved = shape == null ? Shape.of(path) : shape;
+        return Partitioneds.create(
+            partitioning,
+            resolved,
+            fullMemorySegmentSource(path, resolved)
+        );
+    }
+
     public static PartitionedProcessors<Path> partitionedProcessors(
         Path path,
         Partitioning partitioning,

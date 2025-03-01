@@ -12,11 +12,15 @@ public final class Partitioneds {
         Shape resolved,
         MemorySegmentSource segmentSource
     ) {
-        return new PartitionedImpl(
-            partitioning,
-            resolved,
-            segmentSource
-        );
+        return new BitwisePartitioned(partitioning, resolved, segmentSource);
+    }
+
+    public static Partitioned createVectorized(
+        Partitioning partitioning,
+        Shape resolved,
+        MemorySegmentSource segmentSource
+    ) {
+        return new VectorPartitioned(partitioning, resolved, segmentSource);
     }
 
     private Partitioneds() {

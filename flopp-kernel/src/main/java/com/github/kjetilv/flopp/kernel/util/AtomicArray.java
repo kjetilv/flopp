@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 public final class AtomicArray<T> {
 
@@ -17,10 +18,9 @@ public final class AtomicArray<T> {
 
     public AtomicArray(int size, boolean fair) {
         this.array = new Object[size];
-        this.locks = new Lock[size];
-        for (int i = 0; i < array.length; i++) {
-            locks[i] = new ReentrantLock(fair);
-        }
+        this.locks = IntStream.range(0, size)
+            .mapToObj(_ -> new ReentrantLock())
+            .toArray(Lock[]::new);
     }
 
     @SuppressWarnings("unchecked")

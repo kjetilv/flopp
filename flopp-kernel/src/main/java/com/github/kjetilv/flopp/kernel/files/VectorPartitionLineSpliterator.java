@@ -9,15 +9,12 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
+final class VectorPartitionLineSpliterator extends Spliterators.AbstractSpliterator<LineSegment> {
 
     private final Partition partition;
 
     private final HeadersAndFooters<LineSegment> headersAndFooters;
-
-    private final Supplier<BitwisePartitionLineSpliterator> next;
 
     private final MemorySegment segment;
 
@@ -25,20 +22,18 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
 
     private final long logicalLimit;
 
-    BitwisePartitionLineSpliterator(
+    VectorPartitionLineSpliterator(
         Partition partition,
         MemorySegment segment,
         long offset,
         long logicalLimit,
-        HeadersAndFooters<LineSegment> headersAndFooters,
-        Supplier<BitwisePartitionLineSpliterator> next
+        HeadersAndFooters<LineSegment> headersAndFooters
     ) {
         super(Long.MAX_VALUE, IMMUTABLE | SIZED);
         this.partition = Objects.requireNonNull(partition, "partition");
         this.offset = offset;
         this.logicalLimit = logicalLimit;
         this.headersAndFooters = headersAndFooters;
-        this.next = next;
         this.segment = segment;
     }
 
@@ -60,9 +55,8 @@ final class BitwisePartitionLineSpliterator extends Spliterators.AbstractSpliter
         }
     }
 
-    private BitwisePartitionLineFeeder feeder(Consumer<LineSegment> action) {
-        Supplier<BitwisePartitionLineFeeder> supplier = next == null ? null : () -> next.get().feeder(action);
-        return new BitwisePartitionLineFeeder(partition, segment, offset, logicalLimit, action, supplier);
+    private VectorPartitionLineFeeder feeder(Consumer<LineSegment> action) {
+        return new VectorPartitionLineFeeder(partition, segment, offset, logicalLimit, action);
     }
 
     @Override

@@ -34,7 +34,7 @@ subprojects {
     }
 
     tasks.withType<JavaCompile>().all {
-        options.compilerArgs.addAll(listOf("--enable-preview", "--add-modules", "jdk.incubator.vector"))
+        options.compilerArgs.addAll(sequenceOf("--enable-preview", "--add-modules", "jdk.incubator.vector"))
     }
 
     tasks.withType<Test>().all {

@@ -40,7 +40,8 @@ class BitwisePartitionLineFeederTest {
         BitwisePartitionLineFeeder handler = new BitwisePartitionLineFeeder(
             new Partition(0, 1, 0, str.length()),
             memorySegment,
-            0L, str.length(),
+            0L,
+            str.length(),
             e -> handled.add(e.immutable()),
             () -> null
         );

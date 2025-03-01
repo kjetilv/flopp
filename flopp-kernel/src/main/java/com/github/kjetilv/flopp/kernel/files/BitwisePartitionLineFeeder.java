@@ -46,7 +46,24 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         Partition partition,
         MemorySegment segment,
         long offset,
-        long logicalSize,
+        Consumer<LineSegment> action,
+        Supplier<BitwisePartitionLineFeeder> next
+    ) {
+        this(
+            partition,
+            segment,
+            offset,
+            Objects.requireNonNull(segment, "segment").byteSize(),
+            action,
+            next
+        );
+    }
+
+    BitwisePartitionLineFeeder(
+        Partition partition,
+        MemorySegment segment,
+        long offset,
+        long logicalLimit,
         Consumer<LineSegment> action,
         Supplier<BitwisePartitionLineFeeder> next
     ) {
@@ -60,7 +77,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         this.next = next;
 
         this.limit = this.partition.length();
-        this.logicalLimit = logicalSize;
+        this.logicalLimit = logicalLimit;
     }
 
     @Override
@@ -202,7 +219,9 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
     }
 
     private void processNextPartition(BitwisePartitionLineFeeder next) {
-        long nextOffset = next.firstLine >= 0 ? next.firstLine : next.findFirstLine(finder);
+        long nextOffset = next.firstLine >= 0
+            ? next.firstLine
+            : next.findFirstLine(finder);
         if (next.containsLine(nextOffset)) { // Next partition contains the next newline
             mergeWithNext(next, nextOffset);
         } else { // Next line is in a later partition!

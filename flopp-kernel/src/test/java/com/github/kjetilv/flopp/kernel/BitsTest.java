@@ -7,6 +7,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BitsTest {
 
     @Test
+    void repreat() {
+        System.out.println(Bits.hxD(Bits.repeatByte('\n')));
+    }
+
+    @Test
     void countOne() {
         Bits.Counter counter = counter('\n');
         assertThat(counter.count(0x120A340A560AL)).isEqualTo(3);

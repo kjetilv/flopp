@@ -41,7 +41,6 @@ final class BitwiseCounter {
             partition,
             memorySegment,
             sourced.startIndex(),
-            memorySegment.byteSize(),
             action,
             next == null
                 ? null

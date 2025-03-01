@@ -1,8 +1,10 @@
 package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.segments.ImmutableLineSegment;
+import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorSpecies;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
@@ -13,7 +15,7 @@ import java.util.stream.LongStream;
 import static com.github.kjetilv.flopp.kernel.MemorySegments.*;
 import static com.github.kjetilv.flopp.kernel.segments.HashedLineSegment.*;
 import static java.lang.foreign.ValueLayout.*;
-import static jdk.incubator.vector.LongVector.SPECIES_PREFERRED;
+import static java.nio.ByteOrder.nativeOrder;
 
 @SuppressWarnings("unused")
 public interface LineSegment extends Range, Comparable<LineSegment> {
@@ -331,16 +333,15 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     default LongVector asLongVector(VectorMask<Long> mask) {
-        VectorMask<Long> longMask = mask == null
-            ? SPECIES_PREFERRED.maskAll(true)
-            : mask;
-        return LongVector.fromMemorySegment(
-            SPECIES_PREFERRED,
-            memorySegment(),
-            alignedStart(),
-            ByteOrder.nativeOrder(),
-            longMask
-        );
+        return LongVector.fromMemorySegment(L_SPEC, memorySegment(), alignedStart(), NATIVE_ORDER);
+    }
+
+    default ByteVector asByteVector(VectorMask<Byte> mask) {
+        return asByteVector(mask, 0);
+    }
+
+    default ByteVector asByteVector(VectorMask<Byte> mask, long offset) {
+        return ByteVector.fromMemorySegment(B_SPEC, memorySegment(), startIndex() + offset, NATIVE_ORDER);
     }
 
     MemorySegment memorySegment();
@@ -350,11 +351,16 @@ public interface LineSegment extends Range, Comparable<LineSegment> {
     }
 
     byte NULL = (byte) 0;
-    interface Immutable {
 
+    VectorSpecies<Long> L_SPEC = LongVector.SPECIES_PREFERRED;
+
+    VectorSpecies<Byte> B_SPEC = ByteVector.SPECIES_PREFERRED;
+
+    ByteOrder NATIVE_ORDER = nativeOrder();
+
+    interface Immutable {
     }
 
     interface Hashed {
-
     }
 }
