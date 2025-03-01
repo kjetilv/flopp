@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import com.github.kjetilv.flopp.kernel.util.Maps;
 
 import java.util.Map;
@@ -84,7 +85,7 @@ final class VectorPartitioned implements Partitioned {
 
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
-            partitioning == null ? Partitioning.create() : partitioning,
+            partitioning == null ? Partitionings.create() : partitioning,
             shape
         );
     }

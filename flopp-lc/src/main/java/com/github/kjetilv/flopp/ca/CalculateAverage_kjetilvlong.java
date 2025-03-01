@@ -22,6 +22,7 @@ import com.github.kjetilv.flopp.kernel.columns.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMaps;
 
@@ -215,7 +216,7 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static Partitioning readPartitioning(int cpus, Shape shape, Settings settings) {
-        Partitioning basic = Partitioning.create(cpus * settings.cpuMultiplier(), shape.longestLine());
+        Partitioning basic = Partitionings.create(cpus * settings.cpuMultiplier(), shape.longestLine());
         if (shape.size() < 1_000_000) {
             return basic;
         }
@@ -225,7 +226,7 @@ public final class CalculateAverage_kjetilvlong {
 
     @SuppressWarnings("unused")
     private static Partitioning writePartitioning(int cpus, Shape shape, Settings settings) {
-        Partitioning basic = Partitioning.create(cpus * settings.cpuMultiplier(), shape.longestLine());
+        Partitioning basic = Partitionings.create(cpus * settings.cpuMultiplier(), shape.longestLine());
         if (shape.size() < 1_000_000) {
             return basic;
         }

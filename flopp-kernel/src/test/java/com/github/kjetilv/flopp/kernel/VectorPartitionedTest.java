@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel;
 
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -79,7 +80,7 @@ class VectorPartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = Partitioning.create(3, 16);
+        Partitioning partitioning = Partitionings.create(3, 16);
         try (
             Partitioned pf1 = PartitionedPaths.vectorPartitioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -140,7 +141,7 @@ class VectorPartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = Partitioning.create(partitionCount, 16);
+        Partitioning partitioning = Partitionings.create(partitionCount, 16);
 
         try (
             Partitioned pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
@@ -196,7 +197,7 @@ class VectorPartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = Partitioning.create(4, 16);
+        Partitioning partitioning = Partitionings.create(4, 16);
         try (
             Partitioned pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {

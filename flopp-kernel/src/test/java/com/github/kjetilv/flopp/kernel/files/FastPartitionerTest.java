@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
@@ -80,7 +81,7 @@ public class FastPartitionerTest {
         try (
             Partitioned partitioned = PartitionedPaths.partitioned(
                 file,
-                Partitioning.create(partitionCount, 10),
+                Partitionings.create(partitionCount, 10),
                 shape
             )
         ) {
@@ -109,7 +110,7 @@ public class FastPartitionerTest {
         try (
             Partitioned partitioned = PartitionedPaths.partitioned(
                 file,
-                Partitioning.create(partitionCount, 10),
+                Partitionings.create(partitionCount, 10),
                 shape
             )
         ) {
@@ -149,7 +150,7 @@ public class FastPartitionerTest {
             throw new RuntimeException(e);
         }
 
-        Partitioning partitioning = Partitioning.create(partitionCount, longestLine);
+        Partitioning partitioning = Partitionings.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(longestLine).headerFooter(1, 1);
         try (
             Partitioned partitioned = PartitionedPaths.partitioned(file, partitioning, shape)

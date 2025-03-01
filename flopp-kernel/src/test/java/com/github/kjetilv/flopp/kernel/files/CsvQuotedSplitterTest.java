@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -51,39 +52,39 @@ class CsvQuotedSplitterTest {
 
     @Test
     void shortString() {
-        assertSplit(Partitioning.single(), "foo;bar;zot", "foo", "bar", "zot");
+        assertSplit(Partitionings.single(), "foo;bar;zot", "foo", "bar", "zot");
     }
 
     @Test
     void shorterString() {
-        assertSplit(Partitioning.single(), "foo;bar", "foo", "bar");
+        assertSplit(Partitionings.single(), "foo;bar", "foo", "bar");
     }
 
     @Test
     void shorterString2() {
-        assertSplit(Partitioning.single(), "foo;'b'ar", "foo", "'b'ar");
+        assertSplit(Partitionings.single(), "foo;'b'ar", "foo", "'b'ar");
     }
 
     //    @Disabled("Should fail")
     @Test
     void badQuoteString() {
-        assertSplit(Partitioning.single(), "f;'b;a;", "f", "'b;a;");
+        assertSplit(Partitionings.single(), "f;'b;a;", "f", "'b;a;");
     }
 
     @Test
     void dodgyQuoteString() {
-        assertSplit(Partitioning.single(), "f;a'b;'a;", "f", "a'b;'a", "");
+        assertSplit(Partitionings.single(), "f;a'b;'a;", "f", "a'b;'a", "");
     }
 
     @Test
     void dodgyQuoteString2() {
-        assertSplit(Partitioning.single(), "f;''a'b';'a;", "f", "''a'b'", "'a;");
+        assertSplit(Partitionings.single(), "f;''a'b';'a;", "f", "''a'b'", "'a;");
     }
 
     @Test
     void shorterStringUTF8() {
         assertSplit(
-            Partitioning.single(), """
+            Partitionings.single(), """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
                 jk;kl
@@ -94,7 +95,7 @@ class CsvQuotedSplitterTest {
     @Test
     void shorterStringUTF8Parts() {
         assertSplit(
-            Partitioning.create(2), """
+            Partitionings.create(2), """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
                 jk;kl
@@ -104,7 +105,7 @@ class CsvQuotedSplitterTest {
 
     @Test
     void shorterStringUTF8Parts2() {
-        Partitioning partitioning = Partitioning.create(2);
+        Partitioning partitioning = Partitionings.create(2);
 
 //        String input = """
 //            890000000000000000,MAYLUUSSTR,#topl RT jfrblazer49: I THINK JUDGE ROY MOORE WOULD BE AWESOME A SUPREME COURT JUDGE . GOD BLESS JUDGE ROY MOORE! https://t.co/qUSgEIoA1m …,Unknown,English,8/5/2017 6:21,8/5/2017 6:21,2965,638,1234,QUOTE_TWEET,Right,1,RightTroll,0,890467190402686977,893718554687811584,http://twitter.com/890467190402686977/statuses/893718554687811584,https://twitter.com/RebeccaFaussett/status/891646467949121539,,
@@ -137,23 +138,23 @@ class CsvQuotedSplitterTest {
      */
     @Test
     void shorterString8Plus() {
-        assertSplit(Partitioning.single(), "fooz;barz");
+        assertSplit(Partitionings.single(), "fooz;barz");
     }
 
     @Test
     void shorterString8() {
-        assertSplit(Partitioning.single(), "abcd;123");
+        assertSplit(Partitionings.single(), "abcd;123");
     }
 
     @Test
     void shorterString8Short() {
-        assertSplit(Partitioning.single(), "fooz;ba");
+        assertSplit(Partitionings.single(), "fooz;ba");
     }
 
     @Test
     void shorterStringProgressive() {
         assertSplit(
-            Partitioning.single(), """
+            Partitionings.single(), """
                 f;a
                 qweqweqweasdasdasdzxczxzxc;qwe
                 a;qweqweqweasdasdasdzxczxzxc
@@ -164,13 +165,13 @@ class CsvQuotedSplitterTest {
 
     @Test
     void veryShorterString() {
-        assertSplit(Partitioning.single(), "a;b;c", DQ_FORMAT, "a", "b", "c");
+        assertSplit(Partitionings.single(), "a;b;c", DQ_FORMAT, "a", "b", "c");
     }
 
     @Test
     void trickyString1() {
         assertSplit(
-            Partitioning.single(),
+            Partitionings.single(),
             "'c';'';",
             DQ_FORMAT,
             "'c'",
@@ -182,7 +183,7 @@ class CsvQuotedSplitterTest {
     @Test
     void trickyString2() {
         assertSplit(
-            Partitioning.single(),
+            Partitionings.single(),
             "'c';'';'sdf'",
             DQ_FORMAT,
             "'c'",
@@ -194,7 +195,7 @@ class CsvQuotedSplitterTest {
     @Test
     void quoted() {
         assertSplit(
-            Partitioning.single(),
+            Partitionings.single(),
             "'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;',';'\\;'",
             DQ_FORMAT,
             "'foo 1'",
@@ -212,7 +213,7 @@ class CsvQuotedSplitterTest {
     @Test
     void quotingQuotes() {
         assertSplit(
-            Partitioning.single(),
+            Partitionings.single(),
             """
                 'foo 1';'it''s';''foo'';'''''';4
                 """,
@@ -430,7 +431,7 @@ class CsvQuotedSplitterTest {
         );
 
         try {
-            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitionings.single())) {
                 partititioned.streamers()
                     .forEach(streamer -> streamer.lines()
                         .forEach(splitter));

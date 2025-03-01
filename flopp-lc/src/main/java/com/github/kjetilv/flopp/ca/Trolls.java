@@ -24,6 +24,7 @@ import com.github.kjetilv.flopp.kernel.columns.ColumnReaders;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -44,7 +45,7 @@ public final class Trolls {
                 Path path = Path.of(arg);
                 Shape shape = Shape.of(path, UTF_8).header(1).longestLine(1024);
 
-                Partitioning partitioning = Partitioning.create(
+                Partitioning partitioning = Partitionings.create(
                     Runtime.getRuntime().availableProcessors(),
                     shape.longestLine()
                 );

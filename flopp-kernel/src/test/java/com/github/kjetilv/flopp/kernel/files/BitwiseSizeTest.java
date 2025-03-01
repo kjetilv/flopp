@@ -2,6 +2,7 @@ package com.github.kjetilv.flopp.kernel.files;
 
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -128,7 +129,7 @@ public class BitwiseSizeTest {
     private Duration doRealStuff(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        Partitioning partitioning = Partitioning.create(partitions);
+        Partitioning partitioning = Partitionings.create(partitions);
         try (
             PartitionedProcessors<Path> partitioned =
                 PartitionedPaths.partitionedProcessors(path, partitioning, shape);
@@ -149,7 +150,7 @@ public class BitwiseSizeTest {
     ) {
         long start = System.nanoTime();
         Path tmp = out(path, testInfo, qual);
-        Partitioning partitioning = Partitioning.create(partitions, bufferSize);
+        Partitioning partitioning = Partitionings.create(partitions, bufferSize);
         try (
             PartitionedProcessors<Path> partitioned =
                 PartitionedPaths.partitionedProcessors(path, partitioning, shape);
@@ -164,7 +165,7 @@ public class BitwiseSizeTest {
     private Duration doRealStuffFast(TestInfo testInfo, String qual, Function<LineSegment, String> fun) {
         Path tmp = out(path, testInfo, qual);
         long start = System.nanoTime();
-        Partitioning partitioning = Partitioning.create(partitions, 8192);
+        Partitioning partitioning = Partitionings.create(partitions, 8192);
         try (
             PartitionedProcessors<Path> partitioned =
                 PartitionedPaths.partitionedProcessors(path, partitioning, shape);
@@ -182,7 +183,7 @@ public class BitwiseSizeTest {
         Path verified = straightUp(testInfo, OPS, "verified");
         Path out = out(path, testInfo, qual);
         long start = System.nanoTime();
-        Partitioning partitioning = Partitioning.create(partitions, shape.longestLine());
+        Partitioning partitioning = Partitionings.create(partitions, shape.longestLine());
         try (
             PartitionedProcessors<Path> partitioned =
                 PartitionedPaths.partitionedProcessors(path, partitioning, shape);

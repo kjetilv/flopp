@@ -9,31 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT;
-import static com.github.kjetilv.flopp.kernel.MemorySegments.ALIGNMENT_POW;
 import static java.lang.Integer.MAX_VALUE;
 
-public record Partitioning(int count, long tail, TailShards fragmentation) {
-
-    public static Partitioning create() {
-        return new Partitioning(Runtime.getRuntime().availableProcessors(), 0, null);
-    }
-
-    public static Partitioning create(int count) {
-        return create(count, 0);
-    }
-
-    public static Partitioning create(int count, long tail) {
-        return new Partitioning(count, tail, null);
-    }
-
-    public static Partitioning tail(int tail) {
-        return create(0, tail);
-    }
-
-    public static Partitioning single() {
-        return create(1);
-    }
+public record Partitioning(int count, long tail, TailShards fragmentation, int alignment) {
 
     public Partitioning {
         Non.negativeOrZero(count, "count");
@@ -44,12 +22,13 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return new Partitioning(
             Math.toIntExact(Math.round(count * scale)),
             tail,
-            null
+            null,
+            alignment
         );
     }
 
     public Partitioning tail(long tail) {
-        return new Partitioning(count, tail, fragmentation);
+        return new Partitioning(count, tail, fragmentation, alignment);
     }
 
     public Partitions of(long total) {
@@ -75,7 +54,7 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
     }
 
     public Partitioning fragment(TailShards tailShards) {
-        return new Partitioning(count, tail, tailShards);
+        return new Partitioning(count, tail, tailShards, alignment);
     }
 
     private void checkSize(long total) {
@@ -93,13 +72,13 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         }
     }
 
-    private static long[] partitionSizes(int count, long total, long tail) {
+    private long[] partitionSizes(int count, long total, long tail) {
         if (count == 1) {
             return new long[] {total};
         }
-        if (total / count < ALIGNMENT * 2L) {
+        if (total / count < alignment * 2L) {
             throw new IllegalArgumentException(
-                "Too many partitions for " + total + " bytes with alignment " + ALIGNMENT + ": " + count
+                "Too many partitions for " + total + " bytes with alignment " + alignment + ": " + count
             );
         }
         return tail > 0
@@ -107,10 +86,10 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
             : alignedSizes(count, total);
     }
 
-    private static long[] alignedSizesWithTail(int count, long total, long tail) {
+    private long[] alignedSizesWithTail(int count, long total, long tail) {
         long headTotal = total - tail;
-        long alignedHeadSlices = headTotal >> ALIGNMENT_POW;
-        long headOvershoot = headTotal % ALIGNMENT;
+        long alignedHeadSlices = headTotal / alignment;
+        long headOvershoot = headTotal % alignedHeadSlices;
         long overshootTail = tail + headOvershoot;
         long[] headSizes = sizeDistribution(alignedHeadSlices, count);
         long[] sizes = new long[headSizes.length + 1];
@@ -119,9 +98,9 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return sizes;
     }
 
-    private static long[] alignedSizes(int count, long total) {
-        long overshoot = total % ALIGNMENT;
-        long alignedSlices = total >> ALIGNMENT_POW;
+    private long[] alignedSizes(int count, long total) {
+        long overshoot = total % alignment;
+        long alignedSlices = total / alignment;
         long[] sizes = sizeDistribution(alignedSlices, count);
         if (overshoot != 0) {
             sizes[sizes.length - 1] += overshoot;
@@ -129,7 +108,7 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
         return sizes;
     }
 
-    private static long[] sizeDistribution(long alignedSlices, int count) {
+    private long[] sizeDistribution(long alignedSlices, int count) {
         long remainders = intSized(alignedSlices % count);
         long baseCount = intSized(alignedSlices / count);
         int sizeCount = Math.toIntExact(count);
@@ -139,7 +118,7 @@ public record Partitioning(int count, long tail, TailShards fragmentation) {
             sizes[sizeCount - 1 - i] += 1;
         }
         for (int i = 0; i < sizeCount; i++) {
-            sizes[i] *= ALIGNMENT;
+            sizes[i] *= alignment;
         }
         return sizes;
     }

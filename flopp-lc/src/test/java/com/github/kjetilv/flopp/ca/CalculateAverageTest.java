@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.ca;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import com.github.kjetilv.flopp.kernel.segments.LineSegmentMap;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class CalculateAverageTest {
                 int tail = Math.min(100, Math.toIntExact(size / 10));
                 for (int t = 0; t < tail; t += 2) {
                     for (int i = 1; i < maxPartitions; i++) {
-                        Partitioning partitioning = Partitioning.create(i);
+                        Partitioning partitioning = Partitionings.create(i);
                         test(smaple, partitioning, t);
                     }
                 }
@@ -71,6 +72,15 @@ class CalculateAverageTest {
         test(path);
     }
 
+    @Test
+    void test2023() {
+        test(
+            "smaples/measurements-20.txt",
+            Partitionings.create(23),
+            0
+        );
+    }
+
     private static void test(Path smaple) {
         long size;
         try {
@@ -83,7 +93,7 @@ class CalculateAverageTest {
         for (int t = 0; t < tail; t += 10) {
             Shape shape = Shape.of(smaple, UTF_8).longestLine(t);
             for (int i = 1; i < maxPartitions; i++) {
-                LongAdder sum = JustSplit_kjetilvlong.add(Partitioning.create(i), shape, smaple);
+                LongAdder sum = JustSplit_kjetilvlong.add(Partitionings.create(i), shape, smaple);
                 try (Stream<String> lines = Files.lines(smaple)) {
                     assertThat(sum)
                         .describedAs("smaple: " + t + "/" + i + ": " + smaple)
@@ -93,16 +103,7 @@ class CalculateAverageTest {
                 }
             }
         }
-        test(smaple, Partitioning.create(1), 0);
-    }
-
-    @Test
-    void test2023() {
-        test(
-            "smaples/measurements-20.txt",
-            Partitioning.create(23),
-            0
-        );
+        test(smaple, Partitionings.create(1), 0);
     }
 
     @SuppressWarnings("unused")

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.github.kjetilv.flopp.kernel.*;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -223,7 +223,7 @@ class BitwiseFileSplitterTest {
     private static Partitioned partitioned(Path file) {
         return PartitionedPaths.partitioned(
             file,
-            Partitioning.create().scaled(2),
+            Partitionings.create().scaled(2),
             Shape.of(file, UTF_8).longestLine(1024).header(2)
         );
     }

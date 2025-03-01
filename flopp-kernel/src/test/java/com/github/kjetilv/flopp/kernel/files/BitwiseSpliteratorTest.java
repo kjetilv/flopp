@@ -3,6 +3,7 @@ package com.github.kjetilv.flopp.kernel.files;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -51,7 +52,7 @@ public class BitwiseSpliteratorTest {
         Path file = Files.writeString(dir.resolve(UUID.randomUUID() + ".bin"), csq);
 
         Shape shape = Shape.of(file, UTF_8).longestLine(10);
-        Partitioning partitioning = Partitioning.create(3, 8);
+        Partitioning partitioning = Partitionings.create(3, 8);
 
         List<String> expected;
         try (Stream<String> lines = Files.lines(file)) {

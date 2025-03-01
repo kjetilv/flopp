@@ -5,7 +5,7 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Range;
 import com.github.kjetilv.flopp.kernel.formats.Formats;
-import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ class FwLineSplitterTest {
         );
 
         try {
-            try (Partitioned partitioned = PartitionedPaths.partitioned(path, Partitioning.single())) {
+            try (Partitioned partitioned = PartitionedPaths.partitioned(path, Partitionings.single())) {
                 partitioned.streamers()
                     .forEach(streamer ->
                         streamer.lines().forEach(splitter));

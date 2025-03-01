@@ -4,6 +4,7 @@ import com.github.kjetilv.flopp.kernel.Partitioned;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -51,7 +52,7 @@ public final class Lc {
     private static Count count(Path path) {
         Shape shape = Shape.of(path, UTF_8).longestLine(100);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = Partitioning
+        Partitioning partitioning = Partitionings
             .create(cpus, 128)
             .scaled(2);
 

@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.Partitions;
 import com.github.kjetilv.flopp.kernel.Shape;
 import com.github.kjetilv.flopp.kernel.files.PartitionedPaths;
 import com.github.kjetilv.flopp.kernel.partitions.Partitioning;
+import com.github.kjetilv.flopp.kernel.partitions.Partitionings;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -63,7 +64,7 @@ public class UTF8Test {
     void testXyz() throws InterruptedException {
         Path path = path("whoopsei.txt");
         StringBuilder sb;
-        Partitioning partitioning = Partitioning.create(6, 20);
+        Partitioning partitioning = Partitionings.create(6, 20);
         try (
             Partitioned bitwisePartitioned = PartitionedPaths.partitioned(
                 path,
@@ -115,7 +116,7 @@ public class UTF8Test {
         try (
             Partitioned partititioned = PartitionedPaths.partitioned(
                 path,
-                Partitioning.create(3, 112),
+                Partitionings.create(3, 112),
                 Shape.of(path, UTF_8).longestLine(110)
             )
         ) {
@@ -141,7 +142,7 @@ public class UTF8Test {
         try (
             Partitioned bitwisePartitioned = PartitionedPaths.partitioned(
                 path,
-                Partitioning.create(2, 20),
+                Partitionings.create(2, 20),
                 Shape.of(path, UTF_8).longestLine(512)
             )
         ) {
@@ -157,7 +158,7 @@ public class UTF8Test {
         try (
             Partitioned bitwisePartitioned = PartitionedPaths.partitioned(
                 path,
-                Partitioning.create(2, 0),
+                Partitionings.create(2, 0),
                 Shape.of(path, UTF_8).longestLine(30)
             )
         ) {
@@ -173,7 +174,7 @@ public class UTF8Test {
         try (
             Partitioned bitwisePartitioned = PartitionedPaths.partitioned(
                 path,
-                Partitioning.create(3, 40),
+                Partitionings.create(3, 40),
                 Shape.of(path, UTF_8).longestLine(40)
             )
         ) {
@@ -209,7 +210,7 @@ public class UTF8Test {
             throw new RuntimeException(e);
         }
         StringBuilder sb = new StringBuilder();
-        Partitioning partitioning = Partitioning.create(partitionCount);
+        Partitioning partitioning = Partitionings.create(partitionCount);
         Shape shape = Shape.of(tmp, UTF_8).longestLine(longestLine);
         Partitions partitions = partitioning.of(shape.size());
         try (
