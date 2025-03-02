@@ -34,7 +34,7 @@ public final class PartitionedPaths {
 
     public static Partitioned vectorPartitioned(Path path, Partitioning partitioning, Shape shape) {
         Shape resolved = shape == null ? Shape.of(path) : shape;
-        return Partitioneds.create(
+        return Partitioneds.createVectorized(
             partitioning,
             resolved,
             fullMemorySegmentSource(path, resolved)

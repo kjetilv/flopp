@@ -26,19 +26,16 @@ final class VectorPartitionStreamer implements PartitionStreamer {
         LineSegment sourced = Objects.requireNonNull(memorySegmentSource, "memorySegmentSource")
             .get(partition);
 
-        long logicalLimit = sourced.length();
+        long logicalLimit = sourced.endIndex();
 
-        boolean misalignedTail = partition.hasMisalignedTail();
-        MemorySegment paddedMemorySegment = misalignedTail
-            ? MemorySegments.alignmentPadded(sourced.memorySegment(), sourced.startIndex())
-            : sourced.memorySegment();
+        MemorySegment paddedMemorySegment = sourced.memorySegment();
 
         HeadersAndFooters<LineSegment> headersAndFooters = create(partition, shape, LineSegment::immutable);
 
         this.spliterator = new VectorPartitionLineSpliterator(
             partition,
             paddedMemorySegment,
-            misalignedTail ? 0L : sourced.startIndex(),
+            sourced.startIndex(),
             logicalLimit,
             headersAndFooters
         );

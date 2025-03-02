@@ -96,6 +96,16 @@ class CsvSimpleSplitterTest {
     }
 
     @Test
+    void shorterString8() {
+        assertSplit(SINGLE, "abcd;123");
+    }
+
+    @Test
+    void shorterString8Short() {
+        assertSplit(SINGLE, "fooz;ba");
+    }
+
+    @Test
     void shorterString() {
         assertSplit(
             SINGLE,
@@ -141,16 +151,6 @@ class CsvSimpleSplitterTest {
         );
     }
 
-    @Test
-    void shorterString8() {
-        assertSplit(SINGLE, "abcd;123");
-    }
-
-    @Test
-    void shorterString8Short() {
-        assertSplit(SINGLE, "fooz;ba");
-    }
-
 //    @Test
 //    void shorterStringUTF8Parts2() {
 //        Partitioning partitioning = Partitioning.create(2);
@@ -194,6 +194,57 @@ class CsvSimpleSplitterTest {
 //    void shorterString8Plus() {
 //        assertSplit(Partitioning.single(), "fooz;barz");
 //    }
+
+    @Test
+    void splitFile() {
+        assertFileContents(
+            """
+                def123;cba;234;abcdef;3456
+                abc234;foo;456;dfgfgh;1234
+                foo;bar;zot;
+                foo;bar
+                
+                a;
+                ;
+                
+                zot;
+                moreStuff;1;2;3;4;5;6
+                """,
+            "def123",
+            "cba",
+            "234",
+            "abcdef",
+            "3456",
+            "abc234",
+            "foo",
+            "456",
+            "dfgfgh",
+            "1234",
+            "foo",
+            "bar",
+            "zot",
+            "",
+            "foo",
+            "bar",
+            "",
+            "a",
+            "",
+            "",
+            "",
+            "",
+            "zot",
+            "",
+            "moreStuff",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+        );
+    }
+
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
     @Test
     void shorterStringProgressive() {
@@ -252,57 +303,6 @@ class CsvSimpleSplitterTest {
             "'"
         );
     }
-
-    @Test
-    void splitFile() {
-        assertFileContents(
-            """
-                def123;cba;234;abcdef;3456
-                abc234;foo;456;dfgfgh;1234
-                foo;bar;zot;
-                foo;bar
-
-                a;
-                ;
-                
-                zot;
-                moreStuff;1;2;3;4;5;6
-                """,
-            "def123",
-            "cba",
-            "234",
-            "abcdef",
-            "3456",
-            "abc234",
-            "foo",
-            "456",
-            "dfgfgh",
-            "1234",
-            "foo",
-            "bar",
-            "zot",
-            "",
-            "foo",
-            "bar",
-            "",
-            "a",
-            "",
-            "",
-            "",
-            "",
-            "zot",
-            "",
-            "moreStuff",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6"
-        );
-    }
-
-    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
     @Test
     void quotedLimitedButNotReally() {

@@ -94,6 +94,8 @@ public class FastPartitionerTest {
         }
     }
 
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
+
     private void run2(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
         Method method = testInfo.getTestMethod().orElseThrow();
 
@@ -168,6 +170,4 @@ public class FastPartitionerTest {
                 .hasValue(lineCount);
         }
     }
-
-    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 }

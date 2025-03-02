@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -23,12 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class VectorPartitionedTest {
 
-    @Disabled
     @Test
     void testWithHeader() throws IOException {
-        Path pathWithHeaders = Files.createTempFile(UUID.randomUUID().toString(), ".test");
-        Files.write(
-            pathWithHeaders,
+        Path pathWithHeaders = Files.write(
+            Files.createTempFile(UUID.randomUUID().toString(), ".test"),
             Arrays.asList("""
                 HEADER
                 1a
@@ -44,43 +43,41 @@ class VectorPartitionedTest {
                 9eeeeee
                 10
                 
-                11
-                1a
-                1aa
-                1aaa
-                2aaaaaa
-                3bbbb
-                4bbbbbbbb
-                5ccccc
-                6cccccccccc
-                7dddddd
-                8dddddddddddd
-                9eeeeee
-                10
+                011
+                01a
+                01aa
+                01aaa
+                02aaaaaa
+                03bbbb
+                04bbbbbbbb
+                05ccccc
+                06cccccccccc
+                07dddddd
+                08dddddddddddd
+                09eeeeee
+                010
                 
-                11
-                11
-                1a
-                1aa
-                1aaa
-                2aaaaaa
-                3bbbb
-                4bbbbbbbb
-                5ccccc
-                6cccccccccc
-                7dddddd
-                8dddddddddddd
-                9eeeeee
+                111
+                111
+                11a
+                11aa
+                11aaa
+                12aaaaaa
+                13bbbb
+                14bbbbbbbb
+                15ccccc
+                16cccccccccc
+                17dddddd
+                18dddddddddddd
+                19eeeeee
                 10
                 
                 11
                 """.split("\n"))
         );
         Shape shape = Shape.size(Files.size(pathWithHeaders), UTF_8).header(1);
-
         List<String> syncLines = new ArrayList<>();
-
-        Partitioning partitioning = PARTITIONINGS.create(3, 16);
+        Partitioning partitioning = PARTITIONINGS.create(5, 32);
         try (
             Partitioned pf1 = PartitionedPaths.vectorPartitioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -88,7 +85,7 @@ class VectorPartitionedTest {
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
-                        .forEach(syncLines::add));
+                        .forEach(add(syncLines)));
         }
         assertContents(syncLines);
 
@@ -104,7 +101,7 @@ class VectorPartitionedTest {
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
                         partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
-                            .forEach(asyncLines::add)))
+                            .forEach(add(asyncLines))))
                 .forEach(CompletableFuture::join);
         }
         assertContents(asyncLines);
@@ -132,6 +129,35 @@ class VectorPartitionedTest {
                 9eeeeee
                 10
                 
+                011
+                01a
+                01aa
+                01aaa
+                02aaaaaa
+                03bbbb
+                04bbbbbbbb
+                05ccccc
+                06cccccccccc
+                07dddddd
+                08dddddddddddd
+                09eeeeee
+                010
+                
+                111
+                111
+                11a
+                11aa
+                11aaa
+                12aaaaaa
+                13bbbb
+                14bbbbbbbb
+                15ccccc
+                16cccccccccc
+                17dddddd
+                18dddddddddddd
+                19eeeeee
+                10
+                
                 11
                 FOOTER1
                 FOOTER2
@@ -150,7 +176,7 @@ class VectorPartitionedTest {
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
-                        .forEach(syncLines::add));
+                        .forEach(add(syncLines)));
         }
         assertContents(syncLines);
 
@@ -165,12 +191,13 @@ class VectorPartitionedTest {
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
                         partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
-                            .forEach(asyncLines::add)))
+                            .forEach(add(asyncLines))))
                 .forEach(CompletableFuture::join);
         }
         assertContents(asyncLines);
     }
 
+    @Disabled
     @Test
     void testWithoutHeaders() throws IOException {
         Path pathWithHeaders = Files.createTempFile(UUID.randomUUID().toString(), ".test");
@@ -190,6 +217,35 @@ class VectorPartitionedTest {
                 9eeeeee
                 10
                 
+                011
+                01a
+                01aa
+                01aaa
+                02aaaaaa
+                03bbbb
+                04bbbbbbbb
+                05ccccc
+                06cccccccccc
+                07dddddd
+                08dddddddddddd
+                09eeeeee
+                010
+                
+                111
+                111
+                11a
+                11aa
+                11aaa
+                12aaaaaa
+                13bbbb
+                14bbbbbbbb
+                15ccccc
+                16cccccccccc
+                17dddddd
+                18dddddddddddd
+                19eeeeee
+                10
+                
                 11
                 """.split("\n"))
         );
@@ -205,7 +261,7 @@ class VectorPartitionedTest {
                 .forEach(partitionStreamer ->
                     partitionStreamer.lines()
                         .map(lineSegment -> lineSegment.asString(UTF_8))
-                        .forEach(syncLines::add)
+                        .forEach(add(syncLines))
                 );
         }
         assertContents(syncLines);
@@ -221,23 +277,32 @@ class VectorPartitionedTest {
                 .map(future ->
                     future.thenAccept(partitionedLineStream ->
                         partitionedLineStream.map(lineSegment -> lineSegment.asString(UTF_8))
-                            .forEach(asyncLines::add)))
+                            .forEach(add(asyncLines))))
                 .forEach(CompletableFuture::join);
         }
         assertContents(asyncLines);
     }
 
-    public static final Partitionings PARTITIONINGS = Partitionings.LONG;
+    private static final Partitionings PARTITIONINGS = Partitionings.BYTE_VECTOR;
+
+    private static Consumer<String> add(List<String> syncLines) {
+        return e -> {
+            if (e.contains("\n")) {
+                throw new IllegalStateException("Line has more than one line: `" + e + "`");
+            }
+            syncLines.add(e);
+        };
+    }
 
     private static void assertContents(List<String> lines) {
         String collect = lines.stream()
             .map(Object::toString)
             .collect(Collectors.joining("\n"));
         assertEquals(
-            14, lines.size(),
+            43, lines.size(),
             collect
         );
         assertEquals("1a", lines.getFirst(), collect);
-        assertEquals("11", lines.get(13), collect);
+        assertEquals("01a", lines.get(14), collect);
     }
 }

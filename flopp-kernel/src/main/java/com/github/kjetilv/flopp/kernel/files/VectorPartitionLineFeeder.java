@@ -50,17 +50,17 @@ final class VectorPartitionLineFeeder implements Runnable, LineSegment {
         long position;
         if (partition.first()) {
             position = 0L;
+            startIndex = 0L;
         } else {
             position = finder.getAsLong();
             if (position < 0L) {
                 return;
             }
+            startIndex = position + 1;
         }
-        startIndex = position;
         try {
-            while (startIndex < logicalLimit) {
-                position = finder.getAsLong();
-                endIndex = position < 0L ? this.logicalLimit : position;
+            while (startIndex <= logicalLimit && (position = finder.getAsLong()) >= 0L) {
+                endIndex = position;
                 action.accept(this);
                 startIndex = endIndex + 1;
             }
