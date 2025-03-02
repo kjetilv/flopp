@@ -52,7 +52,7 @@ public final class Lc {
     private static Count count(Path path) {
         Shape shape = Shape.of(path, UTF_8).longestLine(100);
         int cpus = Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = Partitionings
+        Partitioning partitioning = Partitionings.LONG
             .create(cpus, 128)
             .scaled(2);
 

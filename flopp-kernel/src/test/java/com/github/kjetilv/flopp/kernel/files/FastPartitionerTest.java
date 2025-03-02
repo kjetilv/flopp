@@ -21,6 +21,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class FastPartitionerTest {
 
+    private void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
+        Method method = testInfo.getTestMethod().orElseThrow();
+
+        Path file = FileBuilder.file(
+            tmp,
+            method.getName(),
+            lineCount,
+            4,
+            new Shape.Decor(1, 1)
+        );
+
+        Shape shape = Shape.size(Files.size(file), UTF_8).headerFooter(1, 1).longestLine(128);
+        LongAdder cont = new LongAdder();
+        try (
+            Partitioned partitioned = PartitionedPaths.partitioned(
+                file,
+                Partitionings.LONG.create(partitionCount, 10),
+                shape
+            )
+        ) {
+            partitioned.streamers()
+                .forEach(streamer ->
+                    streamer.lines()
+                        .forEach(_ ->
+                            cont.increment()));
+            assertThat(cont).hasValue(lineCount);
+        }
+    }
+
     @TempDir
     private Path tmp;
 
@@ -65,35 +94,6 @@ public class FastPartitionerTest {
         }
     }
 
-    private void run(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
-        Method method = testInfo.getTestMethod().orElseThrow();
-
-        Path file = FileBuilder.file(
-            tmp,
-            method.getName(),
-            lineCount,
-            4,
-            new Shape.Decor(1, 1)
-        );
-
-        Shape shape = Shape.size(Files.size(file), UTF_8).headerFooter(1, 1).longestLine(128);
-        LongAdder cont = new LongAdder();
-        try (
-            Partitioned partitioned = PartitionedPaths.partitioned(
-                file,
-                Partitionings.create(partitionCount, 10),
-                shape
-            )
-        ) {
-            partitioned.streamers()
-                .forEach(streamer ->
-                    streamer.lines()
-                        .forEach(_ ->
-                            cont.increment()));
-            assertThat(cont).hasValue(lineCount);
-        }
-    }
-
     private void run2(TestInfo testInfo, int lineCount, int partitionCount) throws IOException {
         Method method = testInfo.getTestMethod().orElseThrow();
 
@@ -110,7 +110,7 @@ public class FastPartitionerTest {
         try (
             Partitioned partitioned = PartitionedPaths.partitioned(
                 file,
-                Partitionings.create(partitionCount, 10),
+                PARTITIONINGS.create(partitionCount, 10),
                 shape
             )
         ) {
@@ -150,7 +150,7 @@ public class FastPartitionerTest {
             throw new RuntimeException(e);
         }
 
-        Partitioning partitioning = Partitionings.create(partitionCount, longestLine);
+        Partitioning partitioning = PARTITIONINGS.create(partitionCount, longestLine);
         Shape shape = Shape.size(Files.size(file), UTF_8).longestLine(longestLine).headerFooter(1, 1);
         try (
             Partitioned partitioned = PartitionedPaths.partitioned(file, partitioning, shape)
@@ -168,4 +168,6 @@ public class FastPartitionerTest {
                 .hasValue(lineCount);
         }
     }
+
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 }

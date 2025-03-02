@@ -44,7 +44,7 @@ public final class FormattSplit_kjetilvlong {
             Path path = Path.of(arg);
             Shape shape = Shape.of(path, UTF_8).longestLine(128);
 
-            Partitioning partitioning = Partitionings.create(
+            Partitioning partitioning = Partitionings.LONG.create(
                 Runtime.getRuntime().availableProcessors(),
                 shape.longestLine()
             ).scaled(2);

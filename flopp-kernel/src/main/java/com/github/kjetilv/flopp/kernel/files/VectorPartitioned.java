@@ -83,9 +83,11 @@ final class VectorPartitioned implements Partitioned {
         );
     }
 
+    private static final Partitionings PARTITIONINGS = Partitionings.BYTE_VECTOR;
+
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
-            partitioning == null ? Partitionings.create() : partitioning,
+            partitioning == null ? PARTITIONINGS.create() : partitioning,
             shape
         );
     }

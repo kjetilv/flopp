@@ -187,6 +187,8 @@ public final class CalculateAverage_kjetilvlong {
         }
     }
 
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
+
     private static Optional<Path> pathArgument(String[] args, int no) {
         return Arrays.stream(args)
             .skip(no)
@@ -216,7 +218,7 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static Partitioning readPartitioning(int cpus, Shape shape, Settings settings) {
-        Partitioning basic = Partitionings.create(cpus * settings.cpuMultiplier(), shape.longestLine());
+        Partitioning basic = PARTITIONINGS.create(cpus * settings.cpuMultiplier(), shape.longestLine());
         if (shape.size() < 1_000_000) {
             return basic;
         }
@@ -226,7 +228,7 @@ public final class CalculateAverage_kjetilvlong {
 
     @SuppressWarnings("unused")
     private static Partitioning writePartitioning(int cpus, Shape shape, Settings settings) {
-        Partitioning basic = Partitionings.create(cpus * settings.cpuMultiplier(), shape.longestLine());
+        Partitioning basic = PARTITIONINGS.create(cpus * settings.cpuMultiplier(), shape.longestLine());
         if (shape.size() < 1_000_000) {
             return basic;
         }

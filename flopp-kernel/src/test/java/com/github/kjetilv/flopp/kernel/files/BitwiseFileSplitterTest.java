@@ -218,12 +218,14 @@ class BitwiseFileSplitterTest {
         System.out.println(time);
     }
 
-    public static final Path PATH = Path.of(System.getProperty("csv.dir"));
+    private static final Path PATH = Path.of(System.getProperty("csv.dir"));
+
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
     private static Partitioned partitioned(Path file) {
         return PartitionedPaths.partitioned(
             file,
-            Partitionings.create().scaled(2),
+            PARTITIONINGS.create().scaled(2),
             Shape.of(file, UTF_8).longestLine(1024).header(2)
         );
     }

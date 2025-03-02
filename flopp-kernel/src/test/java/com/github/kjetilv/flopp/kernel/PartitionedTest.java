@@ -49,7 +49,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = Partitionings.create(4, 16);
+        Partitioning partitioning = PARTITIONINGS.create(4, 16);
         try (
             Partitioned pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -111,7 +111,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
         int partitionCount = 2; //Runtime.getRuntime().availableProcessors();
-        Partitioning partitioning = Partitionings.create(partitionCount, 16);
+        Partitioning partitioning = PARTITIONINGS.create(partitionCount, 16);
 
         try (
             Partitioned pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
@@ -167,7 +167,7 @@ class PartitionedTest {
 
         List<String> syncLines = new ArrayList<>();
 
-        Partitioning partitioning = Partitionings.create(4, 16);
+        Partitioning partitioning = PARTITIONINGS.create(4, 16);
         try (
             Partitioned pf1 = PartitionedPaths.partitioned(pathWithHeaders, partitioning, shape)
         ) {
@@ -196,6 +196,8 @@ class PartitionedTest {
         }
         assertContents(asyncLines);
     }
+
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
     private static void assertContents(List<String> lines) {
         String collect = lines.stream()

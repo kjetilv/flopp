@@ -114,9 +114,11 @@ final class BitwisePartitioned implements Partitioned {
         );
     }
 
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
+
     private static Partitioning partitioning(Partitioning partitioning, Shape shape) {
         return withTail(
-            partitioning == null ? Partitionings.create() : partitioning,
+            partitioning == null ? PARTITIONINGS.create() : partitioning,
             shape
         );
     }

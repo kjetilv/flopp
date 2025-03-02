@@ -52,7 +52,7 @@ public class BitwiseSpliteratorTest {
         Path file = Files.writeString(dir.resolve(UUID.randomUUID() + ".bin"), csq);
 
         Shape shape = Shape.of(file, UTF_8).longestLine(10);
-        Partitioning partitioning = Partitionings.create(3, 8);
+        Partitioning partitioning = Partitionings.LONG.create(3, 8);
 
         List<String> expected;
         try (Stream<String> lines = Files.lines(file)) {

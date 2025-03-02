@@ -22,6 +22,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CsvSimpleSplitterTest {
 
+    @Test
+    void shortString() {
+        assertSplit(
+            SINGLE,
+            "foo;bar;zot",
+            "foo",
+            "bar",
+            "zot"
+        );
+    }
+
+    @Test
+    void shortStrings() {
+        assertSplit(
+            SINGLE,
+            """
+                foo;bar
+                zot;zip
+                """,
+            "foo",
+            "bar",
+            "zot",
+            "zip"
+        );
+    }
+
     @TempDir
     private Path tempDir;
 
@@ -70,35 +96,9 @@ class CsvSimpleSplitterTest {
     }
 
     @Test
-    void shortString() {
-        assertSplit(
-            Partitionings.single(),
-            "foo;bar;zot",
-            "foo",
-            "bar",
-            "zot"
-        );
-    }
-
-    @Test
-    void shortStrings() {
-        assertSplit(
-            Partitionings.single(),
-            """
-                foo;bar
-                zot;zip
-                """,
-            "foo",
-            "bar",
-            "zot",
-            "zip"
-        );
-    }
-
-    @Test
     void shorterString() {
         assertSplit(
-            Partitionings.single(),
+            SINGLE,
             "foo;bar",
             "foo",
             "bar"
@@ -108,7 +108,7 @@ class CsvSimpleSplitterTest {
     @Test
     void shorterStringUTF8() {
         assertSplit(
-            Partitionings.single(),
+            SINGLE,
             """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
@@ -120,7 +120,7 @@ class CsvSimpleSplitterTest {
     @Test
     void shorterStringUTF82() {
         assertSplit(
-            Partitionings.single(),
+            SINGLE,
             """
                 a;b
                 å;øøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
@@ -132,13 +132,23 @@ class CsvSimpleSplitterTest {
     @Test
     void shorterStringUTF8Parts() {
         assertSplit(
-            Partitionings.create(2),
+            PARTITIONINGS.create(2),
             """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
                 jk;kl
                 """
         );
+    }
+
+    @Test
+    void shorterString8() {
+        assertSplit(SINGLE, "abcd;123");
+    }
+
+    @Test
+    void shorterString8Short() {
+        assertSplit(SINGLE, "fooz;ba");
     }
 
 //    @Test
@@ -186,19 +196,9 @@ class CsvSimpleSplitterTest {
 //    }
 
     @Test
-    void shorterString8() {
-        assertSplit(Partitionings.single(), "abcd;123");
-    }
-
-    @Test
-    void shorterString8Short() {
-        assertSplit(Partitionings.single(), "fooz;ba");
-    }
-
-    @Test
     void shorterStringProgressive() {
         assertSplit(
-            Partitionings.single(),
+            SINGLE,
             """
                 f;a
                 qweqweqweasdasdasdzxczxzxc;qwe
@@ -211,7 +211,7 @@ class CsvSimpleSplitterTest {
     @Test
     void veryShorterString() {
         assertSplit(
-            Partitionings.single(), "a;b;c", CSV_FORMAT,
+            SINGLE, "a;b;c", CSV_FORMAT,
             "a",
             "b",
             "c"
@@ -221,7 +221,7 @@ class CsvSimpleSplitterTest {
     @Test
     void trickyString1() {
         assertSplit(
-            Partitionings.single(), "'c';'';", CSV_FORMAT,
+            SINGLE, "'c';'';", CSV_FORMAT,
             "'c'", "''", ""
         );
     }
@@ -229,7 +229,7 @@ class CsvSimpleSplitterTest {
     @Test
     void trickyString2() {
         assertSplit(
-            Partitionings.single(), "c;\\'c\\';", CSV_FORMAT,
+            SINGLE, "c;\\'c\\';", CSV_FORMAT,
             "c", "\\'c\\'", ""
         );
     }
@@ -237,7 +237,7 @@ class CsvSimpleSplitterTest {
     @Test
     void quoted() {
         assertSplit(
-            Partitionings.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;;234;',';'\\;'",
+            SINGLE, "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;;234;',';'\\;'",
             CSV_FORMAT,
             "'foo 1'",
             "bar",
@@ -252,6 +252,57 @@ class CsvSimpleSplitterTest {
             "'"
         );
     }
+
+    @Test
+    void splitFile() {
+        assertFileContents(
+            """
+                def123;cba;234;abcdef;3456
+                abc234;foo;456;dfgfgh;1234
+                foo;bar;zot;
+                foo;bar
+
+                a;
+                ;
+                
+                zot;
+                moreStuff;1;2;3;4;5;6
+                """,
+            "def123",
+            "cba",
+            "234",
+            "abcdef",
+            "3456",
+            "abc234",
+            "foo",
+            "456",
+            "dfgfgh",
+            "1234",
+            "foo",
+            "bar",
+            "zot",
+            "",
+            "foo",
+            "bar",
+            "",
+            "a",
+            "",
+            "",
+            "",
+            "",
+            "zot",
+            "",
+            "moreStuff",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+        );
+    }
+
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
     @Test
     void quotedLimitedButNotReally() {
@@ -294,54 +345,7 @@ class CsvSimpleSplitterTest {
             expected);
     }
 
-    @Test
-    void splitFile() {
-        assertFileContents(
-            """
-                def123;cba;234;abcdef;3456
-                abc234;foo;456;dfgfgh;1234
-                foo;bar;zot;
-                foo;bar
-                
-                a;
-                ;
-                
-                zot;
-                moreStuff;1;2;3;4;5;6
-                """,
-            "def123",
-            "cba",
-            "234",
-            "abcdef",
-            "3456",
-            "abc234",
-            "foo",
-            "456",
-            "dfgfgh",
-            "1234",
-            "foo",
-            "bar",
-            "zot",
-            "",
-            "foo",
-            "bar",
-            "",
-            "a",
-            "",
-            "",
-            "",
-            "",
-            "zot",
-            "",
-            "moreStuff",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6"
-        );
-    }
+    private static final Partitioning SINGLE = PARTITIONINGS.single();
 
     @Test
     void quotesFiles() {
@@ -484,7 +488,7 @@ class CsvSimpleSplitterTest {
         );
 
         try {
-            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitionings.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, SINGLE)) {
                 partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()

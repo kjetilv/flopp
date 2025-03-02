@@ -54,7 +54,7 @@ class FwLineSplitterTest {
         );
 
         try {
-            try (Partitioned partitioned = PartitionedPaths.partitioned(path, Partitionings.single())) {
+            try (Partitioned partitioned = PartitionedPaths.partitioned(path, Partitionings.LONG.single())) {
                 partitioned.streamers()
                     .forEach(streamer ->
                         streamer.lines().forEach(splitter));

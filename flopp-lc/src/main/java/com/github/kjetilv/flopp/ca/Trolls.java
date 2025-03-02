@@ -45,7 +45,7 @@ public final class Trolls {
                 Path path = Path.of(arg);
                 Shape shape = Shape.of(path, UTF_8).header(1).longestLine(1024);
 
-                Partitioning partitioning = Partitionings.create(
+                Partitioning partitioning = Partitionings.LONG.create(
                     Runtime.getRuntime().availableProcessors(),
                     shape.longestLine()
                 );

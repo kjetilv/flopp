@@ -71,7 +71,7 @@ class CsvEscapeSplitterTest {
     @Test
     void shortString() {
         assertSplit(
-            Partitionings.single(),
+            PARTITIONINGS.single(),
             "foo;bar;zot",
             "foo",
             "bar",
@@ -82,7 +82,7 @@ class CsvEscapeSplitterTest {
     @Test
     void shorterString() {
         assertSplit(
-            Partitionings.single(),
+            PARTITIONINGS.single(),
             "foo;bar",
             "foo",
             "bar"
@@ -92,7 +92,7 @@ class CsvEscapeSplitterTest {
     @Test
     void shorterStringUTF8() {
         assertSplit(
-            Partitionings.single(),
+            PARTITIONINGS.single(),
             """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
@@ -104,7 +104,7 @@ class CsvEscapeSplitterTest {
     @Test
     void shorterStringUTF8Parts() {
         assertSplit(
-            Partitionings.create(2),
+            PARTITIONINGS.create(2),
             """
                 a;b
                 åøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøøaåaåøø;0.1
@@ -112,6 +112,7 @@ class CsvEscapeSplitterTest {
                 """
         );
     }
+
 
 //    @Test
 //    void shorterStringUTF8Parts2() {
@@ -159,18 +160,18 @@ class CsvEscapeSplitterTest {
 
     @Test
     void shorterString8() {
-        assertSplit(Partitionings.single(), "abcd;123");
+        assertSplit(PARTITIONINGS.single(), "abcd;123");
     }
 
     @Test
     void shorterString8Short() {
-        assertSplit(Partitionings.single(), "fooz;ba");
+        assertSplit(PARTITIONINGS.single(), "fooz;ba");
     }
 
     @Test
     void shorterStringProgressive() {
         assertSplit(
-            Partitionings.single(),
+            PARTITIONINGS.single(),
             """
                 f;a
                 qweqweqweasdasdasdzxczxzxc;qwe
@@ -183,7 +184,7 @@ class CsvEscapeSplitterTest {
     @Test
     void veryShorterString() {
         assertSplit(
-            Partitionings.single(), "a;b;c", CSV_FORMAT,
+            PARTITIONINGS.single(), "a;b;c", CSV_FORMAT,
             "a",
             "b",
             "c"
@@ -193,7 +194,7 @@ class CsvEscapeSplitterTest {
     @Test
     void trickyString1() {
         assertSplit(
-            Partitionings.single(), "'c';'';", CSV_FORMAT,
+            PARTITIONINGS.single(), "'c';'';", CSV_FORMAT,
             "'c'", "''", ""
         );
     }
@@ -201,7 +202,7 @@ class CsvEscapeSplitterTest {
     @Test
     void trickyString2() {
         assertSplit(
-            Partitionings.single(), "c;\\'c\\';", CSV_FORMAT,
+            PARTITIONINGS.single(), "c;\\'c\\';", CSV_FORMAT,
             "c", "\\'c\\'", ""
         );
     }
@@ -209,7 +210,7 @@ class CsvEscapeSplitterTest {
     @Test
     void quoted() {
         assertSplit(
-            Partitionings.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;;234;',';'\\;'",
+            PARTITIONINGS.single(), "'foo 1';bar;234;'ab; cd;ef';'it is \\'aight';;;234;',';'\\;'",
             CSV_FORMAT,
             "'foo 1'",
             "bar",
@@ -424,6 +425,8 @@ class CsvEscapeSplitterTest {
 
     private static final Format.Csv.Escape CSV_FORMAT = Formats.Csv.escape(';', '\\', true);
 
+    private static final Partitionings PARTITIONINGS = Partitionings.LONG;
+
     private static void assertFileContents(String contents, String... lines) {
         List<String> splits = new ArrayList<>();
         Path path;
@@ -443,7 +446,7 @@ class CsvEscapeSplitterTest {
         );
 
         try {
-            try (Partitioned partititioned = PartitionedPaths.partitioned(path, Partitionings.single())) {
+            try (Partitioned partititioned = PartitionedPaths.partitioned(path, PARTITIONINGS.single())) {
                 partititioned.streamers()
                     .forEach(streamer ->
                         streamer.lines()

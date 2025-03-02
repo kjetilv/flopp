@@ -42,7 +42,7 @@ class CalculateAverageTest {
                 int tail = Math.min(100, Math.toIntExact(size / 10));
                 for (int t = 0; t < tail; t += 2) {
                     for (int i = 1; i < maxPartitions; i++) {
-                        Partitioning partitioning = Partitionings.create(i);
+                        Partitioning partitioning = Partitionings.LONG.create(i);
                         test(smaple, partitioning, t);
                     }
                 }
@@ -76,7 +76,7 @@ class CalculateAverageTest {
     void test2023() {
         test(
             "smaples/measurements-20.txt",
-            Partitionings.create(23),
+            Partitionings.LONG.create(23),
             0
         );
     }
@@ -93,7 +93,7 @@ class CalculateAverageTest {
         for (int t = 0; t < tail; t += 10) {
             Shape shape = Shape.of(smaple, UTF_8).longestLine(t);
             for (int i = 1; i < maxPartitions; i++) {
-                LongAdder sum = JustSplit_kjetilvlong.add(Partitionings.create(i), shape, smaple);
+                LongAdder sum = JustSplit_kjetilvlong.add(Partitionings.LONG.create(i), shape, smaple);
                 try (Stream<String> lines = Files.lines(smaple)) {
                     assertThat(sum)
                         .describedAs("smaple: " + t + "/" + i + ": " + smaple)
@@ -103,7 +103,7 @@ class CalculateAverageTest {
                 }
             }
         }
-        test(smaple, Partitionings.create(1), 0);
+        test(smaple, Partitionings.LONG.create(1), 0);
     }
 
     @SuppressWarnings("unused")
