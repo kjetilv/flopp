@@ -54,7 +54,7 @@ class CsvSimpleSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.simple(';'),
             adder(splits)
         );
@@ -72,7 +72,7 @@ class CsvSimpleSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.simple(';'), adder(splits)
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
@@ -307,7 +307,7 @@ class CsvSimpleSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -336,7 +336,7 @@ class CsvSimpleSplitterTest {
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
         String[] expected =
             {"'foo 1'", "bar", "234", "'ab\\", " cd\\", "ef'", "'it is 'aight'", "", "234", "'\\", "'", "'\\", "'"};
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -480,7 +480,7 @@ class CsvSimpleSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             CSV_FORMAT,
             line ->
                 line.columns(UTF_8)

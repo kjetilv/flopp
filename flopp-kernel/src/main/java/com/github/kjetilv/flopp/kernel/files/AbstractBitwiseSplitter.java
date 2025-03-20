@@ -7,14 +7,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-sealed abstract class AbstractPartitionedSplitter implements PartitionedSplitter
+sealed abstract class AbstractBitwiseSplitter implements PartitionedSplitter
     permits BitwiseCsvSplitter, BitwiseFwSplitter {
 
     private final PartitionStreamer streamer;
 
     private final Partition partition;
 
-    protected AbstractPartitionedSplitter(PartitionStreamer streamer) {
+    protected AbstractBitwiseSplitter(PartitionStreamer streamer) {
         this.streamer = Objects.requireNonNull(streamer, "streamer");
         this.partition = this.streamer.partition();
     }
@@ -26,13 +26,13 @@ sealed abstract class AbstractPartitionedSplitter implements PartitionedSplitter
 
     @Override
     public final void forEach(Consumer<SeparatedLine> consumer) {
-        streamer().lines()
+        streamer.lines()
             .forEach(consumer(consumer));
     }
 
     @Override
     public final Stream<SeparatedLine> separatedLines() {
-        return streamer().lines()
+        return streamer.lines()
             .map(transform());
     }
 

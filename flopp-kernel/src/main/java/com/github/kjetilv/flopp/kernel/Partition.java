@@ -84,6 +84,8 @@ public record Partition(int partitionNo, int partitionCount, long offset, long l
     @SuppressWarnings("NullableProblems")
     @Override
     public String toString() {
-        return "P[" + str() + ":" + Print.bigInt(offset) + "+" + Print.bigInt(length) + "]";
+        return getClass().getSimpleName() + "[" + str() + ":" +
+               Print.bigInt(offset) + "+" + Print.bigInt(length) + "=" + Print.bigInt(offset + length) +
+               "]";
     }
 }

@@ -23,7 +23,7 @@ public sealed interface Format {
             return Character.toString(separator());
         }
 
-        char separator();
+        byte separator();
 
         int columnCount();
 
@@ -31,12 +31,12 @@ public sealed interface Format {
 
         sealed interface Quoted extends Csv permits QuotedCsvImpl {
 
-            char quote();
+            byte quote();
         }
 
         sealed interface Escape extends Csv permits EscapeCsvImpl {
 
-            char escape();
+            byte escape();
         }
 
         sealed interface Simple extends Csv permits SimpleCsvImpl {

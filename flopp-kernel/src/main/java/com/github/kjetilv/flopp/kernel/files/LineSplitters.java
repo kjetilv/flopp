@@ -10,38 +10,84 @@ import java.util.function.Function;
 @SuppressWarnings({"SameParameterValue", "unused"})
 final class LineSplitters {
 
-    static Function<LineSegment, SeparatedLine> fwTransform(Format.FwFormat format, Consumer<SeparatedLine> lines) {
-        return fwLineSplitter(format, lines);
-    }
-
-    static Consumer<LineSegment> fwSink(Format.FwFormat format, Consumer<SeparatedLine> lines) {
-        return fwLineSplitter(format, lines);
-    }
-
-    static Function<LineSegment, SeparatedLine> csvTransform(Format.Csv format) {
-        return csvLineSplitter(format, null);
-    }
-
-    static Function<LineSegment, SeparatedLine> csvTransform(Format.Csv format, Consumer<SeparatedLine> lines) {
-        return csvLineSplitter(format, lines);
-    }
-
-    static Consumer<LineSegment> csvSink(Format.Csv format, Consumer<SeparatedLine> lines) {
-        return csvLineSplitter(format, lines);
-    }
-
     private LineSplitters() {
     }
 
-    private static BitwiseFwLineSplitter fwLineSplitter(Format.FwFormat format, Consumer<SeparatedLine> lines) {
-        return new BitwiseFwLineSplitter(format, lines);
+    static final class Bitwise {
+
+        static Function<LineSegment, SeparatedLine> fwTransform(Format.FwFormat format, Consumer<SeparatedLine> lines) {
+            return bitwiseFwLineSplitter(format, lines);
+        }
+
+        static Consumer<LineSegment> fwSink(Format.FwFormat format, Consumer<SeparatedLine> lines) {
+            return bitwiseFwLineSplitter(format, lines);
+        }
+
+        static Function<LineSegment, SeparatedLine> csvTransform(Format.Csv format) {
+            return bitwiseCsvLineSplitter(format, null);
+        }
+
+        static Function<LineSegment, SeparatedLine> csvTransform(Format.Csv format, Consumer<SeparatedLine> lines) {
+            return bitwiseCsvLineSplitter(format, lines);
+        }
+
+        static Consumer<LineSegment> csvSink(Format.Csv format, Consumer<SeparatedLine> lines) {
+            return bitwiseCsvLineSplitter(format, lines);
+        }
+
+        private Bitwise() {
+        }
+
+        private static BitwiseFwLineSplitter bitwiseFwLineSplitter(
+            Format.FwFormat format,
+            Consumer<SeparatedLine> lines
+        ) {
+            return new BitwiseFwLineSplitter(format, lines);
+        }
+
+        private static AbstractBitwiseCsvLineSplitter bitwiseCsvLineSplitter(
+            Format.Csv format,
+            Consumer<SeparatedLine> lines
+        ) {
+            return switch (format) {
+                case Format.Csv.Escape esc -> new BitwiseCsvEscapeSplitter(lines, esc);
+                case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);
+                default -> new BitwiseCsvSimpleSplitter(lines, format);
+            };
+        }
     }
 
-    private static AbstractBitwiseCsvLineSplitter csvLineSplitter(Format.Csv format, Consumer<SeparatedLine> lines) {
-        return switch (format) {
-            case Format.Csv.Escape esc -> new BitwiseCsvEscapeSplitter(lines, esc);
-            case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);
-            default -> new BitwiseCsvSimpleSplitter(lines, format);
-        };
+    static final class Vector {
+
+        public static Consumer<LineSegment> fwSink(Format.FwFormat format, Consumer<SeparatedLine> consumer) {
+            return null;
+        }
+
+        public static Function<LineSegment, SeparatedLine> fwTransform(
+            Format.FwFormat format,
+            Consumer<SeparatedLine> consumer
+        ) {
+            return null;
+        }
+
+        public static Consumer<LineSegment> csvSink(Format.Csv format, Consumer<SeparatedLine> consumer) {
+            return switch (format) {
+//                case Format.Csv.Escape esc -> new BitwiseCsvEscapeSplitter(lines, esc);
+//                case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);
+                default -> new VectorCsvSimpleLineSplitter(format, consumer);
+            };
+
+        }
+
+        public static Function<LineSegment, SeparatedLine> csvTransform(Format.Csv format) {
+            return csvTransform(format, null);
+        }
+
+        public static Function<LineSegment, SeparatedLine> csvTransform(
+            Format.Csv format,
+            Consumer<SeparatedLine> lines
+        ) {
+            return null;
+        }
     }
 }

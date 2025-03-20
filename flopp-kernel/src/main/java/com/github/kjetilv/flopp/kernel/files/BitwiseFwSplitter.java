@@ -9,10 +9,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.github.kjetilv.flopp.kernel.files.LineSplitters.fwSink;
-import static com.github.kjetilv.flopp.kernel.files.LineSplitters.fwTransform;
+import static com.github.kjetilv.flopp.kernel.files.LineSplitters.Bitwise.fwSink;
+import static com.github.kjetilv.flopp.kernel.files.LineSplitters.Bitwise.fwTransform;
 
-final class BitwiseFwSplitter extends AbstractPartitionedSplitter {
+final class BitwiseFwSplitter extends AbstractBitwiseSplitter {
 
     private final Format.FwFormat format;
 

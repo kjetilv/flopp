@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 
 import static java.nio.ByteOrder.nativeOrder;
 
-public final class MemorySegmentByteFinder implements Vectors.ByteFinder {
+public final class MemorySegmentByteFinder implements Vectors.Finder {
 
     private final MemorySegment segment;
 
@@ -26,14 +26,6 @@ public final class MemorySegmentByteFinder implements Vectors.ByteFinder {
     private long nextOffset;
 
     private VectorMask<Byte> mask;
-
-    public MemorySegmentByteFinder(MemorySegment segment, byte character) {
-        this(segment, 0L, character);
-    }
-
-    public MemorySegmentByteFinder(MemorySegment segment, long initialOffset, char character) {
-        this(segment, initialOffset, (byte) character);
-    }
 
     public MemorySegmentByteFinder(MemorySegment segment, long initialOffset, byte character) {
         this.segment = Objects.requireNonNull(segment, "memorySegment");

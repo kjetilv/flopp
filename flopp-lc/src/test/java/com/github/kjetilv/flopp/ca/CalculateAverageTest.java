@@ -68,7 +68,8 @@ class CalculateAverageTest {
     void splitOne() {
         Path path = Path.of(
             Objects.requireNonNull(
-                Thread.currentThread().getContextClassLoader().getResource("smaples/measurements-rounding.txt")).getFile());
+                    Thread.currentThread().getContextClassLoader().getResource("smaples/measurements-rounding.txt"))
+                .getFile());
         test(path);
     }
 
@@ -125,7 +126,17 @@ class CalculateAverageTest {
         Shape shape = Shape.of(smaple, UTF_8).longestLine(tail);
         LineSegmentMap<CalculateAverage_kjetilvlong.Result> map = CalculateAverage_kjetilvlong.mapAverages(
             smaple,
-            new CalculateAverage_kjetilvlong.Settings(1, 50, 1, 2, 6), Formats.Csv.simple(2, ';')
+            new CalculateAverage_kjetilvlong.Settings(
+                1,
+                50,
+                1,
+                2,
+                6
+            ),
+            Formats.Csv.simple(
+                2,
+                (byte) ';'
+            )
         );
         Path out = Path.of(smaple.toString().replace(".txt", ".out"));
         assertThat(out).hasContent(map + "\n")

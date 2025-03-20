@@ -71,7 +71,7 @@ final class BitwisePartitionLineFeeder implements Runnable, LineSegment {
         this.first = this.partition.first();
         this.last = this.partition.last();
         this.segment = Objects.requireNonNull(segment, "segment");
-        this.finder = Bits.swarFinder('\n');
+        this.finder = Bits.swarFinder((byte) '\n');
         this.offset = offset;
         this.action = Objects.requireNonNull(action, "action");
         this.next = next;

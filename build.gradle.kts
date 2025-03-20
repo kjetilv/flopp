@@ -1,5 +1,3 @@
-import org.gradle.api.JavaVersion.VERSION_23
-
 plugins {
     java
     `maven-publish`
@@ -20,12 +18,12 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(23))
+            languageVersion.set(JavaLanguageVersion.of(24))
         }
         withSourcesJar()
         modularity.inferModulePath
-        sourceCompatibility = VERSION_23
-        targetCompatibility = VERSION_23
+        sourceCompatibility = JavaVersion.VERSION_24
+        targetCompatibility = JavaVersion.VERSION_24
     }
 
 

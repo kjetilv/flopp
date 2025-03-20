@@ -46,7 +46,7 @@ class FwLineSplitterTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Consumer<LineSegment> splitter = LineSplitters.fwSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.fwSink(
             format,
             line ->
                 line.columns(UTF_8)

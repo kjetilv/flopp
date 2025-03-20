@@ -10,7 +10,7 @@ import java.util.function.LongSupplier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MemorySegmentByteFinderTest {
+class MemorySegmentFinderTest {
 
     @Test
     void getAsLong() {
@@ -39,7 +39,7 @@ class MemorySegmentByteFinderTest {
             """;
 
         MemorySegment memorySegment = MemorySegments.of(s, UTF_8, false);
-        LongSupplier longSupplier = new MemorySegmentByteFinder(memorySegment, (byte) '\n');
+        LongSupplier longSupplier = Vectors.finder(memorySegment, (byte) '\n');
 
         for (int i = 0; i < 21; i++) {
             System.out.println(longSupplier.getAsLong());
@@ -59,14 +59,14 @@ class MemorySegmentByteFinderTest {
             zot
             zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz""";
         MemorySegment memorySegment = MemorySegment.ofArray(s.getBytes(UTF_8));
-        Vectors.ByteFinder byteFinder = new MemorySegmentByteFinder(memorySegment, 6, (byte) '\n');
+        Vectors.Finder finder = Vectors.finder(memorySegment, 6, (byte) '\n');
 
-        assertThat(byteFinder.next()).isEqualTo(6L);
-        assertThat(byteFinder.next()).isEqualTo(9L);
-        assertThat(byteFinder.next()).isEqualTo(14L);
-        assertThat(byteFinder.next()).isEqualTo(20L);
-        assertThat(byteFinder.next()).isEqualTo(24L);
-        assertThat(byteFinder.next()).isEqualTo(-1L);
+        assertThat(finder.next()).isEqualTo(6L);
+        assertThat(finder.next()).isEqualTo(9L);
+        assertThat(finder.next()).isEqualTo(14L);
+        assertThat(finder.next()).isEqualTo(20L);
+        assertThat(finder.next()).isEqualTo(24L);
+        assertThat(finder.next()).isEqualTo(-1L);
     }
 
 }

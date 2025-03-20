@@ -28,7 +28,7 @@ class CsvEscapeSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.escape(';'), adder(splits)
         );
         LineSegment lineSegment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
@@ -45,7 +45,7 @@ class CsvEscapeSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.escape(';'), adder(splits)
         );
         LineSegment segment = LineSegments.of("foo123;bar;234;abcdef;3456", UTF_8);
@@ -242,7 +242,7 @@ class CsvEscapeSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             CSV_FORMAT, adder(splits)
         );
         splitter.accept(LineSegments.of(
@@ -265,7 +265,7 @@ class CsvEscapeSplitterTest {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab\\; cd\\;ef';'it is 'aight';;234;'\\;';'\\;'";
         String[] expected = {"'foo 1'", "bar", "234", "'ab\\; cd\\;ef'", "'it is 'aight'", "", "234", "'\\;'", "'\\;'"};
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(CSV_FORMAT, adder(splits));
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(CSV_FORMAT, adder(splits));
         splitter.accept(LineSegments.of(input, UTF_8));
         assertThat(splits).containsExactly(expected);
     }
@@ -423,7 +423,11 @@ class CsvEscapeSplitterTest {
         return splits;
     }
 
-    private static final Format.Csv.Escape CSV_FORMAT = Formats.Csv.escape(';', '\\', true);
+    private static final Format.Csv.Escape CSV_FORMAT = Formats.Csv.escape(
+        (byte) ';',
+        (byte) '\\',
+        true
+    );
 
     private static final Partitionings PARTITIONINGS = Partitionings.LONG;
 
@@ -438,7 +442,7 @@ class CsvEscapeSplitterTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             CSV_FORMAT,
             line ->
                 line.columns(UTF_8)

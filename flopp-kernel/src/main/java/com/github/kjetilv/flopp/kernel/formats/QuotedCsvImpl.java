@@ -9,8 +9,8 @@ import java.util.Objects;
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
 public record QuotedCsvImpl(
-    char separator,
-    char quote,
+    byte separator,
+    byte quote,
     int columnCount,
     boolean fast,
     Charset charset
@@ -27,8 +27,8 @@ public record QuotedCsvImpl(
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-               "[separator:" + separator +
-               " quote:" + quote +
+               "[separator:'" + (char) separator + "'" +
+               " quote:'" + (char) quote + "'" +
                " columnCount:" + columnCount +
                " fast:" + fast +
                " charset:" + charset +

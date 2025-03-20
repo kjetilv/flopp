@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
-public record SimpleCsvImpl(char separator, int columnCount, Charset charset)
+public record SimpleCsvImpl(byte separator, int columnCount, Charset charset)
     implements Format.Csv.Simple {
 
     public SimpleCsvImpl {
@@ -27,7 +27,7 @@ public record SimpleCsvImpl(char separator, int columnCount, Charset charset)
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-               "[separator:" + separator +
+               "[separator:'" + (char) separator + "'" +
                " columnCount:" + columnCount +
                " charset:" + charset +
                "]";

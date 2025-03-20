@@ -9,8 +9,8 @@ import java.util.Objects;
 import static com.github.kjetilv.flopp.kernel.formats.Formats.*;
 
 public record EscapeCsvImpl(
-    char separator,
-    char escape,
+    byte separator,
+    byte escape,
     boolean fast,
     int columnCount,
     Charset charset
@@ -27,8 +27,8 @@ public record EscapeCsvImpl(
     @Override
     public String toString() {
         return getClass().getSimpleName() +
-               "[separator:" + separator +
-               " escape:" + escape +
+               "[separator:'" + (char) separator + "'" +
+               " escape:'" + (char) escape + "'" +
                " fast:" + fast +
                " columnCount:" + columnCount +
                " charset:" + charset +

@@ -251,6 +251,14 @@ public final class Bits {
      * @return Finder for cycling through the occurrences in a long
      */
     public static Finder finder(char c) {
+        return finder((byte) c);
+    }
+
+    /**
+     * @param c Char
+     * @return Finder for cycling through the occurrences in a long
+     */
+    public static Finder finder(byte c) {
         return finder(c, false);
     }
 
@@ -259,14 +267,18 @@ public final class Bits {
      * @return Finder for cycling through the occurrences in a long
      */
     public static Finder finder(char c, boolean fast) {
+        return finder((byte) c, fast);
+    }
+
+    public static Finder finder(byte c, boolean fast) {
         return fast ? swarFinder(c) : cyclingFinder(c);
     }
 
-    public static Finder cyclingFinder(char c) {
+    public static Finder cyclingFinder(byte c) {
         return new CyclingFinder(c);
     }
 
-    public static Finder swarFinder(char c) {
+    public static Finder swarFinder(byte c) {
         return new SwarFinder(c);
     }
 
@@ -449,7 +461,7 @@ public final class Bits {
 
         private long dists;
 
-        private SwarFinder(char c) {
+        private SwarFinder(byte c) {
             this.mask = ONES * c;
         }
 
@@ -557,7 +569,7 @@ public final class Bits {
 
         private final long mask;
 
-        private CyclingFinder(char c) {
+        private CyclingFinder(byte c) {
             this.mask = ONES * c;
         }
 

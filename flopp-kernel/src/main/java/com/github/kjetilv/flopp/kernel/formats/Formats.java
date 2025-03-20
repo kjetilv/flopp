@@ -8,20 +8,20 @@ import java.nio.charset.Charset;
 @SuppressWarnings("unused")
 public final class Formats {
 
-    private Formats() {
-    }
+    public static final byte DEF_ESC_CHAR = '\\';
 
-    public static final char DEF_ESC_CHAR = '\\';
+    public static final byte DEF_SEP_CHAR = ',';
 
-    public static final char DEF_SEP_CHAR = ',';
-
-    public static final char DEF_QUO_CHAR = '"';
+    public static final byte DEF_QUO_CHAR = '"';
 
     public static final int DEF_COL_COUNT = 128;
 
     public static final int DEF_MAX_COL_WIDTH = 8192;
 
     public static final Charset DEF_CHARSET = Charset.defaultCharset();
+
+    private Formats() {
+    }
 
     public static final class Csv {
 
@@ -30,14 +30,18 @@ public final class Formats {
         }
 
         public static Format.Csv.Simple simple(char separator) {
+            return simple((byte) separator);
+        }
+
+        public static Format.Csv.Simple simple(byte separator) {
             return new SimpleCsvImpl(separator, DEF_COL_COUNT, DEF_CHARSET);
         }
 
-        public static Format.Csv.Simple simple(int columnCount, char separator) {
+        public static Format.Csv.Simple simple(int columnCount, byte separator) {
             return new SimpleCsvImpl(separator, columnCount, DEF_CHARSET);
         }
 
-        public static Format.Csv.Quoted quoted(int columnCount, char quote, char separator) {
+        public static Format.Csv.Quoted quoted(int columnCount, byte quote, byte separator) {
             return new QuotedCsvImpl(separator, quote, columnCount, false, DEF_CHARSET);
         }
 
@@ -46,6 +50,10 @@ public final class Formats {
         }
 
         public static Format.Csv.Quoted quoted(char separator) {
+            return quoted((byte) separator);
+        }
+
+        public static Format.Csv.Quoted quoted(byte separator) {
             return new QuotedCsvImpl(separator, DEF_QUO_CHAR, DEF_COL_COUNT, false, DEF_CHARSET);
         }
 
@@ -54,16 +62,40 @@ public final class Formats {
         }
 
         public static Format.Csv.Quoted quoted(char separator, char quote) {
+            return quoted((byte) separator, (byte) quote);
+        }
+
+        public static Format.Csv.Quoted quoted(byte separator, byte quote) {
             return new QuotedCsvImpl(separator, quote, DEF_COL_COUNT, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(char separator, int columnCount) {
+            return quoted((byte) separator, columnCount);
+        }
+
+        public static Format.Csv.Quoted quoted(byte separator, int columnCount) {
             return new QuotedCsvImpl(separator, DEF_QUO_CHAR, columnCount, false, DEF_CHARSET);
         }
 
         public static Format.Csv.Quoted quoted(
             char separator,
             char quote,
+            int columnCount,
+            boolean fast,
+            Charset charset
+        ) {
+            return quoted(
+                (byte) separator,
+                (byte) quote,
+                columnCount,
+                fast,
+                charset
+            );
+        }
+
+        public static Format.Csv.Quoted quoted(
+            byte separator,
+            byte quote,
             int columnCount,
             boolean fast,
             Charset charset
@@ -80,6 +112,10 @@ public final class Formats {
         }
 
         public static Format.Csv.Escape escape(char separator) {
+            return escape((byte) separator);
+        }
+
+        public static Format.Csv.Escape escape(byte separator) {
             return new EscapeCsvImpl(separator, DEF_ESC_CHAR, false, DEF_COL_COUNT, DEF_CHARSET);
         }
 
@@ -88,18 +124,34 @@ public final class Formats {
         }
 
         public static Format.Csv.Escape escape(char separator, int columnCount) {
+            return escape((byte) separator, columnCount);
+        }
+
+        public static Format.Csv.Escape escape(byte separator, int columnCount) {
             return new EscapeCsvImpl(separator, DEF_ESC_CHAR, false, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape) {
+            return escape((byte) separator, (byte) escape);
+        }
+
+        public static Format.Csv.Escape escape(byte separator, byte escape) {
             return new EscapeCsvImpl(separator, escape, false, DEF_COL_COUNT, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape, int columnCount) {
+            return escape((byte) separator, (byte) escape, columnCount);
+        }
+
+        public static Format.Csv.Escape escape(byte separator, byte escape, int columnCount) {
             return new EscapeCsvImpl(separator, escape, false, columnCount, DEF_CHARSET);
         }
 
         public static Format.Csv.Escape escape(char separator, char escape, boolean fast) {
+            return escape((byte) separator, (byte) escape, fast);
+        }
+
+        public static Format.Csv.Escape escape(byte separator, byte escape, boolean fast) {
             return new EscapeCsvImpl(separator, escape, fast, DEF_COL_COUNT, DEF_CHARSET);
         }
 

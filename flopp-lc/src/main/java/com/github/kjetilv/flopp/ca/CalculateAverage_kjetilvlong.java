@@ -33,11 +33,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -60,7 +58,7 @@ public final class CalculateAverage_kjetilvlong {
         System.out.println(size + " bytes on " + cpus + " cpus: " + settings);
 
         Instant start = Instant.now();
-        Format.Csv simple = Formats.Csv.simple(2, ';');
+        Format.Csv simple = Formats.Csv.simple(2, (byte) ';');
 
 //        Result result = mapAverage(inputFile, settings, simple);
 //        System.out.println(result);
@@ -98,7 +96,7 @@ public final class CalculateAverage_kjetilvlong {
             int chunks = partitioned.partitions().size();
             BlockingQueue<Result> queue = new ArrayBlockingQueue<>(chunks);
             Function<Throwable, Boolean> printException = CalculateAverage_kjetilvlong::print;
-            partitioned.splitters(format)
+            Boolean completed = partitioned.splitters(format)
                 .map(splitter ->
                     CompletableFuture.supplyAsync(() -> result(splitter))
                         .thenApply(queue::offer)
@@ -108,7 +106,12 @@ public final class CalculateAverage_kjetilvlong {
                 .orElse(false);
             Result result = new Result();
             for (int i = 0; i < chunks; i++) {
-                result.merge(take(queue));
+                Result take = de(queue);
+                if (take == null) {
+                    throw new IllegalStateException("Failed to retrieve result #" + (i + 1) + "/" + chunks);
+                }
+                result.merge(take);
+
             }
             return result;
         }
@@ -127,19 +130,21 @@ public final class CalculateAverage_kjetilvlong {
         );
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
+        BlockingQueue<LineSegmentMap<Result>> queue;
+        int partitionCount;
         try (
-            Partitioned partitioned = PartitionedPaths.partitioned(path, partitioning, shape);
+            Partitioned partitioned = PartitionedPaths.vectorPartitioned(path, partitioning, shape);
             StructuredTaskScope<Boolean> scope = new StructuredTaskScope<>()
         ) {
-            int partitionCount = partitioned.partitions().size();
-            BlockingQueue<LineSegmentMap<Result>> queue = new ArrayBlockingQueue<>(partitionCount);
-            partitioned.splitters(format)
-                .forEach(splitter ->
-                    scope.fork(() -> queue.offer(table(splitter, size)))
-                );
-            for (int i = 0; i < partitionCount; i++) {
-                map.merge(take(queue), Result::merge);
-            }
+            partitionCount = partitioned.partitions().size();
+            queue = new ArrayBlockingQueue<>(partitionCount);
+            List<StructuredTaskScope.Subtask<Boolean>> subtasks = partitioned.splitters(format)
+                .map(splitter ->
+                    scope.fork(() ->
+                        queue.offer(table(splitter, size))))
+                .toList();
+            scope.fork(() ->
+                merge(partitionCount, map, queue));
             scope.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -188,6 +193,21 @@ public final class CalculateAverage_kjetilvlong {
     }
 
     private static final Partitionings PARTITIONINGS = Partitionings.LONG;
+
+    private static boolean merge(
+        int partitionCount,
+        LineSegmentMap<Result> map,
+        BlockingQueue<LineSegmentMap<Result>> queue
+    ) {
+        for (int i = 0; i < partitionCount; i++) {
+            LineSegmentMap<Result> result = de(queue);
+            if (result == null) {
+                throw new IllegalStateException("Failed to retrieve result #" + (i + 1) + "/" + partitionCount);
+            }
+            map.merge(result, Result::merge);
+        }
+        return true;
+    }
 
     private static Optional<Path> pathArgument(String[] args, int no) {
         return Arrays.stream(args)
@@ -294,9 +314,9 @@ public final class CalculateAverage_kjetilvlong {
         return value;
     }
 
-    private static <T> T take(BlockingQueue<T> queue) {
+    private static <T> T de(BlockingQueue<T> queue) {
         try {
-            return queue.take();
+            return queue.poll(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Failed", e);

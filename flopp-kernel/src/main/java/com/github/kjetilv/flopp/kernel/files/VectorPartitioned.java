@@ -54,10 +54,10 @@ final class VectorPartitioned implements Partitioned {
         return switch (format) {
             case Format.Csv csv -> streamers()
                 .map(streamer ->
-                    new BitwiseCsvSplitter(streamer, csv));
+                    new VectorCsvSplitter(streamer, csv));
             case Format.FwFormat fw -> streamers()
                 .map(streamer ->
-                    new BitwiseFwSplitter(streamer, fw));
+                    new VectorFwSplitter(streamer, fw));
         };
     }
 

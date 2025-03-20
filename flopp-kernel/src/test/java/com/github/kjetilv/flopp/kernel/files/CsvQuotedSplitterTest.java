@@ -27,7 +27,7 @@ class CsvQuotedSplitterTest {
     @Test
     void splitLine() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.quoted(';', '"'),
             adder(splits)
         );
@@ -39,7 +39,7 @@ class CsvQuotedSplitterTest {
     @Test
     void splitLineTwice() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.quoted(';', '"'),
             adder(splits)
         );
@@ -229,7 +229,7 @@ class CsvQuotedSplitterTest {
     @Test
     void quotedLimitedButNotReally() {
         List<String> splits = new ArrayList<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(DQ_FORMAT, adder(splits));
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(DQ_FORMAT, adder(splits));
         splitter.accept(LineSegments.of(
             "'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';;';'\\;'",
             UTF_8
@@ -251,7 +251,7 @@ class CsvQuotedSplitterTest {
     void quotedPickAll() {
         List<String> splits = new ArrayList<>();
         String input = "'foo 1';bar;234;'ab; cd;ef';'it is ''aight';;234;';';'\\;'";
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(DQ_FORMAT, adder(splits));
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(DQ_FORMAT, adder(splits));
         splitter.accept(LineSegments.of(input, UTF_8));
         assertThat(splits).containsExactly(
             "'foo 1'",

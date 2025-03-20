@@ -61,7 +61,7 @@ class BitwiseFileSplitterTest {
     void faster() throws IOException {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.escape(),
             line ->
                 airlines.add(line.column(1, UTF_8))
@@ -87,7 +87,7 @@ class BitwiseFileSplitterTest {
         Instant now = Instant.now();
         Set<String> airlines = new HashSet<>();
         Path path = PATH;
-        Consumer<LineSegment> splitter = LineSplitters.csvSink(
+        Consumer<LineSegment> splitter = LineSplitters.Bitwise.csvSink(
             Formats.Csv.escape(),
             line ->
                 airlines.add(line.column(1, UTF_8))
@@ -202,7 +202,7 @@ class BitwiseFileSplitterTest {
                             CompletableFuture.runAsync(
                                 () ->
                                     partitionStreamer.lines()
-                                        .forEach(LineSplitters.csvSink(format, lines)),
+                                        .forEach(LineSplitters.Bitwise.csvSink(format, lines)),
                                 executor
                             )))
                 .toList();

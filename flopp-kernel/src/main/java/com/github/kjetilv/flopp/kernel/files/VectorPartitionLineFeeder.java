@@ -4,7 +4,6 @@ import com.github.kjetilv.flopp.kernel.LineSegment;
 import com.github.kjetilv.flopp.kernel.LineSegments;
 import com.github.kjetilv.flopp.kernel.Partition;
 import com.github.kjetilv.flopp.kernel.Vectors;
-import com.github.kjetilv.flopp.kernel.util.MemorySegmentByteFinder;
 import com.github.kjetilv.flopp.kernel.util.Non;
 
 import java.lang.foreign.MemorySegment;
@@ -17,7 +16,7 @@ final class VectorPartitionLineFeeder implements Runnable, LineSegment {
 
     private final MemorySegment segment;
 
-    private final Vectors.ByteFinder finder;
+    private final Vectors.Finder finder;
 
     private final Consumer<LineSegment> action;
 
@@ -36,10 +35,10 @@ final class VectorPartitionLineFeeder implements Runnable, LineSegment {
     ) {
         this.partition = Objects.requireNonNull(partition, "partition");
         this.segment = Objects.requireNonNull(segment, "segment");
-        this.finder = new MemorySegmentByteFinder(
+        this.finder = Vectors.finder(
             this.segment,
             Non.negative(offset, "offset"),
-            '\n'
+            (byte) '\n'
         );
         this.logicalLimit = logicalLimit;
         this.action = Objects.requireNonNull(action, "action");
