@@ -52,7 +52,7 @@ public final class CalculateAverage_kjetilvlong {
 //        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
 //        Optional<Path> outFile = pathArgument(args, 2);
 
-        Settings settings = new Settings(1, 8, 6, 7, 8);
+        Settings settings = new Settings(3, 8, 6, 7, 8);
         long size = Files.size(inputFile);
         int cpus = Runtime.getRuntime().availableProcessors();
         System.out.println(size + " bytes on " + cpus + " cpus: " + settings);
