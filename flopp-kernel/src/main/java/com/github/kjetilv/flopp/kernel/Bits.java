@@ -158,8 +158,14 @@ public final class Bits {
      */
     public static byte[] toBytes(long l) {
         return new byte[] {
-            ffb(l), ffb(l >> 8L), ffb(l >> 16L), ffb(l >> 24L), ffb(l >> 32L), ffb(l >> 40L), ffb(l >> 48L),
-            (byte) (l >> 56L)
+            ffb(l),
+            ffb(l >> 8L),
+            ffb(l >> 16L),
+            ffb(l >> 24L),
+            ffb(l >> 32L),
+            ffb(l >> 40L),
+            ffb(l >> 48L),
+            ffb(l >> 56L)
         };
     }
 
@@ -169,8 +175,14 @@ public final class Bits {
      */
     public static char[] toChars(long l) {
         return new char[] {
-            ffc(l), ffc(l >> 8L), ffc(l >> 16L), ffc(l >> 24L), ffc(l >> 32L), ffc(l >> 40L), ffc(l >> 48L),
-            (char) (l >> 56L)
+            ffc(l),
+            ffc(l >> 8L),
+            ffc(l >> 16L),
+            ffc(l >> 24L),
+            ffc(l >> 32L),
+            ffc(l >> 40L),
+            ffc(l >> 48L),
+            ffc(l >> 56L)
         };
     }
 

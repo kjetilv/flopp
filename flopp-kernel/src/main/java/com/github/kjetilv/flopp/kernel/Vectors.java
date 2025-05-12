@@ -5,6 +5,7 @@ import com.github.kjetilv.flopp.kernel.util.MemorySegmentByteFinder;
 import java.lang.foreign.MemorySegment;
 import java.util.function.LongSupplier;
 
+@SuppressWarnings("unused")
 public final class Vectors {
 
     public static Finder finder(MemorySegment memorySegment, char b) {

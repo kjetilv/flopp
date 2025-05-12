@@ -7,6 +7,8 @@ import com.github.kjetilv.flopp.kernel.SeparatedLine;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.github.kjetilv.flopp.kernel.util.Todo.TODO;
+
 @SuppressWarnings({"SameParameterValue", "unused"})
 final class LineSplitters {
 
@@ -67,13 +69,13 @@ final class LineSplitters {
             Format.FwFormat format,
             Consumer<SeparatedLine> consumer
         ) {
-            return null;
+            return TODO();
         }
 
         public static Consumer<LineSegment> csvSink(Format.Csv format, Consumer<SeparatedLine> consumer) {
             return switch (format) {
-//                case Format.Csv.Escape esc -> new BitwiseCsvEscapeSplitter(lines, esc);
-//                case Format.Csv.Quoted dbl -> new BitwiseCsvQuotedSplitter(lines, dbl);
+                case Format.Csv.Escape esc -> TODO();
+                case Format.Csv.Quoted dbl -> TODO();
                 default -> new VectorCsvSimpleLineSplitter(format, consumer);
             };
 
