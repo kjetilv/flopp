@@ -74,18 +74,25 @@ class VectorCsvSimpleLineSplitter
     @Override
     public final SeparatedLine apply(LineSegment lineSegment) {
         memorySegment = lineSegment.memorySegment();
-        Vectors.Finder finder = Vectors.finder(memorySegment, format.separator());
-        startPositions[0] = 0;
+        long start = lineSegment.startIndex();
+        Vectors.Finder finder = Vectors.finder(memorySegment, start, format.separator());
+        startPositions[0] = start;
         while (true) {
             long next = finder.next();
             if (next >= lineSegment.endIndex()) {
                 endPositions[columnNo] = lineSegment.endIndex();
+                columnNo = 0;
                 lines.accept(this);
                 return this;
             }
             endPositions[columnNo] = next;
-            startPositions[columnNo] = next + 1;
             columnNo++;
+            if (columnNo == format.columnCount()) {
+                columnNo = 0;
+                lines.accept(this);
+                return this;
+            }
+            startPositions[columnNo] = next + 1;
         }
     }
 

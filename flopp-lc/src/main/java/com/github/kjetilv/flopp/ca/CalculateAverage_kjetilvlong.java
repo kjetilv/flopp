@@ -44,13 +44,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @SuppressWarnings("preview")
 public final class CalculateAverage_kjetilvlong {
 
-    public static void main(String[] args) throws IOException {
+    static void main(String[] args) throws IOException {
         Path inputFile = pathArgument(args, 0)
             .filter(Files::isRegularFile)
             .orElseThrow(() ->
                 new IllegalArgumentException("No path: " + args[0]));
-//        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
-//        Optional<Path> outFile = pathArgument(args, 2);
+        Optional<Path> truthFile = pathArgument(args, 1).filter(Files::isRegularFile);
+        Optional<Path> outFile = pathArgument(args, 2);
 
         Settings settings = new Settings(3, 8, 6, 7, 8);
         long size = Files.size(inputFile);
@@ -63,27 +63,27 @@ public final class CalculateAverage_kjetilvlong {
 //        Result result = mapAverage(inputFile, settings, simple);
 //        System.out.println(result);
 //        System.out.println(Duration.between(start, Instant.now()));
-//
-//        start = Instant.now();
+
+        start = Instant.now();
 
         LineSegmentMap<Result> map = mapAverages(inputFile, settings, simple);
         String mapStringSorted = map.toStringSorted();
         System.out.println(mapStringSorted);
         System.out.println(Duration.between(start, Instant.now()));
 
-//        truthFile
-//            .map(CalculateAverage_kjetilvlong::readString)
-//                .ifPresent(contents ->
-//                System.out.println(mapStringSorted.equals(contents.trim())));
-//
-//        outFile.ifPresent(out ->
-//            temper(
-//                map,
-//                inputFile,
-//                settings,
-//                simple,
-//                out
-//            ));
+        truthFile
+            .map(CalculateAverage_kjetilvlong::readString)
+                .ifPresent(contents ->
+                System.out.println(mapStringSorted.equals(contents.trim())));
+
+        outFile.ifPresent(out ->
+            temper(
+                map,
+                inputFile,
+                settings,
+                simple,
+                out
+            ));
     }
 
     static Result mapAverage(Path path, Settings settings, Format.Csv format) {
@@ -106,7 +106,7 @@ public final class CalculateAverage_kjetilvlong {
                 .orElse(false);
             Result result = new Result();
             for (int i = 0; i < chunks; i++) {
-                Result take = de(queue);
+                Result take = poll(queue);
                 if (take == null) {
                     throw new IllegalStateException("Failed to retrieve result #" + (i + 1) + "/" + chunks);
                 }
@@ -130,25 +130,61 @@ public final class CalculateAverage_kjetilvlong {
         );
         int size = 32 * 1024;
         LineSegmentMap<Result> map = LineSegmentMaps.create(size);
-        BlockingQueue<LineSegmentMap<Result>> queue;
         int partitionCount;
         try (
             Partitioned partitioned = PartitionedPaths.vectorPartitioned(path, partitioning, shape);
             StructuredTaskScope<Boolean> scope = new StructuredTaskScope<>()
         ) {
             partitionCount = partitioned.partitions().size();
-            queue = new ArrayBlockingQueue<>(partitionCount);
+            BlockingQueue<LineSegmentMap<Result>> queue =
+                new ArrayBlockingQueue<>(partitionCount);
             List<StructuredTaskScope.Subtask<Boolean>> subtasks = partitioned.splitters(format)
                 .map(splitter ->
                     scope.fork(() ->
                         queue.offer(table(splitter, size))))
                 .toList();
-            scope.fork(() ->
-                merge(partitionCount, map, queue));
-            scope.join();
+            scope.fork(() -> merge(partitionCount, map, queue));
+
+            StructuredTaskScope<Boolean> joined = scope.join();
+            if (subtasks.stream().allMatch(StructuredTaskScope.Subtask::get)) {
+                return map;
+            }
+
+            subtasks.stream()
+                .filter(StructuredTaskScope.Subtask::get)
+                .forEach(subtask -> {
+                    throw new IllegalStateException("Subtask failed: " + subtask, subtask.exception());
+                });
+            return null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static LineSegmentMap<Result> mapAveragesSync(
+        Path path,
+        Settings settings,
+        Format.Csv format
+    ) {
+        Shape shape = Shape.of(path, UTF_8).longestLine(128);
+        Partitioning partitioning = readPartitioning(
+            Runtime.getRuntime().availableProcessors(),
+            shape,
+            settings
+        );
+        int size = 32 * 1024;
+        LineSegmentMap<Result> map = LineSegmentMaps.create(size);
+        try (
+            Partitioned partitioned = PartitionedPaths.vectorPartitioned(path, partitioning, shape)
+        ) {
+            partitioned.splitters(format)
+                .forEach(splitter -> {
+                    LineSegmentMap<Result> table = table(splitter, size);
+                    map.merge(table, Result::merge);
+                });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -200,7 +236,7 @@ public final class CalculateAverage_kjetilvlong {
         BlockingQueue<LineSegmentMap<Result>> queue
     ) {
         for (int i = 0; i < partitionCount; i++) {
-            LineSegmentMap<Result> result = de(queue);
+            LineSegmentMap<Result> result = poll(queue);
             if (result == null) {
                 throw new IllegalStateException("Failed to retrieve result #" + (i + 1) + "/" + partitionCount);
             }
@@ -270,10 +306,12 @@ public final class CalculateAverage_kjetilvlong {
             Column.ofInt(1, CalculateAverage_kjetilvlong::parseValue)
         );
         columnReader.read(
-            splitter, columns -> {
+            splitter,
+            columns -> {
                 LineSegment segment = columns.getRaw(0);
                 Result result = table.get(segment, Result::new);
-                result.add(columns.getInt(1));
+                int i = columns.getInt(1);
+                result.add(i);
             }
         );
         return table;
@@ -314,7 +352,7 @@ public final class CalculateAverage_kjetilvlong {
         return value;
     }
 
-    private static <T> T de(BlockingQueue<T> queue) {
+    private static <T> T poll(BlockingQueue<T> queue) {
         try {
             return queue.poll(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {

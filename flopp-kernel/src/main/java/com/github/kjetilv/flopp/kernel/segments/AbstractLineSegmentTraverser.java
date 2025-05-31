@@ -317,7 +317,7 @@ public abstract sealed class AbstractLineSegmentTraverser
         @Override
         public int toHashCode() {
             int hash = 17;
-            int length = (int) (alignedStart - alignedEnd);
+            int length = (int) (alignedEnd - alignedStart);
             for (int i = 0; i < length; i += ALIGNMENT_INT) {
                 long data = segment.longAt(alignedStart + i);
                 hash = nextHash(hash, data);
